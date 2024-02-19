@@ -1,6 +1,8 @@
 import numpy as np
+from mlcg.data import AtomicData
 from mlcg.datasets.h5_dataset import MolData, MetaSet
 import tempfile
+import torch
 import h5py
 
 np.random.seed(54392)
@@ -40,6 +42,12 @@ def make_hdf5(tdir, detailed_idx=True):
         detailed_idx = None
 
     return f, mol_list, detailed_idx
+
+
+def zero_force_transform(inp: AtomicData) -> AtomicData:
+    """Dummy transform that set the forces to zero."""
+    inp.forces = torch.zeros_like(inp.forces)
+    return inp
 
 
 def test_metaset_props():
@@ -86,3 +94,14 @@ def test_metaset_props():
             np.testing.assert_equal(
                 sub_forces[i], meta_set._mol_dataset[mol_id]._forces
             )
+
+
+def test_h5_dataset_transform():
+    with tempfile.TemporaryDirectory() as tdir:
+        f, mol_list, _ = make_hdf5(tdir)
+        meta_set = MetaSet.create_from_hdf5_group(
+            f, mol_list, transform=zero_force_transform
+        )
+        random_indices = np.random.choice(len(meta_set), 10)
+        for i in random_indices:
+            assert np.allclose(meta_set[i].forces.detach().numpy(), 0.0)

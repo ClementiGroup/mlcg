@@ -145,7 +145,7 @@ import itertools
 import warnings
 from torch_geometric.loader.dataloader import Collater as PyGCollater
 import torch_geometric.loader.dataloader  # for type hint
-from typing import Dict, List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence, Callable
 from mlcg.data import AtomicData
 from mlcg.utils import make_splits, calc_num_samples, tqdm
 
@@ -236,12 +236,17 @@ class MetaSet:
 
     """
 
-    def __init__(self, name):
+    def __init__(
+        self,
+        name: str,
+        transform: Optional[Callable] = None,
+    ):
         self.name = name
         self._mol_dataset = []
         self._mol_map = {}
         self._n_mol_samples = []
         self._cumulate_indices = [0]
+        self._transform = transform
 
     @staticmethod
     def retrieve_hdf(hdf_grp, hdf_key):
@@ -283,6 +288,7 @@ class MetaSet:
             "world_size": 1,
         },
         subsample_using_weights=False,
+        transform: Optional[Callable] = None,
     ):
         def select_for_rank(length_or_indices):
             """Return a slicing for loading the necessary data from the HDF dataset."""
@@ -312,7 +318,7 @@ class MetaSet:
             else:
                 return np.s_[(residue + rank) :: (world_size * stride)]
 
-        output = MetaSet(hdf5_group.name.split("/")[-1])
+        output = MetaSet(hdf5_group.name.split("/")[-1], transform=transform)
         keys = hdf_key_mapping
         for mol_name in tqdm(mol_list, leave=False, desc="loading molecules"):
             if mol_name not in hdf5_group:
@@ -376,6 +382,12 @@ class MetaSet:
                 )
             )
         return output
+
+    def set_transform(
+        self,
+        transform: Optional[Callable] = None,
+    ):
+        self._transform = transform
 
     def insert_mol(self, mol_data):
         self._mol_dataset.append(mol_data)
@@ -471,11 +483,14 @@ class MetaSet:
 
     def __getitem__(self, idx):
         dataset_id, data_id = self._locate_idx(idx)
-        return AtomicData.from_points(
+        ad_point = AtomicData.from_points(
             pos=self._mol_dataset[dataset_id].coords[data_id],
             forces=self._mol_dataset[dataset_id].forces[data_id],
             atom_types=self._mol_dataset[dataset_id].embeds,
         )
+        if self._transform is not None:
+            ad_point = self._transform(ad_point)
+        return ad_point
 
     def _locate_idx(self, idx):
         full_length = self._cumulate_indices[-1]
@@ -633,6 +648,7 @@ class H5Dataset:
         partition_options: Dict,
         loading_options: Dict,
         subsample_using_weights: bool = False,
+        transform: Optional[Callable] = None,
     ):
         self._h5_path = h5_file_path
         self._h5_root = h5py.File(h5_file_path, "r")
@@ -642,6 +658,7 @@ class H5Dataset:
         self._partition_sample_info = {}
         self._detailed_indices = {}
         self._subsample_using_weights = subsample_using_weights
+        self._transform = transform
 
         # processing the hdf5 file
         for metaset_name in self._h5_root:
@@ -712,6 +729,7 @@ class H5Dataset:
                         hdf_key_mapping=hdf_key_mapping,
                         parallel=parallel,
                         subsample_using_weights=self._subsample_using_weights,
+                        transform=self._transform,
                     ),
                 )
             ## trim the metasets to fit the need of sampling
@@ -869,6 +887,7 @@ class H5SimpleDataset(H5Dataset):
         },
         parallel={"rank": 0, "world_size": 1},
         subsample_using_weights: Optional[bool] = False,
+        transform: Optional[Callable] = None,
     ):
         # input checking
         if not isinstance(stride, int) and stride > 0:
@@ -880,6 +899,7 @@ class H5SimpleDataset(H5Dataset):
         # ^ dict containing all metasets in the HDF5 file
         self._partitions = None
         self._partition_sample_info = None
+        self._transform = transform
 
         # checking metaset
         all_metasets = list(self._h5_root.keys())
@@ -914,6 +934,7 @@ class H5SimpleDataset(H5Dataset):
             hdf_key_mapping=hdf_key_mapping,
             parallel=parallel,
             subsample_using_weights=subsample_using_weights,
+            transform=self._transform,
         )
 
     def get_dataloader(
