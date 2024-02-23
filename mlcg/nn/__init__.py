@@ -1,6 +1,6 @@
 from .gradients import GradientsOut, SumOut
-from .schnet import SchNet, StandardSchNet
-from .radial_basis import GaussianBasis, ExpNormalBasis
+from .schnet import SchNet, StandardSchNet, NoiseEmbedSchNet
+from .radial_basis import GaussianBasis, ExpNormalBasis, SkewedMuGaussianBasis
 from .cutoff import CosineCutoff, IdentityCutoff
 from .losses import ForceMSE, ForceRMSE, Loss
 from .prior import Harmonic, HarmonicAngles, HarmonicBonds, Repulsion, Dihedral
@@ -18,8 +18,10 @@ __all__ = [
     "SumOut",
     "SchNet",
     "StandardSchNet",
+    "NoiseEmbedSchNet",
     "GaussianBasis",
     "ExpNormalBasis",
+    "SkewedMuGaussianBasis",
     "CosineCutoff",
     "IdentityCutoff",
     "ForceMSE",
