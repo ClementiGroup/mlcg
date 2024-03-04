@@ -77,6 +77,22 @@ class SkewedMuGaussianBasis(_RadialBasis):
         self.offset.data.copy_(offset)
         self.coeff.data.copy_(coeff)
 
+    def plot(self):
+        r"""Method for quickly visualizing a specific basis. This is useful for
+        inspecting the distance coverage of basis functions.
+        """
+
+        import matplotlib.pyplot as plt
+
+        distances = torch.linspace(0, 1, 1000)
+        expanded_distances = self(distances)
+
+        for i in range(expanded_distances.shape[-1]):
+            plt.plot(
+                distances.numpy(), expanded_distances[:, i].detach().numpy()
+            )
+        plt.show()
+
     def forward(self, dist: torch.Tensor) -> torch.Tensor:
         r"""Expansion of distances through the radial basis function set.
 
@@ -95,5 +111,5 @@ class SkewedMuGaussianBasis(_RadialBasis):
         dist = dist.unsqueeze(-1)
         expanded_distances = torch.exp(
             self.coeff * torch.pow(dist - self.offset, 2)
-        ) * self.cutoff(dist)
+        )
         return expanded_distances
