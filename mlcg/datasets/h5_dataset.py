@@ -172,6 +172,7 @@ class MolData:
         coords: np.ndarray,
         forces: np.ndarray,
         weights: np.ndarray = None,
+        noise_levels: np.ndarray = None,
     ):
         self._name = name
         self._embeds = embeds
@@ -186,6 +187,9 @@ class MolData:
         self._weights = weights
         if self._weights is not None:
             assert len(self._coords) == len(self._weights)
+        self._noise_levels = noise_levels
+        if self._noise_levels is not None:
+            assert len(self._coords) == len(self._noise_levels)
 
     @property
     def name(self):
@@ -208,6 +212,10 @@ class MolData:
         return self._weights
 
     @property
+    def noise_levels(self):
+        return self._noise_levels
+
+    @property
     def n_frames(self):
         return self.coords.shape[0]
 
@@ -224,6 +232,8 @@ class MolData:
 
         if self.weights is not None:
             self._weights = self._weights[indices]
+        if self._noise_levels is not None:
+            self._noise_levels = self._noise_levels[indices]
 
 
 class MetaSet:
@@ -282,6 +292,7 @@ class MetaSet:
             "coords": "cg_coords",
             "forces": "cg_delta_forces",
             "weights": "subsampling_weights",
+            "noise_levels": "noise_levels",
         },
         parallel={
             "rank": 0,
@@ -353,6 +364,9 @@ class MetaSet:
                 forces = MetaSet.retrieve_hdf(
                     hdf5_group[mol_name], keys["forces"]
                 )[selection]
+                noise_levels = MetaSet.retrieve_hdf(
+                    hdf5_group[mol_name], keys["noise_levels"]
+                )[selection]
                 weights = None  # Weights are None by default
                 if subsample_using_weights is True:
                     weights = MetaSet.retrieve_hdf(
@@ -367,6 +381,9 @@ class MetaSet:
                 forces = MetaSet.retrieve_hdf(
                     hdf5_group[mol_name], keys["forces"]
                 )[:][selection]
+                noise_levels = MetaSet.retrieve_hdf(
+                    hdf5_group[mol_name], keys["noise_levels"]
+                )[:][selection]
                 weights = None  # Weights are None by default
                 if subsample_using_weights is True:
                     weights = MetaSet.retrieve_hdf(
@@ -379,6 +396,7 @@ class MetaSet:
                     coords,
                     forces,
                     weights=weights,
+                    noise_levels=noise_levels,
                 )
             )
         return output
@@ -483,10 +501,19 @@ class MetaSet:
 
     def __getitem__(self, idx):
         dataset_id, data_id = self._locate_idx(idx)
+        # print(type(self._mol_dataset[dataset_id].forces[data_id]))
+        # print(type(self._mol_dataset[dataset_id].noise_levels[data_id:(data_id + 1)]))
+        # exit()
         ad_point = AtomicData.from_points(
             pos=self._mol_dataset[dataset_id].coords[data_id],
             forces=self._mol_dataset[dataset_id].forces[data_id],
             atom_types=self._mol_dataset[dataset_id].embeds,
+            noise_levels=torch.as_tensor(
+                np.tile(
+                    self._mol_dataset[dataset_id].noise_levels[data_id],
+                    [len(self._mol_dataset[dataset_id].coords[data_id])],
+                )
+            ),
         )
         if self._transform is not None:
             ad_point = self._transform(ad_point)
