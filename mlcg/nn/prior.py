@@ -272,7 +272,7 @@ class HarmonicAngles(Harmonic):
     """
 
     name: Final[str] = "angles"
-    _order = 2
+    _order = 3
 
     def __init__(self, statistics) -> None:
         super(HarmonicAngles, self).__init__(statistics, HarmonicAngles.name)

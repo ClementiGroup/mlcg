@@ -40,10 +40,23 @@ def atomic_data2neighbor_list(
 
     mapping = torch.cat([idx_i.unsqueeze(0), idx_j.unsqueeze(0)], dim=0)
     order = mapping.shape[0]
+    if "batch" not in data:
+        batch = torch.zeros(
+            data.pos.shape[0], dtype=torch.long, device=data.pos.device
+        )
+    else:
+        batch = data.batch
+
+    assert torch.all(
+        batch[mapping[0]] == batch[mapping[1]]
+    ), "torch_neighbor_list() returned pairs of indices in different structures"
+
+    mapping_batch = batch[mapping[0]]
     return make_neighbor_list(
         tag=f"nonbounded rc:{rcut} order:{order}",
         order=order,
         index_mapping=mapping,
+        mapping_batch=mapping_batch,
         cell_shifts=cell_shifts,
         rcut=rcut,
         self_interaction=self_interaction,
@@ -54,6 +67,7 @@ def make_neighbor_list(
     tag: str,
     order: int,
     index_mapping: torch.Tensor,
+    mapping_batch: Optional[torch.Tensor] = None,
     cell_shifts: Optional[torch.Tensor] = None,
     rcut: Optional[float] = None,
     self_interaction: Optional[bool] = None,
@@ -74,6 +88,8 @@ def make_neighbor_list(
         refers to the central atom index and the 2nd column to the neighbor atom
         index in the list of atoms (so it has to be shifted by a cell_shift to get
         the actual position of the neighboring atoms)
+    mapping_batch:
+        [n_edge] map for the neighbor -> structure index relation
     cell_shifts:
         A [n_edge, 3] tensor giving the periodic cell shift
     rcut:
@@ -86,14 +102,17 @@ def make_neighbor_list(
     Dict:
         Neighborlist dictionary
     """
-    if len(index_mapping) > 0:
-        mapping_batch = torch.zeros((index_mapping.shape[1]), dtype=torch.long)
-    else:
-        mapping_batch = torch.zeros((0,), dtype=torch.long)
     if index_mapping.shape[0] != order:
         raise RuntimeError(
             f"index_mapping shape does not match the order:{index_mapping.shape[0]} != {order}"
         )
+    if mapping_batch is None:
+        if len(index_mapping) > 0:
+            mapping_batch = torch.zeros(
+                (index_mapping.shape[1]), dtype=torch.long
+            )
+        else:
+            mapping_batch = torch.zeros((0,), dtype=torch.long)
     return dict(
         tag=tag,
         order=order,
