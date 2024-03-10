@@ -1,10 +1,12 @@
 import copy
-from typing import List, Union
+from typing import List, Union, Optional, Callable
 from collections.abc import Mapping
-
+import torch
 import torch.distributed as dist
 import pytorch_lightning as pl
 from ruamel.yaml import YAML
+from torch_geometric.transforms.base_transform import BaseTransform
+from torch_geometric.loader.dataloader import Collater as PyGCollater
 
 from ..datasets import H5Dataset, H5PartitionDataLoader, H5MetasetDataLoader
 
@@ -49,6 +51,9 @@ class H5DataModule(pl.LightningDataModule):
             "hdf_key_mapping": default_key_mapping
         },
         subsample_using_weights: bool = False,
+        transform: Optional[BaseTransform] = None,
+        collater_fn: Optional[Callable] = None,
+        batch_transform: Optional[BaseTransform] = None,
     ):
         super(H5DataModule, self).__init__()
         self.save_hyperparameters()
@@ -66,6 +71,11 @@ class H5DataModule(pl.LightningDataModule):
 
         self._part_options = get_options(partition_options)
         self._load_options = get_options(loading_options)
+        self._transform = transform
+        self._collater_fn = collater_fn
+        if self._collater_fn is None:
+            self._collater_fn = PyGCollater(None, None)
+        self._batch_transform = batch_transform
 
     def prepare_data(self):
         # download, split, etc...
@@ -102,6 +112,7 @@ class H5DataModule(pl.LightningDataModule):
             self._part_options,
             self._process_load_options,
             self._subsample_using_weights,
+            transform=self._transform,
         )
         if use_ddp:
             sample_info = [None] * num_replicas
@@ -160,14 +171,23 @@ class H5DataModule(pl.LightningDataModule):
         part = self._h5d.partition(part_name)
         if part_name == "train":
             combined_loader = H5PartitionDataLoader(
-                part, subsample_using_weights=self._subsample_using_weights
+                part,
+                subsample_using_weights=self._subsample_using_weights,
+                collater_fn=self._collater_fn,
+                transform=self._batch_transform,
             )
         else:
             loaders = []
             for metaset_name, batch_size in sorted(part.batch_sizes.items()):
                 metaset = part.get_metaset(metaset_name)
                 loaders.append(
-                    H5MetasetDataLoader(metaset, batch_size, shuffle=False)
+                    H5MetasetDataLoader(
+                        metaset,
+                        batch_size,
+                        shuffle=False,
+                        collater_fn=self._collater_fn,
+                        transform=self._batch_transform,
+                    )
                 )
             if len(loaders) == 1:
                 combined_loader = loaders[0]
