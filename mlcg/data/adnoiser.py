@@ -376,7 +376,7 @@ class PosForceTransformCollater:
 
     def __init__(
         self,
-        transform: Union[_pftransform, str, Callable],
+        transform: Union[_pftransform, str, Callable, None] = None,
         copy: bool = True,
         baseline_models: Union[str, Dict[str, Module], None] = None,
         aggforce_style: bool = False,
@@ -419,7 +419,7 @@ class PosForceTransformCollater:
                 _transform: Callable = pickle.load(f)
         else:
             _transform = transform
-        if aggforce_style:
+        if _transform is not None and aggforce_style:
             self.batch_transform = _AggforceWrapper(_transform)
         else:
             self.batch_transform = _transform
@@ -454,9 +454,12 @@ class PosForceTransformCollater:
         # we assume the frames are from the same molecule
         old_positions = stack([getattr(x, POSITIONS_KEY) for x in datas])
         old_forces = stack([getattr(x, FORCE_KEY) for x in datas])
-        new_positions, new_forces = self.batch_transform(
-            old_positions, old_forces
-        )
+        if self.batch_transform is not None:
+            new_positions, new_forces = self.batch_transform(
+                old_positions, old_forces
+            )
+        else:
+            new_positions, new_forces = old_positions, old_forces
         # collation happens here
         collated_data = self._collater_fn(datas)
         setattr(collated_data, POSITIONS_KEY, new_positions.flatten(0, 1))

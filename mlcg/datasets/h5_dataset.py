@@ -403,16 +403,12 @@ class MetaSet:
                     weights = MetaSet.retrieve_hdf(
                         hdf5_group[mol_name], keys["weights"]
                     )[:][selection]
-            if (
-                mol_neighbor_lists is not None
-                and mol_name in mol_neighbor_lists
-            ):
-                neighbor_list = mol_neighbor_lists[mol_name]
-            elif "_default" in mol_neighbor_lists:
-                neighbor_list = mol_neighbor_lists["_default"]
-                # print(f"Default neighbor list loaded for {mol_name}")
-            else:
-                neighbor_list = None
+            neighbor_list = None
+            if mol_neighbor_lists is not None:
+                if mol_name in mol_neighbor_lists:
+                    neighbor_list = mol_neighbor_lists[mol_name]
+                elif "_default" in mol_neighbor_lists:
+                    neighbor_list = mol_neighbor_lists["_default"]
             output.insert_mol(
                 MolData(
                     mol_name,
