@@ -18,6 +18,7 @@ from torch import (
     zeros_like,
 )
 from torch.nn import Module
+import torch
 from mlcg.data import AtomicData
 from mlcg.datasets.utils import remove_baseline_forces
 
@@ -366,6 +367,29 @@ class PosForceBT:
         return msg
 
 
+def simplify_trajectory_map_callable(tmap_array_noiser):
+    from aggforce.map.tmap import SeperableTMap, AugmentedTMap
+    from aggforce.map.jaxlinearmap import JLinearMap
+
+    if not hasattr(tmap_array_noiser, "__self__") or not isinstance(
+        tmap_array_noiser.__self__, AugmentedTMap
+    ):
+        raise ValueError("Expecting a AugmentedTMap to be simplified.")
+
+    def convert_combined_tmap_to_numpy_only(tmap):
+        assert isinstance(tmap, SeperableTMap)
+        if isinstance(tmap.coord_map, JLinearMap):
+            tmap.coord_map = tmap.coord_map.to_linearmap()
+        if isinstance(tmap.force_map, JLinearMap):
+            tmap.force_map = tmap.force_map.to_linearmap()
+
+    convert_combined_tmap_to_numpy_only(tmap_array_noiser.__self__.tmap)
+    tmap_array_noiser.__self__.augmenter = (
+        tmap_array_noiser.__self__.augmenter.to_SimpleCondNormal()
+    )
+    return tmap_array_noiser
+
+
 class PosForceTransformCollater:
     """Transforms coordinate and force entries of an AtomicData collated from a batch of frames
     that correspond to the same molecule.
@@ -382,6 +406,7 @@ class PosForceTransformCollater:
         aggforce_style: bool = False,
         collater_fn: PyGCollater = PyGCollater(None, None),
         remove_neighbor_list: bool = True,
+        use_simple_augmenter: bool = True,
     ) -> None:
         """Initialize.
 
@@ -420,6 +445,12 @@ class PosForceTransformCollater:
         else:
             _transform = transform
         if _transform is not None and aggforce_style:
+            if use_simple_augmenter:
+                _transform = simplify_trajectory_map_callable(_transform)
+                print("map simplified")
+                print(_transform.__self__.augmenter)
+                print(_transform.__self__.tmap.coord_map)
+                print(_transform.__self__.tmap.force_map)
             self.batch_transform = _AggforceWrapper(_transform)
         else:
             self.batch_transform = _transform
@@ -527,5 +558,217 @@ class PosForceTransformCollaterLWP(PosForceTransformCollater):
         """Return string representation of transform."""
         if self._init_args:
             return super(PosForceTransformCollaterLWP, self).__repr__()
+        else:
+            return ""
+
+
+class Noiser(torch.nn.Module):
+    ndim = 3
+
+    def __init__(self, sigma, kbt, coord_map, force_map):
+        super(Noiser, self).__init__()
+        self.sigma = torch.nn.Parameter(
+            torch.tensor(sigma), requires_grad=False
+        )
+        self.kbt = torch.nn.Parameter(torch.tensor(kbt), requires_grad=False)
+        self.coord_map = torch.nn.Parameter(coord_map, requires_grad=False)
+        self.force_map = torch.nn.Parameter(force_map, requires_grad=False)
+
+    def forward(self, coords, forces):
+        with torch.no_grad():
+            coords = coords.reshape([-1, len(self.coord_map), self.ndim])
+            forces = forces.reshape([-1, len(self.force_map), self.ndim])
+            noise = torch.randn_like(coords)
+            # aug_coords = self.augmenter.sample(coords)
+            aug_coords = coords + self.sigma * noise
+            full_coords = torch.cat([coords, aug_coords], axis=-2)
+            # aug_forces = self.kbt * aug_lgrad
+            aug_forces = -self.kbt * noise
+            # real_forces_corrected = forces + self.kbt * real_lgrad_correction
+            real_forces_corrected = forces + self.kbt * noise
+            full_forces = torch.cat(
+                [real_forces_corrected, aug_forces], axis=-2
+            )
+            orig_prec = torch.get_float32_matmul_precision()
+            torch.set_float32_matmul_precision("highest")
+            new_coords, new_forces = (
+                self.coord_map @ full_coords,
+                self.force_map @ full_forces,
+            )
+            torch.set_float32_matmul_precision(orig_prec)
+            return new_coords.flatten(0, 1), new_forces.flatten(0, 1)
+
+    @classmethod
+    def from_aug_tmap(cls, aug_tmap):
+        sigma = aug_tmap.augmenter._cov
+        kbt = aug_tmap.kbt
+        coord_map = torch.tensor(aug_tmap.tmap.coord_map.standard_matrix)
+        force_map = torch.tensor(aug_tmap.tmap.force_map.standard_matrix)
+        return cls(sigma, kbt, coord_map, force_map)
+
+    def __repr__(self) -> str:
+        """Return string representation of Noiser."""
+        msg = f"<Noiser: sigma={self.sigma.item()}, kbt={self.kbt.item()} with linear transforms>"
+        return msg
+
+
+class PosForceTransformCollaterTorch:
+    """Transforms coordinate and force entries of an AtomicData collated from a batch of frames
+    that correspond to the same molecule.
+
+    Transform is effectively applied _per frame_ as this maps individual
+    AtomicData instances.
+    """
+
+    def __init__(
+        self,
+        transform: Union[_pftransform, str, Callable, None] = None,
+        baseline_models: Union[str, Dict[str, Module], None] = None,
+        aggforce_style: bool = False,
+        collater_fn: PyGCollater = PyGCollater(None, None),
+        remove_neighbor_list: bool = True,
+        device: str = "cuda",
+    ) -> None:
+        """Initialize.
+
+        Arguments:
+        ---------
+        transform:
+            Callable that powers the
+        copy:
+            If true, we deepcopy the input AtomicData instance during call.
+        baseline_models:
+            Used to subtract out forces on the _transformed_ positions. If not
+            a string or None, passed to mlcg.datasets.utils.remove_baseline_forces.
+            If a string, read using torch.load and then passed. If None, no
+            post-transform correction is done.
+        aggforce_style:
+            If true, we wrap the provided transform using _aggforce_wrapper; this
+            allows a TrajectoryMap.map_arrays instance to be used.
+
+        Notes:
+        -----
+        If transform is a string, we treat it as a file name and attempt to read it
+        via pickle; the read object is then used as the transform. If aggforce_style
+        is False, the used transform should take two arguments: first the position
+        Tensor and Force Tensor of a frame(both with shape (n_particles,3)), and will
+        return a 2-tuple of Tensors (first element mapped positions, second element the
+        mapped forces).
+
+        If aggforce_style is True, then the transform should be a .map_arrays method of
+        a TrajectoryMap (not a TrajectoryMap instance itself!).
+
+        """
+        if isinstance(transform, str):
+            # maybe we can use torch.load here too
+            print(f"Loading... {transform}")
+            with open(transform, "rb") as f:  # noqa: PTH123
+                _transform: Callable = pickle.load(f)
+        else:
+            _transform = transform
+        self.device = torch.device(device)
+        if _transform is not None and aggforce_style:
+            self.noiser = Noiser.from_aug_tmap(_transform.__self__).to(
+                self.device
+            )
+        else:
+            self.noiser = _transform
+        if isinstance(baseline_models, str):
+            _baseline_models = load(baseline_models)
+        else:
+            _baseline_models = baseline_models
+        if _baseline_models is not None:
+            self.baseline_models = _baseline_models.to(self.device)
+        else:
+            self.baseline_models = None
+        self._remove_neighbor_list = remove_neighbor_list
+        self._collater_fn = collater_fn
+
+    def __call__(self, datas: Iterable[AtomicData]) -> AtomicData:
+        """Evaluate transform and collate the output to a single AtomicData
+
+        Arguments:
+        ---------
+        datas:
+            Iterable of AtomicData instances to transform. Should have position and
+            force entries.
+
+        Returns:
+        -------
+        AtomicData instance representing transformed data. May be a copy; see
+        initialization. Entries besides positions and forces will match input instance.
+
+        """
+        # collation happens here
+        collated_data = self._collater_fn(datas).to(self.device)
+        if self.noiser:
+            new_pos, new_forces = self.noiser(
+                collated_data[POSITIONS_KEY], collated_data[FORCE_KEY]
+            )
+            setattr(collated_data, POSITIONS_KEY, new_pos)
+            setattr(collated_data, FORCE_KEY, new_forces)
+        # remove the baseline forces
+        corrected_data = self._collated_remove_baseline(collated_data)  # type: ignore
+
+        return corrected_data
+
+    def _collated_remove_baseline(
+        self, collated_frames: AtomicData
+    ) -> AtomicData:
+        """Remove baseline from forces in the collated AtomicData.
+
+        This may modify the input AtomicData instances.
+        """
+        if self.baseline_models is None:
+            return collated_frames
+        else:
+            # remove baseline (collated)
+            collated_forces = collated_frames[FORCE_KEY]
+            baseline_forces = zeros_like(collated_forces, requires_grad=False)
+            for k, model in self.baseline_models.items():
+                model.eval()
+                with enable_grad():
+                    collated_frames = model(collated_frames)
+                baseline_forces += collated_frames.out[k][FORCE_KEY].detach()
+                del collated_frames.out[k]
+            collated_forces -= baseline_forces
+            if self._remove_neighbor_list:
+                collated_frames.neighbor_list = {}
+            return collated_frames
+
+    def __repr__(self) -> str:
+        """Return string representation of transform."""
+        msg = repr(type(self)) + ": " + repr(self.noiser)
+        return msg
+
+
+class PosForceTransformCollaterTorchLWP(PosForceTransformCollaterTorch):
+    """Same as `PosForceTransformCollaterTorch` but generates Light-Weight Pickle file
+    and PytorchLightning checkpoints.
+
+
+    Note: pytorch lightning expects this class to be able to pickled and unpickled
+    without __init__ run. So there are some hacks to work around this requirement.
+    """
+
+    _init_args = {}
+
+    def __init__(self, **kwargs):
+        self._init_args = kwargs
+        super(PosForceTransformCollaterTorchLWP, self).__init__(**kwargs)
+
+    def __getstate__(self):
+        """Determines what to be saved when pickling."""
+        return self._init_args
+
+    def __setstate__(self, state):
+        """Reconstruct the instance."""
+        if state:
+            super(PosForceTransformCollaterTorchLWP, self).__init__(**state)
+
+    def __repr__(self) -> str:
+        """Return string representation of transform."""
+        if self._init_args:
+            return super(PosForceTransformCollaterTorchLWP, self).__repr__()
         else:
             return ""
