@@ -19,6 +19,7 @@ from torch import (
 )
 from torch.nn import Module
 import torch
+import math
 from mlcg.data import AtomicData
 from mlcg.datasets.utils import remove_baseline_forces
 
@@ -370,6 +371,7 @@ class PosForceBT:
 def simplify_trajectory_map_callable(tmap_array_noiser):
     from aggforce.map.tmap import SeperableTMap, AugmentedTMap
     from aggforce.map.jaxlinearmap import JLinearMap
+    from aggforce.trajectory.jaxgausstraj import JCondNormal
 
     if not hasattr(tmap_array_noiser, "__self__") or not isinstance(
         tmap_array_noiser.__self__, AugmentedTMap
@@ -384,9 +386,10 @@ def simplify_trajectory_map_callable(tmap_array_noiser):
             tmap.force_map = tmap.force_map.to_linearmap()
 
     convert_combined_tmap_to_numpy_only(tmap_array_noiser.__self__.tmap)
-    tmap_array_noiser.__self__.augmenter = (
-        tmap_array_noiser.__self__.augmenter.to_SimpleCondNormal()
-    )
+    if isinstance(tmap_array_noiser.__self__.augmenter, JCondNormal):
+        tmap_array_noiser.__self__.augmenter = (
+            tmap_array_noiser.__self__.augmenter.to_SimpleCondNormal()
+        )
     return tmap_array_noiser
 
 
@@ -447,10 +450,6 @@ class PosForceTransformCollater:
         if _transform is not None and aggforce_style:
             if use_simple_augmenter:
                 _transform = simplify_trajectory_map_callable(_transform)
-                print("map simplified")
-                print(_transform.__self__.augmenter)
-                print(_transform.__self__.tmap.coord_map)
-                print(_transform.__self__.tmap.force_map)
             self.batch_transform = _AggforceWrapper(_transform)
         else:
             self.batch_transform = _transform
@@ -583,9 +582,9 @@ class Noiser(torch.nn.Module):
             aug_coords = coords + self.sigma * noise
             full_coords = torch.cat([coords, aug_coords], axis=-2)
             # aug_forces = self.kbt * aug_lgrad
-            aug_forces = -self.kbt * noise
+            aug_forces = -self.kbt * (noise / self.sigma)
             # real_forces_corrected = forces + self.kbt * real_lgrad_correction
-            real_forces_corrected = forces + self.kbt * noise
+            real_forces_corrected = forces - aug_forces
             full_forces = torch.cat(
                 [real_forces_corrected, aug_forces], axis=-2
             )
@@ -600,7 +599,7 @@ class Noiser(torch.nn.Module):
 
     @classmethod
     def from_aug_tmap(cls, aug_tmap):
-        sigma = aug_tmap.augmenter._cov
+        sigma = math.sqrt(aug_tmap.augmenter._cov)
         kbt = aug_tmap.kbt
         coord_map = torch.tensor(aug_tmap.tmap.coord_map.standard_matrix)
         force_map = torch.tensor(aug_tmap.tmap.force_map.standard_matrix)
