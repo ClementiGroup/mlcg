@@ -308,6 +308,7 @@ class MetaSet:
         subsample_using_weights=False,
         transform: Optional[Callable] = None,
         mol_neighbor_lists: Optional[dict] = None,
+        overriding_offset: Optional[int] = None,
     ):
         def select_for_rank(length_or_indices):
             """Return a slicing for loading the necessary data from the HDF dataset."""
@@ -321,6 +322,12 @@ class MetaSet:
                 length = len(indices)
             rank = parallel.get("rank", 0)
             world_size = parallel.get("world_size", 1)
+            if overriding_offset is not None and world_size > 1:
+                raise ValueError(
+                    f"overriding_offset ({overriding_offset}) "
+                    f"should be left None when world_size is "
+                    f"{world_size} > 1"
+                )
             if rank < 0 or rank >= world_size:
                 raise ValueError(
                     "Rank %d is invalid given the world_size %d."
@@ -332,10 +339,14 @@ class MetaSet:
                     % (length, world_size)
                 )
             residue = length % world_size
-            if indices is not None:
-                return indices[(residue + rank) :: (world_size * stride)]
+            if overriding_offset is not None:
+                offset = overriding_offset
             else:
-                return np.s_[(residue + rank) :: (world_size * stride)]
+                offset = residue + rank
+            if indices is not None:
+                return indices[offset :: (world_size * stride)]
+            else:
+                return np.s_[offset :: (world_size * stride)]
 
         output = MetaSet(hdf5_group.name.split("/")[-1], transform=transform)
         keys = hdf_key_mapping
@@ -732,6 +743,10 @@ class H5Dataset:
                 "world_size": 1,
             },
         )  # if no parallel entry, then target for single process
+        overriding_offset = loading_options.get(
+            "overriding_offset",
+            None,
+        )
         neighbor_list_chkpts = loading_options.get(
             "nl_chkpts",
             None,
@@ -798,6 +813,7 @@ class H5Dataset:
                         subsample_using_weights=self._subsample_using_weights,
                         transform=self._transform,
                         mol_neighbor_lists=mol_neighbor_lists,
+                        overriding_offset=overriding_offset,
                     ),
                 )
             ## trim the metasets to fit the need of sampling
