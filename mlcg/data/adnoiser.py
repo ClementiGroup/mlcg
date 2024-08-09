@@ -1,9 +1,10 @@
 """Noiser."""
 
-from typing import Union, Callable, Tuple, Final, Dict, Iterable, List, Any
+from typing import Union, Callable, Tuple, Final, Dict, Iterable, List, Any, Optional
 from copy import copy as shallow_copy
 from copy import deepcopy
 import pickle
+import numpy as np
 from numpy import ndarray, asarray
 from torch_geometric.transforms.base_transform import BaseTransform
 from torch_geometric.loader.dataloader import Collater as PyGCollater
@@ -778,5 +779,131 @@ class PosForceTransformCollaterTorchLWP(PosForceTransformCollaterTorch):
         """Return string representation of transform."""
         if self._init_args:
             return super(PosForceTransformCollaterTorchLWP, self).__repr__()
+        else:
+            return ""
+
+
+class MixingNoiser(torch.nn.Module):
+
+    def __init__(self, sigma, kbt, mixing_coeffs=None):
+        super(MixingNoiser, self).__init__()
+        self.sigma = torch.nn.Parameter(
+            torch.tensor(sigma), requires_grad=False
+        )
+        self.kbt = torch.nn.Parameter(torch.tensor(kbt), requires_grad=False)
+        if mixing_coeffs is not None:
+            self.mixing_coeffs = torch.nn.Parameter(torch.tensor(mixing_coeffs), requires_grad=False)
+        else:
+            self.mixing_coeffs = None
+            print("Noise-only forces will be generated.")
+
+    def forward(self, coords, forces):
+        with torch.no_grad():
+            noise = torch.randn_like(coords)
+            aug_coords = coords + self.sigma * noise
+            aug_forces = -self.kbt * (noise / self.sigma)
+            if self.mixing_coeffs is not None:
+                real_forces_corrected = forces - aug_forces
+                n_batch = len(real_forces_corrected) // len(self.mixing_coeffs)
+                mixing_coeffs = torch.tile(self.mixing_coeffs, (n_batch,))[:, None]
+                aug_forces = real_forces_corrected * mixing_coeffs + aug_forces * (1 - mixing_coeffs)
+            return aug_coords, aug_forces
+
+    def __repr__(self) -> str:
+        """Return string representation of Noiser."""
+        if self.mixing_coeffs:
+            msg = f"<MixingNoiser: sigma={self.sigma.item()}, kbt={self.kbt.item()} with mixing coefficients>"
+        else:
+            msg = f"<MixingNoiser: sigma={self.sigma.item()}, kbt={self.kbt.item()} (noise only)>"
+        return msg
+
+
+class PosForceNoiseMixingCollaterTorch(PosForceTransformCollaterTorch):
+    """Transforms coordinate and force entries of an AtomicData collated from a batch of frames
+    that correspond to the same molecule.
+    
+    When `noise_level` is a positive float, noise the coordinates and forces. Otherwise use
+    the original forces from the upstream dataset (i.e., mapped all-atom forces).
+    Only supports simple noise mixing, i.e., output force is noise signal + mixing_coeffs * 
+    real_forces_corrected. When `mixing_coeffs` is None while `noise_level` is a positive
+    float, generates data for noise-only training.
+    
+    When `baseline_models` is a valid path to a saved torch ModuleDict, the baseline forces
+    will be removed from the forces from above.
+    """
+
+    def __init__(
+        self,
+        noise_level: Optional[float] = None,
+        kbt: Optional[float] = None,
+        mixing_coeffs: Optional[str] = None,
+        baseline_models: Union[str, Dict[str, Module], None] = None,
+        collater_fn: PyGCollater = PyGCollater(None, None),
+        remove_neighbor_list: bool = True,
+        device: str = "cuda",
+    ) -> None:
+        """Initialize.
+
+        Arguments:
+        ---------
+        noise_level:
+            The variance of the white isotropic Guassian gonna be added to the positions
+            and have effects on the forces.
+        baseline_models:
+            Used to subtract out forces on the _transformed_ positions. If not
+            a string or None, passed to mlcg.datasets.utils.remove_baseline_forces.
+            If a string, read using torch.load and then passed. If None, no
+            post-transform correction is done.
+        """
+        if isinstance(mixing_coeffs, str):
+            print(f"Loading mixing coefficients... {mixing_coeffs}")
+            mixing_coeffs = np.load(mixing_coeffs)
+        else:
+            mixing_coeffs = None
+        self.device = torch.device(device)
+        
+        if noise_level:
+            sigma = math.sqrt(noise_level)
+            self.noiser = MixingNoiser(sigma, kbt, mixing_coeffs=mixing_coeffs)
+        else:
+            self.noiser = None
+        
+        if isinstance(baseline_models, str):
+            self.baseline_models = load(baseline_models)
+        else:
+            self.baseline_models = baseline_models
+        self._remove_neighbor_list = remove_neighbor_list
+        self._collater_fn = collater_fn
+        self._moved_to_device = False
+
+
+class PosForceNoiseMixingCollaterTorchLWP(PosForceNoiseMixingCollaterTorch):
+    """Same as `PosForceNoiseMixingCollaterTorch` but generates Light-Weight Pickle file
+    and PytorchLightning checkpoints.
+
+
+    Note: pytorch lightning expects this class to be able to pickled and unpickled
+    without __init__ run. So there are some hacks to work around this requirement.
+    """
+
+    _init_args = {}
+
+    def __init__(self, **kwargs):
+        self._init_args = kwargs
+        super(PosForceNoiseMixingCollaterTorchLWP, self).__init__(**kwargs)
+
+    def __getstate__(self):
+        """Determines what to be saved when pickling."""
+        return self._init_args
+
+    def __setstate__(self, state):
+        """Reconstruct the instance."""
+        if state:
+            super(PosForceNoiseMixingCollaterTorchLWP, self).__init__(**state)
+
+    def __repr__(self) -> str:
+        """Return string representation of transform."""
+        if self._init_args:
+            return super(PosForceNoiseMixingCollaterTorchLWP, self).__repr__()
         else:
             return ""
