@@ -317,7 +317,7 @@ class CFConv(MessagePassing):
         W = self.filter_network(edge_attr) * C.view(-1, 1)
 
         x = self.lin1(x)
-        # propagate_type: (x: Tensor, W: Tensor)
+        # propagate_type: (x: torch.Tensor, W: torch.Tensor)
         # Perform the continuous filter convolution
         x = self.propagate(edge_index, x=x, W=W, size=None)
         x = self.lin2(x)

@@ -682,6 +682,7 @@ class PosForceTransformCollaterTorch:
             self.baseline_models = None
         self._remove_neighbor_list = remove_neighbor_list
         self._collater_fn = collater_fn
+        self._moved_to_device = False
 
     def __call__(self, datas: Iterable[AtomicData]) -> AtomicData:
         """Evaluate transform and collate the output to a single AtomicData
@@ -698,6 +699,14 @@ class PosForceTransformCollaterTorch:
         initialization. Entries besides positions and forces will match input instance.
 
         """
+        if not self._moved_to_device:
+            # copy the params over to the current device
+            # since we noticed that the self.device can change after init in ddp
+            if self.baseline_models:
+                self.baseline_models.to(self.device)
+            if self.noiser:
+                self.noiser.to(self.device)
+            self._moved_to_device = True
         # collation happens here
         collated_data = self._collater_fn(datas).to(self.device)
         if self.noiser:
