@@ -785,36 +785,92 @@ class PosForceTransformCollaterTorchLWP(PosForceTransformCollaterTorch):
 
 class MixingNoiser(torch.nn.Module):
 
-    def __init__(self, sigma, kbt, mixing_coeffs=None):
+    def __init__(self, sigma, kbt, mixing_matrix=None, mixing_coeffs=None, noising_mask=None):
+        """Prioritize `mixing_matrix` if it's not None, otherwise use `mixing_coeffs` if they exist, 
+        otherwise generates noise-only signals. `noising_mask` can be used to set which beads to be noised.
+        """
         super(MixingNoiser, self).__init__()
         self.sigma = torch.nn.Parameter(
             torch.tensor(sigma), requires_grad=False
         )
         self.kbt = torch.nn.Parameter(torch.tensor(kbt), requires_grad=False)
-        if mixing_coeffs is not None:
+        self.mixing_coeffs = None
+        self.mixing_matrix = None
+        if mixing_matrix is not None:
+            self.mixing_matrix = torch.nn.Parameter(torch.tensor(mixing_matrix), requires_grad=False)
+        elif mixing_coeffs is not None:
             self.mixing_coeffs = torch.nn.Parameter(torch.tensor(mixing_coeffs), requires_grad=False)
         else:
-            self.mixing_coeffs = None
             print("Noise-only forces will be generated.")
+        if noising_mask is not None:
+            self.noising_mask = torch.nn.Parameter(torch.tensor(noising_mask, dtype=torch.bool), requires_grad=False)
+            self.n_noising_beads = self.noising_mask.sum().item()
+            self.n_beads = len(self.noising_mask)
+            if self.mixing_coeffs is not None:
+                assert len(self.mixing_coeffs) == self.n_noising_beads
+            print(f"Noising only the following indices {self.noising_mask.argwhere()[:, 0]}")
+        else:
+            self.noising_mask = None
 
     def forward(self, coords, forces):
-        with torch.no_grad():
-            noise = torch.randn_like(coords)
-            aug_coords = coords + self.sigma * noise
-            aug_forces = -self.kbt * (noise / self.sigma)
-            if self.mixing_coeffs is not None:
-                real_forces_corrected = forces - aug_forces
-                n_batch = len(real_forces_corrected) // len(self.mixing_coeffs)
-                mixing_coeffs = torch.tile(self.mixing_coeffs, (n_batch,))[:, None]
-                aug_forces = real_forces_corrected * mixing_coeffs + aug_forces * (1 - mixing_coeffs)
-            return aug_coords, aug_forces
+        if self.noising_mask is None:
+            # traditional: noising all CG sites
+            with torch.no_grad():
+                noise = torch.randn_like(coords)
+                aug_coords = coords + self.sigma * noise
+                aug_forces = -self.kbt * (noise / self.sigma)
+                if self.mixing_matrix is not None:
+                    real_forces_corrected = forces - aug_forces
+                    batch_forces = real_forces_corrected.reshape([-1, self.n_beads, 3])
+                    orig_prec = torch.get_float32_matmul_precision()
+                    torch.set_float32_matmul_precision("highest")
+                    batch_forces = self.mixing_matrix @ batch_forces
+                    torch.set_float32_matmul_precision(orig_prec)
+                    aug_forces += batch_forces.reshape([-1, 3]) 
+                elif self.mixing_coeffs is not None:
+                    # real_forces_corrected = forces - aug_forces
+                    n_batch = len(forces) // len(self.mixing_coeffs)
+                    mixing_coeffs = torch.tile(self.mixing_coeffs, (n_batch,))[:, None]
+                    aug_forces = forces * mixing_coeffs + aug_forces * (1 - mixing_coeffs)
+                return aug_coords, aug_forces
+        else:
+            # only noising specified sites:
+            with torch.no_grad():
+                batch_coords = coords.reshape([-1, self.n_beads, 3])
+                batch_forces = forces.reshape([-1, self.n_beads, 3])
+                noise = torch.randn(len(batch_coords), self.n_noising_beads, 3, device=coords.device)
+                batch_coords[:, self.noising_mask] += self.sigma * noise
+                aug_forces = -self.kbt * (noise / self.sigma)
+                if self.mixing_matrix is not None:
+                    batch_forces[:, self.noising_mask] -= aug_forces
+                    orig_prec = torch.get_float32_matmul_precision()
+                    torch.set_float32_matmul_precision("highest")
+                    batch_forces = self.mixing_matrix @ batch_forces
+                    torch.set_float32_matmul_precision(orig_prec)
+                    batch_forces[:, self.noising_mask] += aug_forces
+                elif self.mixing_coeffs is not None:
+                    # real_forces_corrected = batch_forces[:, self.noising_mask] - aug_forces
+                    mixing_coeffs = self.mixing_coeffs[:, None]
+                    aug_forces = batch_forces[:, self.noising_mask] * mixing_coeffs + aug_forces * (1 - mixing_coeffs)
+                    batch_forces[:, self.noising_mask] = aug_forces
+                else:
+                    # a mixture of noise-only forces on the noised beads and 0-noise original CG force on the rest
+                    batch_forces[:, self.noising_mask] = aug_forces
+                return batch_coords.reshape([-1, 3]), batch_forces.reshape([-1, 3])
 
     def __repr__(self) -> str:
         """Return string representation of Noiser."""
-        if self.mixing_coeffs:
-            msg = f"<MixingNoiser: sigma={self.sigma.item()}, kbt={self.kbt.item()} with mixing coefficients>"
+        msg = f"<MixingNoiser: sigma={self.sigma.item()}, kbt={self.kbt.item()}"
+        if self.mixing_matrix is not None:
+            msg += " with mixing matrix"
+        elif self.mixing_coeffs is not None:
+            msg += " with mixing coefficients"
         else:
-            msg = f"<MixingNoiser: sigma={self.sigma.item()}, kbt={self.kbt.item()} (noise only)>"
+            msg += " (noise only)"
+        if self.noising_mask is not None:
+            msg += f" (noising only beads {self.noising_mask.argwhere()[:, 0]})>"
+        else:
+            msg += ">"
         return msg
 
 
@@ -836,7 +892,9 @@ class PosForceNoiseMixingCollaterTorch(PosForceTransformCollaterTorch):
         self,
         noise_level: Optional[float] = None,
         kbt: Optional[float] = None,
+        mixing_matrix: Optional[str] = None,
         mixing_coeffs: Optional[str] = None,
+        noising_mask: Optional[str] = None,
         baseline_models: Union[str, Dict[str, Module], None] = None,
         collater_fn: PyGCollater = PyGCollater(None, None),
         remove_neighbor_list: bool = True,
@@ -855,16 +913,34 @@ class PosForceNoiseMixingCollaterTorch(PosForceTransformCollaterTorch):
             If a string, read using torch.load and then passed. If None, no
             post-transform correction is done.
         """
-        if isinstance(mixing_coeffs, str):
+        if isinstance(mixing_matrix, str):
+            print(f"Loading mixing matrix... {mixing_matrix}")
+            mixing_matrix = np.load(mixing_matrix)
+        elif isinstance(mixing_coeffs, str):
             print(f"Loading mixing coefficients... {mixing_coeffs}")
+            mixing_matrix = None
             mixing_coeffs = np.load(mixing_coeffs)
         else:
+            mixing_matrix = None
             mixing_coeffs = None
+        
+        if isinstance(noising_mask, str):
+            print(f"Loading noising mask... {noising_mask}")
+            noising_mask = np.load(noising_mask)
+        else:
+            noising_mask = None
+        
         self.device = torch.device(device)
         
         if noise_level:
             sigma = math.sqrt(noise_level)
-            self.noiser = MixingNoiser(sigma, kbt, mixing_coeffs=mixing_coeffs)
+            self.noiser = MixingNoiser(
+                sigma, 
+                kbt,
+                mixing_matrix=mixing_matrix,
+                mixing_coeffs=mixing_coeffs,
+                noising_mask=noising_mask,
+            )
         else:
             self.noiser = None
         
