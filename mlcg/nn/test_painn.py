@@ -4,7 +4,7 @@ import pytest
 from typing import List
 import warnings
 
-from mlcg.nn.schnet import StandardSchNet
+from mlcg.nn.painn import StandardPaiNN
 from mlcg.nn.radial_basis import GaussianBasis
 from mlcg.nn.gradients import GradientsOut
 from mlcg.nn.cutoff import IdentityCutoff, CosineCutoff
@@ -94,7 +94,7 @@ database = MolDatabase()
 )
 def test_cutoff_warning(basis, cutoff, expected_warning):
     with pytest.warns(expected_warning):
-        StandardSchNet(basis, cutoff, [128, 128])
+        StandardPaiNN(basis, cutoff, [128, 128])
 
 
 @pytest.mark.parametrize(
@@ -105,12 +105,12 @@ def test_cutoff_warning(basis, cutoff, expected_warning):
 )
 def test_cutoff_warning_None(basis, cutoff, expected_warning):
     with warnings.catch_warnings(record=True):
-        StandardSchNet(basis, cutoff, [128, 128])
+        StandardPaiNN(basis, cutoff, [128, 128])
 
 
 def test_minimum_interaction_block():
     with pytest.raises(ValueError):
-        StandardSchNet(
+        StandardPaiNN(
             standard_basis, standard_cutoff, [128, 128], num_interactions=-1
         )
 
@@ -130,11 +130,11 @@ def test_prediction(collated_data, out_keys, expected_shapes):
     and that the correspdonding shapes of the outputs are correct given the
     requested gradient targets.
     """
-    test_schnet = StandardSchNet(standard_basis, standard_cutoff, [128, 128])
+    test_schnet = StandardPaiNN(standard_basis, standard_cutoff, [128, 128])
     model = GradientsOut(test_schnet, targets=FORCE_KEY).double()
     collated_data = model(collated_data)
     assert len(collated_data.out) != 0
-    assert "SchNet" in collated_data.out.keys()
+    assert "PaiNN" in collated_data.out.keys()
     for key, shape in zip(out_keys, expected_shapes):
         assert key in collated_data.out[model.name].keys()
         assert collated_data.out[model.name][key].shape == shape

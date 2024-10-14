@@ -14,6 +14,8 @@ from . import (
     OverdampedSimulation,
 )
 from ..data import AtomicData
+from ..nn import load_and_adapt_old_checkpoint
+from ..utils import dump_yaml
 
 
 def parse_simulation_config(
@@ -82,7 +84,19 @@ def parse_simulation_config(
     )
 
     config = parser.parse_args()
-
+    # save config
+    exported_config = {}
+    for k, v in config.items():
+        # Path_fr must be converted to string otherwise they can't be saved
+        if isinstance(v, Path_fr):
+            exported_config[k] = str(v)
+        # redundant to save the path to the original config
+        elif k == "config":
+            continue
+        else:
+            exported_config[k] = v
+    out_name = exported_config["simulation"]["filename"]
+    dump_yaml(f"{out_name}_config.yaml", exported_config)
     # Sanitize PTSimulation kwargs
     if simulation_class == PTSimulation:
         config["simulation"].pop("sim_subroutine", None)
@@ -90,7 +104,9 @@ def parse_simulation_config(
         config["simulation"].pop("save_subroutine", None)
 
     model_fn = config.pop("model_file")
-    model = torch.load((model_fn if isinstance(model_fn, str) else model_fn()))
+    model = load_and_adapt_old_checkpoint(
+        (model_fn if isinstance(model_fn, str) else model_fn())
+    )
 
     structures_fn = config.pop("structure_file")
     initial_data_list = torch.load(

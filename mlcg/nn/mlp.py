@@ -1,9 +1,7 @@
 import torch
-from torch_scatter import scatter
-from typing import Optional, List, Final
+from typing import Optional, List, Final, Callable, Union
 
 from ._module_init import init_xavier_uniform
-from ..data.atomic_data import ENERGY_KEY
 
 
 class MLP(torch.nn.Module):

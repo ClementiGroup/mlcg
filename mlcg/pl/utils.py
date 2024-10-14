@@ -5,19 +5,22 @@ from pytorch_lightning.plugins.environments import (
 from typing import List, Optional, Union, Any, Dict
 
 from .model import PLModel
-from ..nn import SumOut
+from ..nn import SumOut, refresh_module_with_schnet_, fixed_pyg_inspector
 
 
 def extract_model_from_checkpoint(checkpoint_path, hparams_file):
-    plmodel = PLModel.load_from_checkpoint(
-        checkpoint_path=checkpoint_path, hparams_file=hparams_file
-    )
-    return plmodel.get_model()
+    with fixed_pyg_inspector():
+        plmodel = PLModel.load_from_checkpoint(
+            checkpoint_path=checkpoint_path, hparams_file=hparams_file
+        )
+        model = plmodel.get_model()
+        refresh_module_with_schnet_(model)
+    return model
 
 
 def merge_priors_and_checkpoint(
     checkpoint: Union[str, torch.nn.Module],
-    priors: Union[str, torch.nn.ModuleDict],
+    priors: Union[str, torch.nn.ModuleDict, SumOut],
     hparams_file: Optional[str] = None,
     use_only_priors: bool = False,
 ) -> torch.nn.Module:
@@ -29,7 +32,7 @@ def merge_priors_and_checkpoint(
     checkpoint :
         full path to the checkpoint file OR loaded `torch.nn.Module`
     priors :
-        If :obj:`torch.nn.ModuleDict`, it should be the collection of priors
+        If :obj:`torch.nn.ModuleDict` or `SumOut`, it should be the collection of priors
         used as a baseline for training the ML model. If :obj:`str`, it should
         be a full path to the file holding the priors.
     hparams_file :
@@ -44,6 +47,11 @@ def merge_priors_and_checkpoint(
             - trained model with the priors (if use_only_priors is False)
             - model with only priors (if use_only_priors is True)
     """
+    # Check priors being correct type
+    assert isinstance(
+        priors, (str, SumOut, torch.nn.ModuleDict)
+    ), '"priors" has to be either string, SumOut, or ModuleDict'
+
     # merged_model should be a ModuleDict
     merged_model = torch.nn.ModuleDict()
 
@@ -61,6 +69,9 @@ def merge_priors_and_checkpoint(
         prior_model = torch.load(priors)
     else:
         prior_model = priors
+    # case where the prior that we are loading is already wrapped in a SumOut layer
+    if isinstance(prior_model, SumOut):
+        prior_model = prior_model.models
 
     for key in prior_model.keys():
         merged_model[key] = prior_model[key]
