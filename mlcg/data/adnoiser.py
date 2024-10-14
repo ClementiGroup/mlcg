@@ -612,6 +612,60 @@ class Noiser(torch.nn.Module):
         return msg
 
 
+def check_and_sum_decoy_prob(opts):
+    """
+    Sanity check: the probabilities are not exceeding 1
+    Example of expected input:
+    [
+        {
+            "scale": 0.5,
+            "prob": 0.02,
+        },
+        {
+            "scale": 5.0,
+            "prob": 0.02,
+        }
+    ]
+    Example output:
+    [0.02, 0.02, 0.96]
+    """
+    summary_decoy_probs = []
+    for option in opts:
+        if "scale" not in option or option["scale"] <= 0 or "prob" not in option or option["prob"] < 0:
+            raise ValueError(f"Invalid decoy option: {option}")
+        summary_decoy_probs.append(option["prob"])
+    if sum(summary_decoy_probs) > 1:
+        raise ValueError(f"total decoy probability exceeds 1: {summary_decoy_probs}")
+    summary_decoy_probs.append(1 - sum(summary_decoy_probs))
+    return summary_decoy_probs
+
+
+def pick_decoy_frames(data, summary_decoy_probs):
+    """Decide the number of frames picked for each case, the last one corresponds to the number of intact samples
+    """
+    n_frames = len(data.n_atoms)
+    n_picks = np.random.multinomial(n_frames, summary_decoy_probs)[:-1]
+    shuffled_ids = np.arange(n_frames)
+    np.random.shuffle(shuffled_ids)
+    shuffled_ids = shuffled_ids.tolist()
+    n_picks_sum = np.cumsum(n_picks).tolist()
+    id_picks = [shuffled_ids[a:b] for a, b in zip([0] + n_picks_sum, n_picks_sum)]
+    ptr = data.ptr.cpu().numpy()
+    frame_ranges = [[(ptr[id_], ptr[id_ + 1]) for id_ in id_pick] for id_pick in id_picks]
+    return id_picks, frame_ranges
+
+
+def decoy_frame_(data, scale, frame_start, frame_stop):
+    """Make decoy frames in place.
+    1. add (huge amount of) noises to the corresponding frames in the `pos` tensor
+    2. set the corresponding frames in the `forces` tensor to zero
+    such that the NN learns to rely on priors instead of very wrong extrapolations
+    """
+    frame_coords = data.pos[frame_start:frame_stop]
+    frame_coords += torch.randn_like(frame_coords) * scale
+    data.forces[frame_start:frame_stop] = 0
+
+
 class PosForceTransformCollaterTorch:
     """Transforms coordinate and force entries of an AtomicData collated from a batch of frames
     that correspond to the same molecule.
@@ -627,6 +681,7 @@ class PosForceTransformCollaterTorch:
         aggforce_style: bool = False,
         collater_fn: PyGCollater = PyGCollater(None, None),
         remove_neighbor_list: bool = True,
+        decoy_options: Union[List[Dict[str, float]], None] = None,
         device: str = "cuda",
     ) -> None:
         """Initialize.
@@ -681,6 +736,11 @@ class PosForceTransformCollaterTorch:
             self.baseline_models = _baseline_models.to(self.device)
         else:
             self.baseline_models = None
+        if decoy_options is not None:
+            self._decoy_opts = decoy_options
+            self._summary_decoy_probs = check_and_sum_decoy_prob(decoy_options)
+        else:
+            self._decoy_opts = None
         self._remove_neighbor_list = remove_neighbor_list
         self._collater_fn = collater_fn
         self._moved_to_device = False
@@ -718,7 +778,15 @@ class PosForceTransformCollaterTorch:
             setattr(collated_data, FORCE_KEY, new_forces)
         # remove the baseline forces
         corrected_data = self._collated_remove_baseline(collated_data)  # type: ignore
-
+        # alek's idea of regularization of neural network predictions
+        # 0. randomly choose some frames
+        # 1. add huge amount of noises to the coords (creating decoys)
+        # 2. set the delta forces to zero (so the NN learns to rely on priors instead of very wrong extrapolations)
+        if self._decoy_opts:
+            _, frame_ranges = pick_decoy_frames(corrected_data, self._summary_decoy_probs)
+            for opt, ranges in zip(self._decoy_opts, frame_ranges):
+                for start, stop in ranges:
+                    decoy_frame_(corrected_data, opt["scale"], start, stop)
         return corrected_data
 
     def _collated_remove_baseline(
@@ -798,6 +866,7 @@ class MixingNoiser(torch.nn.Module):
         self.mixing_matrix = None
         if mixing_matrix is not None:
             self.mixing_matrix = torch.nn.Parameter(torch.tensor(mixing_matrix), requires_grad=False)
+            self.n_beads = self.mixing_matrix.shape[1]
         elif mixing_coeffs is not None:
             self.mixing_coeffs = torch.nn.Parameter(torch.tensor(mixing_coeffs), requires_grad=False)
         else:
@@ -898,6 +967,7 @@ class PosForceNoiseMixingCollaterTorch(PosForceTransformCollaterTorch):
         baseline_models: Union[str, Dict[str, Module], None] = None,
         collater_fn: PyGCollater = PyGCollater(None, None),
         remove_neighbor_list: bool = True,
+        decoy_options: Union[List[Dict[str, float]], None] = None,
         device: str = "cuda",
     ) -> None:
         """Initialize.
@@ -951,6 +1021,11 @@ class PosForceNoiseMixingCollaterTorch(PosForceTransformCollaterTorch):
         self._remove_neighbor_list = remove_neighbor_list
         self._collater_fn = collater_fn
         self._moved_to_device = False
+        if decoy_options is not None:
+            self._decoy_opts = decoy_options
+            self._summary_decoy_probs = check_and_sum_decoy_prob(decoy_options)
+        else:
+            self._decoy_opts = None
 
 
 class PosForceNoiseMixingCollaterTorchLWP(PosForceNoiseMixingCollaterTorch):
