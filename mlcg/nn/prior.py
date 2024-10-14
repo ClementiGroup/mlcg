@@ -448,7 +448,7 @@ class RepulsionBuckMod(torch.nn.Module, _Prior):
 
         mapping = data.neighbor_list[self.name]["index_mapping"]
         return RepulsionBuckMod.compute_features(data.pos, mapping)
-    
+
     def data2parameters(self, data):
         mapping = data.neighbor_list[self.name]["index_mapping"]
         interaction_types = [
@@ -459,7 +459,7 @@ class RepulsionBuckMod(torch.nn.Module, _Prior):
             "r_0": self.r_0[interaction_types].flatten(),
         }
         return params
-    
+
     def forward(self, data: AtomicData) -> AtomicData:
         """Forward pass through the repulsion interaction.
 
@@ -502,8 +502,6 @@ class RepulsionBuckMod(torch.nn.Module, _Prior):
         """Method defining the repulsion interaction"""
         rr = 1 - (x / r_0)
         return (6 / alpha) * torch.exp(alpha * rr)
-
-
 
     @staticmethod
     def neighbor_list(topology: Topology) -> Dict:

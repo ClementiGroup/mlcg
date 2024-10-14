@@ -1,6 +1,16 @@
 """Noiser."""
 
-from typing import Union, Callable, Tuple, Final, Dict, Iterable, List, Any, Optional
+from typing import (
+    Union,
+    Callable,
+    Tuple,
+    Final,
+    Dict,
+    Iterable,
+    List,
+    Any,
+    Optional,
+)
 from copy import copy as shallow_copy
 from copy import deepcopy
 import pickle
@@ -631,27 +641,37 @@ def check_and_sum_decoy_prob(opts):
     """
     summary_decoy_probs = []
     for option in opts:
-        if "scale" not in option or option["scale"] <= 0 or "prob" not in option or option["prob"] < 0:
+        if (
+            "scale" not in option
+            or option["scale"] <= 0
+            or "prob" not in option
+            or option["prob"] < 0
+        ):
             raise ValueError(f"Invalid decoy option: {option}")
         summary_decoy_probs.append(option["prob"])
     if sum(summary_decoy_probs) > 1:
-        raise ValueError(f"total decoy probability exceeds 1: {summary_decoy_probs}")
+        raise ValueError(
+            f"total decoy probability exceeds 1: {summary_decoy_probs}"
+        )
     summary_decoy_probs.append(1 - sum(summary_decoy_probs))
     return summary_decoy_probs
 
 
 def pick_decoy_frames(data, summary_decoy_probs):
-    """Decide the number of frames picked for each case, the last one corresponds to the number of intact samples
-    """
+    """Decide the number of frames picked for each case, the last one corresponds to the number of intact samples"""
     n_frames = len(data.n_atoms)
     n_picks = np.random.multinomial(n_frames, summary_decoy_probs)[:-1]
     shuffled_ids = np.arange(n_frames)
     np.random.shuffle(shuffled_ids)
     shuffled_ids = shuffled_ids.tolist()
     n_picks_sum = np.cumsum(n_picks).tolist()
-    id_picks = [shuffled_ids[a:b] for a, b in zip([0] + n_picks_sum, n_picks_sum)]
+    id_picks = [
+        shuffled_ids[a:b] for a, b in zip([0] + n_picks_sum, n_picks_sum)
+    ]
     ptr = data.ptr.cpu().numpy()
-    frame_ranges = [[(ptr[id_], ptr[id_ + 1]) for id_ in id_pick] for id_pick in id_picks]
+    frame_ranges = [
+        [(ptr[id_], ptr[id_ + 1]) for id_ in id_pick] for id_pick in id_picks
+    ]
     return id_picks, frame_ranges
 
 
@@ -783,7 +803,9 @@ class PosForceTransformCollaterTorch:
         # 1. add huge amount of noises to the coords (creating decoys)
         # 2. set the delta forces to zero (so the NN learns to rely on priors instead of very wrong extrapolations)
         if self._decoy_opts:
-            _, frame_ranges = pick_decoy_frames(corrected_data, self._summary_decoy_probs)
+            _, frame_ranges = pick_decoy_frames(
+                corrected_data, self._summary_decoy_probs
+            )
             for opt, ranges in zip(self._decoy_opts, frame_ranges):
                 for start, stop in ranges:
                     decoy_frame_(corrected_data, opt["scale"], start, stop)
@@ -853,8 +875,15 @@ class PosForceTransformCollaterTorchLWP(PosForceTransformCollaterTorch):
 
 class MixingNoiser(torch.nn.Module):
 
-    def __init__(self, sigma, kbt, mixing_matrix=None, mixing_coeffs=None, noising_mask=None):
-        """Prioritize `mixing_matrix` if it's not None, otherwise use `mixing_coeffs` if they exist, 
+    def __init__(
+        self,
+        sigma,
+        kbt,
+        mixing_matrix=None,
+        mixing_coeffs=None,
+        noising_mask=None,
+    ):
+        """Prioritize `mixing_matrix` if it's not None, otherwise use `mixing_coeffs` if they exist,
         otherwise generates noise-only signals. `noising_mask` can be used to set which beads to be noised.
         """
         super(MixingNoiser, self).__init__()
@@ -865,19 +894,28 @@ class MixingNoiser(torch.nn.Module):
         self.mixing_coeffs = None
         self.mixing_matrix = None
         if mixing_matrix is not None:
-            self.mixing_matrix = torch.nn.Parameter(torch.tensor(mixing_matrix), requires_grad=False)
+            self.mixing_matrix = torch.nn.Parameter(
+                torch.tensor(mixing_matrix), requires_grad=False
+            )
             self.n_beads = self.mixing_matrix.shape[1]
         elif mixing_coeffs is not None:
-            self.mixing_coeffs = torch.nn.Parameter(torch.tensor(mixing_coeffs), requires_grad=False)
+            self.mixing_coeffs = torch.nn.Parameter(
+                torch.tensor(mixing_coeffs), requires_grad=False
+            )
         else:
             print("Noise-only forces will be generated.")
         if noising_mask is not None:
-            self.noising_mask = torch.nn.Parameter(torch.tensor(noising_mask, dtype=torch.bool), requires_grad=False)
+            self.noising_mask = torch.nn.Parameter(
+                torch.tensor(noising_mask, dtype=torch.bool),
+                requires_grad=False,
+            )
             self.n_noising_beads = self.noising_mask.sum().item()
             self.n_beads = len(self.noising_mask)
             if self.mixing_coeffs is not None:
                 assert len(self.mixing_coeffs) == self.n_noising_beads
-            print(f"Noising only the following indices {self.noising_mask.argwhere()[:, 0]}")
+            print(
+                f"Noising only the following indices {self.noising_mask.argwhere()[:, 0]}"
+            )
         else:
             self.noising_mask = None
 
@@ -890,24 +928,35 @@ class MixingNoiser(torch.nn.Module):
                 aug_forces = -self.kbt * (noise / self.sigma)
                 if self.mixing_matrix is not None:
                     real_forces_corrected = forces - aug_forces
-                    batch_forces = real_forces_corrected.reshape([-1, self.n_beads, 3])
+                    batch_forces = real_forces_corrected.reshape(
+                        [-1, self.n_beads, 3]
+                    )
                     orig_prec = torch.get_float32_matmul_precision()
                     torch.set_float32_matmul_precision("highest")
                     batch_forces = self.mixing_matrix @ batch_forces
                     torch.set_float32_matmul_precision(orig_prec)
-                    aug_forces += batch_forces.reshape([-1, 3]) 
+                    aug_forces += batch_forces.reshape([-1, 3])
                 elif self.mixing_coeffs is not None:
                     # real_forces_corrected = forces - aug_forces
                     n_batch = len(forces) // len(self.mixing_coeffs)
-                    mixing_coeffs = torch.tile(self.mixing_coeffs, (n_batch,))[:, None]
-                    aug_forces = forces * mixing_coeffs + aug_forces * (1 - mixing_coeffs)
+                    mixing_coeffs = torch.tile(self.mixing_coeffs, (n_batch,))[
+                        :, None
+                    ]
+                    aug_forces = forces * mixing_coeffs + aug_forces * (
+                        1 - mixing_coeffs
+                    )
                 return aug_coords, aug_forces
         else:
             # only noising specified sites:
             with torch.no_grad():
                 batch_coords = coords.reshape([-1, self.n_beads, 3])
                 batch_forces = forces.reshape([-1, self.n_beads, 3])
-                noise = torch.randn(len(batch_coords), self.n_noising_beads, 3, device=coords.device)
+                noise = torch.randn(
+                    len(batch_coords),
+                    self.n_noising_beads,
+                    3,
+                    device=coords.device,
+                )
                 batch_coords[:, self.noising_mask] += self.sigma * noise
                 aug_forces = -self.kbt * (noise / self.sigma)
                 if self.mixing_matrix is not None:
@@ -920,12 +969,16 @@ class MixingNoiser(torch.nn.Module):
                 elif self.mixing_coeffs is not None:
                     # real_forces_corrected = batch_forces[:, self.noising_mask] - aug_forces
                     mixing_coeffs = self.mixing_coeffs[:, None]
-                    aug_forces = batch_forces[:, self.noising_mask] * mixing_coeffs + aug_forces * (1 - mixing_coeffs)
+                    aug_forces = batch_forces[
+                        :, self.noising_mask
+                    ] * mixing_coeffs + aug_forces * (1 - mixing_coeffs)
                     batch_forces[:, self.noising_mask] = aug_forces
                 else:
                     # a mixture of noise-only forces on the noised beads and 0-noise original CG force on the rest
                     batch_forces[:, self.noising_mask] = aug_forces
-                return batch_coords.reshape([-1, 3]), batch_forces.reshape([-1, 3])
+                return batch_coords.reshape([-1, 3]), batch_forces.reshape(
+                    [-1, 3]
+                )
 
     def __repr__(self) -> str:
         """Return string representation of Noiser."""
@@ -937,7 +990,9 @@ class MixingNoiser(torch.nn.Module):
         else:
             msg += " (noise only)"
         if self.noising_mask is not None:
-            msg += f" (noising only beads {self.noising_mask.argwhere()[:, 0]})>"
+            msg += (
+                f" (noising only beads {self.noising_mask.argwhere()[:, 0]})>"
+            )
         else:
             msg += ">"
         return msg
@@ -946,13 +1001,13 @@ class MixingNoiser(torch.nn.Module):
 class PosForceNoiseMixingCollaterTorch(PosForceTransformCollaterTorch):
     """Transforms coordinate and force entries of an AtomicData collated from a batch of frames
     that correspond to the same molecule.
-    
+
     When `noise_level` is a positive float, noise the coordinates and forces. Otherwise use
     the original forces from the upstream dataset (i.e., mapped all-atom forces).
-    Only supports simple noise mixing, i.e., output force is noise signal + mixing_coeffs * 
+    Only supports simple noise mixing, i.e., output force is noise signal + mixing_coeffs *
     real_forces_corrected. When `mixing_coeffs` is None while `noise_level` is a positive
     float, generates data for noise-only training.
-    
+
     When `baseline_models` is a valid path to a saved torch ModuleDict, the baseline forces
     will be removed from the forces from above.
     """
@@ -993,19 +1048,19 @@ class PosForceNoiseMixingCollaterTorch(PosForceTransformCollaterTorch):
         else:
             mixing_matrix = None
             mixing_coeffs = None
-        
+
         if isinstance(noising_mask, str):
             print(f"Loading noising mask... {noising_mask}")
             noising_mask = np.load(noising_mask)
         else:
             noising_mask = None
-        
+
         self.device = torch.device(device)
-        
+
         if noise_level:
             sigma = math.sqrt(noise_level)
             self.noiser = MixingNoiser(
-                sigma, 
+                sigma,
                 kbt,
                 mixing_matrix=mixing_matrix,
                 mixing_coeffs=mixing_coeffs,
@@ -1013,7 +1068,7 @@ class PosForceNoiseMixingCollaterTorch(PosForceTransformCollaterTorch):
             )
         else:
             self.noiser = None
-        
+
         if isinstance(baseline_models, str):
             self.baseline_models = load(baseline_models)
         else:
