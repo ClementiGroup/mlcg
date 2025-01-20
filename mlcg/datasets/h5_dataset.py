@@ -751,13 +751,28 @@ class H5Dataset:
             None,
         )
         if isinstance(neighbor_list_chkpts, dict):
-            mol_neighbor_lists = {
-                k: torch.load(v) for k, v in neighbor_list_chkpts.items()
-            }
+            metaset_mol_neighbor_lists = {}
+            for part_name, part_nl_info in neighbor_list_chkpts.items():
+                if isinstance(part_nl_info, str):
+                    # this is the case when the same neighborlist will be shared for the whole partition
+                    metaset_mol_neighbor_lists[part_name] = {
+                        "_default": torch.load(part_nl_info)
+                    }
+                elif isinstance(part_nl_info, dict):
+                    # this is the case when different nls are assigned to different molecules in a partition
+                    metaset_mol_neighbor_lists[part_name] = {
+                        k: torch.load(v) for k, v in part_nl_info.items()
+                    }
+                else:
+                    raise ValueError(
+                        f"Expecting neighborlist for partition {part_name} to be either a path string or dictionary"
+                    )
         elif isinstance(neighbor_list_chkpts, str):
-            mol_neighbor_lists = {"_default": torch.load(neighbor_list_chkpts)}
+            metaset_mol_neighbor_lists = {
+                "_default": {"_default": torch.load(neighbor_list_chkpts)}
+            }
         else:
-            mol_neighbor_lists = None
+            metaset_mol_neighbor_lists = None
         for part_name in partition_options:
             ## create a partition, typical names are train/val
             part = Partition(part_name)
@@ -800,6 +815,17 @@ class H5Dataset:
                     detailed_indices = None
 
                 stride = part_info["metasets"][metaset_name].get("stride", 1)
+                if metaset_mol_neighbor_lists is not None:
+                    if metaset_name in metaset_mol_neighbor_lists:
+                        mol_neighbor_lists = metaset_mol_neighbor_lists[
+                            metaset_name
+                        ]
+                    else:
+                        mol_neighbor_lists = metaset_mol_neighbor_lists[
+                            "_default"
+                        ]
+                else:
+                    mol_neighbor_lists = None
                 part.add_metaset(
                     metaset_name,
                     MetaSet.create_from_hdf5_group(
