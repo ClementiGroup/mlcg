@@ -3,14 +3,15 @@ version: 2.0
 jobs:
   test:
     docker:
-      - image: nec4/pytorch_geometric_cpu:v1.4
+      - image: nec4/pytorch_geometric_cpu:v1.5
     steps:
       - checkout
       - run:
           name: "Install dependencies and repo"
           command: |
+            pip3 --version
             pip3 install -r requirements.txt
-            pip3 install --use-feature=in-tree-build .
+            pip3 install .
       - run:
           name: "Run tests"
           command: "pytest ."

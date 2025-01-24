@@ -40,7 +40,7 @@ class PLModel(pl.LightningModule):
 
         super(PLModel, self).__init__()
 
-        self.save_hyperparameters()
+        self.save_hyperparameters(logger=False)
         self.model = model
         self.loss = loss
 

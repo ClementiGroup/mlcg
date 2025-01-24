@@ -482,7 +482,6 @@ class StandardPaiNN(PaiNN):
         aggr: str = "add",
         epsilon: float = 1e-8,
     ):
-
         if num_interactions < 1:
             raise ValueError("At least one interaction block must be specified")
 

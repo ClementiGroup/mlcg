@@ -106,7 +106,9 @@ def refresh_module_with_schnet_(
 @contextmanager
 def fixed_pyg_inspector():
     """An ad hoc fixer for the moved `torch_geometric.nn.conv.utils.inspector`
-    since pyg v2.5.0
+    since pyg v2.5.0, and `MessagePassing` class calls Inspector.implements
+    which raises `AttributeError: 'Inspector' object has no attribute '_cls'`
+    since pyg v2.6.0
     """
     import sys
     import torch_geometric
@@ -120,6 +122,22 @@ def fixed_pyg_inspector():
             sys.modules["torch_geometric.nn.conv.utils.inspector"] = (
                 torch_geometric.inspector
             )
+
+            # Inspector.implements was also refactored
+            def compat_implements(self, func_name: str) -> bool:
+                # since v2.6.0 they changed the code in `MessagePassing`
+                # that will call `implements`, which in turn requires the
+                # inspector to have a `_cls` attribute (previously called
+                # `base_class`)
+                if not hasattr(self, "_cls"):
+                    self._cls = self.base_class
+                # below are original code from v2.5.0+
+                func = getattr(self._cls, func_name, None)
+                if not callable(func):
+                    return False
+                return not getattr(func, "__isabstractmethod__", False)
+
+            torch_geometric.inspector.Inspector.implements = compat_implements
             monkey_patched = True
         yield
     finally:
