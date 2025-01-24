@@ -18,4 +18,4 @@ torch_optimizer<=1.5.1
 pytest
 coverage[toml]
 black[jupyter]
-
+Cython>=0.22
