@@ -1,5 +1,8 @@
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages, Extension
 import re
+
+from Cython.Build import cythonize
+import numpy as np
 
 NAME = "mlcg"
 
@@ -19,6 +22,15 @@ with open("requirements.txt") as f:
         filter(lambda x: "#" not in x, (line.strip() for line in f))
     )
 
+extensions = [
+    Extension(
+        "*",
+        ["mlcg/datasets/cython/*.pyx"],
+        include_dirs=[np.get_include()],
+        define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")],
+    ),
+]
+
 setup(
     name=NAME,
     version=VERSION,
@@ -30,6 +42,9 @@ setup(
     + "\u0301"
     + "lix Musil, Nick Charron, Yoayi Chen, Atharva Kelkar, Clark Templeton",
     install_requires=install_requires,
+    ext_modules=cythonize(
+        extensions, compiler_directives={"language_level": "3"}
+    ),
     scripts=[
         "scripts/mlcg-train.py",
         "scripts/mlcg-nvt_langevin.py",
