@@ -196,7 +196,7 @@ class MolData:
         self._neighbor_list = neighbor_list
 
         self._exclusion_pairs = exclusion_pairs
-        if self._weights is not None and self._exclusion_pairs.size > 0:
+        if self._exclusion_pairs is not None and self._exclusion_pairs.size > 0:
             assert (
                 self._exclusion_pairs.min() >= 0
                 and self._exclusion_pairs.max() < len(self._embeds)
