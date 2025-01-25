@@ -54,11 +54,13 @@ class H5DataModule(pl.LightningDataModule):
         transform: Optional[BaseTransform] = None,
         collater_fn: Optional[Callable] = None,
         batch_transform: Optional[BaseTransform] = None,
+        exclude_bonded_pairs: bool = False,
     ):
         super(H5DataModule, self).__init__()
         self.save_hyperparameters()
         self._h5_file_path = h5_file_path
         self._subsample_using_weights = subsample_using_weights
+        self._exclude_bonded_pairs = exclude_bonded_pairs
 
         def get_options(options_or_path):
             if isinstance(options_or_path, Mapping):
@@ -113,6 +115,7 @@ class H5DataModule(pl.LightningDataModule):
             self._process_load_options,
             self._subsample_using_weights,
             transform=self._transform,
+            self._exclude_bonded_pairs,
         )
         if use_ddp:
             sample_info = [None] * num_replicas

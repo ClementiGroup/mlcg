@@ -373,3 +373,27 @@ def write_PSF(
                 string = ["{:>8d}".format(x) for x in print_list]
                 string = "".join(string)
                 file.write(string + "\n")
+
+
+def get_exclusion_pairs_from_neighborlist(
+    nl_dict, ignore_terms=("non_bonded", "gamma_1", "gamma_2")
+):
+    """Extract the exclusion pairs for a molecule given the neighbor list used.
+    For term of order bigger than 2, extracting the pairs formed by the first and last bead.
+
+    Input
+    -----
+    nl_dict: dict of neighbor list dictionaries, each of which contains an `index_mapping`
+    ignore_terms: sequence of str, names of terms to be ignored, e.g., "non_bonded"
+
+    Output
+    ------
+    int Tensor of shape (2, N_pairs) with all pairs extracted from the the neighbor list.
+    """
+    exc_pairs = []
+    for term_name, term in nl_dict.items():
+        if term_name not in ignore_terms:
+            exc_pairs.append(term["index_mapping"][[0, -1]].T)
+            exc_pairs.append(term["index_mapping"][[-1, 0]].T)
+    exc_pairs = torch.unique(torch.cat(exc_pairs), dim=1).T
+    return exc_pairs

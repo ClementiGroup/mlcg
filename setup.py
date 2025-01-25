@@ -5,7 +5,9 @@ from Cython.Build import cythonize
 import numpy as np
 
 NAME = "mlcg"
-
+EXCLUDE_FOLDERS = [
+    "opt_radius",
+]
 # read the version number from the library
 pattern = r"[0-9]\.[0-9]\.[0-9]"
 VERSION = None
@@ -34,7 +36,7 @@ extensions = [
 setup(
     name=NAME,
     version=VERSION,
-    packages=find_packages(),
+    packages=find_packages(exclude=EXCLUDE_FOLDERS),
     zip_safe=True,
     python_requires=">=3.8",
     license="MIT",

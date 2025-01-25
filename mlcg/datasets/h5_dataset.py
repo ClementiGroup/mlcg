@@ -175,6 +175,7 @@ class MolData:
         weights: np.ndarray = None,
         noise_levels: np.ndarray = None,
         neighbor_list: dict = None,
+        exclusion_pairs: np.ndarray = None,
     ):
         self._name = name
         self._embeds = embeds
@@ -193,6 +194,13 @@ class MolData:
         if self._noise_levels is not None:
             assert len(self._coords) == len(self._noise_levels)
         self._neighbor_list = neighbor_list
+
+        self._exclusion_pairs = exclusion_pairs
+        if self._weights is not None and self._exclusion_pairs.size > 0:
+            assert (
+                self._exclusion_pairs.min() >= 0
+                and self._exclusion_pairs.max() < len(self._embeds)
+            )
 
     @property
     def name(self):
@@ -221,6 +229,9 @@ class MolData:
     @property
     def neighbor_list(self):
         return self._neighbor_list
+
+    def exclusion_pairs(self):
+        return self._exclusion_pairs
 
     @property
     def n_frames(self):
@@ -264,6 +275,7 @@ class MetaSet:
         self._n_mol_samples = []
         self._cumulate_indices = [0]
         self._transform = transform
+        self._exclude_bonded_pairs = False
 
     @staticmethod
     def retrieve_hdf(hdf_grp, hdf_key):
@@ -309,6 +321,7 @@ class MetaSet:
         transform: Optional[Callable] = None,
         mol_neighbor_lists: Optional[dict] = None,
         overriding_offset: Optional[int] = None,
+        exclude_bonded_pairs=False,
     ):
         def select_for_rank(length_or_indices):
             """Return a slicing for loading the necessary data from the HDF dataset."""
@@ -358,6 +371,16 @@ class MetaSet:
                     % (mol_name, hdf5_group.name)
                 )
             embeds = MetaSet.retrieve_hdf(hdf5_group[mol_name], keys["embeds"])
+            if exclude_bonded_pairs:
+                if "exclusion_pairs" not in keys:
+                    raise ValueError(
+                        f"Missing `exclusion_pairs` from hdf5 key mapping."
+                    )
+                exclusion_pairs = MetaSet.retrieve_hdf(
+                    hdf5_group[mol_name], keys["exclusion_pairs"]
+                )
+            else:
+                exclusion_pairs = None
             if (
                 detailed_indices is not None
                 and detailed_indices.get(mol_name) is not None
@@ -428,8 +451,10 @@ class MetaSet:
                     weights=weights,
                     noise_levels=noise_levels,
                     neighbor_list=neighbor_list,
+                    exclusion_pairs=exclusion_pairs,
                 )
             )
+        output._exclude_bonded_pairs = exclude_bonded_pairs
         return output
 
     def set_transform(
@@ -532,9 +557,6 @@ class MetaSet:
 
     def __getitem__(self, idx):
         dataset_id, data_id = self._locate_idx(idx)
-        # print(type(self._mol_dataset[dataset_id].forces[data_id]))
-        # print(type(self._mol_dataset[dataset_id].noise_levels[data_id:(data_id + 1)]))
-        # exit()
         mol_data = self._mol_dataset[dataset_id]
         point_tensors = {
             "pos": mol_data.coords[data_id],
@@ -551,10 +573,14 @@ class MetaSet:
         if mol_data.neighbor_list is not None:
             # AtomicData.from_points uses "neighborlist" in args
             point_tensors["neighborlist"] = mol_data.neighbor_list
-        ad_point = AtomicData.from_points(**point_tensors)
+        atd = AtomicData.from_points(**point_tensors)
+        if self._exclude_bonded_pairs:
+            atd.exc_pair_index = torch.tensor(
+                self._mol_dataset[dataset_id].exclusion_pairs
+            )
         if self._transform is not None:
-            ad_point = self._transform(ad_point)
-        return ad_point
+            atd = self._transform(atd)
+        return atd
 
     def _locate_idx(self, idx):
         full_length = self._cumulate_indices[-1]
@@ -713,6 +739,7 @@ class H5Dataset:
         loading_options: Dict,
         subsample_using_weights: bool = False,
         transform: Optional[Callable] = None,
+        exclude_bonded_pairs: bool = False,
     ):
         self._h5_path = h5_file_path
         self._h5_root = h5py.File(h5_file_path, "r")
@@ -725,6 +752,8 @@ class H5Dataset:
         self._transform = transform
         if self._transform is not None:
             print("Using transform:", self._transform)
+        self._exclude_bonded_pairs = exclude_bonded_pairs
+
         # processing the hdf5 file
         for metaset_name in self._h5_root:
             self._metaset_entries[metaset_name] = self._h5_root[metaset_name]
@@ -839,6 +868,7 @@ class H5Dataset:
                         transform=self._transform,
                         mol_neighbor_lists=mol_neighbor_lists,
                         overriding_offset=overriding_offset,
+                        exclude_bonded_pairs=self._exclude_bonded_pairs,
                     ),
                 )
             ## trim the metasets to fit the need of sampling
@@ -997,6 +1027,7 @@ class H5SimpleDataset(H5Dataset):
         parallel={"rank": 0, "world_size": 1},
         subsample_using_weights: Optional[bool] = False,
         transform: Optional[Callable] = None,
+        exclude_bonded_pairs: bool = False,
     ):
         # input checking
         if not isinstance(stride, int) and stride > 0:
@@ -1044,6 +1075,7 @@ class H5SimpleDataset(H5Dataset):
             parallel=parallel,
             subsample_using_weights=subsample_using_weights,
             transform=self._transform,
+            exclude_bonded_pairs=exclude_bonded_pairs,
         )
 
     def get_dataloader(
