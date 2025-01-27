@@ -115,7 +115,7 @@ class H5DataModule(pl.LightningDataModule):
             self._process_load_options,
             self._subsample_using_weights,
             transform=self._transform,
-            self._exclude_bonded_pairs,
+            exclude_bonded_pairs=self._exclude_bonded_pairs,
         )
         if use_ddp:
             sample_info = [None] * num_replicas

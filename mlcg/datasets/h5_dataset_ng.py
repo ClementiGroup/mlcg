@@ -175,6 +175,7 @@ class MolData:
         weights: np.ndarray = None,
         noise_levels: np.ndarray = None,
         neighbor_list: dict = None,
+        exclusion_pairs: np.ndarray = None,
     ):
         self._name = name
         self._embeds = embeds
@@ -193,6 +194,13 @@ class MolData:
         if self._noise_levels is not None:
             assert len(self._coords) == len(self._noise_levels)
         self._neighbor_list = neighbor_list
+
+        self._exclusion_pairs = exclusion_pairs
+        if self._exclusion_pairs is not None and self._exclusion_pairs.size > 0:
+            assert (
+                self._exclusion_pairs.min() >= 0
+                and self._exclusion_pairs.max() < len(self._embeds)
+            )
 
     @property
     def name(self):
@@ -221,6 +229,10 @@ class MolData:
     @property
     def neighbor_list(self):
         return self._neighbor_list
+
+    @property
+    def exclusion_pairs(self):
+        return self._exclusion_pairs
 
     @property
     def n_frames(self):
@@ -264,6 +276,7 @@ class MetaSet:
         self._n_mol_samples = []
         self._cumulate_indices = [0]
         self._transform = transform
+        self._exclude_bonded_pairs = False
 
     @staticmethod
     def retrieve_hdf(hdf_grp, hdf_key):
@@ -309,6 +322,7 @@ class MetaSet:
         transform: Optional[Callable] = None,
         mol_neighbor_lists: Optional[dict] = None,
         overriding_offset: Optional[int] = None,
+        exclude_bonded_pairs=False,
     ):
         def select_for_rank(length_or_indices):
             """Return a slicing for loading the necessary data from the HDF dataset."""
@@ -358,6 +372,16 @@ class MetaSet:
                     % (mol_name, hdf5_group.name)
                 )
             embeds = MetaSet.retrieve_hdf(hdf5_group[mol_name], keys["embeds"])
+            if exclude_bonded_pairs:
+                if "exclusion_pairs" not in keys:
+                    raise ValueError(
+                        f"Missing `exclusion_pairs` from hdf5 key mapping."
+                    )
+                exclusion_pairs = MetaSet.retrieve_hdf(
+                    hdf5_group[mol_name], keys["exclusion_pairs"]
+                )
+            else:
+                exclusion_pairs = None
             if (
                 detailed_indices is not None
                 and detailed_indices.get(mol_name) is not None
@@ -428,8 +452,10 @@ class MetaSet:
                     weights=weights,
                     noise_levels=noise_levels,
                     neighbor_list=neighbor_list,
+                    exclusion_pairs=exclusion_pairs,
                 )
             )
+        output._exclude_bonded_pairs = exclude_bonded_pairs
         return output
 
     def set_transform(
@@ -550,6 +576,8 @@ class MetaSet:
             )
         if mol_data.neighbor_list is not None:
             point_tensors["neighbor_list"] = mol_data.neighbor_list
+        if self._exclude_bonded_pairs:
+            point_tensors["exc_pair_index"] = mol_data.exclusion_pairs
         return point_tensors  # ad_point
 
     def _locate_idx(self, idx):
@@ -709,6 +737,7 @@ class H5DatasetNG:
         loading_options: Dict,
         subsample_using_weights: bool = False,
         transform: Optional[Callable] = None,
+        exclude_bonded_pairs: bool = False,
     ):
         self._h5_path = h5_file_path
         self._h5_root = h5py.File(h5_file_path, "r")
@@ -721,6 +750,7 @@ class H5DatasetNG:
         self._transform = transform
         if self._transform is not None:
             print("Using transform:", self._transform)
+        self._exclude_bonded_pairs = exclude_bonded_pairs
         # processing the hdf5 file
         for metaset_name in self._h5_root:
             self._metaset_entries[metaset_name] = self._h5_root[metaset_name]
@@ -834,6 +864,7 @@ class H5DatasetNG:
                         transform=self._transform,
                         mol_neighbor_lists=mol_neighbor_lists,
                         overriding_offset=overriding_offset,
+                        exclude_bonded_pairs=self._exclude_bonded_pairs,
                     ),
                 )
             ## trim the metasets to fit the need of sampling

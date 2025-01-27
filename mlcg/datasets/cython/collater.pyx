@@ -3,7 +3,7 @@ cimport numpy as np
 from libc.string cimport memcpy
 import numpy as np
 import torch
-from .batch_helper import batch_collate_w_nls
+from .batch_helper import batch_collate_w_nls, batch_collate_w_nls_w_exc_pair
 from .decoy_helper import check_and_sum_decoy_prob, pick_decoy_frames, decoy_frame_
 
 # init numpy
@@ -60,6 +60,7 @@ class CythonCollater:
         baseline_models: Union[str, Dict[str, torch.Module], None] = None,
         remove_neighbor_list: bool = True,
         decoy_options: Union[List[Dict[str, float]], None] = None,
+        exclude_bonded_pairs: bool = False,
         device: str = "cuda",
     ):
         self.transform = transform
@@ -79,6 +80,7 @@ class CythonCollater:
         else:
             self._decoy_opts = None
         self._moved_to_device = False
+        self._exclude_bonded_pairs = exclude_bonded_pairs
 
     def __call__(self, np_data_batch: Iterable[AtomicData]) -> MockBatch:
         if not self._moved_to_device:
@@ -88,7 +90,10 @@ class CythonCollater:
                 self.baseline_models.to(self.device)
             self._moved_to_device = True
         # collation happens here
-        collated_data_np = batch_collate_w_nls(np_data_batch, transform=self.transform)
+        if self._exclude_bonded_pairs:
+            collated_data_np = batch_collate_w_nls_w_exc_pair(np_data_batch, transform=self.transform)
+        else:
+            collated_data_np = batch_collate_w_nls(np_data_batch, transform=self.transform)
         # pick the decoy indices here over the numpy data
         if self._decoy_opts:
             _, frame_ranges = pick_decoy_frames(collated_data_np, self._summary_decoy_probs)

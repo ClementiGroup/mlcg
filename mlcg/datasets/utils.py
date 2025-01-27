@@ -395,5 +395,10 @@ def get_exclusion_pairs_from_neighborlist(
         if term_name not in ignore_terms:
             exc_pairs.append(term["index_mapping"][[0, -1]].T)
             exc_pairs.append(term["index_mapping"][[-1, 0]].T)
-    exc_pairs = torch.unique(torch.cat(exc_pairs), dim=1).T
+    all_exc_pairs = torch.cat(exc_pairs)
+    if all_exc_pairs.size(0) > 0:
+        exc_pairs = torch.unique(all_exc_pairs, dim=1).T
+    else:
+        # corner case: no bonded pairs
+        exc_pairs = all_exc_pairs.T
     return exc_pairs

@@ -60,6 +60,7 @@ class H5DataModule(pl.LightningDataModule):
         baseline_models: Optional[str] = None,
         decoy_options: Optional[list[dict]] = None,
         remove_neighbor_list: bool = True,
+        exclude_bonded_pairs: bool = False,
         # collater_fn: CythonCollater = None,
         # batch_transform: Optional[BaseTransform] = None,
     ):
@@ -67,6 +68,7 @@ class H5DataModule(pl.LightningDataModule):
         self.save_hyperparameters()
         self._h5_file_path = h5_file_path
         self._subsample_using_weights = subsample_using_weights
+        self._exclude_bonded_pairs = exclude_bonded_pairs
 
         def get_options(options_or_path):
             if isinstance(options_or_path, Mapping):
@@ -93,6 +95,7 @@ class H5DataModule(pl.LightningDataModule):
             baseline_models=baseline_models,
             decoy_options=decoy_options,
             remove_neighbor_list=remove_neighbor_list,
+            exclude_bonded_pairs=self._exclude_bonded_pairs,
         )
         # if self._collater_fn is None:
         #    self._collater_fn = PyGCollater(None, None)
@@ -134,6 +137,7 @@ class H5DataModule(pl.LightningDataModule):
             self._process_load_options,
             self._subsample_using_weights,
             # transform=self._transform,
+            exclude_bonded_pairs=self._exclude_bonded_pairs,
         )
         if use_ddp:
             sample_info = [None] * num_replicas

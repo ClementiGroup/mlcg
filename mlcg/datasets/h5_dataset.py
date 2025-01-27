@@ -230,6 +230,7 @@ class MolData:
     def neighbor_list(self):
         return self._neighbor_list
 
+    @property
     def exclusion_pairs(self):
         return self._exclusion_pairs
 
