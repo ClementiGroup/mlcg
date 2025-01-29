@@ -193,7 +193,24 @@ class MolData:
         self._noise_levels = noise_levels
         if self._noise_levels is not None:
             assert len(self._coords) == len(self._noise_levels)
-        self._neighbor_list = neighbor_list
+        self._neighbor_list = {}
+        # convert the arrays in the neighbor list to contiguous numpy arrays
+        if neighbor_list is not None:
+            for name in list(neighbor_list):
+                if name == "fmap":
+                    # force map is just an array
+                    self._neighbor_list[name] = self.to_contiguous_np_array(
+                        neighbor_list[name]
+                    )
+                else:
+                    # normal neighbor list is a dict with possible array values
+                    term = {}
+                    for k, v in neighbor_list[name].items():
+                        if isinstance(v, (torch.Tensor, np.ndarray)):
+                            term[k] = self.to_contiguous_np_array(v)
+                        else:
+                            term[k] = v
+                    self._neighbor_list[name] = term
 
         self._exclusion_pairs = exclusion_pairs
         if self._exclusion_pairs is not None and self._exclusion_pairs.size > 0:
@@ -201,6 +218,15 @@ class MolData:
                 self._exclusion_pairs.min() >= 0
                 and self._exclusion_pairs.max() < len(self._embeds)
             )
+
+    @staticmethod
+    def to_contiguous_np_array(arr):
+        if isinstance(arr, torch.Tensor):
+            arr = arr.numpy().copy()
+        else:
+            # make a contiguous copy
+            arr = np.copy(arr)
+        return arr
 
     @property
     def name(self):

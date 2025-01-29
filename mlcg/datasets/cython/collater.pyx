@@ -71,6 +71,9 @@ class CythonCollater:
         else:
             _baseline_models = baseline_models
         if _baseline_models is not None:
+            if hasattr(_baseline_models, "models"):
+                # unwrap from a SumOut module
+                _baseline_models = _baseline_models.models
             self.baseline_models = _baseline_models.to(self.device)
         else:
             self.baseline_models = None

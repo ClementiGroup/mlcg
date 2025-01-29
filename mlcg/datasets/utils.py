@@ -376,7 +376,10 @@ def write_PSF(
 
 
 def get_exclusion_pairs_from_neighborlist(
-    nl_dict, ignore_terms=("non_bonded", "gamma_1", "gamma_2")
+    nl_dict,
+    ignore_terms=("non_bonded", "gamma_1", "gamma_2"),
+    exclude_self=True,
+    n_beads=None,
 ):
     """Extract the exclusion pairs for a molecule given the neighbor list used.
     For term of order bigger than 2, extracting the pairs formed by the first and last bead.
@@ -385,16 +388,28 @@ def get_exclusion_pairs_from_neighborlist(
     -----
     nl_dict: dict of neighbor list dictionaries, each of which contains an `index_mapping`
     ignore_terms: sequence of str, names of terms to be ignored, e.g., "non_bonded"
+    exclude_self: bool, whether the self pairs are excluded, default `True`
+    n_beads: Optional int, number of beads in the molecule. If not given, then infer from
+        the maximum index in the neighbor list.
 
     Output
     ------
     int Tensor of shape (2, N_pairs) with all pairs extracted from the the neighbor list.
     """
     exc_pairs = []
+    max_bead_id = -1
     for term_name, term in nl_dict.items():
+        max_bead_id = int(max(max_bead_id, term["index_mapping"].max()))
         if term_name not in ignore_terms:
             exc_pairs.append(term["index_mapping"][[0, -1]].T)
             exc_pairs.append(term["index_mapping"][[-1, 0]].T)
+    if exclude_self:
+        if n_beads is None:
+            n_beads = max_bead_id + 1
+        self_inter_pairs = []
+        for i in range(n_beads):
+            self_inter_pairs.append([i, i])
+        exc_pairs.append(torch.as_tensor(self_inter_pairs))
     all_exc_pairs = torch.cat(exc_pairs)
     if all_exc_pairs.size(0) > 0:
         exc_pairs = torch.unique(all_exc_pairs, dim=1).T
