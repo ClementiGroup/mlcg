@@ -1,0 +1,151 @@
+train:
+  batch_sizes:
+    CATH: 13
+    DIMER: 21
+  max_epoch_samples: null
+  metasets:
+    CATH:
+      molecules:
+      - cath_3g7lA00
+      - cath_1on2A01
+      - cath_3ossC00
+      stride: 1
+    DIMER:
+      molecules:
+      - dimer_ER_RP
+      - dimer_NA_EE
+      - dimer_EK_AY
+      - dimer_YD_DG
+      - dimer_GS_RL
+      - dimer_PE_YD
+      - dimer_RR_RL
+      - dimer_TA_TT
+      - dimer_QW_WL
+      - dimer_G_Q
+      - dimer_N_R
+      - dimer_DA_IV
+      - dimer_I_N
+      - dimer_E_P
+      - dimer_PG_GS
+      - dimer_SK_VY
+      - dimer_QL_SP
+      - dimer_FS_KV
+      - dimer_I_H
+      - dimer_AV_KN
+      - dimer_HN_VE
+      - dimer_LE_LK
+      - dimer_H_A
+      - dimer_DE_KQ
+      - dimer_EK_QY
+      - dimer_T_P
+      - dimer_KK_TS
+      - dimer_KQ_AL
+      - dimer_GM_AY
+      - dimer_TA_KE
+      - dimer_RS_KE
+      - dimer_SY_EI
+      - dimer_Q_W
+      - dimer_DA_KA
+      - dimer_ED_GR
+      - dimer_K_A
+      - dimer_Q_T
+      - dimer_KA_SQ
+      - dimer_GT_MS
+      - dimer_S_P
+      - dimer_MK_DG
+      - dimer_L_C
+      - dimer_PS_SP
+      - dimer_SY_IW
+      - dimer_VG_AK
+      - dimer_R_N
+      - dimer_NH_VY
+      - dimer_RR_KN
+      - dimer_K_F
+      - dimer_NE_ED
+      - dimer_NG_AT
+      - dimer_W_P
+      - dimer_FK_IE
+      - dimer_EQ_AA
+      - dimer_YD_NG
+      - dimer_R_P
+      - dimer_KK_FK
+      - dimer_DT_AV
+      - dimer_HL_RL
+      - dimer_ES_PE
+      - dimer_IA_LE
+      - dimer_C_R
+      - dimer_KH_HL
+      - dimer_QA_RK
+      - dimer_LG_GG
+      - dimer_QS_KM
+      - dimer_VE_VA
+      - dimer_NV_TQ
+      - dimer_KG_AE
+      - dimer_RE_GQ
+      - dimer_WE_PS
+      - dimer_VE_TQ
+      - dimer_KQ_FF
+      - dimer_K_D
+      - dimer_KI_NG
+      - dimer_E_I
+      - dimer_AN_KV
+      - dimer_EF_KI
+      - dimer_MG_NE
+      - dimer_N_P
+      - dimer_QW_SG
+      - dimer_K_N
+      - dimer_EN_EA
+      - dimer_H_K
+      - dimer_GI_EA
+      - dimer_A_Y
+      - dimer_KG_WL
+      - dimer_E_A
+      - dimer_IY_TQ
+      - dimer_C_M
+      - dimer_TG_TQ
+      - dimer_TW_YD
+      - dimer_FA_SA
+      - dimer_LP_AF
+      - dimer_W_L
+      - dimer_R_V
+      - dimer_SW_FK
+      stride: 1
+  subsample_random_seed: 42
+val:
+  batch_sizes:
+    CATH: 13
+    DIMER: 21
+  max_epoch_samples: null
+  metasets:
+    CATH:
+      molecules:
+      - cath_1xovA03
+      stride: 1
+    DIMER:
+      molecules:
+      - dimer_YA_EA
+      - dimer_W_I
+      - dimer_FN_GM
+      - dimer_G_Y
+      - dimer_LV_FN
+      - dimer_AH_EV
+      - dimer_GT_RM
+      - dimer_G_T
+      - dimer_RP_GR
+      - dimer_NE_FK
+      - dimer_TK_TV
+      - dimer_TS_EV
+      - dimer_AY_LT
+      - dimer_AI_PE
+      - dimer_SQ_LS
+      - dimer_PS_GQ
+      - dimer_NK_LK
+      - dimer_HI_VY
+      - dimer_PA_LA
+      - dimer_W_R
+      - dimer_YT_RD
+      - dimer_EQ_EE
+      - dimer_E_S
+      - dimer_LL_SQ
+      stride: 1
+  subsample_random_seed: 42

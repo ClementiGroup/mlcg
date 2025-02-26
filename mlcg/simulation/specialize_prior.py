@@ -5,6 +5,7 @@ from collections import defaultdict
 
 from ..nn import GradientsOut, Dihedral, SumOut
 from ..nn.prior import _Prior
+from ..nn.utils import desparsify_prior_module
 from ..neighbor_list.neighbor_list import make_neighbor_list
 from ..data import AtomicData
 from ..nn.prior import (
@@ -174,6 +175,7 @@ def condense_prior_for_simulation(
         index_mapping = []
         for k, prior in priors.models.items():
             if isinstance(prior.model, TargetPrior):
+                prior.model = desparsify_prior_module(prior.model)
                 pp = prior.model.data2parameters(data)
                 for kv, v in pp.items():
                     if v.ndim == 1:

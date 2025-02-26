@@ -37,7 +37,13 @@ CLI
 ---
 
 The models defined in this library can be convinietly trained using the pytorch-lightning
-`cli <https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_cli.html>`_ utilities.
+`CLI <https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_cli.html>`_ utilities.
+
+Examples
+--------
+
+Please take a look into the examples folder to see how to use this code to train a model over an existing dataset.
+
 
 .. end-intro
 

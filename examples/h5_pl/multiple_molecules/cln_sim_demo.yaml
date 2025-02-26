@@ -1,0 +1,21 @@
+betas:
+- 1.6773985789045691
+model_file: model_with_prior.pt
+structure_file: cln_configurations_demo.pt
+simulation:
+  create_checkpoints: false
+  device: cuda
+  dt: 0.004
+  dtype: single
+  export_interval: 10000
+  filename: sims/cln
+  friction: 1.0
+  log_interval: 10000
+  log_type: write
+  n_timesteps: 50000
+  read_checkpoint_file: false
+  save_energies: false
+  save_forces: false
+  save_interval: 250
+  specialize_priors: true
+

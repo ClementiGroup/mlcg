@@ -1,18 +1,29 @@
-# Example for HDF5-PyTorch-Lightning-Parallel dataset construction and training-validation
+# Example for training using H5 dataset and Pytorch Lightning model specification
 
-## Features
-- Parallelized training on multiple GPUs with distributed data parallel (DDP) and low memory footprint
-- Balanced batch sized with accurate data loading proportions
-- Bundled datasets in single (or several) HDF5 files
+This example shows how to train an MLCG model by using an H5 dataset and Pytorch Lighning 
 
-## Additional dependencies
-- h5py (install can be done with `conda install -c conda-forge h5py`)
+- Bundled datasets in single (or several) HDF5 files.
+- Parallelized training on multiple GPUs with distributed data parallel (DDP) and low memory footprint.
+- External description of dataset partition that enables. 
+- Balanced batch sized with accurate data loading proportions.
 
-## Guidelines
-1. (Optional) Run `save_h5.py` to create the dataset (Please check the CLI helper. The full-sized combined datasets require around 60GB disk space.) Alternatively, you can start with a sample dataset at `/import/a12/users/nickc/mlcg_delta_datasets/dihedral_1_6_res_exclusion/combined_dihedral_1_6_res_exclusion.h5`. Please remember to change the path in the `train_h5_1_10.yaml` file.
-2. Check out `train_h5_1_10.yaml` and `partition_settings.yaml` and adjust the settings according to the actual needs, e.g., the training set composition and number of GPUs.
-3. Run `python ../../scripts/mlcg-train_h5.py fit --config train_h5_1_10.yaml` for model training.
+## H5 dataset construction: the `mlcg-tk` package
+
+We provide the tools to convert an AA dataset into an H5 dataset compatible with mlcg in the [mlcg-tk package](https://github.com/ClementiGroup/mlcg-tk/). Please go to the [mlcg-tk example folder](https://github.com/ClementiGroup/mlcg-tk/tree/main/examples) folder for a detailed description on how to use mlcg-tk.
+
+## Single protein model example
+
+Check the folder `single_molecule` to learn how to make an mlcg model for an H5 dataset that contains data from a single molecule. 
+
+## Multi molecule example
+
+Check the folder `multiple_molecules` to see how to train an mlcg on an H5 dataset that contains data from multiple molecules.
+
+## Additional files
+
+In the `additional_files` folder you can find some useful yaml input examples for mlcg scripts and some code that can be useful when working with H5 datasets.
 
 ## Note
-1. The detailed data structure readme can be found at the header of `mlcg/datasets/h5_dataset.py`.
-2. The pytorch-lightning script `scripts/mlcg-train_h5.py` may serve as an example for constructing training pipelines without pytorch-lightning.
+
+1. The detailed data structure information of an H5 Dataset can be found at the [documentation](https://clementigroup.github.io/mlcg/)
+2. The pytorch-lightning script `../../scripts/mlcg-train_h5.py` may serve as an example for constructing training pipelines without pytorch-lightning.

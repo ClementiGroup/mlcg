@@ -1,0 +1,124 @@
+# example training script
+# check the following options:
+#   trainer
+#       default_root_dir
+#       max_epochs
+#       devices
+#       enable_progress_bar
+#   optimizer.init_args.lr
+#   data
+#       h5_file_path
+#       partition_options
+seed_everything: 19384
+# define the training
+trainer:
+  # Work directory for the session
+  default_root_dir: ./h5_1_10
+  max_epochs: 1
+  max_time: null
+  resume_from_checkpoint: null
+  profiler: null
+
+  accelerator: 'gpu'
+  strategy: 'ddp'
+  devices: 1 # change this to the number of GPUs to see how parallelization works on a cluster node
+  precision: 32
+  logger:
+    - class_path: pytorch_lightning.loggers.TensorBoardLogger
+      init_args:
+        save_dir: default_root_dir
+        name: tensorboard
+        version: ''
+  benchmark: false
+  enable_checkpointing: true
+  callbacks:
+    - class_path: pytorch_lightning.callbacks.EarlyStopping
+      init_args:
+        monitor: 'validation_loss'
+        patience: 5
+    - class_path: pytorch_lightning.callbacks.LearningRateMonitor
+      init_args:
+        logging_interval: epoch
+        log_momentum: false
+    - class_path: pytorch_lightning.callbacks.model_checkpoint.ModelCheckpoint
+      init_args:
+        dirpath: default_root_dir
+        monitor: validation_loss
+        save_top_k: -1
+        every_n_epochs: 1
+        filename: '{epoch}-{validation_loss:.4f}'
+        save_last: true
+  log_every_n_steps: 500
+  gradient_clip_val: 0
+  gradient_clip_algorithm: norm
+  log_gpu_memory: null
+  track_grad_norm: -1
+  check_val_every_n_epoch: 1
+  fast_dev_run: false
+  accumulate_grad_batches: 1 # you can change this to enable a even higher effective batch size
+  enable_model_summary: false
+  deterministic: false
+  auto_lr_find: false
+  detect_anomaly: false # setting this to true enables detection of NaN after every small-batch update, but will slow down the training by 30%~50%
+  replace_sampler_ddp: false # see https://pytorch-lightning.readthedocs.io/en/latest/common/trainer.html#replace-sampler-ddp for details
+  # enable_progress_bar: false # uncomment this in production (e.g., when redirecting the stdout to a file), otherwise it will generate huge a huge log file and harm the disk
+model:
+  loss:
+    class_path: mlcg.nn.Loss
+    init_args:
+      losses:
+        - class_path: mlcg.nn.ForceMSE
+          init_args:
+            force_kwd: forces
+  model:
+    class_path: mlcg.nn.GradientsOut
+    init_args:
+      targets: forces
+      model:
+        class_path: mlcg.nn.schnet.StandardSchNet
+        init_args:
+          hidden_channels: 128
+          embedding_size: 25
+          num_filters: 128
+          num_interactions: 5
+          output_hidden_layer_widths:
+            - 128
+          activation:
+            class_path: torch.nn.Tanh
+            init_args: {}
+          max_num_neighbors: 100
+          aggr: "add"
+          cutoff:
+            class_path: mlcg.nn.CosineCutoff
+            init_args:
+              cutoff_lower: 0
+              cutoff_upper: 20
+          rbf_layer:
+            class_path: mlcg.nn.ExpNormalBasis
+            init_args:
+              cutoff: 20
+              num_rbf: 128
+              trainable: false
+  monitor: validation_loss
+  step_frequency: 1
+optimizer:
+  class_path: torch.optim.Adam
+  init_args:
+    lr: 0.0008
+    weight_decay: 0
+lr_scheduler:
+  class_path: torch.optim.lr_scheduler.ReduceLROnPlateau
+  init_args:
+    factor: 0.5
+    patience: 3
+    min_lr: 0.000001
+data:
+  h5_file_path: /path/to/dataset.h5 # point to your actual dataset location
+  partition_options: ./partition_settings.yaml
+  loading_options:
+    hdf_key_mapping:
+      embeds: attrs:cg_embeds
+      coords: cg_coords
+      forces: cg_delta_forces
+      exclusion_pairs: attrs:cg_exc_pairs
+  exclude_listed_pairs: true
