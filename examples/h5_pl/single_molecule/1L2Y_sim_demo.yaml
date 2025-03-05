@@ -1,0 +1,21 @@
+betas:
+- 1.6773985789045691
+model_file: model_with_prior.pt
+structure_file: 1L2Y_model_tag_configurations.pt
+simulation:
+  create_checkpoints: false
+  device: cuda
+  dt: 0.004
+  dtype: single
+  export_interval: 100
+  filename: sims/1L2Y
+  friction: 1.0
+  log_interval: 1000
+  log_type: write
+  n_timesteps: 5000
+  read_checkpoint_file: false
+  save_energies: false
+  save_forces: false
+  save_interval: 10
+  specialize_priors: true
+

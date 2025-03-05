@@ -14,6 +14,7 @@ from .pyg_forward_compatibility import (
 )
 from .painn import PaiNN, StandardPaiNN
 from .lr_scheduler import CustomStepLR
+from .utils import sparsify_prior_module, desparsify_prior_module
 
 try:
     from .mace_interface import MACEInterface

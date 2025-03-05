@@ -1,0 +1,101 @@
+seed_everything: 19384
+trainer:
+  max_epochs: 40
+  devices: 4
+  accelerator: gpu
+  strategy: ddp_find_unused_parameters_false
+  precision: 32
+  default_root_dir: .
+  resume_from_checkpoint: null
+  logger:
+    - class_path: pytorch_lightning.loggers.TensorBoardLogger
+      init_args:
+        save_dir: default_root_dir
+        name: tensorboard
+        version: ''
+  checkpoint_callback: null
+  enable_checkpointing: true
+  callbacks:
+    - class_path: pytorch_lightning.callbacks.LearningRateMonitor
+      init_args:
+        logging_interval: epoch
+        log_momentum: false
+    - class_path: pytorch_lightning.callbacks.model_checkpoint.ModelCheckpoint
+      init_args:
+        dirpath: default_root_dir
+        filename: '{epoch}-{validation_loss:.4f}'
+        monitor: validation_loss
+        save_last: true
+        save_top_k: -1
+    - class_path: pytorch_lightning.callbacks.StochasticWeightAveraging
+      init_args:
+        swa_epoch_start: 30
+        swa_lrs: null
+        annealing_epochs: 5
+        annealing_strategy: cos
+        device: cpu
+    - class_path: pytorch_lightning.callbacks.TQDMProgressBar
+      init_args:
+        refresh_rate: 20
+  benchmark: false
+  deterministic: false
+  reload_dataloaders_every_n_epochs: 0
+  auto_lr_find: false
+  replace_sampler_ddp: false
+  detect_anomaly: false
+  auto_scale_batch_size: false
+  prepare_data_per_node: null
+  plugins: null
+  move_metrics_to_cpu: false
+  multiple_trainloader_mode: max_size_cycle
+  stochastic_weight_avg: false
+  terminate_on_nan: null
+optimizer:
+  class_path: torch_optimizer.Lamb
+  init_args:
+    lr: 0.0003
+data:
+  dataset:
+    class_path: mlcg.datasets.ChignolinDataset
+    init_args:
+      root: /path/to/save/dataset/
+  log_dir: default_root_dir
+  val_ratio: 0.1
+  test_ratio: 0.
+  batch_size: 256
+  inference_batch_size: 256
+  num_workers: 0
+  loading_stride: 1
+  save_local_copy: false
+model:
+  loss:
+    class_path: mlcg.nn.Loss
+    init_args:
+      # list of losses to optimize
+      losses:
+        - class_path: mlcg.nn.ForceRMSE
+          init_args:
+            force_kwd: forces
+  # model specifications
+  model:
+    class_path: mlcg.nn.MACEInterface
+    init_args:
+      max_num_neighbors: 15
+      gate:
+          class_path: torch.nn.Tanh
+          init_args: {}
+      config:
+        r_max: 10
+        num_bessel: 10
+        num_polynomial_cutoff: 5
+        max_ell: 1
+        interaction_cls: RealAgnosticResidualInteractionBlock
+        interaction_cls_first: RealAgnosticInteractionBlock
+        num_interactions: 1
+        num_elements: 8
+        hidden_irreps: 128x0e
+        MLP_irreps: 16x0e
+        avg_num_neighbors: 9
+        correlation: 4
+        atomic_numbers: [3,  6,  7, 15, 17, 18, 19, 40]
+
