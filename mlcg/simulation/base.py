@@ -64,7 +64,7 @@ class _Simulation(object):
     dtype : str, default='single'
         precision to run the simulation with (single or double)
     export_interval : int, default=None
-        If not None, .npy files will be saved. If an int is given, then
+        Interval at which .npy files will be saved. If an int is given, then
         the int specifies at what intervals numpy files will be saved per
         observable. This number must be an integer multiple of save_interval.
         All output files should be the same shape. Forces and potentials will
@@ -72,6 +72,8 @@ class _Simulation(object):
         arguments, respectively. If friction is not None, kinetic energies
         will also be saved. This method is only implemented for a maximum of
         1000 files per observable due to file naming conventions.
+        If None, export_interval will be set to n_timesteps to output one file
+        for the entire simulation
     log_interval : int, default=None
         If not None, a log will be generated indicating simulation start and
         end times as well as completion updates at regular intervals. If an
@@ -140,7 +142,10 @@ class _Simulation(object):
             self.dtype = torch.float64
 
         self.device = torch.device(device)
-        self.export_interval = export_interval
+        if export_interval is None:
+            self.export_interval = self.n_timesteps
+        else:
+            self.export_interval = export_interval
         self.log_interval = log_interval
         self.create_checkpoints = create_checkpoints
         self.read_checkpoint_file = read_checkpoint_file
