@@ -164,9 +164,10 @@ def test_data_list_raises(
 @pytest.mark.parametrize(
     "seed, device", [(None, "cuda"), (None, "cpu"), (1, "cuda"), (1, "cpu")]
 )
-def test_simulation_device(seed, device):
+def test_simulation_device(seed, device, tmp_path):
     """Test to meke sure generator devices are set correctly"""
-    simulation = _Simulation(random_seed=seed, device=device)
+    fn = tmp_path / _Simulation.__name__
+    simulation = _Simulation(random_seed=seed, device=device, filename=fn)
     current_device = torch.device(device)
     assert simulation.device == current_device
     if seed == None:
@@ -216,6 +217,7 @@ def test_simulation_run(
     sim_args,
     betas,
     sim_kwargs,
+    tmp_path,
 ):
     """Test to make sure the simulation runs"""
     data_dictionary = ASE_prior_model()
@@ -225,6 +227,7 @@ def test_simulation_run(
     initial_data_list = get_initial_data(
         mol, neighbor_lists, corruptor=None, add_masses=add_masses
     )
+    sim_kwargs["filename"] = tmp_path / sim_class.__name__
     simulation = sim_class(*sim_args, **sim_kwargs)
     simulation.attach_model_and_configurations(
         full_model, initial_data_list, betas
@@ -297,7 +300,7 @@ def test_overwrite_protection(
             simulation.simulate()
 
 
-def test_exchange_detection():
+def test_exchange_detection(tmp_path):
     """Test to make sure that the Monte-Carlo exchange criterion
     works appropriately for two ideal fermions in the same spatial state
     with different energetic spin states (to the dumbest order).
@@ -319,7 +322,8 @@ def test_exchange_detection():
             masses=torch.tensor([1]),
         ),
     ]
-    simulation = PTSimulation()
+    fn = tmp_path / PTSimulation.__name__
+    simulation = PTSimulation(filename=fn)
     simulation._attach_configurations(
         test_data, betas
     )  # necessary to populate some attributes
@@ -340,7 +344,7 @@ def test_exchange_detection():
     )
 
 
-def test_exchange_and_rescale():
+def test_exchange_and_rescale(tmp_path):
     # Test to make sure that replica swaps are accurate and scaled
     # appropriately.
 
@@ -364,8 +368,8 @@ def test_exchange_and_rescale():
         "a": torch.tensor([0, 2, 3, 6, 9]),
         "b": torch.tensor([10, 12, 13, 16, 19]),
     }
-
-    simulation = PTSimulation()
+    fn = tmp_path / PTSimulation.__name__
+    simulation = PTSimulation(filename=fn)
     simulation._attach_configurations(configurations, betas)
 
     # randomize coordinates and velocites - as if we had run some simulation and the replicas
@@ -455,7 +459,7 @@ def test_maxwell_boltzmann_stats():
     )
 
 
-def test_pt_velocity_init():
+def test_pt_velocity_init(tmp_path):
     """Tests to make sure that PTSimulation.attach_configurations
     correctly for each temperature level"""
     betas = [1.67, 1.42, 1.22, 1.0]  # only used to instantiate the simulation
@@ -473,8 +477,8 @@ def test_pt_velocity_init():
                 velocities=torch.zeros(n_atoms, 3),
             )
         )
-
-    simulation = PTSimulation()
+    fn = tmp_path / PTSimulation.__name__
+    simulation = PTSimulation(filename=fn)
     simulation._attach_configurations(configurations, betas)
     print(simulation.initial_data.velocities)
 
