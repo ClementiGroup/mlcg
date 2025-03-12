@@ -715,8 +715,9 @@ class _Simulation(object):
                 f"Simulation of trajectory blew up at #timestep={t}"
             )
 
-
-        save_ind = (t // self.save_interval) - self._npy_file_index * self._save_size
+        save_ind = (
+            t // self.save_interval
+        ) - self._npy_file_index * self._save_size
 
         self.simulated_coords[save_ind, :, :] = x_new
 

@@ -158,11 +158,13 @@ class LangevinSimulation(_Simulation):
         # Initialize velocities according to Maxwell-Boltzmann distribution
         if VELOCITY_KEY not in self.initial_data:
             # initialize velocities at zero
-            self.initial_data[VELOCITY_KEY] = (
-                LangevinSimulation.sample_maxwell_boltzmann(
-                    self.beta.repeat_interleave(self.n_atoms),
-                    self.initial_data[MASS_KEY],
-                ).to(self.dtype)
+            self.initial_data[
+                VELOCITY_KEY
+            ] = LangevinSimulation.sample_maxwell_boltzmann(
+                self.beta.repeat_interleave(self.n_atoms),
+                self.initial_data[MASS_KEY],
+            ).to(
+                self.dtype
             )
         assert (
             self.initial_data[VELOCITY_KEY].shape
@@ -214,7 +216,9 @@ class LangevinSimulation(_Simulation):
         v_new = data[VELOCITY_KEY].view(-1, self.n_atoms, self.n_dims)
         masses = data.masses.view(self.n_sims, self.n_atoms)
 
-        save_ind = (t // self.save_interval) - self._npy_file_index * self._save_size
+        save_ind = (
+            t // self.save_interval
+        ) - self._npy_file_index * self._save_size
 
         if self.save_energies:
             kes = 0.5 * torch.sum(
