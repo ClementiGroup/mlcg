@@ -315,7 +315,7 @@ class _Simulation(object):
                 # it only happens when time points are also recorded
                 if self.export_interval is not None:
                     if (t + 1) % self.export_interval == 0:
-                        self.write((t + 1) // self.save_interval)
+                        self.write()
                         if self.save_subroutine is not None:
                             self.save_subroutine(
                                 data, (t + 1) // self.save_interval
@@ -338,7 +338,7 @@ class _Simulation(object):
         # if relevant, save the remainder of the simulation
         if self.export_interval is not None:
             if int(t + 1) % self.export_interval > 0:
-                self.write(t + 1)
+                self.write()
 
         # if relevant, log that simulation has been completed
         if self.log_interval is not None:
@@ -348,7 +348,7 @@ class _Simulation(object):
 
         self._simulated = True
 
-        return self.simulated_coords
+        return
 
     def log(self, iter_: int):
         """Utility to print log statement or write it to an text file"""
@@ -581,16 +581,8 @@ class _Simulation(object):
                     # the `current_timestep` in the checkpoint is actually the number of the last
                     # numpy filed saved. We need to use it to reset the _npy_file_index
                     self._npy_file_index = self.current_timestep
-                    # We also need to reset _npy_starting_index, which should carry the last simulation timestep
-                    # in which we saved coordinates, divided by the save interval
-                    self._npy_starting_index = (
-                        self.current_timestep
-                        * self.export_interval
-                        // self.save_interval
-                    )
                 else:
                     self._npy_file_index = 0
-                    self._npy_starting_index = 0
 
         # logging
         if self.log_interval is not None:
@@ -660,7 +652,7 @@ class _Simulation(object):
                 "To rerun, set overwrite=True."
             )
 
-        self._save_size = int(self.n_timesteps / self.save_interval)
+        self._save_size = int(self.export_interval / self.save_interval)
 
         self.simulated_coords = torch.zeros(
             (self._save_size, self.n_sims, self.n_atoms, self.n_dims)
@@ -723,11 +715,8 @@ class _Simulation(object):
                 f"Simulation of trajectory blew up at #timestep={t}"
             )
 
-            # tt = pos_spread > 1e3*self.initial_pos_spread
-            # traj_ids = torch.where(tt == True)[0]
-            # raise RuntimeError(f'Simulation of trajectory {traj_ids} blew up at #timestep={t} with pos= \n {x_new[tt]}')
 
-        save_ind = t // self.save_interval
+        save_ind = (t // self.save_interval) - self._npy_file_index * self._save_size
 
         self.simulated_coords[save_ind, :, :] = x_new
 
@@ -742,7 +731,7 @@ class _Simulation(object):
                 ]
                 self.simulated_potential = torch.zeros((potential_dims))
 
-            self.simulated_potential[t // self.save_interval] = potential
+            self.simulated_potential[save_ind] = potential
 
         if self.create_checkpoints:
             self.checkpoint = {}
@@ -753,29 +742,23 @@ class _Simulation(object):
                 data[VELOCITY_KEY].detach()
             )
 
-    def write(self, iter_: int):
+    def write(self):
         """Utility to write numpy arrays to disk"""
         key = self._get_numpy_count()
 
-        coords_to_export = self.simulated_coords[
-            self._npy_starting_index : iter_
-        ]
+        coords_to_export = self.simulated_coords
         coords_to_export = self._swap_and_export(coords_to_export)
         np.save("{}_coords_{}.npy".format(self.filename, key), coords_to_export)
 
         if self.save_forces:
-            forces_to_export = self.simulated_forces[
-                self._npy_starting_index : iter_
-            ]
+            forces_to_export = self.simulated_forces
             forces_to_export = self._swap_and_export(forces_to_export)
             np.save(
                 "{}_forces_{}.npy".format(self.filename, key), forces_to_export
             )
 
         if self.save_energies:
-            potentials_to_export = self.simulated_potential[
-                self._npy_starting_index : iter_
-            ]
+            potentials_to_export = self.simulated_potential
             potentials_to_export = self._swap_and_export(potentials_to_export)
             np.save(
                 "{}_potential_{}.npy".format(self.filename, key),
@@ -783,7 +766,7 @@ class _Simulation(object):
             )
 
         if self.create_checkpoints:
-            self.checkpoint["current_timestep"] = int(key) + 1
+            self.checkpoint["current_timestep"] = self._npy_file_index + 1
             self.checkpoint["export_interval"] = self.export_interval
             self.checkpoint["save_interval"] = self.save_interval
             self.checkpoint["log_interval"] = self.log_interval
@@ -792,7 +775,22 @@ class _Simulation(object):
                 "{}_checkpoint.pt".format(self.filename),
             )
 
-        self._npy_starting_index = iter_
+        # Reset simulated coords, forces and potential
+        self.simulated_coords = torch.zeros(
+            (self._save_size, self.n_sims, self.n_atoms, self.n_dims)
+        )
+        if self.save_forces:
+            self.simulated_forces = torch.zeros(
+                (self._save_size, self.n_sims, self.n_atoms, self.n_dims)
+            )
+        else:
+            self.simulated_forces = None
+
+        if self.save_energies:
+            self.simulated_potential = torch.zeros(self._save_size, self.n_sims)
+        else:
+            self.simulated_potential = None
+
         self._npy_file_index += 1
 
     def reshape_output(self):
