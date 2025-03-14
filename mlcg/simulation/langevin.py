@@ -214,7 +214,9 @@ class LangevinSimulation(_Simulation):
         v_new = data[VELOCITY_KEY].view(-1, self.n_atoms, self.n_dims)
         masses = data.masses.view(self.n_sims, self.n_atoms)
 
-        save_ind = t // self.save_interval
+        save_ind = (
+            t // self.save_interval
+        ) - self._npy_file_index * self._save_size
 
         if self.save_energies:
             kes = 0.5 * torch.sum(
@@ -222,13 +224,11 @@ class LangevinSimulation(_Simulation):
             )
             self.simulated_kinetic_energies[save_ind, :] = kes
 
-    def write(self, iter_: int):
+    def write(self):
         """Utility to save numpy arrays"""
         key = self._get_numpy_count()
         if self.save_energies:
-            kinetic_energies_to_export = self.simulated_kinetic_energies[
-                self._npy_starting_index : iter_
-            ]
+            kinetic_energies_to_export = self.simulated_kinetic_energies
             kinetic_energies_to_export = self._swap_and_export(
                 kinetic_energies_to_export
             )
@@ -237,7 +237,12 @@ class LangevinSimulation(_Simulation):
                 kinetic_energies_to_export,
             )
 
-        super().write(iter_)
+            # Reset simulate_kinetic_energies
+            self.simulated_kinetic_energies = torch.zeros(
+                self._save_size, self.n_sims
+            )
+
+        super().write()
 
     def reshape_output(self):
         super().reshape_output()

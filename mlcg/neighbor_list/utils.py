@@ -40,7 +40,7 @@ def ase2data(
     z = torch.from_numpy(frame.get_atomic_numbers())
     pos = torch.from_numpy(frame.get_positions())
     pbc = torch.from_numpy(frame.get_pbc())
-    cell = torch.tensor(frame.get_cell().tolist(), dtype=torch.float64)
+    cell = torch.tensor(frame.get_cell().tolist())
     n_atoms = torch.tensor([len(frame)])
     data = Data(z=z, pos=pos, pbc=pbc, cell=cell, n_atoms=n_atoms)
 

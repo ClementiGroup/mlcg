@@ -152,7 +152,6 @@ class PTSimulation(LangevinSimulation):
                     self.initial_data[MASS_KEY],
                 ).to(self.dtype)
             )
-
         self.initial_data[MASS_KEY] = self.initial_data[MASS_KEY].to(self.dtype)
         self.initial_data[POSITIONS_KEY] = self.initial_data[POSITIONS_KEY].to(
             self.dtype
