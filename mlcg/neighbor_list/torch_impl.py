@@ -93,12 +93,9 @@ def compute_images(
     """TODO: add doc"""
 
     reciprocal_cell = torch.linalg.inv(cell).transpose(2, 1)
-    # print('reciprocal_cell: ', reciprocal_cell.device)
     inv_distances = reciprocal_cell.norm(2, dim=-1)
-    # print('inv_distances: ', inv_distances.device)
     num_repeats = torch.ceil(cutoff * inv_distances).to(torch.long)
     num_repeats_ = torch.where(pbc, num_repeats, torch.zeros_like(num_repeats))
-    # print('num_repeats_: ', num_repeats_.device)
     images, batch_images, shifts_expanded, shifts_idx_ = [], [], [], []
     for i_structure in range(num_repeats_.shape[0]):
         num_repeats = num_repeats_[i_structure]
