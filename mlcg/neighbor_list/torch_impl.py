@@ -92,8 +92,6 @@ def compute_images(
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     """TODO: add doc"""
 
-    cell = cell.view((-1, 3, 3)).to(torch.float64)
-    pbc = pbc.view((-1, 3))
     reciprocal_cell = torch.linalg.inv(cell).transpose(2, 1)
     # print('reciprocal_cell: ', reciprocal_cell.device)
     inv_distances = reciprocal_cell.norm(2, dim=-1)

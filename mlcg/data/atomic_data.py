@@ -132,7 +132,7 @@ class AtomicData(Data):
         pos = torch.from_numpy(frame.get_positions())
         masses = torch.from_numpy(frame.get_masses())
         pbc = torch.from_numpy(frame.get_pbc())
-        cell = torch.tensor(frame.get_cell().tolist(), dtype=torch.float64)
+        cell = torch.tensor(frame.get_cell().tolist(), dtype=pos.dtype)
 
         tag = frame.info.get("tag")
 
