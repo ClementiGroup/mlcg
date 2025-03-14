@@ -714,7 +714,7 @@ class _Simulation(object):
         forces = forces.view(-1, self.n_atoms, self.n_dims)
 
         pos_spread = x_new.std(dim=(1, 2)).detach().max().cpu()
-        # print(pos_spread.min(),pos_spread.max(),pos_spread.mean())
+
         if torch.any(pos_spread > 1e3 * self.initial_pos_spread):
             raise RuntimeError(
                 f"Simulation of trajectory blew up at #timestep={t}"
