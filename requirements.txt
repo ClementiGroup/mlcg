@@ -13,6 +13,7 @@ h5py
 scipy
 scikit-learn
 ipython
+ipywidgets
 torch_optimizer<=1.5.1
 # developer tools
 pytest

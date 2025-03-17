@@ -104,7 +104,7 @@ class ChignolinDataset(InMemoryDataset):
         topo = mdtraj.load(topology_fn).remove_solvent().topology
         topology = Topology.from_mdtraj(topo)
         embeddings, masses, cg_matrix, _ = build_cg_matrix(
-            topology, cg_mapping=CA_MAP
+            topology, cg_mapping=CA_MAP,special_terminal=False
         )
         cg_topo = build_cg_topology(topology, cg_mapping=CA_MAP)
         copy(topology_fn, self.processed_paths[1])
@@ -123,6 +123,7 @@ class ChignolinDataset(InMemoryDataset):
 
         data_list = []
         ii_frame = 0
+        
         for i_traj, tag in enumerate(tqdm(coord_fns, desc="Load Dataset")):
             forces = np.load(forces_fns[tag])
             cg_forces = np.array(

@@ -31,6 +31,8 @@ class Atom(NamedTuple):
         Atom name
     resname: Optional[str] = None
         Name of the residue containing the atom
+    resid: Optional[int] = None
+        Index of the desired residue
     """
 
     #: type of the atom

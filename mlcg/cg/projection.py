@@ -154,11 +154,11 @@ def build_cg_topology(
     cg_topo = Topology()
     for at in topology.atoms:
         (cg_name, cg_type, _) = cg_mapping.get(
-            (at.residue.name, at.name), (None, None, None)
+            (at.resname, at.name), (None, None, None)
         )
         if cg_name is None:
             continue
-        cg_topo.add_atom(cg_type, cg_name, at.residue.name, at.residue.index)
+        cg_topo.add_atom(cg_type, cg_name, at.resname, at.resid)
 
     if special_terminal:
         cg_topo.names[0] += "-terminal"
