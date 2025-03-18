@@ -8,13 +8,13 @@ from torch_geometric.data.collate import collate
 from shutil import copy
 import mdtraj
 
-from aggforce import (LinearMap, 
-                    guess_pairwise_constraints, 
-                    project_forces, 
-                    constraint_aware_uni_map,
-                    qp_linear_map
-                    )
-
+from aggforce import (
+    LinearMap,
+    guess_pairwise_constraints,
+    project_forces,
+    constraint_aware_uni_map,
+    qp_linear_map,
+)
 
 
 from ..utils import tqdm, download_url
@@ -46,7 +46,14 @@ class ChignolinDataset(InMemoryDataset):
     _priors_cls = [HarmonicBonds, HarmonicAngles, Repulsion]
 
     def __init__(
-        self, root, transform=None, pre_transform=None, pre_filter=None,mapping:str="slice_aggregate",terminal_embeds:bool=False,max_num_files:int=None
+        self,
+        root,
+        transform=None,
+        pre_transform=None,
+        pre_filter=None,
+        mapping: str = "slice_aggregate",
+        terminal_embeds: bool = False,
+        max_num_files: int = None,
     ):
         self.terminal_embeds = terminal_embeds
         self.priors_cls = self._priors_cls
@@ -116,9 +123,11 @@ class ChignolinDataset(InMemoryDataset):
         topo = mdtraj.load(topology_fn).remove_solvent().topology
         topology = Topology.from_mdtraj(topo)
         embeddings, masses, cg_matrix, _ = build_cg_matrix(
-            topology, cg_mapping=CA_MAP,special_terminal=self.terminal_embeds
+            topology, cg_mapping=CA_MAP, special_terminal=self.terminal_embeds
         )
-        cg_topo = build_cg_topology(topology, cg_mapping=CA_MAP,special_terminal=self.terminal_embeds)
+        cg_topo = build_cg_topology(
+            topology, cg_mapping=CA_MAP, special_terminal=self.terminal_embeds
+        )
         copy(topology_fn, self.processed_paths[1])
         prior_nls = {}
         for cls in self.priors_cls:
@@ -164,7 +173,7 @@ class ChignolinDataset(InMemoryDataset):
 
         data_list = []
         ii_frame = 0
-        file_counter=0
+        file_counter = 0
         for i_traj, tag in enumerate(tqdm(coord_fns, desc="Load Dataset")):
             forces = np.load(forces_fns[tag])
             cg_forces = np.array(
