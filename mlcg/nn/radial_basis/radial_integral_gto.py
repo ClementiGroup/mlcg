@@ -1,5 +1,4 @@
 import torch
-from torch import nn
 import numpy as np
 from mpmath import hyp1f1, gamma, exp, power
 from itertools import product
@@ -83,7 +82,7 @@ class RIGTOBasis(_RadialBasis):
             sigma,
             self.cutoff,
             mesh_size,
-        ).to(torch.float32)
+        )
 
     def forward(self, dist: torch.Tensor) -> torch.Tensor:
         r"""Expansion of distances through the radial basis function set.
