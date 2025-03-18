@@ -38,9 +38,6 @@ class _Simulation(object):
     ----------
     dt : float, default=5e-4
         The integration time step for Langevin dynamics.
-    beta : float, default=1
-        The thermodynamic inverse temperature, :math:`1/(k_B T)`, for Boltzman
-        constant :math:`k_B` and temperature :math:`T`.
     save_forces : bool, default=False
         Whether to save forces at the same saved interval as the simulation
         coordinates
