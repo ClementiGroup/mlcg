@@ -151,7 +151,7 @@ class PTSimulation(LangevinSimulation):
                     self.beta.repeat_interleave(self.n_atoms),
                     self.initial_data[MASS_KEY],
                 ).to(self.dtype)
-             )
+            )
         self.initial_data[MASS_KEY] = self.initial_data[MASS_KEY].to(self.dtype)
         self.initial_data[POSITIONS_KEY] = self.initial_data[POSITIONS_KEY].to(
             self.dtype
@@ -226,7 +226,7 @@ class PTSimulation(LangevinSimulation):
                 self.beta.repeat_interleave(self.n_atoms),
                 self.initial_data[MASS_KEY],
             ).to(self.dtype)
-         )
+        )
         self.initial_data[MASS_KEY] = self.initial_data[MASS_KEY].to(self.dtype)
         self.initial_data[POSITIONS_KEY] = self.initial_data[POSITIONS_KEY].to(
             self.dtype
