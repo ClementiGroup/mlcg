@@ -41,7 +41,7 @@ class _Simulation(object):
     save_forces : bool, default=False
         Whether to save forces at the same saved interval as the simulation
         coordinates
-    save_potential : bool, default=False
+    save_energies : bool, default=False
         Whether to save potential at the same saved interval as the simulation
         coordinates
     create_checkpoints: bool, default=False
@@ -65,7 +65,7 @@ class _Simulation(object):
         the int specifies at what intervals numpy files will be saved per
         observable. This number must be an integer multiple of save_interval.
         All output files should be the same shape. Forces and potentials will
-        also be saved according to the save_forces and save_potential
+        also be saved according to the save_forces and save_energies
         arguments, respectively. If friction is not None, kinetic energies
         will also be saved. This method is only implemented for a maximum of
         1000 files per observable due to file naming conventions.
