@@ -133,7 +133,7 @@ the Einstein relation:</p>
 <li><p><strong>dt</strong> (<em>float</em><em>, </em><em>default=5e-4</em>) – The integration time step for Langevin dynamics.</p></li>
 <li><p><strong>save_forces</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to save forces at the same saved interval as the simulation
 coordinates</p></li>
-<li><p><strong>save_potential</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to save potential at the same saved interval as the simulation
+<li><p><strong>save_energies</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to save potential at the same saved interval as the simulation
 coordinates</p></li>
 <li><p><strong>create_checkpoints</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Save the atomic data object so it can be reloaded in. Overwrites previous object.</p></li>
 <li><p><strong>read_checkpoint_file</strong> (<em>[</em><em>str</em><em>,</em><em>bool</em><em>]</em><em>, </em><em>default=None</em>) – Whether to read in checkpoint file from. Can specify explicit file path or try to infer from self.filename</p></li>
@@ -148,7 +148,7 @@ identical for the same random seed</p></li>
 the int specifies at what intervals numpy files will be saved per
 observable. This number must be an integer multiple of save_interval.
 All output files should be the same shape. Forces and potentials will
-also be saved according to the save_forces and save_potential
+also be saved according to the save_forces and save_energies
 arguments, respectively. If friction is not None, kinetic energies
 will also be saved. This method is only implemented for a maximum of
 1000 files per observable due to file naming conventions.
@@ -201,7 +201,7 @@ parameters in the case that they have some estimate of the diffusion.</p></li>
 <li><p><strong>dt</strong> (<em>float</em><em>, </em><em>default=5e-4</em>) – The integration time step for Langevin dynamics.</p></li>
 <li><p><strong>save_forces</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to save forces at the same saved interval as the simulation
 coordinates</p></li>
-<li><p><strong>save_potential</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to save potential at the same saved interval as the simulation
+<li><p><strong>save_energies</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to save potential at the same saved interval as the simulation
 coordinates</p></li>
 <li><p><strong>create_checkpoints</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Save the atomic data object so it can be reloaded in. Overwrites previous object.</p></li>
 <li><p><strong>read_checkpoint_file</strong> (<em>[</em><em>str</em><em>,</em><em>bool</em><em>]</em><em>, </em><em>default=None</em>) – Whether to read in checkpoint file from. Can specify explicit file path or try to infer from self.filename</p></li>
@@ -216,7 +216,7 @@ identical for the same random seed</p></li>
 the int specifies at what intervals numpy files will be saved per
 observable. This number must be an integer multiple of save_interval.
 All output files should be the same shape. Forces and potentials will
-also be saved according to the save_forces and save_potential
+also be saved according to the save_forces and save_energies
 arguments, respectively. If friction is not None, kinetic energies
 will also be saved. This method is only implemented for a maximum of
 1000 files per observable due to file naming conventions.
@@ -293,7 +293,7 @@ replica exchange.</p></li>
 <li><p><strong>dt</strong> (<em>float</em><em>, </em><em>default=5e-4</em>) – The integration time step for Langevin dynamics.</p></li>
 <li><p><strong>save_forces</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to save forces at the same saved interval as the simulation
 coordinates</p></li>
-<li><p><strong>save_potential</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to save potential at the same saved interval as the simulation
+<li><p><strong>save_energies</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to save potential at the same saved interval as the simulation
 coordinates</p></li>
 <li><p><strong>create_checkpoints</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Save the atomic data object so it can be reloaded in. Overwrites previous object.</p></li>
 <li><p><strong>read_checkpoint_file</strong> (<em>[</em><em>str</em><em>,</em><em>bool</em><em>]</em><em>, </em><em>default=None</em>) – Whether to read in checkpoint file from. Can specify explicit file path or try to infer from self.filename</p></li>
@@ -308,7 +308,7 @@ identical for the same random seed</p></li>
 the int specifies at what intervals numpy files will be saved per
 observable. This number must be an integer multiple of save_interval.
 All output files should be the same shape. Forces and potentials will
-also be saved according to the save_forces and save_potential
+also be saved according to the save_forces and save_energies
 arguments, respectively. If friction is not None, kinetic energies
 will also be saved. This method is only implemented for a maximum of
 1000 files per observable due to file naming conventions.
