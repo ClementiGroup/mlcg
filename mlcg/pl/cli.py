@@ -33,16 +33,20 @@ class LightningCLI(plc.LightningCLI):
         else:
             config = self.config
 
-        if self.config["seed_everything"] is in (None, False):
+        if self.config["seed_everything"] in (None, False):
             devices = self.config["trainer"]["devices"]
             num_nodes = self.config["trainer"]["num_nodes"]
-            if self.config["trainer"]['gpus'] is not None: # account for composite/redundant lightning trainer opts 
+            if (
+                self.config["trainer"]["gpus"] is not None
+            ):  # account for composite/redundant lightning trainer opts
                 gpus = self.config["gpus"]
                 if isinstance(gpus, list):
                     gpus = len(gpus)
             if (num_nodes > 1) or (devices > 1) or (gpus > 1):
-                warnings.warn("ATTENTION: `seed_everything` has been set to false/null, but multiple devices are being used for distributed training. This can result in local ranks/procids making different train/val/test data splits, which can further result in train/val/test data leakage. Please follow the best practice as outlined by Lightning developers and set `seed_everything` to a non-zero integer for multi-device computations. Else, make sure that your `PLDataModule` avoids this be defining the splits to loaded from the disk beforehand.")
-        
+                warnings.warn(
+                    "ATTENTION: `seed_everything` has been set to false/null, but multiple devices are being used for distributed training. This can result in local ranks/procids making different train/val/test data splits, which can further result in train/val/test data leakage. Please follow the best practice as outlined by Lightning developers and set `seed_everything` to a non-zero integer for multi-device computations. Else, make sure that your `PLDataModule` avoids this be defining the splits to loaded from the disk beforehand."
+                )
+
         trainer = config["trainer"]
         default_root_dir = trainer.get("default_root_dir")
         if default_root_dir is not None:
