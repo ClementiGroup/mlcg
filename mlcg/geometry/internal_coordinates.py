@@ -102,7 +102,41 @@ def compute_distances(
 
 
 @torch.jit.script
-def compute_angles(
+def compute_angles_raw(
+    pos: torch.Tensor,
+    mapping: torch.Tensor,
+    cell_shifts: Optional[torch.Tensor] = None,
+):
+    r"""Compute the raw angle between the positions in :obj:`pos` following the :obj:`mapping` assuming that the mapping indices follow::
+
+       j--k
+      /
+     i
+
+    .. math::
+
+        \angle(x, y) := 2 \arctan\left( \frac{ \|x \cdot \|y\| - y \cdot \|x\| \|  }{ \|x \cdot \|y\| + y \cdot \|x\| \| } \right)
+
+    See: How Futile are Mindless Assessments of Roundoff in Floating-Point Computation? §12: Mangled Angles by William Kahan
+
+    """
+    assert mapping.dim() == 2
+    assert mapping.shape[0] == 3
+
+    dr1 = pos[mapping[0]] - pos[mapping[1]]
+    dr2 = pos[mapping[2]] - pos[mapping[1]]
+    dr1_norm = dr1.norm(p=2, dim=1)
+    dr2_norm = dr2.norm(p=2, dim=1)
+
+    theta = 2 * torch.atan2(
+        (dr1 * dr2_norm[:,None] - dr1_norm[:,None] * dr2).norm(p=2, dim=1),
+        (dr1 * dr2_norm[:,None] + dr1_norm[:,None] * dr2).norm(p=2, dim=1)
+    )
+    return theta
+
+
+@torch.jit.script
+def compute_angles_cos(
     pos: torch.Tensor,
     mapping: torch.Tensor,
     cell_shifts: Optional[torch.Tensor] = None,
@@ -150,7 +184,7 @@ def compute_torsions(pos: torch.Tensor, mapping: torch.Tensor):
     For impropers: the angle is positive if when looking in plane ikj, l is rotated clockwise
 
      k
-      \
+      \\
        l--j
       /
      i

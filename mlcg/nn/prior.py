@@ -9,7 +9,8 @@ import numpy as np
 from ..geometry.topology import Topology
 from ..geometry.internal_coordinates import (
     compute_distances,
-    compute_angles,
+    compute_angles_cos,
+    compute_angles_raw,
     compute_torsions,
 )
 from ..data.atomic_data import AtomicData
@@ -75,7 +76,7 @@ class Harmonic(torch.nn.Module, _Prior):
     }
     _compute_map = {
         "bonds": compute_distances,
-        "angles": compute_angles,
+        "angles": compute_angles_cos,
         "impropers": compute_torsions,
         "omega": compute_torsions,
         "gamma_1": compute_torsions,
@@ -294,6 +295,33 @@ class HarmonicAngles(Harmonic):
     def compute_features(pos, mapping):
         return Harmonic.compute_features(pos, mapping, HarmonicAngles.name)
 
+
+class HarmonicAnglesRaw(Harmonic):
+    r"""Wrapper class for quickly computing angle priors
+    (order 3 Harmonic priors)
+
+    This class uses the raw angles in rad calculated via the atan2 to ensure numerical stability
+
+    \angle(x, y) := 2 \arctan\left( \frac{ \|x \cdot \|y\| - y \cdot \|x\| \|  }{ \|x \cdot \|y\| + y \cdot \|x\| \| } \right)
+
+    See: How Futile are Mindless Assessments of Roundoff in Floating-Point Computation? §12: Mangled Angles by William Kahan
+
+    """
+
+    name: Final[str] = "angles"
+    _order = 3
+
+    def __init__(self, statistics) -> None:
+        super(HarmonicAngles, self).__init__(statistics, HarmonicAngles.name)
+
+    @staticmethod
+    def neighbor_list(topology: Topology) -> dict:
+        return Harmonic.neighbor_list(topology, HarmonicAngles.name)
+
+    @staticmethod
+    def compute_features(pos, mapping):
+        return compute_angles_raw(pos, mapping)
+    
 
 class HarmonicImpropers(Harmonic):
     name: Final[str] = "impropers"
