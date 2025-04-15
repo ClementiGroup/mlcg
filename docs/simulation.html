@@ -99,8 +99,8 @@
 <dl class="py class">
 <dt class="sig sig-object py" id="mlcg.simulation.LangevinSimulation">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcg.simulation.</span></span><span class="sig-name descname"><span class="pre">LangevinSimulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">friction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/simulation/langevin.html#LangevinSimulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.simulation.LangevinSimulation" title="Link to this definition"></a></dt>
-<dd><p>Langevin simulatin class for trained models.</p>
-<p>The following <a class="reference external" href="https://doi.org/10.1007/978-3-319-16375-8">BAOAB integration scheme</a> is used, where:</p>
+<dd><p>Langevin simulation class for trained models.</p>
+<p>The following <a class="reference internal" href="bibliography.html#baoab" id="id1"><span>[BAOAB]</span></a> integration scheme is used, where:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">B</span> <span class="o">=</span> <span class="n">deterministic</span> <span class="n">velocity</span> <span class="n">update</span>
 <span class="n">A</span> <span class="o">=</span> <span class="n">deterministic</span> <span class="n">position</span> <span class="n">update</span>
 <span class="n">O</span> <span class="o">=</span> <span class="n">stochastic</span> <span class="n">velocity</span> <span class="n">update</span>
@@ -119,18 +119,32 @@ forces once per timestep:</p>
 <span class="math notranslate nohighlight">\(\alpha\)</span> is the noise scale, and:</p>
 <div class="math notranslate nohighlight">
 \[\begin{split}F(X_t) =&amp; - \nabla  U(X_t)  \\
+&amp; \\
 \epsilon =&amp; \exp(-\eta \; \Delta t) \\
-\alpha =&amp; \sqrt{1 - \epsilon^2}\end{split}\]</div>
+&amp; \\
+\alpha =&amp; \sqrt{(1 - \epsilon^2) / \beta m}\end{split}\]</div>
+<p>Initial velocities are sampled from the Maxwell-Boltzmann distribution for
+the provided beta.</p>
 <p>A diffusion constant <span class="math notranslate nohighlight">\(D\)</span> can be back-calculated using
 the Einstein relation:</p>
 <div class="math notranslate nohighlight">
 \[D = 1 / (\beta  \eta)\]</div>
-<p>Initial velocities are set to zero if not provided.</p>
+<p>For a larger discussion on Langevin Dynamics integrators, please refer to <a class="reference internal" href="bibliography.html#mdbook" id="id2"><span>[MDBook]</span></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>friction</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – Friction value for Langevin scheme, in units of inverse time.</p></li>
-<li><p><strong>dt</strong> (<em>float</em><em>, </em><em>default=5e-4</em>) – The integration time step for Langevin dynamics.</p></li>
+<li><p><strong>dt</strong> (<em>float</em><em>, </em><em>default=5e-4</em>) – <p>The integration time step for the dynamics. The simulation code is unit agnostic
+and will use the same distance and energy units that the network and initial configurations.
+However, for the two other parameters in a simulation, time and mass, only one of them is unit-agnostic:
+<strong>if you provide the time thinking in a particular unit, the unit of mass is defined, and
+viceversa. Be aware that only either mass or time can be provided in custom units</strong>.</p>
+<p>The following relation must be satisfied by the units to ensure consistency:</p>
+<div class="math notranslate nohighlight">
+\[[\text{Energy}] = [\text{Mass}]\frac{[\text{Length}]^2}{[\text{Time}]^2}\]</div>
+<p>For example, if you are using kcal/mol for the energy, Angstrom from the distance and time
+in picoseconds, the masses will need to be provided in units of AMU/418.39.</p>
+</p></li>
 <li><p><strong>save_forces</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to save forces at the same saved interval as the simulation
 coordinates</p></li>
 <li><p><strong>save_energies</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to save potential at the same saved interval as the simulation
@@ -142,7 +156,7 @@ coordinates</p></li>
 a factor of the simulation length</p></li>
 <li><p><strong>random_seed</strong> (<em>int</em><em>, </em><em>default=None</em>) – Seed for random number generator; if seeded, results always will be
 identical for the same random seed</p></li>
-<li><p><strong>device</strong> (<em>str</em><em>, </em><em>default='cpu'</em>) – Device upon which simulation compuation will be carried out</p></li>
+<li><p><strong>device</strong> (<em>str</em><em>, </em><em>default='cpu'</em>) – Device upon which simulation computation will be carried out</p></li>
 <li><p><strong>dtype</strong> (<em>str</em><em>, </em><em>default='single'</em>) – precision to run the simulation with (single or double)</p></li>
 <li><p><strong>export_interval</strong> (<em>int</em><em>, </em><em>default=None</em>) – Interval at which .npy files will be saved. If an int is given, then
 the int specifies at what intervals numpy files will be saved per
@@ -187,10 +201,12 @@ arguments.</p></li>
 <dd><p>Overdamped Langevin simulation class for trained models.</p>
 <p>The following Brownian motion scheme is used:</p>
 <div class="math notranslate nohighlight">
-\[dX_t = - \nabla U( X_t )   D  \Delta t + \sqrt{( 2  D *\Delta t / \beta )} dW_t\]</div>
+\[dX_t = - \nabla U( X_t )   D  \Delta t + \sqrt{( 2  D \Delta t / \beta )} dW_t\]</div>
 <p>for coordinates <span class="math notranslate nohighlight">\(X_t\)</span> at time <span class="math notranslate nohighlight">\(t\)</span>, potential energy <span class="math notranslate nohighlight">\(U\)</span>,
 diffusion <span class="math notranslate nohighlight">\(D\)</span>, thermodynamic inverse temperature <span class="math notranslate nohighlight">\(\beta\)</span>,
 time step <span class="math notranslate nohighlight">\(\Delta t\)</span>, and stochastic Weiner process <span class="math notranslate nohighlight">\(W\)</span>.</p>
+<p>Due to the nature of Overdamped Langevin dynamics, the masses and velocities
+are not used.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -198,7 +214,17 @@ time step <span class="math notranslate nohighlight">\(\Delta t\)</span>, and st
 is set to unity and is absorbed into the <span class="math notranslate nohighlight">\(\Delta t\)</span> argument.
 However, users may specify separate diffusion and <span class="math notranslate nohighlight">\(\Delta t\)</span>
 parameters in the case that they have some estimate of the diffusion.</p></li>
-<li><p><strong>dt</strong> (<em>float</em><em>, </em><em>default=5e-4</em>) – The integration time step for Langevin dynamics.</p></li>
+<li><p><strong>dt</strong> (<em>float</em><em>, </em><em>default=5e-4</em>) – <p>The integration time step for the dynamics. The simulation code is unit agnostic
+and will use the same distance and energy units that the network and initial configurations.
+However, for the two other parameters in a simulation, time and mass, only one of them is unit-agnostic:
+<strong>if you provide the time thinking in a particular unit, the unit of mass is defined, and
+viceversa. Be aware that only either mass or time can be provided in custom units</strong>.</p>
+<p>The following relation must be satisfied by the units to ensure consistency:</p>
+<div class="math notranslate nohighlight">
+\[[\text{Energy}] = [\text{Mass}]\frac{[\text{Length}]^2}{[\text{Time}]^2}\]</div>
+<p>For example, if you are using kcal/mol for the energy, Angstrom from the distance and time
+in picoseconds, the masses will need to be provided in units of AMU/418.39.</p>
+</p></li>
 <li><p><strong>save_forces</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to save forces at the same saved interval as the simulation
 coordinates</p></li>
 <li><p><strong>save_energies</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to save potential at the same saved interval as the simulation
@@ -210,7 +236,7 @@ coordinates</p></li>
 a factor of the simulation length</p></li>
 <li><p><strong>random_seed</strong> (<em>int</em><em>, </em><em>default=None</em>) – Seed for random number generator; if seeded, results always will be
 identical for the same random seed</p></li>
-<li><p><strong>device</strong> (<em>str</em><em>, </em><em>default='cpu'</em>) – Device upon which simulation compuation will be carried out</p></li>
+<li><p><strong>device</strong> (<em>str</em><em>, </em><em>default='cpu'</em>) – Device upon which simulation computation will be carried out</p></li>
 <li><p><strong>dtype</strong> (<em>str</em><em>, </em><em>default='single'</em>) – precision to run the simulation with (single or double)</p></li>
 <li><p><strong>export_interval</strong> (<em>int</em><em>, </em><em>default=None</em>) – Interval at which .npy files will be saved. If an int is given, then
 the int specifies at what intervals numpy files will be saved per
@@ -290,7 +316,17 @@ adjecent temperatures implied by the user-supplied list of beta values.</p>
 <li><p><strong>friction</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – Scalar friction to use for Langevin updates</p></li>
 <li><p><strong>exchange_interval</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Specifies the number of simulation steps to take before attempting
 replica exchange.</p></li>
-<li><p><strong>dt</strong> (<em>float</em><em>, </em><em>default=5e-4</em>) – The integration time step for Langevin dynamics.</p></li>
+<li><p><strong>dt</strong> (<em>float</em><em>, </em><em>default=5e-4</em>) – <p>The integration time step for the dynamics. The simulation code is unit agnostic
+and will use the same distance and energy units that the network and initial configurations.
+However, for the two other parameters in a simulation, time and mass, only one of them is unit-agnostic:
+<strong>if you provide the time thinking in a particular unit, the unit of mass is defined, and
+viceversa. Be aware that only either mass or time can be provided in custom units</strong>.</p>
+<p>The following relation must be satisfied by the units to ensure consistency:</p>
+<div class="math notranslate nohighlight">
+\[[\text{Energy}] = [\text{Mass}]\frac{[\text{Length}]^2}{[\text{Time}]^2}\]</div>
+<p>For example, if you are using kcal/mol for the energy, Angstrom from the distance and time
+in picoseconds, the masses will need to be provided in units of AMU/418.39.</p>
+</p></li>
 <li><p><strong>save_forces</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to save forces at the same saved interval as the simulation
 coordinates</p></li>
 <li><p><strong>save_energies</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to save potential at the same saved interval as the simulation
@@ -302,7 +338,7 @@ coordinates</p></li>
 a factor of the simulation length</p></li>
 <li><p><strong>random_seed</strong> (<em>int</em><em>, </em><em>default=None</em>) – Seed for random number generator; if seeded, results always will be
 identical for the same random seed</p></li>
-<li><p><strong>device</strong> (<em>str</em><em>, </em><em>default='cpu'</em>) – Device upon which simulation compuation will be carried out</p></li>
+<li><p><strong>device</strong> (<em>str</em><em>, </em><em>default='cpu'</em>) – Device upon which simulation computation will be carried out</p></li>
 <li><p><strong>dtype</strong> (<em>str</em><em>, </em><em>default='single'</em>) – precision to run the simulation with (single or double)</p></li>
 <li><p><strong>export_interval</strong> (<em>int</em><em>, </em><em>default=None</em>) – Interval at which .npy files will be saved. If an int is given, then
 the int specifies at what intervals numpy files will be saved per

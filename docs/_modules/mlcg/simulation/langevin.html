@@ -100,9 +100,9 @@
 <div class="viewcode-block" id="LangevinSimulation">
 <a class="viewcode-back" href="../../../simulation.html#mlcg.simulation.LangevinSimulation">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">LangevinSimulation</span><span class="p">(</span><span class="n">_Simulation</span><span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Langevin simulatin class for trained models.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Langevin simulation class for trained models.</span>
 
-<span class="sd">    The following `BAOAB integration scheme &lt;https://doi.org/10.1007/978-3-319-16375-8&gt;`_ is used, where::</span>
+<span class="sd">    The following [BAOAB]_ integration scheme is used, where::</span>
 
 <span class="sd">        B = deterministic velocity update</span>
 <span class="sd">        A = deterministic position update</span>
@@ -124,17 +124,22 @@
 
 <span class="sd">    .. math::</span>
 <span class="sd">        F(X_t) =&amp; - \nabla  U(X_t)  \\</span>
+<span class="sd">        &amp; \\</span>
 <span class="sd">        \epsilon =&amp; \exp(-\eta \; \Delta t) \\</span>
-<span class="sd">        \alpha =&amp; \sqrt{1 - \epsilon^2}</span>
+<span class="sd">        &amp; \\</span>
+<span class="sd">        \alpha =&amp; \sqrt{(1 - \epsilon^2) / \beta m}</span>
+<span class="sd">    </span>
+<span class="sd">    Initial velocities are sampled from the Maxwell-Boltzmann distribution for </span>
+<span class="sd">    the provided beta.</span>
 
 <span class="sd">    A diffusion constant :math:`D` can be back-calculated using</span>
 <span class="sd">    the Einstein relation:</span>
 
 <span class="sd">    .. math::</span>
 <span class="sd">        D = 1 / (\beta  \eta)</span>
-
-<span class="sd">    Initial velocities are set to zero if not provided.</span>
-
+<span class="sd">    </span>
+<span class="sd">    For a larger discussion on Langevin Dynamics integrators, please refer to [MDBook]_.</span>
+<span class="sd">        </span>
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 
@@ -166,7 +171,7 @@
 <span class="sd">        betas:</span>
 <span class="sd">            The inverse thermodynamic temperature of each atom</span>
 <span class="sd">        masses:</span>
-<span class="sd">            Them masses of each atom</span>
+<span class="sd">            The masses of each atom</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="nb">all</span><span class="p">([</span><span class="n">m</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">masses</span><span class="p">])</span>
         <span class="n">scale</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">betas</span> <span class="o">*</span> <span class="n">masses</span><span class="p">))</span>
@@ -346,7 +351,7 @@
 
 <span class="c1"># pipe the doc from the base class into the child class so that it&#39;s properly</span>
 <span class="c1"># displayed by sphinx</span>
-<span class="n">LangevinSimulation</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">+=</span> <span class="n">_Simulation</span><span class="o">.</span><span class="vm">__doc__</span>
+<span class="n">LangevinSimulation</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">+=</span> <span class="n">_Simulation</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
 
 
 <div class="viewcode-block" id="OverdampedSimulation">
@@ -357,12 +362,14 @@
 <span class="sd">    The following Brownian motion scheme is used:</span>
 
 <span class="sd">    .. math::</span>
-
-<span class="sd">        dX_t = - \nabla U( X_t )   D  \Delta t + \sqrt{( 2  D *\Delta t / \beta )} dW_t</span>
+<span class="sd">        dX_t = - \nabla U( X_t )   D  \Delta t + \sqrt{( 2  D \Delta t / \beta )} dW_t</span>
 
 <span class="sd">    for coordinates :math:`X_t` at time :math:`t`, potential energy :math:`U`,</span>
 <span class="sd">    diffusion :math:`D`, thermodynamic inverse temperature :math:`\beta`,</span>
 <span class="sd">    time step :math:`\Delta t`, and stochastic Weiner process :math:`W`.</span>
+
+<span class="sd">    Due to the nature of Overdamped Langevin dynamics, the masses and velocities</span>
+<span class="sd">    are not used.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
