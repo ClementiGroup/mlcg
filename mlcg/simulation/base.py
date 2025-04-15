@@ -211,6 +211,8 @@ class _Simulation(object):
             Trained model used to generate simulation data
         """
         self.model = model.eval().to(device=self.device, dtype=self.dtype)
+        for param in self.model.parameters():
+            param.requires_grad = False
 
     def _attach_configurations(
         self,
@@ -411,7 +413,7 @@ class _Simulation(object):
 
         data = self.model(data)
         potential = data.out[ENERGY_KEY].detach()
-        forces = data.out[FORCE_KEY]
+        forces = data.out[FORCE_KEY].detach()
         return potential, forces
 
     def timestep(self):
