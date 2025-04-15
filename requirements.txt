@@ -1,23 +1,32 @@
-mdtraj
-pyyaml>=6.0
- # `ruamel.yaml` used mostly because it support scientific notation
-ruamel.yaml
-pytorch_lightning==1.9.4
-jsonargparse[signatures]==4.20.0
-tqdm
+aggforce @ git+https://github.com/noegroup/aggforce.git
 ase
 e3nn<=0.5.1
-networkx
-numpy<2.0
 h5py
+ipython
+ipywidgets
+jsonargparse[signatures]==4.20.0
+matplotlib
+mdtraj
+mpmath
+networkx
+nglview
+numpy<2.0
+packaging
+pandas
+pytorch_lightning==1.9.4
+pyyaml>=6.0
+requests
+ruamel.yaml
 scipy
 scikit-learn
-ipython
+sympy
+seaborn
 torch_optimizer<=1.5.1
+tqdm
 # developer tools
-pytest
-coverage[toml]
 black[jupyter]
+coverage[toml]
+pytest
 # by mlcg_opt_radius
 ninja
 
