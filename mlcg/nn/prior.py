@@ -321,7 +321,7 @@ class HarmonicAnglesRaw(Harmonic):
     @staticmethod
     def compute_features(pos, mapping):
         return compute_angles_raw(pos, mapping)
-    
+
 
 class HarmonicImpropers(Harmonic):
     name: Final[str] = "impropers"
