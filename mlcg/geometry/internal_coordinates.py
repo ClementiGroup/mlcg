@@ -109,15 +109,9 @@ def compute_angles_raw(
 ):
     r"""Compute the raw angle between the positions in :obj:`pos` following the :obj:`mapping` assuming that the mapping indices follow::
 
-       j--k
-      /
-     i
-
-    .. math::
-
-        \angle(x, y) := 2 \arctan\left( \frac{ \|x \cdot \|y\| - y \cdot \|x\| \|  }{ \|x \cdot \|y\| + y \cdot \|x\| \| } \right)
-
-    See: How Futile are Mindless Assessments of Roundoff in Floating-Point Computation? §12: Mangled Angles by William Kahan
+      j--k
+     /
+    i
 
     """
     assert mapping.dim() == 2
