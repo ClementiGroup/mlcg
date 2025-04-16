@@ -102,7 +102,34 @@ def compute_distances(
 
 
 @torch.jit.script
-def compute_angles(
+def compute_angles_raw(
+    pos: torch.Tensor,
+    mapping: torch.Tensor,
+    cell_shifts: Optional[torch.Tensor] = None,
+):
+    r"""Compute the raw angle between the positions in :obj:`pos` following the :obj:`mapping` assuming that the mapping indices follow::
+
+      j--k
+     /
+    i
+
+    """
+    assert mapping.dim() == 2
+    assert mapping.shape[0] == 3
+
+    dr1 = pos[mapping[0]] - pos[mapping[1]]
+    dr2 = pos[mapping[2]] - pos[mapping[1]]
+
+    n = torch.cross(dr1, dr2)
+    n = n.norm(p=2, dim=1)
+    d = (dr1 * dr2).sum(dim=1)
+    theta = torch.atan2(n, d)
+
+    return theta
+
+
+@torch.jit.script
+def compute_angles_cos(
     pos: torch.Tensor,
     mapping: torch.Tensor,
     cell_shifts: Optional[torch.Tensor] = None,
@@ -150,7 +177,7 @@ def compute_torsions(pos: torch.Tensor, mapping: torch.Tensor):
     For impropers: the angle is positive if when looking in plane ikj, l is rotated clockwise
 
      k
-      \
+      \\
        l--j
       /
      i
