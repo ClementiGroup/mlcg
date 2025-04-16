@@ -1902,9 +1902,9 @@ wrapped.</p></li>
 </pre></div>
 </div>
 <div class="math notranslate nohighlight">
-\[\begin{split}\cos{\theta_{ijk}} &amp;= \frac{\mathbf{r}_{ji} \mathbf{r}_{jk}}{r_{ji} r_{jk}}  \\
-r_{ji}&amp;= ||\mathbf{r}_i - \mathbf{r}_j||_{2} \\
-r_{jk}&amp;= ||\mathbf{r}_k - \mathbf{r}_j||_{2}\end{split}\]</div>
+\[\begin{split}\cos{\theta_{ijk}} &amp;= \frac{\mathbf{r}_{ij} \cdot \mathbf{r}_{jk}}{ \Vert \mathbf{r}_{ji}  \Vert \Vert \mathbf{r}_{kj} \Vert}  \\
+\mathbf{r}_{ij} &amp;= \mathbf{r}_i - \mathbf{r}_j \\
+\mathbf{r}_{kj} &amp;= \mathbf{r}_k - \mathbf{r}_j\end{split}\]</div>
 <p>In the case of periodic boundary conditions, <code class="xref py py-obj docutils literal notranslate"><span class="pre">cell_shifts</span></code> must be
 provided so that <span class="math notranslate nohighlight">\(\mathbf{r}_j\)</span> can be outside of the original unit
 cell.</p>
@@ -1913,12 +1913,17 @@ cell.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="mlcg.geometry.internal_coordinates.compute_angles_raw">
 <span class="sig-prename descclassname"><span class="pre">mlcg.geometry.internal_coordinates.</span></span><span class="sig-name descname"><span class="pre">compute_angles_raw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mapping</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cell_shifts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/geometry/internal_coordinates.html#compute_angles_raw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.geometry.internal_coordinates.compute_angles_raw" title="Link to this definition"></a></dt>
-<dd><p>Compute the raw angle between the positions in <code class="xref py py-obj docutils literal notranslate"><span class="pre">pos</span></code> following the <code class="xref py py-obj docutils literal notranslate"><span class="pre">mapping</span></code> assuming that the mapping indices follow:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span> <span class="n">j</span><span class="o">--</span><span class="n">k</span>
-<span class="o">/</span>
+<dd><p>Compute the raw angle (in radians) between the positions in <code class="xref py py-obj docutils literal notranslate"><span class="pre">pos</span></code> following the <code class="xref py py-obj docutils literal notranslate"><span class="pre">mapping</span></code> assuming that the mapping indices follow:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>  <span class="n">j</span><span class="o">--</span><span class="n">k</span>
+ <span class="o">/</span>
+<span class="n">i</span>
 </pre></div>
 </div>
-<p>i</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\theta_{ijk} = &amp;\text{atan2}(\Vert \hat{\mathbf{n}} \vert, \mathbf{r}_{ij} \cdot \mathbf{r}_{kj} ) \\
+\mathbf{r}_{ij} &amp;= \mathbf{r}_i - \mathbf{r}_j \\
+\mathbf{r}_{kj} &amp;= \mathbf{r}_k - \mathbf{r}_j \\
+\mathbf{\hat{n}} &amp;= \frac{\mathbf{r}_{ij} \times \mathbf{r}_{kj}}{\Vert \mathbf{r}_{ij} \times \mathbf{r}_{kj} \Vert}\end{split}\]</div>
 </dd></dl>
 
 <dl class="py function">
@@ -1960,29 +1965,29 @@ cell.</p>
 <dd><p>Compute the angle between two planes from positions in :obj:’pos’ following the
 <code class="xref py py-obj docutils literal notranslate"><span class="pre">mapping</span></code>:</p>
 <p>For dihedrals: the angle w.r.t. position of i&amp;l is positive if l i rotated clockwise
-when staring down bond jk</p>
-<blockquote>
-<div><blockquote>
-<div><blockquote>
-<div><p>j–k–l</p>
-</div></blockquote>
-<p>/</p>
-</div></blockquote>
-<p>i</p>
-</div></blockquote>
-<p>For impropers: the angle is positive if when looking in plane ikj, l is rotated clockwise</p>
-<blockquote>
-<div><dl>
-<dt>k</dt><dd><dl class="simple">
-<dt></dt><dd><p>l–j</p>
-</dd>
-</dl>
-<p>/</p>
-</dd>
-</dl>
-<p>i</p>
-</div></blockquote>
-<p>In the case of periodic boundary conditions, <code class="xref py py-obj docutils literal notranslate"><span class="pre">cell_shifts</span></code> must be
+when staring down bond jk:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>  <span class="n">j</span><span class="o">--</span><span class="n">k</span><span class="o">--</span><span class="n">l</span>
+ <span class="o">/</span>
+<span class="n">i</span>
+</pre></div>
+</div>
+<p>For impropers: the angle is positive if when looking in plane ikj, l is rotated clockwise:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">k</span>
+ \\
+  <span class="n">l</span><span class="o">--</span><span class="n">j</span>
+ <span class="o">/</span>
+<span class="n">i</span>
+</pre></div>
+</div>
+<p>The angle is computed using the formula:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\phi_{ijkl} &amp;= \text{atan2}(-\mathbf{m} \cdot \mathbf{n}_2, \mathbf{n}_2 \cdot \mathbf{n}_1) \\
+\mathbf{n}_1 &amp;= \mathbf{\hat{r}}_{ji} \times \mathbf{\hat{r}}_{kj} \\
+\mathbf{n}_2 &amp;= \mathbf{\hat{r}}_{kj} \times \mathbf{\hat{r}}_{jl} \\
+\mathbf{m} &amp;= \mathbf{n}_{1} \times \mathbf{\hat{r}}_{kj}\end{split}\]</div>
+<p>Where the <span class="math notranslate nohighlight">\(\hat{u}\)</span> indicates a normalized vector in direction of <span class="math notranslate nohighlight">\(u\)</span>.
+The order and signs in the atan2 arguments are needed to obtain values consistent
+with mdtraj. In the case of periodic boundary conditions, <code class="xref py py-obj docutils literal notranslate"><span class="pre">cell_shifts</span></code> must be
 provided so that <span class="math notranslate nohighlight">\(\mathbf{r}_j\)</span> can be outside of the original unit
 cell.</p>
 </dd></dl>

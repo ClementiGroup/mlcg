@@ -194,18 +194,26 @@
 
 
 <div class="viewcode-block" id="compute_angles_raw">
-<a class="viewcode-back" href="../../../autodoc.html#mlcg.geometry.internal_coordinates.compute_angles_raw">[docs]</a>
+<a class="viewcode-back" href="../../../geometry.html#mlcg.geometry.internal_coordinates.compute_angles_raw">[docs]</a>
 <span class="nd">@torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">script</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">compute_angles_raw</span><span class="p">(</span>
     <span class="n">pos</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">mapping</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">cell_shifts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the raw angle between the positions in :obj:`pos` following the :obj:`mapping` assuming that the mapping indices follow::</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the raw angle (in radians) between the positions in :obj:`pos` following the :obj:`mapping` assuming that the mapping indices follow::</span>
 
-<span class="sd">      j--k</span>
-<span class="sd">     /</span>
-<span class="sd">    i</span>
+<span class="sd">       j--k</span>
+<span class="sd">      /</span>
+<span class="sd">     i</span>
+
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \theta_{ijk} = &amp;\text{atan2}(\Vert \hat{\mathbf{n}} \vert, \mathbf{r}_{ij} \cdot \mathbf{r}_{kj} ) \\</span>
+<span class="sd">        \mathbf{r}_{ij} &amp;= \mathbf{r}_i - \mathbf{r}_j \\</span>
+<span class="sd">        \mathbf{r}_{kj} &amp;= \mathbf{r}_k - \mathbf{r}_j \\</span>
+<span class="sd">        \mathbf{\hat{n}} &amp;= \frac{\mathbf{r}_{ij} \times \mathbf{r}_{kj}}{\Vert \mathbf{r}_{ij} \times \mathbf{r}_{kj} \Vert} </span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">assert</span> <span class="n">mapping</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">2</span>
@@ -224,7 +232,7 @@
 
 
 <div class="viewcode-block" id="compute_angles_cos">
-<a class="viewcode-back" href="../../../autodoc.html#mlcg.geometry.internal_coordinates.compute_angles_cos">[docs]</a>
+<a class="viewcode-back" href="../../../geometry.html#mlcg.geometry.internal_coordinates.compute_angles_cos">[docs]</a>
 <span class="nd">@torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">script</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">compute_angles_cos</span><span class="p">(</span>
     <span class="n">pos</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
@@ -239,9 +247,9 @@
 
 <span class="sd">    .. math::</span>
 
-<span class="sd">        \cos{\theta_{ijk}} &amp;= \frac{\mathbf{r}_{ji} \mathbf{r}_{jk}}{r_{ji} r_{jk}}  \\</span>
-<span class="sd">        r_{ji}&amp;= ||\mathbf{r}_i - \mathbf{r}_j||_{2} \\</span>
-<span class="sd">        r_{jk}&amp;= ||\mathbf{r}_k - \mathbf{r}_j||_{2}</span>
+<span class="sd">        \cos{\theta_{ijk}} &amp;= \frac{\mathbf{r}_{ij} \cdot \mathbf{r}_{jk}}{ \Vert \mathbf{r}_{ji}  \Vert \Vert \mathbf{r}_{kj} \Vert}  \\</span>
+<span class="sd">        \mathbf{r}_{ij} &amp;= \mathbf{r}_i - \mathbf{r}_j \\</span>
+<span class="sd">        \mathbf{r}_{kj} &amp;= \mathbf{r}_k - \mathbf{r}_j </span>
 
 <span class="sd">    In the case of periodic boundary conditions, :obj:`cell_shifts` must be</span>
 <span class="sd">    provided so that :math:`\mathbf{r}_j` can be outside of the original unit</span>
@@ -263,18 +271,18 @@
 <a class="viewcode-back" href="../../../geometry.html#mlcg.geometry.internal_coordinates.compute_torsions">[docs]</a>
 <span class="nd">@torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">script</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">compute_torsions</span><span class="p">(</span><span class="n">pos</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">mapping</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Compute the angle between two planes from positions in :obj:&#39;pos&#39; following the</span>
 <span class="sd">    :obj:`mapping`::</span>
 
 <span class="sd">    For dihedrals: the angle w.r.t. position of i&amp;l is positive if l i rotated clockwise</span>
-<span class="sd">    when staring down bond jk</span>
+<span class="sd">    when staring down bond jk::</span>
 
 <span class="sd">       j--k--l</span>
 <span class="sd">      /</span>
 <span class="sd">     i</span>
 
-<span class="sd">    For impropers: the angle is positive if when looking in plane ikj, l is rotated clockwise</span>
+<span class="sd">    For impropers: the angle is positive if when looking in plane ikj, l is rotated clockwise::</span>
 
 <span class="sd">     k</span>
 <span class="sd">      \\</span>
@@ -282,8 +290,18 @@
 <span class="sd">      /</span>
 <span class="sd">     i</span>
 
+<span class="sd">    The angle is computed using the formula:</span>
 
-<span class="sd">    In the case of periodic boundary conditions, :obj:`cell_shifts` must be</span>
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \phi_{ijkl} &amp;= \text{atan2}(-\mathbf{m} \cdot \mathbf{n}_2, \mathbf{n}_2 \cdot \mathbf{n}_1) \\</span>
+<span class="sd">        \mathbf{n}_1 &amp;= \mathbf{\hat{r}}_{ji} \times \mathbf{\hat{r}}_{kj} \\</span>
+<span class="sd">        \mathbf{n}_2 &amp;= \mathbf{\hat{r}}_{kj} \times \mathbf{\hat{r}}_{jl} \\</span>
+<span class="sd">        \mathbf{m} &amp;= \mathbf{n}_{1} \times \mathbf{\hat{r}}_{kj} </span>
+
+<span class="sd">    Where the :math:`\hat{u}` indicates a normalized vector in direction of :math:`u`. </span>
+<span class="sd">    The order and signs in the atan2 arguments are needed to obtain values consistent </span>
+<span class="sd">    with mdtraj. In the case of periodic boundary conditions, :obj:`cell_shifts` must be</span>
 <span class="sd">    provided so that :math:`\mathbf{r}_j` can be outside of the original unit</span>
 <span class="sd">    cell.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
