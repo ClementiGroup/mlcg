@@ -49,7 +49,6 @@
 <li class="toctree-l2"><a class="reference internal" href="#internal-coordinate-functions">Internal Coordinate Functions</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#mlcg.geometry.internal_coordinates.compute_distances"><code class="docutils literal notranslate"><span class="pre">compute_distances()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#mlcg.geometry.internal_coordinates.compute_distance_vectors"><code class="docutils literal notranslate"><span class="pre">compute_distance_vectors()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#mlcg.geometry.internal_coordinates.compute_angles"><code class="docutils literal notranslate"><span class="pre">compute_angles()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#mlcg.geometry.internal_coordinates.compute_torsions"><code class="docutils literal notranslate"><span class="pre">compute_torsions()</span></code></a></li>
 </ul>
 </li>
@@ -177,24 +176,6 @@ cell.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="mlcg.geometry.internal_coordinates.compute_angles">
-<span class="sig-prename descclassname"><span class="pre">mlcg.geometry.internal_coordinates.</span></span><span class="sig-name descname"><span class="pre">compute_angles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mapping</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cell_shifts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/geometry/internal_coordinates.html#compute_angles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.geometry.internal_coordinates.compute_angles" title="Link to this definition"></a></dt>
-<dd><p>Compute the cosine of the angle between the positions in <code class="xref py py-obj docutils literal notranslate"><span class="pre">pos</span></code> following the <code class="xref py py-obj docutils literal notranslate"><span class="pre">mapping</span></code> assuming that the mapping indices follow:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>  <span class="n">j</span><span class="o">--</span><span class="n">k</span>
- <span class="o">/</span>
-<span class="n">i</span>
-</pre></div>
-</div>
-<div class="math notranslate nohighlight">
-\[\begin{split}\cos{\theta_{ijk}} &amp;= \frac{\mathbf{r}_{ji} \mathbf{r}_{jk}}{r_{ji} r_{jk}}  \\
-r_{ji}&amp;= ||\mathbf{r}_i - \mathbf{r}_j||_{2} \\
-r_{jk}&amp;= ||\mathbf{r}_k - \mathbf{r}_j||_{2}\end{split}\]</div>
-<p>In the case of periodic boundary conditions, <code class="xref py py-obj docutils literal notranslate"><span class="pre">cell_shifts</span></code> must be
-provided so that <span class="math notranslate nohighlight">\(\mathbf{r}_j\)</span> can be outside of the original unit
-cell.</p>
-</dd></dl>
-
-<dl class="py function">
 <dt class="sig sig-object py" id="mlcg.geometry.internal_coordinates.compute_torsions">
 <span class="sig-prename descclassname"><span class="pre">mlcg.geometry.internal_coordinates.</span></span><span class="sig-name descname"><span class="pre">compute_torsions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mapping</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/geometry/internal_coordinates.html#compute_torsions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.geometry.internal_coordinates.compute_torsions" title="Link to this definition"></a></dt>
 <dd><p>Compute the angle between two planes from positions in :obj:’pos’ following the
@@ -213,9 +194,10 @@ when staring down bond jk</p>
 <p>For impropers: the angle is positive if when looking in plane ikj, l is rotated clockwise</p>
 <blockquote>
 <div><dl>
-<dt>k</dt><dd><blockquote>
-<div><p>l–j</p>
-</div></blockquote>
+<dt>k</dt><dd><dl class="simple">
+<dt></dt><dd><p>l–j</p>
+</dd>
+</dl>
 <p>/</p>
 </dd>
 </dl>

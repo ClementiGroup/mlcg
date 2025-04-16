@@ -89,7 +89,8 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">..geometry.topology</span><span class="w"> </span><span class="kn">import</span> <span class="n">Topology</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..geometry.internal_coordinates</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">compute_distances</span><span class="p">,</span>
-    <span class="n">compute_angles</span><span class="p">,</span>
+    <span class="n">compute_angles_cos</span><span class="p">,</span>
+    <span class="n">compute_angles_raw</span><span class="p">,</span>
     <span class="n">compute_torsions</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..data.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">AtomicData</span>
@@ -157,7 +158,7 @@
     <span class="p">}</span>
     <span class="n">_compute_map</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;bonds&quot;</span><span class="p">:</span> <span class="n">compute_distances</span><span class="p">,</span>
-        <span class="s2">&quot;angles&quot;</span><span class="p">:</span> <span class="n">compute_angles</span><span class="p">,</span>
+        <span class="s2">&quot;angles&quot;</span><span class="p">:</span> <span class="n">compute_angles_cos</span><span class="p">,</span>
         <span class="s2">&quot;impropers&quot;</span><span class="p">:</span> <span class="n">compute_torsions</span><span class="p">,</span>
         <span class="s2">&quot;omega&quot;</span><span class="p">:</span> <span class="n">compute_torsions</span><span class="p">,</span>
         <span class="s2">&quot;gamma_1&quot;</span><span class="p">:</span> <span class="n">compute_torsions</span><span class="p">,</span>
@@ -382,6 +383,33 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_features</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">mapping</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">Harmonic</span><span class="o">.</span><span class="n">compute_features</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">mapping</span><span class="p">,</span> <span class="n">HarmonicAngles</span><span class="o">.</span><span class="n">name</span><span class="p">)</span></div>
 
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">HarmonicAnglesRaw</span><span class="p">(</span><span class="n">Harmonic</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Wrapper class for quickly computing angle priors</span>
+<span class="sd">    (order 3 Harmonic priors)</span>
+
+<span class="sd">    This class uses the raw angles in rad calculated via the atan2 to ensure numerical stability</span>
+
+<span class="sd">    \angle(x, y) := 2 \arctan\left( \frac{ \|x \cdot \|y\| - y \cdot \|x\| \|  }{ \|x \cdot \|y\| + y \cdot \|x\| \| } \right)</span>
+
+<span class="sd">    See: How Futile are Mindless Assessments of Roundoff in Floating-Point Computation? §12: Mangled Angles by William Kahan</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;angles&quot;</span>
+    <span class="n">_order</span> <span class="o">=</span> <span class="mi">3</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">statistics</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">HarmonicAngles</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">statistics</span><span class="p">,</span> <span class="n">HarmonicAngles</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">neighbor_list</span><span class="p">(</span><span class="n">topology</span><span class="p">:</span> <span class="n">Topology</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Harmonic</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">(</span><span class="n">topology</span><span class="p">,</span> <span class="n">HarmonicAngles</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_features</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">mapping</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">compute_angles_raw</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">mapping</span><span class="p">)</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">HarmonicImpropers</span><span class="p">(</span><span class="n">Harmonic</span><span class="p">):</span>
