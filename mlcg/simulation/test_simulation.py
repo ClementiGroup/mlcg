@@ -326,7 +326,7 @@ def test_exchange_detection(tmp_path):
     expected_rate = np.exp((low_energy - high_energy) * (betas[0] - betas[1]))
     empirical_rate_arr = []
     # run 50 independent iterations of 2x1000 exchanges times and
-    # assert the average acceptance rate. the acceptances are 
+    # assert the average acceptance rate. the acceptances are
     # tracked internally by the `attempts/approved` attributes
     for _ in range(50):
         simulation = PTSimulation(filename=fn)
