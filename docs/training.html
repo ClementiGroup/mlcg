@@ -52,12 +52,7 @@
 <li class="toctree-l1"><a class="reference internal" href="models.html">Models</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Training</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#scripts">Scripts</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#utils-for-using-pytorch-lightning">Utils for using Pytorch Lightning</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#mlcg.pl.PLModel"><code class="docutils literal notranslate"><span class="pre">PLModel</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#mlcg.pl.DataModule"><code class="docutils literal notranslate"><span class="pre">DataModule</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#mlcg.pl.LightningCLI"><code class="docutils literal notranslate"><span class="pre">LightningCLI</span></code></a></li>
-</ul>
-</li>
+<li class="toctree-l2"><a class="reference internal" href="#utils-for-using-pytorch-lightning">Utils for using Pytorch Lightning</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="simulation.html">Simulations</a></li>
@@ -101,61 +96,6 @@
 </section>
 <section id="utils-for-using-pytorch-lightning">
 <h2>Utils for using Pytorch Lightning<a class="headerlink" href="#utils-for-using-pytorch-lightning" title="Link to this heading"></a></h2>
-<dl class="py class">
-<dt class="sig sig-object py" id="mlcg.pl.PLModel">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcg.pl.</span></span><span class="sig-name descname"><span class="pre">PLModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loss</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/pl/model.html#PLModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.pl.PLModel" title="Link to this definition"></a></dt>
-<dd><p>PL interface to train with models defined in <span class="xref std std-ref">mlcg.nn</span>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>model</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – instance of a model class from <span class="xref std std-ref">mlcg.nn</span>.</p></li>
-<li><p><strong>loss</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="models.html#mlcg.nn.losses.Loss" title="mlcg.nn.losses.Loss"><code class="xref py py-class docutils literal notranslate"><span class="pre">Loss</span></code></a></span>) – instance of <span class="xref std std-ref">mlcg.nn.Loss</span>.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="mlcg.pl.DataModule">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcg.pl.</span></span><span class="sig-name descname"><span class="pre">DataModule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">splits</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">512</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inference_batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_workers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loading_stride</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_local_copy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pin_memory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/pl/data.html#DataModule"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.pl.DataModule" title="Link to this definition"></a></dt>
-<dd><p>PL interface to train with datasets defined in mlcg.datasets.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>dataset</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">InMemoryDataset</span></code></span>) – a dataset from mlcg.datasets (or following the API of <cite>torch_geometric.data.InMemoryDataset</cite>)</p></li>
-<li><p><strong>log_dir</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – where to store the data that might be produced during training.</p></li>
-<li><p><strong>val_ratio</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – fraction of the dataset used for validation</p></li>
-<li><p><strong>test_ratio</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – fraction of the dataset used for testing</p></li>
-<li><p><strong>splits</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]</span>) – filename of a file containing the indices for training, validation, and testing. It should be compatible with <cite>np.load</cite> and contain the fields <cite>‘idx_train’</cite>, <cite>‘idx_val’</cite>, and <cite>‘idx_test’</cite>.
-If None then the dataset is split randomly using the <cite>val_ratio</cite> and <cite>test_ratio</cite>.</p></li>
-<li><p><strong>batch_size</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – number of structure to include in each training batches.</p></li>
-<li><p><strong>inference_batch_size</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – number of structure to include in each validation/training batches.</p></li>
-<li><p><strong>num_workers;</strong> – number of <cite>cpu</cite> used for loading the dataset (see <a class="reference external" href="https://pytorch-lightning.readthedocs.io/en/stable/guides/speed.html?highlight=num_workers#num-workers">here</a> for more details).</p></li>
-<li><p><strong>loading_stride</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – stride used to subselect the dataset. Useful parameter for debugging purposes.</p></li>
-<li><p><strong>save_local_copy</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – saves the input dataset in log_dir</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="mlcg.pl.LightningCLI">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcg.pl.</span></span><span class="sig-name descname"><span class="pre">LightningCLI</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_class=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">datamodule_class=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_config_callback=&lt;class</span> <span class="pre">'pytorch_lightning.cli.SaveConfigCallback'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_config_kwargs=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainer_class=&lt;class</span> <span class="pre">'pytorch_lightning.trainer.trainer.Trainer'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainer_defaults=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed_everything_default=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parser_kwargs=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subclass_mode_model=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subclass_mode_data=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">auto_configure_optimizers=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/pl/cli.html#LightningCLI"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.pl.LightningCLI" title="Link to this definition"></a></dt>
-<dd><p>Command line interface for training a model with pytorch lightning.</p>
-<p>It adds a few functionalities to <cite>pytorch_lightning.utilities.cli.LightningCLI</cite>.</p>
-<ul class="simple">
-<li><p>register torch optimizers and lr_scheduler so that they can be specified</p></li>
-</ul>
-<p>in the configuration file. Note that only single (optimizer,lr_scheduler)
-can be specified like that and more complex patterns should be implemented
-in the pytorch_lightning model definition (child of <cite>pytorch_lightning.
-LightningModule</cite>). see <a class="reference external" href="https://pytorch-lightning.readthedocs.io/en/1.4.9/common/lightning_cli.html#optimizers-and-learning-rate-schedulers">doc</a>
-for more details.</p>
-<ul class="simple">
-<li><p>link manually some arguments related to the definition of the work directory. If <cite>default_root_dir</cite> argument of <cite>pytorch_lightning.Trainer</cite> is set and the <cite>save_dir</cite> / <cite>log_dir</cite> / <cite>dirpath</cite> argument of <cite>loggers</cite> / <cite>data</cite> / <cite>callbacks</cite> is set to <cite>default_root_dir</cite> then they will be set to the value of <cite>default_root_dir</cite> / <cite>default_root_dir/data</cite> / <cite>default_root_dir/ckpt</cite>.</p></li>
-</ul>
-</dd></dl>
-
 </section>
 </section>
 

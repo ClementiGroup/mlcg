@@ -52,7 +52,6 @@
 <li class="toctree-l1"><a class="reference internal" href="priors.html">Priors</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Models</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#schnet-utilities">SchNet Utilities</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#mlcg.nn.StandardSchNet"><code class="docutils literal notranslate"><span class="pre">StandardSchNet</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#mlcg.nn.schnet.SchNet"><code class="docutils literal notranslate"><span class="pre">SchNet</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#mlcg.nn.schnet.InteractionBlock"><code class="docutils literal notranslate"><span class="pre">InteractionBlock</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#mlcg.nn.schnet.CFConv"><code class="docutils literal notranslate"><span class="pre">CFConv</span></code></a></li>
@@ -64,7 +63,6 @@
 <li class="toctree-l3"><a class="reference internal" href="#mlcg.nn.radial_basis.ExpNormalBasis"><code class="docutils literal notranslate"><span class="pre">ExpNormalBasis</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#mlcg.nn.radial_basis.RIGTOBasis"><code class="docutils literal notranslate"><span class="pre">RIGTOBasis</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#mlcg.nn.radial_basis.SpacedExpBasis"><code class="docutils literal notranslate"><span class="pre">SpacedExpBasis</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#mlcg.nn.angular_basis.SphericalHarmonics"><code class="docutils literal notranslate"><span class="pre">SphericalHarmonics</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#cutoff-functions">Cutoff Functions</a><ul>
@@ -123,35 +121,6 @@
 <h2>SchNet Utilities<a class="headerlink" href="#schnet-utilities" title="Link to this heading"></a></h2>
 <p>These classes are used to define a SchNet graph neural network. For “typical” SchNet models, users
 may find the class <cite>StandardSchNet</cite> to be helpful in getting started quickly.</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="mlcg.nn.StandardSchNet">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcg.nn.</span></span><span class="sig-name descname"><span class="pre">StandardSchNet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rbf_layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_hidden_layer_widths</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hidden_channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embedding_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_filters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_interactions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Tanh()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_neighbors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aggr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'add'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/schnet.html#StandardSchNet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.StandardSchNet" title="Link to this definition"></a></dt>
-<dd><p>Small wrapper class for <span class="xref std std-ref">SchNet</span> to simplify the definition of the
-SchNet model through an input file. The upper distance cutoff attribute
-in is set by default to match the upper cutoff value in the cutoff function.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>rbf_layer</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – radial basis function used to project the distances <span class="math notranslate nohighlight">\(r_{ij}\)</span>.</p></li>
-<li><p><strong>cutoff</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – smooth cutoff function to supply to the CFConv</p></li>
-<li><p><strong>output_hidden_layer_widths</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]</span>) – List giving the number of hidden nodes of each hidden layer of the MLP
-used to predict the target property from the learned representation.</p></li>
-<li><p><strong>hidden_channels</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – dimension of the learned representation, i.e. dimension of the embeding projection, convolution layers, and interaction block.</p></li>
-<li><p><strong>embedding_size</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – dimension of the input embeddings (should be larger than <code class="xref py py-obj docutils literal notranslate"><span class="pre">AtomicData.atom_types.max()+1</span></code>).</p></li>
-<li><p><strong>num_filters</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – number of nodes of the networks used to filter the projected distances</p></li>
-<li><p><strong>num_interactions</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – number of interaction blocks</p></li>
-<li><p><strong>activation</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – activation function</p></li>
-<li><p><strong>max_num_neighbors</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – The maximum number of neighbors to return for each atom in <code class="xref py py-obj docutils literal notranslate"><span class="pre">data</span></code>.
-If the number of actual neighbors is greater than
-<code class="xref py py-obj docutils literal notranslate"><span class="pre">max_num_neighbors</span></code>, returned neighbors are picked randomly.</p></li>
-<li><p><strong>aggr</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Aggregation scheme for continuous filter output. For all options,
-see <a class="reference external" href="https://pytorch-geometric.readthedocs.io/en/latest/notes/create_gnn.html?highlight=MessagePassing#the-messagepassing-base-class">here</a>
-for more options.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
 <dl class="py class">
 <dt class="sig sig-object py" id="mlcg.nn.schnet.SchNet">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcg.nn.schnet.</span></span><span class="sig-name descname"><span class="pre">SchNet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">embedding_layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interaction_blocks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rbf_layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_network</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">self_interaction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_neighbors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/schnet.html#SchNet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.schnet.SchNet" title="Link to this definition"></a></dt>
@@ -259,7 +228,7 @@ instead fixed in an unoptimizable buffer.</p></li>
 <dt class="sig sig-object py" id="mlcg.nn.radial_basis.ExpNormalBasis">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcg.nn.radial_basis.</span></span><span class="sig-name descname"><span class="pre">ExpNormalBasis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_rbf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/radial_basis/exp_normal.html#ExpNormalBasis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.radial_basis.ExpNormalBasis" title="Link to this definition"></a></dt>
 <dd><p>Class for generating a set of exponential normal radial basis functions,
-as described in <a class="reference internal" href="bibliography.html#physnet" id="id5"><span>[Physnet]</span></a> . The functions have the following form:</p>
+as described in <a class="reference internal" href="bibliography.html#physnet" id="id4"><span>[Physnet]</span></a> . The functions have the following form:</p>
 <div class="math notranslate nohighlight">
 \[f_n(r_{ij};\alpha, r_{low},r_{high}) = f_{cut}(r_{ij},r_{low},r_{high})
 \times \exp\left[-\beta_n \left(e^{\alpha (r_{ij} -r_{high}) }
@@ -357,56 +326,6 @@ function) are registered as optimizable parameters that will be updated
 during backpropagation. If False, these parameters will be instead fixed
 in an unoptimizable buffer.</p></li>
 </ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="mlcg.nn.angular_basis.SphericalHarmonics">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcg.nn.angular_basis.</span></span><span class="sig-name descname"><span class="pre">SphericalHarmonics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lmax</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalization</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'integral'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">irreps_in</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/angular_basis/spherical_harmonics.html#SphericalHarmonics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.angular_basis.SphericalHarmonics" title="Link to this definition"></a></dt>
-<dd><p>JITable module version of real Spherical harmonics</p>
-<img alt="https://user-images.githubusercontent.com/333780/79220728-dbe82c00-7e54-11ea-82c7-b3acbd9b2246.gif" src="https://user-images.githubusercontent.com/333780/79220728-dbe82c00-7e54-11ea-82c7-b3acbd9b2246.gif" />
-<div class="line-block">
-<div class="line">Polynomials defined on the 3d space <span class="math notranslate nohighlight">\(Y^l: \mathbb{R}^3 \longrightarrow \mathbb{R}^{2l+1}\)</span></div>
-<div class="line">Usually restricted on the sphere (with <code class="docutils literal notranslate"><span class="pre">normalize=True</span></code>) <span class="math notranslate nohighlight">\(Y^l: S^2 \longrightarrow \mathbb{R}^{2l+1}\)</span></div>
-<div class="line">who satisfies the following properties:</div>
-</div>
-<ul class="simple">
-<li><p>are polynomials of the cartesian coordinates <code class="docutils literal notranslate"><span class="pre">x,</span> <span class="pre">y,</span> <span class="pre">z</span></code></p></li>
-<li><p>is equivariant <span class="math notranslate nohighlight">\(Y^l(R x) = D^l(R) Y^l(x)\)</span></p></li>
-<li><p>are orthogonal <span class="math notranslate nohighlight">\(\int_{S^2} Y^l_m(x) Y^j_n(x) dx = \text{cste} \; \delta_{lj} \delta_{mn}\)</span></p></li>
-</ul>
-<p>The value of the constant depends on the choice of normalization.</p>
-<p>It obeys the following property:</p>
-<div class="math notranslate nohighlight">
-\[ \begin{align}\begin{aligned}Y^{l+1}_i(x) &amp;= \text{cste}(l) \; &amp; C_{ijk} Y^l_j(x) x_k\\\partial_k Y^{l+1}_i(x) &amp;= \text{cste}(l) \; (l+1) &amp; C_{ijk} Y^l_j(x)\end{aligned}\end{align} \]</div>
-<p>Where <span class="math notranslate nohighlight">\(C\)</span> are the <cite>wigner_3j</cite>.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>This function matches with the following table of standard real spherical harmonics from <a class="reference external" href="https://en.wikipedia.org/wiki/Table_of_spherical_harmonics#Real_spherical_harmonics">Wikipedia</a>
-when <code class="docutils literal notranslate"><span class="pre">normalize=True</span></code>, <code class="docutils literal notranslate"><span class="pre">normalization='integral'</span></code> and is called with the argument in the order <code class="docutils literal notranslate"><span class="pre">y,z,x</span></code> (instead of <code class="docutils literal notranslate"><span class="pre">x,y,z</span></code>).</p>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>l</strong> (<em>int</em><em> or </em><em>list</em><em> of </em><em>int</em>) – degree of the spherical harmonics.</p></li>
-<li><p><strong>x</strong> (<cite>torch.Tensor</cite>) – tensor <span class="math notranslate nohighlight">\(x\)</span> of shape <code class="docutils literal notranslate"><span class="pre">(...,</span> <span class="pre">3)</span></code>.</p></li>
-<li><p><strong>normalize</strong> (<em>bool</em>) – whether to normalize the <code class="docutils literal notranslate"><span class="pre">x</span></code> to vectors that lie on the unit sphere before projecting onto the spherical harmonics</p></li>
-<li><p><strong>normalization</strong> (<em>{'integral'</em><em>, </em><em>'component'</em><em>, </em><em>'norm'}</em>) – normalization of the output tensors — note that this option is independent of <code class="docutils literal notranslate"><span class="pre">normalize</span></code>, which controls the processing of the <em>input</em>, rather than the output.
-Valid options:
-* <em>component</em>: <span class="math notranslate nohighlight">\(\|Y^l(x)\|^2 = 2l+1, x \in S^2\)</span>
-* <em>norm</em>: <span class="math notranslate nohighlight">\(\|Y^l(x)\| = 1, x \in S^2\)</span>, <code class="docutils literal notranslate"><span class="pre">component</span> <span class="pre">/</span> <span class="pre">sqrt(2l+1)</span></code>
-* <em>integral</em>: <span class="math notranslate nohighlight">\(\int_{S^2} Y^l_m(x)^2 dx = 1\)</span>, <code class="docutils literal notranslate"><span class="pre">component</span> <span class="pre">/</span> <span class="pre">sqrt(4pi)</span></code></p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><p>a list of tensors of shapes <code class="docutils literal notranslate"><span class="pre">[lmax][n_neighbor,</span> <span class="pre">m]</span></code> where <span class="math notranslate nohighlight">\(m&lt;=l\)</span></p>
-<div class="math notranslate nohighlight">
-\[Y^l(x)\]</div>
-</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>List[torch.Tensor]</p>
 </dd>
 </dl>
 </dd></dl>
