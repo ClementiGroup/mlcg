@@ -16,6 +16,7 @@
       <script src="_static/documentation_options.js?v=e3a6060d"></script>
       <script src="_static/doctools.js?v=9a2dae69"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -52,8 +53,13 @@
 <li class="toctree-l1"><a class="reference internal" href="models.html">Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="training.html">Training</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Simulations</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#nvt-ensemble">NVT ensemble</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#utilities">Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nvt-ensemble">NVT ensemble</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#mlcg.simulation.LangevinSimulation"><code class="docutils literal notranslate"><span class="pre">LangevinSimulation</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mlcg.simulation.OverdampedSimulation"><code class="docutils literal notranslate"><span class="pre">OverdampedSimulation</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mlcg.simulation.PTSimulation"><code class="docutils literal notranslate"><span class="pre">PTSimulation</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-mlcg.simulation.specialize_prior">Utilities</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="dev/dev.html">Developer Documentation</a></li>
@@ -90,9 +96,290 @@
 <section id="nvt-ensemble">
 <h2>NVT ensemble<a class="headerlink" href="#nvt-ensemble" title="Link to this heading"></a></h2>
 <p>These classes define simulation integration schemes. After setting simulation options, attaching a model, and attaching initial configurations, they can additionally be used to run CG simulations on CPU or GPU.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcg.simulation.LangevinSimulation">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcg.simulation.</span></span><span class="sig-name descname"><span class="pre">LangevinSimulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">friction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/simulation/langevin.html#LangevinSimulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.simulation.LangevinSimulation" title="Link to this definition"></a></dt>
+<dd><p>Langevin simulation class for trained models.</p>
+<p>The following <a class="reference internal" href="bibliography.html#baoab" id="id1"><span>[BAOAB]</span></a> integration scheme is used, where:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">B</span> <span class="o">=</span> <span class="n">deterministic</span> <span class="n">velocity</span> <span class="n">update</span>
+<span class="n">A</span> <span class="o">=</span> <span class="n">deterministic</span> <span class="n">position</span> <span class="n">update</span>
+<span class="n">O</span> <span class="o">=</span> <span class="n">stochastic</span> <span class="n">velocity</span> <span class="n">update</span>
+</pre></div>
+</div>
+<p>We have implemented the following update so as to only calculate
+forces once per timestep:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}[B]\;&amp; V_{t+1/2} = V_t + \frac{\Delta t}{2m}  F(X_t) \\
+[A]\;&amp; X_{t+1/2} = X_t + \frac{\Delta t}{2}V_{t+1/2}  \\
+[O]\;&amp; \tilde{V}_{t+1/2} = \epsilon V_{t+1/2} + \alpha dW_t \\
+[A]\;&amp; X_{t+1} = X_{t+1/2} + \frac{\Delta t}{2} \tilde{V}_{t+1/2}  \\
+[B]\;&amp; V_{t+1} = \tilde{V}_{t+1/2} + \frac{\Delta t}{2m}  F(X_{t+1})\end{split}\]</div>
+<p>Where, <span class="math notranslate nohighlight">\(dW_t\)</span> is a noise drawn from <span class="math notranslate nohighlight">\(\mathcal{N}(0,1)\)</span>,
+<span class="math notranslate nohighlight">\(\eta\)</span> is the friction, <span class="math notranslate nohighlight">\(\epsilon\)</span> is the velocity scale,
+<span class="math notranslate nohighlight">\(\alpha\)</span> is the noise scale, and:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}F(X_t) =&amp; - \nabla  U(X_t)  \\
+&amp; \\
+\epsilon =&amp; \exp(-\eta \; \Delta t) \\
+&amp; \\
+\alpha =&amp; \sqrt{(1 - \epsilon^2) / \beta m}\end{split}\]</div>
+<p>Initial velocities are sampled from the Maxwell-Boltzmann distribution for
+the provided beta.</p>
+<p>A diffusion constant <span class="math notranslate nohighlight">\(D\)</span> can be back-calculated using
+the Einstein relation:</p>
+<div class="math notranslate nohighlight">
+\[D = 1 / (\beta  \eta)\]</div>
+<p>For a larger discussion on Langevin Dynamics integrators, please refer to <a class="reference internal" href="bibliography.html#mdbook" id="id2"><span>[MDBook]</span></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>friction</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – Friction value for Langevin scheme, in units of inverse time.</p></li>
+<li><p><strong>dt</strong> (<em>float</em><em>, </em><em>default=5e-4</em>) – <p>The integration time step for the dynamics. The simulation code is unit agnostic
+and will use the same distance and energy units that the network and initial configurations.
+However, for the two other parameters in a simulation, time and mass, only one of them is unit-agnostic:
+<strong>if you provide the time thinking in a particular unit, the unit of mass is defined, and
+viceversa. Be aware that only either mass or time can be provided in custom units</strong>.</p>
+<p>The following relation must be satisfied by the units to ensure consistency:</p>
+<div class="math notranslate nohighlight">
+\[[\text{Energy}] = [\text{Mass}]\frac{[\text{Length}]^2}{[\text{Time}]^2}\]</div>
+<p>For example, if you are using kcal/mol for the energy, Angstrom from the distance and time
+in picoseconds, the masses will need to be provided in units of AMU/418.39.</p>
+</p></li>
+<li><p><strong>save_forces</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to save forces at the same saved interval as the simulation
+coordinates</p></li>
+<li><p><strong>save_energies</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to save potential at the same saved interval as the simulation
+coordinates</p></li>
+<li><p><strong>create_checkpoints</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Save the atomic data object so it can be reloaded in. Overwrites previous object.</p></li>
+<li><p><strong>read_checkpoint_file</strong> (<em>[</em><em>str</em><em>,</em><em>bool</em><em>]</em><em>, </em><em>default=None</em>) – Whether to read in checkpoint file from. Can specify explicit file path or try to infer from self.filename</p></li>
+<li><p><strong>n_timesteps</strong> (<em>int</em><em>, </em><em>default=100</em>) – The length of the simulation in simulation timesteps</p></li>
+<li><p><strong>save_interval</strong> (<em>int</em><em>, </em><em>default=10</em>) – The interval at which simulation timesteps should be saved. Must be
+a factor of the simulation length</p></li>
+<li><p><strong>random_seed</strong> (<em>int</em><em>, </em><em>default=None</em>) – Seed for random number generator; if seeded, results always will be
+identical for the same random seed</p></li>
+<li><p><strong>device</strong> (<em>str</em><em>, </em><em>default='cpu'</em>) – Device upon which simulation computation will be carried out</p></li>
+<li><p><strong>dtype</strong> (<em>str</em><em>, </em><em>default='single'</em>) – precision to run the simulation with (single or double)</p></li>
+<li><p><strong>export_interval</strong> (<em>int</em><em>, </em><em>default=None</em>) – Interval at which .npy files will be saved. If an int is given, then
+the int specifies at what intervals numpy files will be saved per
+observable. This number must be an integer multiple of save_interval.
+All output files should be the same shape. Forces and potentials will
+also be saved according to the save_forces and save_energies
+arguments, respectively. If friction is not None, kinetic energies
+will also be saved. This method is only implemented for a maximum of
+1000 files per observable due to file naming conventions.
+If None, export_interval will be set to n_timesteps to output one file
+for the entire simulation</p></li>
+<li><p><strong>log_interval</strong> (<em>int</em><em>, </em><em>default=None</em>) – If not None, a log will be generated indicating simulation start and
+end times as well as completion updates at regular intervals. If an
+int is given, then the int specifies how many log statements will be
+output. This number must be a multiple of save_interval.</p></li>
+<li><p><strong>log_type</strong> (<em>str</em><em>, </em><em>default='write'</em>) – Only relevant if log_interval is not None. If ‘print’, a log statement
+will be printed. If ‘write’, the log will be written to a .txt file.</p></li>
+<li><p><strong>filename</strong> (<em>str</em><em>, </em><em>default=None</em>) – Specifies the location to which numpys and/or log files are saved.
+Must be provided if export_interval is not None and/or if log_interval
+is not None and log_type is ‘write’. This provides the base file name;
+for numpy outputs, ‘_coords_000.npy’ or similar is added. For log
+outputs, ‘_log.txt’ is added.</p></li>
+<li><p><strong>specialize_priors</strong> (<em>bool</em><em>, </em><em>default=False</em>) – use optimized version of the priors for a particular molecule</p></li>
+<li><p><strong>dtype</strong> – precision to run the simulation with (single or double)</p></li>
+<li><p><strong>sim_subroutine</strong> – Optional subroutine to run at at the interval specified by
+subroutine_interval after simulation updates. The subroutine should
+take only the internal collated <cite>AtomicData</cite> instance as an argument.</p></li>
+<li><p><strong>sim_subroutine_interval</strong> – Specifies the interval, in simulation steps, between successive calls to
+the subroutine, if specified.</p></li>
+<li><p><strong>save_subroutine</strong> – Specifies additional saving procedures for extra information at the
+same interval as export_interval. The subroutine should take only the
+internal collated <cite>AtomicData</cite> and the current timestep // save_interval as
+arguments.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcg.simulation.OverdampedSimulation">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcg.simulation.</span></span><span class="sig-name descname"><span class="pre">OverdampedSimulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">friction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/simulation/langevin.html#OverdampedSimulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.simulation.OverdampedSimulation" title="Link to this definition"></a></dt>
+<dd><p>Overdamped Langevin simulation class for trained models.</p>
+<p>The following Brownian motion scheme is used:</p>
+<div class="math notranslate nohighlight">
+\[dX_t = - \nabla U( X_t )   D  \Delta t + \sqrt{( 2  D \Delta t / \beta )} dW_t\]</div>
+<p>for coordinates <span class="math notranslate nohighlight">\(X_t\)</span> at time <span class="math notranslate nohighlight">\(t\)</span>, potential energy <span class="math notranslate nohighlight">\(U\)</span>,
+diffusion <span class="math notranslate nohighlight">\(D\)</span>, thermodynamic inverse temperature <span class="math notranslate nohighlight">\(\beta\)</span>,
+time step <span class="math notranslate nohighlight">\(\Delta t\)</span>, and stochastic Weiner process <span class="math notranslate nohighlight">\(W\)</span>.</p>
+<p>Due to the nature of Overdamped Langevin dynamics, the masses and velocities
+are not used.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>diffusion</strong> – The constant diffusion parameter <span class="math notranslate nohighlight">\(D\)</span>. By default, the diffusion
+is set to unity and is absorbed into the <span class="math notranslate nohighlight">\(\Delta t\)</span> argument.
+However, users may specify separate diffusion and <span class="math notranslate nohighlight">\(\Delta t\)</span>
+parameters in the case that they have some estimate of the diffusion.</p></li>
+<li><p><strong>dt</strong> (<em>float</em><em>, </em><em>default=5e-4</em>) – <p>The integration time step for the dynamics. The simulation code is unit agnostic
+and will use the same distance and energy units that the network and initial configurations.
+However, for the two other parameters in a simulation, time and mass, only one of them is unit-agnostic:
+<strong>if you provide the time thinking in a particular unit, the unit of mass is defined, and
+viceversa. Be aware that only either mass or time can be provided in custom units</strong>.</p>
+<p>The following relation must be satisfied by the units to ensure consistency:</p>
+<div class="math notranslate nohighlight">
+\[[\text{Energy}] = [\text{Mass}]\frac{[\text{Length}]^2}{[\text{Time}]^2}\]</div>
+<p>For example, if you are using kcal/mol for the energy, Angstrom from the distance and time
+in picoseconds, the masses will need to be provided in units of AMU/418.39.</p>
+</p></li>
+<li><p><strong>save_forces</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to save forces at the same saved interval as the simulation
+coordinates</p></li>
+<li><p><strong>save_energies</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to save potential at the same saved interval as the simulation
+coordinates</p></li>
+<li><p><strong>create_checkpoints</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Save the atomic data object so it can be reloaded in. Overwrites previous object.</p></li>
+<li><p><strong>read_checkpoint_file</strong> (<em>[</em><em>str</em><em>,</em><em>bool</em><em>]</em><em>, </em><em>default=None</em>) – Whether to read in checkpoint file from. Can specify explicit file path or try to infer from self.filename</p></li>
+<li><p><strong>n_timesteps</strong> (<em>int</em><em>, </em><em>default=100</em>) – The length of the simulation in simulation timesteps</p></li>
+<li><p><strong>save_interval</strong> (<em>int</em><em>, </em><em>default=10</em>) – The interval at which simulation timesteps should be saved. Must be
+a factor of the simulation length</p></li>
+<li><p><strong>random_seed</strong> (<em>int</em><em>, </em><em>default=None</em>) – Seed for random number generator; if seeded, results always will be
+identical for the same random seed</p></li>
+<li><p><strong>device</strong> (<em>str</em><em>, </em><em>default='cpu'</em>) – Device upon which simulation computation will be carried out</p></li>
+<li><p><strong>dtype</strong> (<em>str</em><em>, </em><em>default='single'</em>) – precision to run the simulation with (single or double)</p></li>
+<li><p><strong>export_interval</strong> (<em>int</em><em>, </em><em>default=None</em>) – Interval at which .npy files will be saved. If an int is given, then
+the int specifies at what intervals numpy files will be saved per
+observable. This number must be an integer multiple of save_interval.
+All output files should be the same shape. Forces and potentials will
+also be saved according to the save_forces and save_energies
+arguments, respectively. If friction is not None, kinetic energies
+will also be saved. This method is only implemented for a maximum of
+1000 files per observable due to file naming conventions.
+If None, export_interval will be set to n_timesteps to output one file
+for the entire simulation</p></li>
+<li><p><strong>log_interval</strong> (<em>int</em><em>, </em><em>default=None</em>) – If not None, a log will be generated indicating simulation start and
+end times as well as completion updates at regular intervals. If an
+int is given, then the int specifies how many log statements will be
+output. This number must be a multiple of save_interval.</p></li>
+<li><p><strong>log_type</strong> (<em>str</em><em>, </em><em>default='write'</em>) – Only relevant if log_interval is not None. If ‘print’, a log statement
+will be printed. If ‘write’, the log will be written to a .txt file.</p></li>
+<li><p><strong>filename</strong> (<em>str</em><em>, </em><em>default=None</em>) – Specifies the location to which numpys and/or log files are saved.
+Must be provided if export_interval is not None and/or if log_interval
+is not None and log_type is ‘write’. This provides the base file name;
+for numpy outputs, ‘_coords_000.npy’ or similar is added. For log
+outputs, ‘_log.txt’ is added.</p></li>
+<li><p><strong>specialize_priors</strong> (<em>bool</em><em>, </em><em>default=False</em>) – use optimized version of the priors for a particular molecule</p></li>
+<li><p><strong>dtype</strong> – precision to run the simulation with (single or double)</p></li>
+<li><p><strong>sim_subroutine</strong> – Optional subroutine to run at at the interval specified by
+subroutine_interval after simulation updates. The subroutine should
+take only the internal collated <cite>AtomicData</cite> instance as an argument.</p></li>
+<li><p><strong>sim_subroutine_interval</strong> – Specifies the interval, in simulation steps, between successive calls to
+the subroutine, if specified.</p></li>
+<li><p><strong>save_subroutine</strong> – Specifies additional saving procedures for extra information at the
+same interval as export_interval. The subroutine should take only the
+internal collated <cite>AtomicData</cite> and the current timestep // save_interval as
+arguments.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcg.simulation.PTSimulation">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcg.simulation.</span></span><span class="sig-name descname"><span class="pre">PTSimulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">friction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exchange_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/simulation/parallel_tempering.html#PTSimulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.simulation.PTSimulation" title="Link to this definition"></a></dt>
+<dd><p>Parallel tempering simulation using a Langevin update scheme.
+For theoretical details on replica exchange/parallel tempering, see
+<a class="reference external" href="https://github.com/noegroup/reform">https://github.com/noegroup/reform</a>.</p>
+<p>Briefly, a pair exchange is proposed, and the associated potential energies are used
+to compute a Metroplis-Hastings Boltzmann ratio. This ratio defines an acceptance threshold</p>
+<blockquote>
+<div><p>aginst which approved exchanges are sampled according to a unit uniform distribution.
+For a pair of configurations <span class="math notranslate nohighlight">\(A\)</span> and <span class="math notranslate nohighlight">\(B\)</span>, characterized by the respective
+potential energies <span class="math notranslate nohighlight">\(U_A\)</span> and <span class="math notranslate nohighlight">\(U_B\)</span> the the inverse thermodynamic temperatures
+<span class="math notranslate nohighlight">\(\beta_A\)</span> and <span class="math notranslate nohighlight">\(\beta_B\)</span>, the acceptance rate for exchanging configurations is:</p>
+<div class="math notranslate nohighlight">
+\[Acc = \exp{\left( (U_A - U_B) \times (\beta_A - \beta_B) \right)}\]</div>
+<p>Pairs of candidate configurations undergo exchange if <span class="math notranslate nohighlight">\(\rho \sim U(0,1) &lt; Acc\)</span>. Note
+that the exchanged velocities for each configuration must further be rescaled according to the
+square root of their inverse beta ratios. See _perform_exchange for more details.</p>
+</div></blockquote>
+<p>Currently we only implement parallel tempering for Langevin dynamics.
+Be aware that the output will contain information (e.g., coordinates)
+for all replicas.</p>
+<p>In addition to the typical outputs of <cite>LangevinSimulation</cite>, <cite>PTSimulation</cite> also
+ouputs information about exchange acceptance between replicas at each export.
+This information takes the form of an <cite>acceptance_matrix</cite>, which has shape
+<cite>(n_betas, n_betas)</cite>. The upper triangular portion of the matrix counts
+accepted exchanges between adjacent tempeartures, while the lower triangular
+portion of the matrix counts rejected exchanges between adjacent temperatures. For
+example, the entry <cite>[1,2]</cite> contains the number of accepted exchanges between replicas
+running at the temperatures associated with <cite>beta_1</cite> and <cite>beta_2</cite>, while the entry
+<cite>[2,1]</cite> counts the number of rejected echanges at those two temperatures. The sum of
+such complementary entries across the matrix diagonal always sum to the total number
+of exhchanges proposed between each export interval.</p>
+<p>Note: This implementation only allows for replica exchanges between directly
+adjecent temperatures implied by the user-supplied list of beta values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>friction</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – Scalar friction to use for Langevin updates</p></li>
+<li><p><strong>exchange_interval</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Specifies the number of simulation steps to take before attempting
+replica exchange.</p></li>
+<li><p><strong>dt</strong> (<em>float</em><em>, </em><em>default=5e-4</em>) – <p>The integration time step for the dynamics. The simulation code is unit agnostic
+and will use the same distance and energy units that the network and initial configurations.
+However, for the two other parameters in a simulation, time and mass, only one of them is unit-agnostic:
+<strong>if you provide the time thinking in a particular unit, the unit of mass is defined, and
+viceversa. Be aware that only either mass or time can be provided in custom units</strong>.</p>
+<p>The following relation must be satisfied by the units to ensure consistency:</p>
+<div class="math notranslate nohighlight">
+\[[\text{Energy}] = [\text{Mass}]\frac{[\text{Length}]^2}{[\text{Time}]^2}\]</div>
+<p>For example, if you are using kcal/mol for the energy, Angstrom from the distance and time
+in picoseconds, the masses will need to be provided in units of AMU/418.39.</p>
+</p></li>
+<li><p><strong>save_forces</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to save forces at the same saved interval as the simulation
+coordinates</p></li>
+<li><p><strong>save_energies</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to save potential at the same saved interval as the simulation
+coordinates</p></li>
+<li><p><strong>create_checkpoints</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Save the atomic data object so it can be reloaded in. Overwrites previous object.</p></li>
+<li><p><strong>read_checkpoint_file</strong> (<em>[</em><em>str</em><em>,</em><em>bool</em><em>]</em><em>, </em><em>default=None</em>) – Whether to read in checkpoint file from. Can specify explicit file path or try to infer from self.filename</p></li>
+<li><p><strong>n_timesteps</strong> (<em>int</em><em>, </em><em>default=100</em>) – The length of the simulation in simulation timesteps</p></li>
+<li><p><strong>save_interval</strong> (<em>int</em><em>, </em><em>default=10</em>) – The interval at which simulation timesteps should be saved. Must be
+a factor of the simulation length</p></li>
+<li><p><strong>random_seed</strong> (<em>int</em><em>, </em><em>default=None</em>) – Seed for random number generator; if seeded, results always will be
+identical for the same random seed</p></li>
+<li><p><strong>device</strong> (<em>str</em><em>, </em><em>default='cpu'</em>) – Device upon which simulation computation will be carried out</p></li>
+<li><p><strong>dtype</strong> (<em>str</em><em>, </em><em>default='single'</em>) – precision to run the simulation with (single or double)</p></li>
+<li><p><strong>export_interval</strong> (<em>int</em><em>, </em><em>default=None</em>) – Interval at which .npy files will be saved. If an int is given, then
+the int specifies at what intervals numpy files will be saved per
+observable. This number must be an integer multiple of save_interval.
+All output files should be the same shape. Forces and potentials will
+also be saved according to the save_forces and save_energies
+arguments, respectively. If friction is not None, kinetic energies
+will also be saved. This method is only implemented for a maximum of
+1000 files per observable due to file naming conventions.
+If None, export_interval will be set to n_timesteps to output one file
+for the entire simulation</p></li>
+<li><p><strong>log_interval</strong> (<em>int</em><em>, </em><em>default=None</em>) – If not None, a log will be generated indicating simulation start and
+end times as well as completion updates at regular intervals. If an
+int is given, then the int specifies how many log statements will be
+output. This number must be a multiple of save_interval.</p></li>
+<li><p><strong>log_type</strong> (<em>str</em><em>, </em><em>default='write'</em>) – Only relevant if log_interval is not None. If ‘print’, a log statement
+will be printed. If ‘write’, the log will be written to a .txt file.</p></li>
+<li><p><strong>filename</strong> (<em>str</em><em>, </em><em>default=None</em>) – Specifies the location to which numpys and/or log files are saved.
+Must be provided if export_interval is not None and/or if log_interval
+is not None and log_type is ‘write’. This provides the base file name;
+for numpy outputs, ‘_coords_000.npy’ or similar is added. For log
+outputs, ‘_log.txt’ is added.</p></li>
+<li><p><strong>specialize_priors</strong> (<em>bool</em><em>, </em><em>default=False</em>) – use optimized version of the priors for a particular molecule</p></li>
+<li><p><strong>dtype</strong> – precision to run the simulation with (single or double)</p></li>
+<li><p><strong>sim_subroutine</strong> – Optional subroutine to run at at the interval specified by
+subroutine_interval after simulation updates. The subroutine should
+take only the internal collated <cite>AtomicData</cite> instance as an argument.</p></li>
+<li><p><strong>sim_subroutine_interval</strong> – Specifies the interval, in simulation steps, between successive calls to
+the subroutine, if specified.</p></li>
+<li><p><strong>save_subroutine</strong> – Specifies additional saving procedures for extra information at the
+same interval as export_interval. The subroutine should take only the
+internal collated <cite>AtomicData</cite> and the current timestep // save_interval as
+arguments.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
-<section id="utilities">
-<h2>Utilities<a class="headerlink" href="#utilities" title="Link to this heading"></a></h2>
+<section id="module-mlcg.simulation.specialize_prior">
+<span id="utilities"></span><h2>Utilities<a class="headerlink" href="#module-mlcg.simulation.specialize_prior" title="Link to this heading"></a></h2>
 </section>
 </section>
 

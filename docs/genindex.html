@@ -87,10 +87,13 @@
  | <a href="#E"><strong>E</strong></a>
  | <a href="#F"><strong>F</strong></a>
  | <a href="#G"><strong>G</strong></a>
+ | <a href="#H"><strong>H</strong></a>
  | <a href="#I"><strong>I</strong></a>
+ | <a href="#K"><strong>K</strong></a>
  | <a href="#L"><strong>L</strong></a>
  | <a href="#M"><strong>M</strong></a>
  | <a href="#N"><strong>N</strong></a>
+ | <a href="#O"><strong>O</strong></a>
  | <a href="#P"><strong>P</strong></a>
  | <a href="#R"><strong>R</strong></a>
  | <a href="#S"><strong>S</strong></a>
@@ -111,6 +114,8 @@
       <li><a href="geometry.html#mlcg.geometry.topology.add_chain_bonds">add_chain_bonds() (in module mlcg.geometry.topology)</a>
 </li>
       <li><a href="geometry.html#mlcg.geometry.topology.Topology.add_dihedral">add_dihedral() (mlcg.geometry.topology.Topology method)</a>
+</li>
+      <li><a href="autodoc.html#mlcg.datasets.alanine_dipeptide.AlanineDataset">AlanineDataset (class in mlcg.datasets.alanine_dipeptide)</a>, <a href="datasets.html#mlcg.datasets.alanine_dipeptide.AlanineDataset">[1]</a>
 </li>
       <li><a href="geometry.html#mlcg.geometry.topology.Topology.angles">angles (mlcg.geometry.topology.Topology attribute)</a>
 </li>
@@ -162,6 +167,10 @@
 </li>
       <li><a href="geometry.html#mlcg.geometry.topology.Topology.charges">charges (mlcg.geometry.topology.Topology attribute)</a>
 </li>
+      <li><a href="autodoc.html#mlcg.datasets.chignolin.ChignolinDataset">ChignolinDataset (class in mlcg.datasets.chignolin)</a>, <a href="datasets.html#mlcg.datasets.chignolin.ChignolinDataset">[1]</a>
+</li>
+      <li><a href="autodoc.html#mlcg.datasets.chignolin.ChignolinDatasetWithDihedralPriors">ChignolinDatasetWithDihedralPriors (class in mlcg.datasets.chignolin)</a>
+</li>
       <li><a href="autodoc.html#mlcg.geometry.internal_coordinates.compute_angles_cos">compute_angles_cos() (in module mlcg.geometry.internal_coordinates)</a>, <a href="geometry.html#mlcg.geometry.internal_coordinates.compute_angles_cos">[1]</a>
 </li>
       <li><a href="autodoc.html#mlcg.geometry.internal_coordinates.compute_angles_raw">compute_angles_raw() (in module mlcg.geometry.internal_coordinates)</a>, <a href="geometry.html#mlcg.geometry.internal_coordinates.compute_angles_raw">[1]</a>
@@ -174,9 +183,13 @@
 </li>
       <li><a href="autodoc.html#mlcg.neighbor_list.torch_impl.compute_images">compute_images() (in module mlcg.neighbor_list.torch_impl)</a>, <a href="neighbor_list.html#mlcg.neighbor_list.torch_impl.compute_images">[1]</a>
 </li>
+      <li><a href="geometry.html#mlcg.geometry.statistics.compute_statistics">compute_statistics() (in module mlcg.geometry.statistics)</a>
+</li>
       <li><a href="autodoc.html#mlcg.geometry.internal_coordinates.compute_torsions">compute_torsions() (in module mlcg.geometry.internal_coordinates)</a>, <a href="geometry.html#mlcg.geometry.internal_coordinates.compute_torsions">[1]</a>
 </li>
       <li><a href="autodoc.html#mlcg.nn.cutoff.CosineCutoff">CosineCutoff (class in mlcg.nn.cutoff)</a>, <a href="models.html#mlcg.nn.cutoff.CosineCutoff">[1]</a>
+</li>
+      <li><a href="autodoc.html#mlcg.datasets.h5_dataset.MetaSet.create_from_hdf5_group">create_from_hdf5_group() (mlcg.datasets.h5_dataset.MetaSet static method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -184,12 +197,22 @@
 <h2 id="D">D</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="training.html#mlcg.pl.DataModule">DataModule (class in mlcg.pl)</a>
+</li>
+      <li><a href="priors.html#mlcg.nn.prior.Dihedral">Dihedral (class in mlcg.nn.prior)</a>
+</li>
       <li><a href="geometry.html#mlcg.geometry.topology.Topology.dihedrals">dihedrals (mlcg.geometry.topology.Topology attribute)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="geometry.html#mlcg.geometry.topology.Topology.dihedrals_from_edge_index">dihedrals_from_edge_index() (mlcg.geometry.topology.Topology method)</a>
 </li>
+      <li><a href="autodoc.html#mlcg.datasets.alanine_dipeptide.AlanineDataset.download">download() (mlcg.datasets.alanine_dipeptide.AlanineDataset method)</a>
+
+      <ul>
+        <li><a href="autodoc.html#mlcg.datasets.chignolin.ChignolinDataset.download">(mlcg.datasets.chignolin.ChignolinDataset method)</a>
+</li>
+      </ul></li>
       <li><a href="geometry.html#mlcg.geometry.topology.Topology.draw">draw() (mlcg.geometry.topology.Topology method)</a>
 </li>
   </ul></td>
@@ -218,15 +241,19 @@
 <h2 id="F">F</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="geometry.html#mlcg.geometry.statistics.fit_baseline_models">fit_baseline_models() (in module mlcg.geometry.statistics)</a>
+</li>
       <li><a href="models.html#mlcg.nn.losses.ForceMSE">ForceMSE (class in mlcg.nn.losses)</a>
 </li>
       <li><a href="models.html#mlcg.nn.losses.ForceRMSE">ForceRMSE (class in mlcg.nn.losses)</a>
 </li>
       <li><a href="autodoc.html#mlcg.data.atomic_data.AtomicData.forces">forces (mlcg.data.atomic_data.AtomicData attribute)</a>, <a href="data.html#mlcg.data.atomic_data.AtomicData.forces">[1]</a>
 </li>
-      <li><a href="autodoc.html#mlcg.nn.cutoff.CosineCutoff.forward">forward() (mlcg.nn.cutoff.CosineCutoff method)</a>
+      <li><a href="autodoc.html#mlcg.nn.angular_basis.spherical_harmonics.SphericalHarmonics.forward">forward() (mlcg.nn.angular_basis.spherical_harmonics.SphericalHarmonics method)</a>
 
       <ul>
+        <li><a href="autodoc.html#mlcg.nn.cutoff.CosineCutoff.forward">(mlcg.nn.cutoff.CosineCutoff method)</a>
+</li>
         <li><a href="autodoc.html#mlcg.nn.cutoff.IdentityCutoff.forward">(mlcg.nn.cutoff.IdentityCutoff method)</a>
 </li>
         <li><a href="autodoc.html#mlcg.nn.cutoff.ShiftedCosineCutoff.forward">(mlcg.nn.cutoff.ShiftedCosineCutoff method)</a>
@@ -276,6 +303,8 @@
       </ul></li>
       <li><a href="geometry.html#mlcg.geometry.topology.get_connectivity_matrix">get_connectivity_matrix() (in module mlcg.geometry.topology)</a>
 </li>
+      <li><a href="autodoc.html#mlcg.datasets.h5_dataset.H5SimpleDataset.get_dataloader">get_dataloader() (mlcg.datasets.h5_dataset.H5SimpleDataset method)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="autodoc.html#mlcg.neighbor_list.torch_impl.get_j_idx">get_j_idx() (in module mlcg.neighbor_list.torch_impl)</a>
@@ -284,7 +313,39 @@
 </li>
       <li><a href="geometry.html#mlcg.geometry.topology.get_n_paths">get_n_paths() (in module mlcg.geometry.topology)</a>
 </li>
+      <li><a href="autodoc.html#mlcg.datasets.h5_dataset.MetaSet.grab_n_frames">grab_n_frames() (mlcg.datasets.h5_dataset.MetaSet static method)</a>
+</li>
       <li><a href="models.html#mlcg.nn.gradients.GradientsOut">GradientsOut (class in mlcg.nn.gradients)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="H">H</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="datasets.html#mlcg.datasets.H5Dataset">H5Dataset (class in mlcg.datasets)</a>
+
+      <ul>
+        <li><a href="autodoc.html#mlcg.datasets.h5_dataset.H5Dataset">(class in mlcg.datasets.h5_dataset)</a>
+</li>
+      </ul></li>
+      <li><a href="autodoc.html#mlcg.datasets.h5_dataset.H5MetasetDataLoader">H5MetasetDataLoader (class in mlcg.datasets.h5_dataset)</a>
+</li>
+      <li><a href="datasets.html#mlcg.datasets.H5PartitionDataLoader">H5PartitionDataLoader (class in mlcg.datasets)</a>
+
+      <ul>
+        <li><a href="autodoc.html#mlcg.datasets.h5_dataset.H5PartitionDataLoader">(class in mlcg.datasets.h5_dataset)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="autodoc.html#mlcg.datasets.h5_dataset.H5SimpleDataset">H5SimpleDataset (class in mlcg.datasets.h5_dataset)</a>
+</li>
+      <li><a href="priors.html#mlcg.nn.prior.Harmonic">Harmonic (class in mlcg.nn.prior)</a>
+</li>
+      <li><a href="priors.html#mlcg.nn.prior.HarmonicAngles">HarmonicAngles (class in mlcg.nn.prior)</a>
+</li>
+      <li><a href="priors.html#mlcg.nn.prior.HarmonicBonds">HarmonicBonds (class in mlcg.nn.prior)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -307,9 +368,29 @@
   </ul></td>
 </tr></table>
 
+<h2 id="K">K</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="autodoc.html#mlcg.datasets.alanine_dipeptide.AlanineDataset.kB">kB (mlcg.datasets.alanine_dipeptide.AlanineDataset attribute)</a>
+
+      <ul>
+        <li><a href="autodoc.html#mlcg.datasets.chignolin.ChignolinDataset.kB">(mlcg.datasets.chignolin.ChignolinDataset attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
 <h2 id="L">L</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="simulation.html#mlcg.simulation.LangevinSimulation">LangevinSimulation (class in mlcg.simulation)</a>
+</li>
+      <li><a href="training.html#mlcg.pl.LightningCLI">LightningCLI (class in mlcg.pl)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="autodoc.html#mlcg.datasets.alanine_dipeptide.AlanineDataset.load_original_topology">load_original_topology() (mlcg.datasets.alanine_dipeptide.AlanineDataset static method)</a>
+</li>
       <li><a href="models.html#mlcg.nn.losses.Loss">Loss (class in mlcg.nn.losses)</a>
 </li>
   </ul></td>
@@ -318,16 +399,30 @@
 <h2 id="M">M</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="autodoc.html#mlcg.datasets.alanine_dipeptide.AlanineDataset.make_baseline_models">make_baseline_models() (mlcg.datasets.alanine_dipeptide.AlanineDataset static method)</a>
+</li>
+      <li><a href="autodoc.html#mlcg.datasets.alanine_dipeptide.AlanineDataset.make_cg_topology">make_cg_topology() (mlcg.datasets.alanine_dipeptide.AlanineDataset static method)</a>
+</li>
+      <li><a href="autodoc.html#mlcg.datasets.alanine_dipeptide.AlanineDataset.make_data_slices_prior">make_data_slices_prior() (mlcg.datasets.alanine_dipeptide.AlanineDataset method)</a>
+</li>
       <li><a href="autodoc.html#mlcg.neighbor_list.neighbor_list.make_neighbor_list">make_neighbor_list() (in module mlcg.neighbor_list.neighbor_list)</a>, <a href="neighbor_list.html#mlcg.neighbor_list.neighbor_list.make_neighbor_list">[1]</a>
 </li>
       <li><a href="autodoc.html#mlcg.cg.projection.make_non_bonded_set">make_non_bonded_set() (in module mlcg.cg.projection)</a>
 </li>
       <li><a href="autodoc.html#mlcg.cg.projection.make_opep_residue_indices">make_opep_residue_indices() (in module mlcg.cg.projection)</a>
 </li>
+      <li><a href="autodoc.html#mlcg.datasets.alanine_dipeptide.AlanineDataset.make_priors">make_priors() (mlcg.datasets.alanine_dipeptide.AlanineDataset method)</a>
+</li>
       <li><a href="autodoc.html#mlcg.data.atomic_data.AtomicData.masses">masses (mlcg.data.atomic_data.AtomicData attribute)</a>, <a href="data.html#mlcg.data.atomic_data.AtomicData.masses">[1]</a>
 </li>
       <li><a href="autodoc.html#mlcg.nn.schnet.CFConv.message">message() (mlcg.nn.schnet.CFConv method)</a>
 </li>
+      <li><a href="datasets.html#mlcg.datasets.MetaSet">MetaSet (class in mlcg.datasets)</a>
+
+      <ul>
+        <li><a href="autodoc.html#mlcg.datasets.h5_dataset.MetaSet">(class in mlcg.datasets.h5_dataset)</a>
+</li>
+      </ul></li>
       <li>
     mlcg.cg.projection
 
@@ -340,6 +435,27 @@
 
       <ul>
         <li><a href="autodoc.html#module-mlcg.data.atomic_data">module</a>
+</li>
+      </ul></li>
+      <li>
+    mlcg.datasets.alanine_dipeptide
+
+      <ul>
+        <li><a href="autodoc.html#module-mlcg.datasets.alanine_dipeptide">module</a>
+</li>
+      </ul></li>
+      <li>
+    mlcg.datasets.chignolin
+
+      <ul>
+        <li><a href="autodoc.html#module-mlcg.datasets.chignolin">module</a>
+</li>
+      </ul></li>
+      <li>
+    mlcg.datasets.h5_dataset
+
+      <ul>
+        <li><a href="autodoc.html#module-mlcg.datasets.h5_dataset">module</a>
 </li>
       </ul></li>
       <li>
@@ -364,12 +480,21 @@
 </li>
       </ul></li>
       <li>
+    mlcg.nn.angular_basis.spherical_harmonics
+
+      <ul>
+        <li><a href="autodoc.html#module-mlcg.nn.angular_basis.spherical_harmonics">module</a>
+</li>
+      </ul></li>
+      <li>
     mlcg.nn.cutoff
 
       <ul>
         <li><a href="autodoc.html#module-mlcg.nn.cutoff">module</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     mlcg.nn.radial_basis.exp_normal
 
@@ -377,8 +502,6 @@
         <li><a href="autodoc.html#module-mlcg.nn.radial_basis.exp_normal">module</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     mlcg.nn.radial_basis.exp_spaced
 
@@ -408,6 +531,13 @@
 </li>
       </ul></li>
       <li>
+    mlcg.simulation.specialize_prior
+
+      <ul>
+        <li><a href="simulation.html#module-mlcg.simulation.specialize_prior">module</a>
+</li>
+      </ul></li>
+      <li>
     module
 
       <ul>
@@ -415,11 +545,19 @@
 </li>
         <li><a href="autodoc.html#module-mlcg.data.atomic_data">mlcg.data.atomic_data</a>
 </li>
+        <li><a href="autodoc.html#module-mlcg.datasets.alanine_dipeptide">mlcg.datasets.alanine_dipeptide</a>
+</li>
+        <li><a href="autodoc.html#module-mlcg.datasets.chignolin">mlcg.datasets.chignolin</a>
+</li>
+        <li><a href="autodoc.html#module-mlcg.datasets.h5_dataset">mlcg.datasets.h5_dataset</a>
+</li>
         <li><a href="autodoc.html#module-mlcg.geometry.internal_coordinates">mlcg.geometry.internal_coordinates</a>
 </li>
         <li><a href="autodoc.html#module-mlcg.neighbor_list.neighbor_list">mlcg.neighbor_list.neighbor_list</a>
 </li>
         <li><a href="autodoc.html#module-mlcg.neighbor_list.torch_impl">mlcg.neighbor_list.torch_impl</a>
+</li>
+        <li><a href="autodoc.html#module-mlcg.nn.angular_basis.spherical_harmonics">mlcg.nn.angular_basis.spherical_harmonics</a>
 </li>
         <li><a href="autodoc.html#module-mlcg.nn.cutoff">mlcg.nn.cutoff</a>
 </li>
@@ -432,6 +570,14 @@
         <li><a href="autodoc.html#module-mlcg.nn.radial_basis.radial_integral_gto">mlcg.nn.radial_basis.radial_integral_gto</a>
 </li>
         <li><a href="autodoc.html#module-mlcg.nn.schnet">mlcg.nn.schnet</a>
+</li>
+        <li><a href="simulation.html#module-mlcg.simulation.specialize_prior">mlcg.simulation.specialize_prior</a>
+</li>
+      </ul></li>
+      <li><a href="datasets.html#mlcg.datasets.MolData">MolData (class in mlcg.datasets)</a>
+
+      <ul>
+        <li><a href="autodoc.html#mlcg.datasets.h5_dataset.MolData">(class in mlcg.datasets.h5_dataset)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -459,16 +605,46 @@
   </ul></td>
 </tr></table>
 
+<h2 id="O">O</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="simulation.html#mlcg.simulation.OverdampedSimulation">OverdampedSimulation (class in mlcg.simulation)</a>
+</li>
+  </ul></td>
+</tr></table>
+
 <h2 id="P">P</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="datasets.html#mlcg.datasets.Partition">Partition (class in mlcg.datasets)</a>
+
+      <ul>
+        <li><a href="autodoc.html#mlcg.datasets.h5_dataset.Partition">(class in mlcg.datasets.h5_dataset)</a>
+</li>
+      </ul></li>
       <li><a href="autodoc.html#mlcg.data.atomic_data.AtomicData.pbc">pbc (mlcg.data.atomic_data.AtomicData attribute)</a>, <a href="data.html#mlcg.data.atomic_data.AtomicData.pbc">[1]</a>
+</li>
+      <li><a href="training.html#mlcg.pl.PLModel">PLModel (class in mlcg.pl)</a>
+</li>
+      <li><a href="autodoc.html#mlcg.nn.radial_basis.radial_integral_gto.RIGTOBasis.plot">plot() (mlcg.nn.radial_basis.radial_integral_gto.RIGTOBasis method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="autodoc.html#mlcg.nn.radial_basis.radial_integral_gto.RIGTOBasis.plot">plot() (mlcg.nn.radial_basis.radial_integral_gto.RIGTOBasis method)</a>
-</li>
       <li><a href="autodoc.html#mlcg.data.atomic_data.AtomicData.pos">pos (mlcg.data.atomic_data.AtomicData attribute)</a>, <a href="data.html#mlcg.data.atomic_data.AtomicData.pos">[1]</a>
+</li>
+      <li><a href="autodoc.html#mlcg.datasets.alanine_dipeptide.AlanineDataset.process">process() (mlcg.datasets.alanine_dipeptide.AlanineDataset method)</a>
+
+      <ul>
+        <li><a href="autodoc.html#mlcg.datasets.chignolin.ChignolinDataset.process">(mlcg.datasets.chignolin.ChignolinDataset method)</a>
+</li>
+      </ul></li>
+      <li><a href="autodoc.html#mlcg.datasets.alanine_dipeptide.AlanineDataset.processed_file_names">processed_file_names (mlcg.datasets.alanine_dipeptide.AlanineDataset property)</a>
+
+      <ul>
+        <li><a href="autodoc.html#mlcg.datasets.chignolin.ChignolinDataset.processed_file_names">(mlcg.datasets.chignolin.ChignolinDataset property)</a>
+</li>
+      </ul></li>
+      <li><a href="simulation.html#mlcg.simulation.PTSimulation">PTSimulation (class in mlcg.simulation)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -476,9 +652,19 @@
 <h2 id="R">R</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="autodoc.html#mlcg.datasets.alanine_dipeptide.AlanineDataset.raw_file_names">raw_file_names (mlcg.datasets.alanine_dipeptide.AlanineDataset property)</a>
+
+      <ul>
+        <li><a href="autodoc.html#mlcg.datasets.chignolin.ChignolinDataset.raw_file_names">(mlcg.datasets.chignolin.ChignolinDataset property)</a>
+</li>
+      </ul></li>
       <li><a href="geometry.html#mlcg.geometry.topology.Topology.remove_angle">remove_angle() (mlcg.geometry.topology.Topology method)</a>
 </li>
       <li><a href="geometry.html#mlcg.geometry.topology.Topology.remove_bond">remove_bond() (mlcg.geometry.topology.Topology method)</a>
+</li>
+      <li><a href="priors.html#mlcg.nn.prior.Repulsion">Repulsion (class in mlcg.nn.prior)</a>
+</li>
+      <li><a href="autodoc.html#mlcg.datasets.alanine_dipeptide.AlanineDataset.repulsion_nls">repulsion_nls() (mlcg.datasets.alanine_dipeptide.AlanineDataset static method)</a>
 </li>
       <li><a href="autodoc.html#mlcg.nn.radial_basis.exp_normal.ExpNormalBasis.reset_parameters">reset_parameters() (mlcg.nn.radial_basis.exp_normal.ExpNormalBasis method)</a>
 
@@ -502,6 +688,8 @@
 </li>
       <li><a href="geometry.html#mlcg.geometry.topology.Topology.resnames">resnames (mlcg.geometry.topology.Topology attribute)</a>
 </li>
+      <li><a href="autodoc.html#mlcg.datasets.h5_dataset.MetaSet.retrieve_hdf">retrieve_hdf() (mlcg.datasets.h5_dataset.MetaSet static method)</a>
+</li>
       <li><a href="models.html#mlcg.nn.radial_basis.RIGTOBasis">RIGTOBasis (class in mlcg.nn.radial_basis)</a>
 
       <ul>
@@ -518,6 +706,10 @@
 </li>
       <li><a href="autodoc.html#mlcg.geometry.internal_coordinates.safe_normalization">safe_normalization() (in module mlcg.geometry.internal_coordinates)</a>
 </li>
+      <li><a href="autodoc.html#mlcg.datasets.h5_dataset.Partition.sampling_setup">sampling_setup() (mlcg.datasets.h5_dataset.Partition method)</a>
+</li>
+      <li><a href="autodoc.html#mlcg.datasets.alanine_dipeptide.AlanineDataset.save_dataset">save_dataset() (mlcg.datasets.alanine_dipeptide.AlanineDataset method)</a>
+</li>
       <li><a href="autodoc.html#mlcg.nn.schnet.SchNet">SchNet (class in mlcg.nn.schnet)</a>, <a href="models.html#mlcg.nn.schnet.SchNet">[1]</a>
 </li>
       <li><a href="autodoc.html#mlcg.nn.cutoff.ShiftedCosineCutoff">ShiftedCosineCutoff (class in mlcg.nn.cutoff)</a>, <a href="models.html#mlcg.nn.cutoff.ShiftedCosineCutoff">[1]</a>
@@ -530,8 +722,18 @@
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="autodoc.html#mlcg.nn.schnet.StandardSchNet">StandardSchNet (class in mlcg.nn.schnet)</a>
+      <li><a href="models.html#mlcg.nn.angular_basis.SphericalHarmonics">SphericalHarmonics (class in mlcg.nn.angular_basis)</a>
+
+      <ul>
+        <li><a href="autodoc.html#mlcg.nn.angular_basis.spherical_harmonics.SphericalHarmonics">(class in mlcg.nn.angular_basis.spherical_harmonics)</a>
 </li>
+      </ul></li>
+      <li><a href="models.html#mlcg.nn.StandardSchNet">StandardSchNet (class in mlcg.nn)</a>
+
+      <ul>
+        <li><a href="autodoc.html#mlcg.nn.schnet.StandardSchNet">(class in mlcg.nn.schnet)</a>
+</li>
+      </ul></li>
       <li><a href="autodoc.html#mlcg.neighbor_list.torch_impl.strides_of">strides_of() (in module mlcg.neighbor_list.torch_impl)</a>
 </li>
       <li><a href="models.html#mlcg.nn.gradients.SumOut">SumOut (class in mlcg.nn.gradients)</a>
@@ -546,6 +748,12 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="autodoc.html#mlcg.data.atomic_data.AtomicData.tag">tag (mlcg.data.atomic_data.AtomicData attribute)</a>, <a href="data.html#mlcg.data.atomic_data.AtomicData.tag">[1]</a>
 </li>
+      <li><a href="autodoc.html#mlcg.datasets.alanine_dipeptide.AlanineDataset.temperature">temperature (mlcg.datasets.alanine_dipeptide.AlanineDataset attribute)</a>
+
+      <ul>
+        <li><a href="autodoc.html#mlcg.datasets.chignolin.ChignolinDataset.temperature">(mlcg.datasets.chignolin.ChignolinDataset attribute)</a>
+</li>
+      </ul></li>
       <li><a href="geometry.html#mlcg.geometry.topology.Topology.to_mdtraj">to_mdtraj() (mlcg.geometry.topology.Topology method)</a>
 </li>
       <li><a href="geometry.html#mlcg.geometry.topology.Topology">Topology (class in mlcg.geometry.topology)</a>
@@ -557,6 +765,10 @@
       <li><a href="autodoc.html#mlcg.neighbor_list.torch_impl.torch_neighbor_list_no_pbc">torch_neighbor_list_no_pbc() (in module mlcg.neighbor_list.torch_impl)</a>, <a href="neighbor_list.html#mlcg.neighbor_list.torch_impl.torch_neighbor_list_no_pbc">[1]</a>
 </li>
       <li><a href="autodoc.html#mlcg.neighbor_list.torch_impl.torch_neighbor_list_pbc">torch_neighbor_list_pbc() (in module mlcg.neighbor_list.torch_impl)</a>
+</li>
+      <li><a href="autodoc.html#mlcg.datasets.h5_dataset.H5Dataset.training_validation_splitting">training_validation_splitting() (mlcg.datasets.h5_dataset.H5Dataset method)</a>
+</li>
+      <li><a href="autodoc.html#mlcg.datasets.h5_dataset.MetaSet.trim_down_to">trim_down_to() (mlcg.datasets.h5_dataset.MetaSet method)</a>
 </li>
       <li><a href="geometry.html#mlcg.geometry.topology.Atom.type">type (mlcg.geometry.topology.Atom attribute)</a>
 </li>
