@@ -33,11 +33,24 @@ JPERKCAL = 4184  # Ratio of Joules/kilocalorie
 
 
 class _Simulation(object):
-    """
+    r"""
     Parameters
     ----------
     dt : float, default=5e-4
-        The integration time step for Langevin dynamics.
+        The integration time step for the dynamics. The simulation code is unit agnostic
+        and will use the same distance and energy units that the network and initial configurations.
+        However, for the two other parameters in a simulation, time and mass, only one of them is unit-agnostic:
+        **if you provide the time thinking in a particular unit, the unit of mass is defined, and
+        viceversa. Be aware that only either mass or time can be provided in custom units**.
+
+        The following relation must be satisfied by the units to ensure consistency:
+
+        .. math::
+
+            [\text{Energy}] = [\text{Mass}]\frac{[\text{Length}]^2}{[\text{Time}]^2}
+
+        For example, if you are using kcal/mol for the energy, Angstrom from the distance and time
+        in picoseconds, the masses will need to be provided in units of AMU/418.39.
     save_forces : bool, default=False
         Whether to save forces at the same saved interval as the simulation
         coordinates
@@ -57,7 +70,7 @@ class _Simulation(object):
         Seed for random number generator; if seeded, results always will be
         identical for the same random seed
     device : str, default='cpu'
-        Device upon which simulation compuation will be carried out
+        Device upon which simulation computation will be carried out
     dtype : str, default='single'
         precision to run the simulation with (single or double)
     export_interval : int, default=None
@@ -198,6 +211,8 @@ class _Simulation(object):
             Trained model used to generate simulation data
         """
         self.model = model.eval().to(device=self.device, dtype=self.dtype)
+        for param in self.model.parameters():
+            param.requires_grad = False
 
     def _attach_configurations(
         self,
@@ -398,7 +413,7 @@ class _Simulation(object):
 
         data = self.model(data)
         potential = data.out[ENERGY_KEY].detach()
-        forces = data.out[FORCE_KEY]
+        forces = data.out[FORCE_KEY].detach()
         return potential, forces
 
     def timestep(self):

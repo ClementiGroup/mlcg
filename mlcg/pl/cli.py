@@ -3,6 +3,7 @@ import torch
 import pytorch_lightning.cli as plc
 from torch_geometric.data.makedirs import makedirs
 import torch_optimizer as optim
+import warnings
 
 
 class LightningCLI(plc.LightningCLI):
@@ -31,6 +32,32 @@ class LightningCLI(plc.LightningCLI):
             config = self.config[self.config["subcommand"]]
         else:
             config = self.config
+
+        if config["seed_everything"] in (None, False):
+            devices = int(config["trainer"]["devices"])
+            num_nodes = int(config["trainer"]["num_nodes"])
+            if (
+                config["trainer"]["gpus"] is not None
+            ):  # account for composite/redundant lightning trainer opts
+                gpus = config["trainer"]["gpus"]
+                if isinstance(gpus, list):
+                    gpus = len(gpus)
+            if (num_nodes > 1) or (devices > 1) or (gpus > 1):
+                warnings.warn(
+                    " \n \n ###################################################### \n"
+                    "           WARNING: Possible data leakage  \n "
+                    "######################################################  \n \n "
+                    "`seed_everything` has been set to false/null, but multiple "
+                    "devices are being used for distributed training. This can result in "
+                    "local ranks/procids making different train/val/test data splits, which "
+                    "can further result in train/val/test data leakage. Please follow the "
+                    "best practice as outlined by Lightning developers and set "
+                    "`seed_everything` to a non-zero integer for multi-device "
+                    "computations. Else, make sure that your `PLDataModule` "
+                    "avoids this be defining the splits to loaded from "
+                    "the disk beforehand. "
+                    "\n \n ###################################################### \n \n "
+                )
 
         trainer = config["trainer"]
         default_root_dir = trainer.get("default_root_dir")

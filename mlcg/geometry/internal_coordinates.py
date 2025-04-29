@@ -102,7 +102,42 @@ def compute_distances(
 
 
 @torch.jit.script
-def compute_angles(
+def compute_angles_raw(
+    pos: torch.Tensor,
+    mapping: torch.Tensor,
+    cell_shifts: Optional[torch.Tensor] = None,
+):
+    r"""Compute the raw angle (in radians) between the positions in :obj:`pos` following the :obj:`mapping` assuming that the mapping indices follow::
+
+       j--k
+      /
+     i
+
+
+    .. math::
+
+        \theta_{ijk} = &\text{atan2}(\Vert \hat{\mathbf{n}} \vert, \mathbf{r}_{ij} \cdot \mathbf{r}_{kj} ) \\
+        \mathbf{r}_{ij} &= \mathbf{r}_i - \mathbf{r}_j \\
+        \mathbf{r}_{kj} &= \mathbf{r}_k - \mathbf{r}_j \\
+        \mathbf{\hat{n}} &= \frac{\mathbf{r}_{ij} \times \mathbf{r}_{kj}}{\Vert \mathbf{r}_{ij} \times \mathbf{r}_{kj} \Vert} 
+
+    """
+    assert mapping.dim() == 2
+    assert mapping.shape[0] == 3
+
+    dr1 = pos[mapping[0]] - pos[mapping[1]]
+    dr2 = pos[mapping[2]] - pos[mapping[1]]
+
+    n = torch.cross(dr1, dr2)
+    n = n.norm(p=2, dim=1)
+    d = (dr1 * dr2).sum(dim=1)
+    theta = torch.atan2(n, d)
+
+    return theta
+
+
+@torch.jit.script
+def compute_angles_cos(
     pos: torch.Tensor,
     mapping: torch.Tensor,
     cell_shifts: Optional[torch.Tensor] = None,
@@ -115,9 +150,9 @@ def compute_angles(
 
     .. math::
 
-        \cos{\theta_{ijk}} &= \frac{\mathbf{r}_{ji} \mathbf{r}_{jk}}{r_{ji} r_{jk}}  \\
-        r_{ji}&= ||\mathbf{r}_i - \mathbf{r}_j||_{2} \\
-        r_{jk}&= ||\mathbf{r}_k - \mathbf{r}_j||_{2}
+        \cos{\theta_{ijk}} &= \frac{\mathbf{r}_{ij} \cdot \mathbf{r}_{jk}}{ \Vert \mathbf{r}_{ji}  \Vert \Vert \mathbf{r}_{kj} \Vert}  \\
+        \mathbf{r}_{ij} &= \mathbf{r}_i - \mathbf{r}_j \\
+        \mathbf{r}_{kj} &= \mathbf{r}_k - \mathbf{r}_j 
 
     In the case of periodic boundary conditions, :obj:`cell_shifts` must be
     provided so that :math:`\mathbf{r}_j` can be outside of the original unit
@@ -136,27 +171,37 @@ def compute_angles(
 
 @torch.jit.script
 def compute_torsions(pos: torch.Tensor, mapping: torch.Tensor):
-    """
+    r"""
     Compute the angle between two planes from positions in :obj:'pos' following the
     :obj:`mapping`::
 
     For dihedrals: the angle w.r.t. position of i&l is positive if l i rotated clockwise
-    when staring down bond jk
+    when staring down bond jk::
 
        j--k--l
       /
      i
 
-    For impropers: the angle is positive if when looking in plane ikj, l is rotated clockwise
+    For impropers: the angle is positive if when looking in plane ikj, l is rotated clockwise::
 
      k
-      \
+      \\
        l--j
       /
      i
 
+    The angle is computed using the formula:
 
-    In the case of periodic boundary conditions, :obj:`cell_shifts` must be
+    .. math::
+
+        \phi_{ijkl} &= \text{atan2}(-\mathbf{m} \cdot \mathbf{n}_2, \mathbf{n}_2 \cdot \mathbf{n}_1) \\
+        \mathbf{n}_1 &= \mathbf{\hat{r}}_{ji} \times \mathbf{\hat{r}}_{kj} \\
+        \mathbf{n}_2 &= \mathbf{\hat{r}}_{kj} \times \mathbf{\hat{r}}_{jl} \\
+        \mathbf{m} &= \mathbf{n}_{1} \times \mathbf{\hat{r}}_{kj} 
+
+    Where the :math:`\hat{u}` indicates a normalized vector in direction of :math:`u`. 
+    The order and signs in the atan2 arguments are needed to obtain values consistent 
+    with mdtraj. In the case of periodic boundary conditions, :obj:`cell_shifts` must be
     provided so that :math:`\mathbf{r}_j` can be outside of the original unit
     cell.
     """
