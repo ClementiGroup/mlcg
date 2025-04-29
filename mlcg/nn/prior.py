@@ -1133,7 +1133,7 @@ class Polynomial(torch.nn.Module, _Prior):
     }
     _compute_map = {
         "bonds": compute_distances,
-        "angles": compute_angles,
+        "angles": compute_angles_cos,
         "dihedrals": compute_torsions,
     }
     _neighbor_list_map = {
