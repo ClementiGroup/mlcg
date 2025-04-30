@@ -1,6 +1,6 @@
 from .gradients import GradientsOut, SumOut, EnergyOut
 from .schnet import SchNet, StandardSchNet
-from .radial_basis import GaussianBasis, ExpNormalBasis, ShiftedExpNormalBasis
+from .radial_basis import GaussianBasis, ExpNormalBasis, ShiftedRBF
 from .cutoff import CosineCutoff, IdentityCutoff
 from .losses import ForceMSE, ForceRMSE, Loss
 from .prior import (
@@ -38,7 +38,7 @@ __all__ = [
     "StandardSchNet",
     "GaussianBasis",
     "ExpNormalBasis",
-    "ShiftedExpNormalBasis",
+    "ShiftedRBF",
     "CosineCutoff",
     "IdentityCutoff",
     "ForceMSE",
