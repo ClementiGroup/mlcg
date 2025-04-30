@@ -5,7 +5,6 @@ from typing import Union
 from .base import _RadialBasis
 
 
-
 class ShiftedRBF(_RadialBasis):
     r"""Subclass of ExpNormalBasis which shifts the distance by a value
     ----------
@@ -26,7 +25,7 @@ class ShiftedRBF(_RadialBasis):
 
     def __init__(
         self,
-        rbf : _RadialBasis,
+        rbf: _RadialBasis,
         shift: float = 0.0,
     ):
         super(ShiftedRBF, self).__init__()
@@ -35,7 +34,7 @@ class ShiftedRBF(_RadialBasis):
         self.cutoff = self.rbf.cutoff
         assert shift >= 0.0
         self.shift = shift
-    
+
     def reset_parameters(self):
         r"""Method to reset the parameters of the basis functions to their
         initial values.

@@ -12,18 +12,11 @@ class SpacedExpBasis(_RadialBasis):
     The functions have an exponential form with the following means and std:
 
     .. math::
-        \sigma_0 = \sigma_f/s
-        \sigma_1 = \sigma_${min}
-        \sigma_2 = \sigma_f*\sigma_1
-        ...
-        \sigma_n = \sigma_f*\sigma_${n-1}
-
-        \mu_0 = 0
-        \mu_1 = \sigma_f
-        \mu_2 = \mu_1 + s*\sigma_1
-        ...
-        \mu_n = \mu_${n-1} + s*\sigma_${n-1}
-
+        \sigma_0 = \sigma_f/s \; &, \; \mu_0 = 0 \\
+        \sigma_1 = \sigma_{\text{min}} \; &, \; \mu_1 = \sigma_f \\
+        \sigma_2 = \sigma_f \sigma_1 \; &, \; \mu_2 = \mu_1 + s \sigma_1 \\
+        \vdots \quad \quad \; &, \; \quad \quad \vdots \\
+        \sigma_n = \sigma_f \sigma_{n-1} \; &, \; \mu_n = \mu_{n-1} + s \sigma_{n-1} \\
     Parameters
     ----------
     cutoff:
