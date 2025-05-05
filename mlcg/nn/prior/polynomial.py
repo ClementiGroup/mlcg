@@ -1,15 +1,12 @@
 import torch
 from torch_scatter import scatter
-from typing import Optional
+from typing import Optional, Dict
 
 
 from .base import _Prior
 from ...data.atomic_data import AtomicData
-from ...geometry.topology import Topology
 from ...geometry.internal_coordinates import (
-    compute_distances,
     compute_angles_cos,
-    compute_torsions,
 )
 
 
@@ -86,21 +83,7 @@ class Polynomial(torch.nn.Module, _Prior):
         self.register_buffer("v_0", v_0)
         return None
 
-    def data2features(self, data):
-        mapping = data.neighbor_list[self.name]["index_mapping"]
-        if hasattr(data, "pbc"):
-            return Polynomial.compute_features(
-                data.pos,
-                mapping,
-                self.name,
-                data.pbc,
-                data.cell,
-                data.batch,
-            )
-        else:
-            return Polynomial.compute_features(data.pos, mapping, self.name)
-
-    def data2parameters(self, data):
+    def data2parameters(self, data: AtomicData) -> Dict:
         mapping = data.neighbor_list[self.name]["index_mapping"]
         interaction_types = [
             data.atom_types[mapping[ii]] for ii in range(self.order)
@@ -112,7 +95,24 @@ class Polynomial(torch.nn.Module, _Prior):
         v_0s = self.v_0[interaction_types].t()
         return {"ks": ks, "v_0s": v_0s}
 
-    def forward(self, data):
+    def forward(self, data: AtomicData) -> AtomicData:
+        r"""Forward pass through the Polynomial interaction.
+        Parameters
+        ----------
+        data:
+            Input AtomicData instance that possesses an appropriate
+            neighbor list containing both an 'index_mapping'
+            field and a 'mapping_batch' field for accessing
+            beads relevant to the interaction and scattering
+            the interaction energies onto the correct example/structure
+            respectively.
+        Returns
+        -------
+        AtomicData:
+            Updated AtomicData instance with the 'out' field
+            populated with the predicted energies for each
+            example/structure
+        """
         mapping_batch = data.neighbor_list[self.name]["mapping_batch"]
         features = self.data2features(data).flatten()
         params = self.data2parameters(data)
@@ -131,7 +131,9 @@ class Polynomial(torch.nn.Module, _Prior):
         return data
 
     @staticmethod
-    def compute(x: torch.Tensor, ks: torch.Tensor, V0: torch.Tensor):
+    def compute(
+        x: torch.Tensor, ks: torch.Tensor, V0: torch.Tensor
+    ) -> torch.Tensor:
         """Harmonic interaction in the form of a series. The shape of the tensors
             should match between each other.
 
@@ -157,6 +159,23 @@ class QuarticAngles(Polynomial):
             statistics, name, order=3, n_degs=n_degs
         )
 
+    def data2features(self, data: AtomicData) -> torch.Tensor:
+        r"""Computes features for the QuarticAngle interaction from
+        an AtomicData instance)
+        Parameters
+        ----------
+        data:
+            Input `AtomicData` instance
+        Returns
+        -------
+        torch.Tensor:
+            Tensor of computed features
+        """
+        mapping = data.neighbor_list[self.name]["index_mapping"]
+        return self.compute_features(data.pos, mapping)
+
     @staticmethod
-    def compute_features(pos, mapping):
-        return Polynomial.compute_features(pos, mapping, "angles")
+    def compute_features(
+        pos: AtomicData, mapping: torch.Tensor
+    ) -> torch.Tensor:
+        return compute_angles_cos(pos, mapping)
