@@ -49,7 +49,7 @@ class FourierSeries(torch.nn.Module, _Prior):
     """
 
     def __init__(
-        self, statistics: Dict, name : str = "", n_degs: int = 6, order: int = 4
+        self, statistics: Dict, name: str = "", n_degs: int = 6, order: int = 4
     ) -> None:
         super(FourierSeries, self).__init__()
         keys = torch.tensor(list(statistics.keys()), dtype=torch.long)
@@ -435,16 +435,19 @@ class FourierSeries(torch.nn.Module, _Prior):
         raise NotImplementedError()
 
 
-
 class Dihedral(FourierSeries):
     r"""
     Class to represent a Dihedral potential using a fourier series
     """
 
-    name : Final[str] = "dihedrals"
-    _order : Final[int] = 4
+    name: Final[str] = "dihedrals"
+    _order: Final[int] = 4
+
     def __init__(
-        self, statistics: Dict,  n_degs: int = 3, name: str = "dihedrals",
+        self,
+        statistics: Dict,
+        n_degs: int = 3,
+        name: str = "dihedrals",
     ) -> None:
         super(Dihedral, self).__init__(
             statistics, name=name, n_degs=n_degs, order=self._order
@@ -454,7 +457,7 @@ class Dihedral(FourierSeries):
     def neighbor_list(topology) -> None:
         nl = topology.neighbor_list(Dihedral.name)
         return {Dihedral.name: nl}
-    
+
     @staticmethod
     def compute_features(
         pos: torch.Tensor, mapping: torch.Tensor

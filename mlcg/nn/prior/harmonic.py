@@ -56,7 +56,6 @@ class Harmonic(torch.nn.Module, _Prior):
         The keys can be tuples of 2 or 3 atom type integers.
     """
 
-
     def __init__(self, statistics: Dict, name: str, order: int) -> None:
         super(Harmonic, self).__init__()
         keys = torch.tensor(list(statistics.keys()), dtype=torch.long)
@@ -207,7 +206,9 @@ class HarmonicBonds(Harmonic):
     _order = 2
 
     def __init__(self, statistics) -> None:
-        super(HarmonicBonds, self).__init__(statistics, HarmonicBonds.name, order=2)
+        super(HarmonicBonds, self).__init__(
+            statistics, HarmonicBonds.name, order=2
+        )
 
     def data2features(self, data):
         mapping = data.neighbor_list[self.name]["index_mapping"]
@@ -240,8 +241,10 @@ class HarmonicAngles(Harmonic):
     _order = 3
 
     def __init__(self, statistics) -> None:
-        super(HarmonicAngles, self).__init__(statistics, HarmonicAngles.name, order=3)
-    
+        super(HarmonicAngles, self).__init__(
+            statistics, HarmonicAngles.name, order=3
+        )
+
     def data2features(self, data):
         mapping = data.neighbor_list[self.name]["index_mapping"]
         return self.compute_features(data.pos, mapping)
@@ -271,7 +274,9 @@ class HarmonicAnglesRaw(Harmonic):
     _order = 3
 
     def __init__(self, statistics) -> None:
-        super(HarmonicAngles, self).__init__(statistics, HarmonicAngles.name,order=3)
+        super(HarmonicAngles, self).__init__(
+            statistics, HarmonicAngles.name, order=3
+        )
 
     @staticmethod
     def neighbor_list(topology: Topology) -> dict:
@@ -343,7 +348,9 @@ class ShiftedPeriodicHarmonicImpropers(Harmonic):
 
     def __init__(self, statistics) -> None:
         super(ShiftedPeriodicHarmonicImpropers, self).__init__(
-            statistics, ShiftedPeriodicHarmonicImpropers.name, order=ShiftedPeriodicHarmonicImpropers._order
+            statistics,
+            ShiftedPeriodicHarmonicImpropers.name,
+            order=ShiftedPeriodicHarmonicImpropers._order,
         )
 
     @staticmethod
@@ -355,9 +362,7 @@ class ShiftedPeriodicHarmonicImpropers(Harmonic):
         # features should be between -pi and pi after data2features()
         # Here, we conditionally shift angles in (-pi, 0) to (pi, 2pi)
         # Then subtract pi in order to center the distribution at 0
-        features = compute_torsions(
-            pos, mapping
-        )
+        features = compute_torsions(pos, mapping)
         features = (
             torch.where(features < 0, features + 2 * torch_pi, features)
             - torch_pi
@@ -388,7 +393,9 @@ class GeneralBonds(Harmonic):
     _order = 2
 
     def __init__(self, statistics, name) -> None:
-        super(GeneralBonds, self).__init__(statistics, HarmonicBonds.name,order=GeneralBonds._order)
+        super(GeneralBonds, self).__init__(
+            statistics, HarmonicBonds.name, order=GeneralBonds._order
+        )
         self.name = name
 
     def data2features(self, data):
@@ -407,7 +414,9 @@ class GeneralAngles(Harmonic):
     _order = 3
 
     def __init__(self, statistics, name) -> None:
-        super(GeneralAngles, self).__init__(statistics, HarmonicAngles.name,order = GeneralAngles._order)
+        super(GeneralAngles, self).__init__(
+            statistics, HarmonicAngles.name, order=GeneralAngles._order
+        )
         self.name = name
 
     def data2features(self, data):
