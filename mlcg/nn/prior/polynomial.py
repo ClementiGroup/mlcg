@@ -10,7 +10,7 @@ from ...geometry.internal_coordinates import (
 )
 
 
-class Polynomial(torch.nn.Module, _Prior):
+class Polynomial(_Prior):
     r"""
     Prior representing a polynomial with
     the following energy ansatz:

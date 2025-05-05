@@ -13,7 +13,7 @@ from ...geometry.internal_coordinates import (
 )
 
 
-class FourierSeries(torch.nn.Module, _Prior):
+class FourierSeries(_Prior):
     r"""
     Prior class representing a fourier series of a periodic variable $\theta$.
     The energy computed is given by the follwoing function
@@ -199,7 +199,7 @@ class FourierSeries(torch.nn.Module, _Prior):
         return -L
 
     @staticmethod
-    def _init_parameters(n_degs):
+    def _init_parameters(n_degs: int):
         """Helper method for guessing initial parameter values"""
         p0 = [1.00]  # start with constant offset
         k1s_0 = [1 for _ in range(n_degs)]
@@ -209,7 +209,7 @@ class FourierSeries(torch.nn.Module, _Prior):
         return p0
 
     @staticmethod
-    def _init_parameter_dict(n_degs):
+    def _init_parameter_dict(n_degs: int):
         """Helper method for initializing the parameter dictionary"""
         stat = {"k1s": {}, "k2s": {}, "v_0": 0.00}
         k1_names = ["k1_" + str(ii) for ii in range(1, n_degs + 1)]
@@ -222,7 +222,7 @@ class FourierSeries(torch.nn.Module, _Prior):
         return stat
 
     @staticmethod
-    def _make_parameter_dict(stat, popt, n_degs):
+    def _make_parameter_dict(stat, popt, n_degs: int):
         """Helper method for constructing a fitted parameter dictionary"""
         v_0 = popt[0]
         k_popt = popt[1:]
