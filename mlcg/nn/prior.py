@@ -300,23 +300,31 @@ class HarmonicAnglesRaw(Harmonic):
     r"""Wrapper class for quickly computing angle priors
     (order 3 Harmonic priors)
 
-    This class uses the raw angles in rad calculated via the atan2 to ensure numerical stability
+    .. math::
 
-    \angle(x, y) := 2 \arctan\left( \frac{ \|x \cdot \|y\| - y \cdot \|x\| \|  }{ \|x \cdot \|y\| + y \cdot \|x\| \| } \right)
-
-    See: How Futile are Mindless Assessments of Roundoff in Floating-Point Computation? §12: Mangled Angles by William Kahan
+        \theta_{ijk} = &\text{atan2}(\Vert \hat{\mathbf{n}} \vert, \mathbf{r}_{ij} \cdot \mathbf{r}_{kj} ) \\
+        \mathbf{r}_{ij} &= \mathbf{r}_i - \mathbf{r}_j \\
+        \mathbf{r}_{kj} &= \mathbf{r}_k - \mathbf{r}_j \\
+        \mathbf{\hat{n}} &= \frac{\mathbf{r}_{ij} \times \mathbf{r}_{kj}}{\Vert \mathbf{r}_{ij} \times \mathbf{r}_{kj} \Vert} 
 
     """
 
     name: Final[str] = "angles"
     _order = 3
 
-    def __init__(self, statistics) -> None:
-        super(HarmonicAngles, self).__init__(statistics, HarmonicAngles.name)
+    def __init__(self, statistics, name) -> None:
+        super(HarmonicAnglesRaw, self).__init__(
+            statistics, HarmonicAnglesRaw.name
+        )
+        self.name = name
 
     @staticmethod
     def neighbor_list(topology: Topology) -> dict:
-        return Harmonic.neighbor_list(topology, HarmonicAngles.name)
+        return Harmonic.neighbor_list(topology, HarmonicAnglesRaw.name)
+
+    def data2features(self, data):
+        mapping = data.neighbor_list[self.name]["index_mapping"]
+        return HarmonicAnglesRaw.compute_features(data.pos, mapping)
 
     @staticmethod
     def compute_features(pos, mapping):
