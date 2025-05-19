@@ -128,7 +128,7 @@ def compute_angles_raw(
     dr1 = pos[mapping[0]] - pos[mapping[1]]
     dr2 = pos[mapping[2]] - pos[mapping[1]]
 
-    n = torch.cross(dr1, dr2)
+    n = torch.cross(dr1, dr2, dim=1)
     n = n.norm(p=2, dim=1)
     d = (dr1 * dr2).sum(dim=1)
     theta = torch.atan2(n, d)
