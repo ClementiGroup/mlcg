@@ -1,5 +1,5 @@
 import torch
-from typing import Sequence, Any, List
+from typing import Sequence, Any, List, Union
 from ..data.atomic_data import AtomicData
 from ..data._keys import *
 
@@ -56,7 +56,7 @@ class SumOut(torch.nn.Module):
         self.targets = targets
         self.models = models
 
-    def forward(self, data: AtomicData) -> AtomicData:
+    def forward(self, data: AtomicData, rescaler: Union[None, torch.Tensor] = None) -> AtomicData:
         r"""Sums output properties from individual models into global
         property predictions
 
@@ -113,7 +113,10 @@ class SumOut(torch.nn.Module):
         for name in self.models.keys():
             data = self.models[name](data)
             for target in self.targets:
-                data.out[target] += data.out[name][target]
+                if target == 'forces' and name == 'SchNet' and rescaler is not None:
+                    data.out[target] += rescaler * data.out[name][target]
+                else:
+                    data.out[target] += data.out[name][target]
         return data
 
     def neighbor_list(self, **kwargs):

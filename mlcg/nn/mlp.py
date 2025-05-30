@@ -26,6 +26,8 @@ class MLP(torch.nn.Module):
         with no bias
     last_bias: bool
         add a bias term to the last layer of the MLP
+    hidden_bias: bool
+        add a bias term to the hidden layers of the MLP
     """
 
     def __init__(
@@ -33,13 +35,14 @@ class MLP(torch.nn.Module):
         layer_widths: List[int] = None,
         activation_func: torch.nn.Module = torch.torch.nn.Tanh(),
         last_bias: bool = True,
+        hidden_bias: bool = True
     ):
         super(MLP, self).__init__()
         if layer_widths is None:
             layer_widths = [10, 10, 1]
         layers = []
         for w_in, w_out in zip(layer_widths[:-2], layer_widths[1:-1]):
-            layers.append(torch.nn.Linear(w_in, w_out, bias=True))
+            layers.append(torch.nn.Linear(w_in, w_out, bias=hidden_bias))
             layers.append(activation_func)
         # last layer without activation function and bias
         layers.append(

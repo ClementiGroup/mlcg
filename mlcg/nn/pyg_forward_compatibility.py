@@ -11,9 +11,9 @@ import warnings
 import torch
 import mlcg.nn.schnet
 from mlcg.nn.schnet import CFConv, SchNet
+from interpret_gnn.models import CustomCFConv
 
-
-def get_refreshed_cfconv_layer(old_cfconv: CFConv):
+def get_refreshed_cfconv_layer(old_cfconv: CustomCFConv):
     """Extract the weights and reinstantiate the `CFConv` object
     such as to make it compatible with the current pyg.
 
@@ -34,23 +34,62 @@ def get_refreshed_cfconv_layer(old_cfconv: CFConv):
     out_channels = old_cfconv.lin2.out_features
     num_filters = old_cfconv.lin1.out_features
     aggr = old_cfconv.aggr
+    # edge_params =
     # extract the state dict
     # clone is used here, since the state_dict of filter_network
     # will be overwritten by the __init__ of `new_cfconv`
     state_dict = {k: v.clone() for k, v in old_cfconv.state_dict().items()}
     device = next(iter(state_dict.values())).device
     # rebuild
-    new_cfconv = CFConv(
+    new_cfconv = CustomCFConv(
         filter_network=filter_network,
         cutoff=cutoff,
         in_channels=in_channels,
         out_channels=out_channels,
         num_filters=num_filters,
+        # edge_params=edge_params,
         aggr=aggr,
     ).to(device)
     new_cfconv.load_state_dict(state_dict)
     return new_cfconv
 
+# def get_refreshed_cfconv_layer(old_cfconv: CFConv):
+#     """Extract the weights and reinstantiate the `CFConv` object
+#     such as to make it compatible with the current pyg.
+# 
+#     Parameters
+#     ----------
+#     old_cfconv: the `CFConv` from deserialized SchNet checkpoints
+#         possibly saved with a previous versions of pyg.
+#     """
+#     # Tensor was once imported as a standalone symbol in an older
+#     # version of mlcg (or pyg) but not anymore, thus we have
+#     # to monkey patch it here in order for some older checkpoints
+#     # to work
+#     mlcg.nn.schnet.Tensor = torch.Tensor
+#     # extract init args
+#     filter_network = old_cfconv.filter_network
+#     cutoff = old_cfconv.cutoff
+#     in_channels = old_cfconv.lin1.in_features
+#     out_channels = old_cfconv.lin2.out_features
+#     num_filters = old_cfconv.lin1.out_features
+#     aggr = old_cfconv.aggr
+#     # extract the state dict
+#     # clone is used here, since the state_dict of filter_network
+#     # will be overwritten by the __init__ of `new_cfconv`
+#     state_dict = {k: v.clone() for k, v in old_cfconv.state_dict().items()}
+#     device = next(iter(state_dict.values())).device
+#     # rebuild
+#     new_cfconv = CFConv(
+#         filter_network=filter_network,
+#         cutoff=cutoff,
+#         in_channels=in_channels,
+#         out_channels=out_channels,
+#         num_filters=num_filters,
+#         aggr=aggr,
+#     ).to(device)
+#     new_cfconv.load_state_dict(state_dict)
+#     return new_cfconv
 
 def _search_for_schnet(top_level: torch.nn.Module):
     """Recursively search for SchNet in all submodules."""

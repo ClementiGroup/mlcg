@@ -21,6 +21,7 @@ def extract_model_from_checkpoint(checkpoint_path, hparams_file):
     return model
 
 
+
 def merge_priors_and_checkpoint(
     checkpoint: Union[str, torch.nn.Module],
     priors: Union[str, torch.nn.ModuleDict, SumOut],

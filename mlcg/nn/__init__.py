@@ -3,7 +3,7 @@ from .schnet import SchNet, StandardSchNet
 from .radial_basis import GaussianBasis, ExpNormalBasis
 from .cutoff import CosineCutoff, IdentityCutoff
 from .losses import ForceMSE, ForceRMSE, Loss
-from .prior import Harmonic, HarmonicAngles, HarmonicBonds, Repulsion, Dihedral
+from .prior import Harmonic, HarmonicAngles, HarmonicBonds, Repulsion, Dihedral, HarmonicAnglesRawo
 from .mlp import MLP, TypesMLP
 from .attention import ExactAttention, FavorAttention, Nonlocalinteractionblock
 from .pyg_forward_compatibility import (
@@ -37,6 +37,7 @@ __all__ = [
     "Loss",
     "Harmonic",
     "HarmonicAngles",
+    "HarmonicAnglesRaw",
     "HarmonicBonds",
     "Repulsion",
     "MLP",

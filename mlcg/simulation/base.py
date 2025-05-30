@@ -398,6 +398,13 @@ class _Simulation(object):
         forces :
             vector forces predicted by the model
         """
+        
+        # REBALANCING BEADS
+        # rescaler = torch.ones(10, device=data.pos.device)
+        # rebalance_beads = [0, 1, 8, 9]
+        # for b in rebalance_beads:
+        #     rescaler[b] = 0.1
+        # data = self.model(data, rescaler.repeat(30).view(-1,1))
 
         data = self.model(data)
         potential = data.out[ENERGY_KEY].detach()
