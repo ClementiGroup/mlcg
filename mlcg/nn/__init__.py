@@ -1,9 +1,17 @@
-from .gradients import GradientsOut, SumOut
+from .gradients import GradientsOut, SumOut, EnergyOut
 from .schnet import SchNet, StandardSchNet
 from .radial_basis import GaussianBasis, ExpNormalBasis
 from .cutoff import CosineCutoff, IdentityCutoff
 from .losses import ForceMSE, ForceRMSE, Loss
-from .prior import Harmonic, HarmonicAngles, HarmonicBonds, Repulsion, Dihedral
+from .prior import (
+    Harmonic,
+    HarmonicAngles,
+    HarmonicBonds,
+    Repulsion,
+    Dihedral,
+    Polynomial,
+    QuarticAngles,
+)
 from .mlp import MLP, TypesMLP
 from .attention import ExactAttention, FavorAttention, Nonlocalinteractionblock
 from .pyg_forward_compatibility import (
@@ -13,6 +21,8 @@ from .pyg_forward_compatibility import (
     fixed_pyg_inspector,
 )
 from .painn import PaiNN, StandardPaiNN
+from .lr_scheduler import CustomStepLR
+from .utils import sparsify_prior_module, desparsify_prior_module
 
 try:
     from .mace_interface import MACEInterface
@@ -23,6 +33,7 @@ except Exception as e:
 __all__ = [
     "GradientsOut",
     "SumOut",
+    "EnergyOut",
     "SchNet",
     "StandardSchNet",
     "GaussianBasis",
@@ -51,4 +62,5 @@ __all__ = [
     "fixed_pyg_inspector",
     "PaiNN",
     "StandardPaiNN",
+    "CustomStepLR",
 ]

@@ -31,6 +31,8 @@ class Atom(NamedTuple):
         Atom name
     resname: Optional[str] = None
         Name of the residue containing the atom
+    resid: Optional[int] = None
+        Index of the desired residue
     """
 
     #: type of the atom
@@ -700,11 +702,8 @@ def get_n_paths(
     for atom in graph.nodes:
         n_hop_paths = nx.single_source_dijkstra_path(graph, atom, cutoff=n)
         paths = [path for _, path in n_hop_paths.items() if len(path) == n]
-        # print(paths)
         for path in paths:
-            # print(path)
             for k, sub_atom in enumerate(path):
-                # print(sub_atom)
                 final_paths[k].append(sub_atom)
     final_paths = torch.tensor(final_paths)
     if unique and n in [2, 3, 4]:

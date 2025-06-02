@@ -2,6 +2,9 @@ import torch
 from pytorch_lightning.plugins.environments import (
     ClusterEnvironment,
 )
+import pytorch_lightning as pl
+from pytorch_lightning.callbacks import ModelCheckpoint
+
 from typing import List, Optional, Union, Any, Dict
 
 from .model import PLModel
@@ -78,3 +81,37 @@ def merge_priors_and_checkpoint(
 
     model = SumOut(models=merged_model)
     return model
+
+
+class LossScheduler(pl.Callback):
+    def __init__(self, epoch_to_update, new_weights):
+        """
+        epoch_to_update: int, the epoch number to update the weights
+        new_weights: list or tensor, the new weights to be used after the epoch
+        """
+        self.epoch_to_update = epoch_to_update
+        self.new_weights = torch.tensor(new_weights)
+
+    def on_train_epoch_start(
+        self, trainer: "pl.Trainer", pl_module: "pl.LightningModule"
+    ) -> None:
+        if trainer.current_epoch == self.epoch_to_update:
+            pl_module.loss.weights.copy_(self.new_weights)
+            print(
+                f"Updated loss weights to {self.new_weights.tolist()} at epoch {self.epoch_to_update}"
+            )
+
+
+class OffsetCheckpoint(ModelCheckpoint):
+    """Customized checkpoint class used to save checkpoints
+    starting from specified epoch."""
+
+    def __init__(self, start_epoch: int, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.start_epoch = start_epoch
+
+    def on_train_epoch_end(self, trainer, pl_module):
+        # Only save checkpoints if the current epoch >= start_epoch
+        if trainer.current_epoch >= self.start_epoch:
+            # Call the parent class's save logic
+            super().on_train_epoch_end(trainer, pl_module)

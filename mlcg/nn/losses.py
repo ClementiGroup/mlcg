@@ -50,7 +50,7 @@ class Loss(torch.nn.Module):
             over the entire AtomicData instance
         """
 
-        loss = torch.zeros((len(self.losses)))
+        loss = torch.zeros((len(self.losses)), device=self.weights.device)
         for ii, loss_fn in enumerate(self.losses):
             loss[ii] = loss_fn(data) * self.weights[ii]
         return loss.sum()

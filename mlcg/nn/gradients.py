@@ -123,6 +123,39 @@ class SumOut(torch.nn.Module):
         return nl
 
 
+class EnergyOut(torch.nn.Module):
+    r"""Extractor for energy computed via SchNet
+
+    Parameters
+    ----------
+    model:
+        model whose target should be extyracted
+    targets:
+        List of prediction targets that will be extracted
+
+    """
+
+    name: str = "EnergyOut"
+
+    def __init__(
+        self,
+        model: torch.nn.Module,
+        targets: List[str] = None,
+    ):
+        super().__init__()
+        if targets is None:
+            targets = ["enegy"]
+        self.targets = targets
+        self.model = model
+        self.name = self.model.name
+
+    def forward(self, data: AtomicData) -> AtomicData:
+        data = self.model(data)
+        for target in self.targets:
+            data.out[target] = data.out[self.name][target]
+        return data
+
+
 class GradientsOut(torch.nn.Module):
     r"""Gradient wrapper for models.
 

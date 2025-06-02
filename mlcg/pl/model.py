@@ -90,7 +90,7 @@ class PLModel(pl.LightningModule):
         )
 
     def training_step(self, data: AtomicData, batch_idx: int) -> torch.Tensor:
-        loss, _ = self.step(data, "training")
+        loss, _ = self.step(data, "train")
         return loss
 
     def validation_step(

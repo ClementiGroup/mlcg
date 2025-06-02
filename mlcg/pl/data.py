@@ -49,6 +49,7 @@ class DataModule(pl.LightningDataModule):
         num_workers: int = 1,
         loading_stride: int = 1,
         save_local_copy: bool = False,
+        pin_memory: bool = True,
     ) -> None:
         super(DataModule, self).__init__()
         # self.save_hyperparameters()
@@ -76,15 +77,15 @@ class DataModule(pl.LightningDataModule):
         self.splits = splits
         self.loading_stride = loading_stride
         self.splits_fn = os.path.join(self.log_dir, "splits.npz")
+        self.pin_memory = pin_memory
 
     def load_dataset(self):
         if self.save_local_copy:
             dataset = torch.load(self.dataset_root)
         else:
             dataset = self.dataset_cls(**self.dataset_init_kwargs)
-        return [
-            dataset[ii] for ii in range(0, len(dataset), self.loading_stride)
-        ]
+        indeces = torch.arange(0, len(dataset), self.loading_stride)
+        return dataset[indeces]
 
     def prepare_data(self):
         """Download, preprocess dataset, etc."""
@@ -97,12 +98,13 @@ class DataModule(pl.LightningDataModule):
             len(dataset),
             self.val_ratio,
             self.test_ratio,
-            splits=self.splits_fn,
+            filename=self.splits_fn,
+            splits=self.splits,
         )
 
-        self.train_dataset = [dataset[ii] for ii in self.idx_train]
-        self.val_dataset = [dataset[ii] for ii in self.idx_val]
-        self.test_dataset = [dataset[ii] for ii in self.idx_test]
+        self.train_dataset = dataset[self.idx_train]
+        self.val_dataset = dataset[self.idx_val]
+        self.test_dataset = dataset[self.idx_test]
 
     def train_dataloader(self):
         return self._get_dataloader(self.train_dataset, "train")
@@ -126,5 +128,5 @@ class DataModule(pl.LightningDataModule):
             batch_size=batch_size,
             shuffle=shuffle,
             num_workers=self.num_workers,
-            pin_memory=True,
+            pin_memory=self.pin_memory,
         )
