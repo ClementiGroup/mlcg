@@ -124,6 +124,60 @@ class ExpNormalBasis(_RadialBasis):
         )
 
 
+class ShiftedExpNormalBasis(ExpNormalBasis):
+    r"""Subclass of ExpNormalBasis which shifts the distance by a value
+    ----------
+    cutoff:
+        Defines the smooth cutoff function. If a float is provided, it will be interpreted as
+        an upper cutoff and a CosineCutoff will be used between 0 and the provided float. Otherwise,
+        a chosen `_Cutoff` instance can be supplied.
+    num_rbf:
+        The number of functions in the basis set.
+    trainable:
+        If True, the parameters of the basis (the centers and widths of each
+        function) are registered as optimizable parameters that will be updated
+        during backpropagation. If False, these parameters will be instead fixed
+        in an unoptimizable buffer.
+    shift:
+        Zero value of the functions.
+    """
+
+    def __init__(
+        self,
+        cutoff: Union[int, float, _Cutoff],
+        num_rbf: int = 50,
+        trainable: bool = True,
+        shift: float = 0.0,
+    ):
+        super(ShiftedExpNormalBasis, self).__init__(
+            cutoff=cutoff, num_rbf=num_rbf, trainable=trainable
+        )
+        assert shift >= 0.0
+        self.shift = shift
+
+    def forward(self, dist: torch.Tensor) -> torch.Tensor:
+        r"""Expansion of distances through the radial basis function set.
+        Parameters
+        ----------
+        dist: torch.Tensor
+            Input pairwise distances of shape (total_num_edges)
+        Return
+        ------
+        expanded_distances: torch.Tensor
+            Distances expanded in the radial basis with shape (total_num_edges, num_rbf)
+        """
+
+        dist = dist.unsqueeze(-1) - self.shift
+        return self.cutoff(dist) * torch.exp(
+            -self.betas
+            * (
+                torch.exp(self.alpha * (-dist + self.cutoff.cutoff_lower))
+                - self.means
+            )
+            ** 2
+        )
+
+
 class ExtendedExpNormalBasis(ExpNormalBasis):
     r"""ExpNormalBasis that allows for arbitrary lower cutoffs not tied to
     a supplied `_Cutoff`. This basis follows the definition in [Physnet]_.

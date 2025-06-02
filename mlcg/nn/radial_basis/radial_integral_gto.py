@@ -3,7 +3,7 @@ import numpy as np
 from mpmath import hyp1f1, gamma, exp, power
 from itertools import product
 from scipy import interpolate
-from typing import Union
+from typing import Union, Callable, Tuple
 
 from ..spline import NaturalCubicSpline
 from .base import _RadialBasis
@@ -26,12 +26,16 @@ class RIGTOBasis(_RadialBasis):
         {}_1F_1\left(\frac{n+l+3}{2},l+\frac{3}{2};\frac{c^2 r^2}{c+b_n}\right),
 
     where :math:`{}_1F_1` is the confluent hypergeometric function,
-    :math:`\Gamma` is the gamma function, :math:`f_c` is a cutoff function,
-    :math:`b_n=\frac{1}{2\sigma_n^2}`, :math:`c= 1 / (2\sigma^2`,
-    :math:`\sigma_n = r_\text{cut} \max(\sqrt{n},1)/n_{max}` and
-    :math:`\mathcal{N}_n^2 = \frac{2}{\sigma_n^{2n + 3}\Gamma(n + 3/2)}`.
+    :math:`\Gamma` is the gamma function, :math:`f_c` is a cutoff function
+    and
 
-    For more details on the derivation, refer to `appendix A <https://doi.org/10.5075/epfl-thesis-7997>`_.
+    .. math::
+        b_n &= \frac{1}{2\sigma_n^2} \\
+        c &= \frac{1}{2\sigma^2} \\
+        \sigma_n &= r_\text{cut} \frac{\max(\sqrt{n},1)}{n_{\text{max}}} \\
+        \mathcal{N}_n^2 &= \frac{2}{\sigma_n^{2n + 3}\Gamma(n + 3/2)} \\
+
+    For more details on the derivation, refer to `appendix A of this supplementary information <https://doi.org/10.5075/epfl-thesis-7997>`_.
 
     Parameters
     ----------
@@ -119,7 +123,32 @@ class RIGTOBasis(_RadialBasis):
         pass
 
 
-def fit_splined_radial_integrals(nmax, lmax, rc, sigma, cutoff, mesh_size):
+def fit_splined_radial_integrals(
+    nmax: int,
+    lmax: int,
+    rc: float,
+    sigma: float,
+    cutoff: _Cutoff,
+    mesh_size: int,
+) -> Tuple[
+    torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor
+]:
+    """
+    Fit a natural cubic spline to the radial integrals of Gaussian type orbitals.
+
+    Parameters:
+    -----------
+        nmax (int): The maximum number of orbitals.
+        lmax (int): The maximum angular momentum.
+        rc (float): The radial cutoff.
+        sigma (float): The variance parameter for the Gaussian.
+        cutoff (_Cutoff): The cutoff class applied to the orbitals.
+        mesh_size (int): The size of the mesh to be used for fitting.
+
+    Returns:
+    --------
+        tuple: Coefficients of the cubic spline.
+    """
     c = 0.5 / sigma**2
     length, channels = mesh_size, nmax * lmax
 
@@ -144,7 +173,30 @@ def fit_splined_radial_integrals(nmax, lmax, rc, sigma, cutoff, mesh_size):
     return coeffs
 
 
-def splined_radial_integrals(nmax, lmax, rc, sigma, cutoff, mesh_size=600):
+def splined_radial_integrals(
+    nmax: int,
+    lmax: int,
+    rc: float,
+    sigma: float,
+    cutoff: _Cutoff,
+    mesh_size: int = 600,
+) -> "NaturalCubicSpline":
+    """
+    Compute splined radial integrals using a natural cubic spline.
+
+    Parameters:
+    -----------
+        nmax (int): The maximum number of orbitals.
+        lmax (int): The maximum angular momentum.
+        rc (float): The radial cutoff.
+        sigma (float): The variance parameter for the Gaussian.
+        cutoff (_Cutoff): The cutoff function applied to the orbitals.
+        mesh_size (int, optional): The size of the mesh to be used for fitting. Default is 600.
+
+    Returns:
+    --------
+        NaturalCubicSpline: The radial integrals in spline form.
+    """
     coeffs = fit_splined_radial_integrals(
         nmax, lmax, rc, sigma, cutoff, mesh_size
     )
@@ -152,31 +204,82 @@ def splined_radial_integrals(nmax, lmax, rc, sigma, cutoff, mesh_size=600):
     return Rnl
 
 
-def sn(n, rcut, nmax):
+def sigma_n(n: int, rcut: float, nmax: int) -> float:
+    """
+    Compute the scale parameter s_n for the given orbital.
+
+    Parameters:
+    -----------
+        n (int): The principal quantum number.
+        rcut (float): The radial cutoff.
+        nmax (int): The maximum number of orbitals.
+
+    Returns:
+    --------
+        float: The computed scale parameter s_n.
+    """
     return rcut * max(np.sqrt(n), 1) / nmax
 
 
-def dn(n, rcut, nmax):
-    s_n = sn(n, rcut, nmax)
+def bn(n: int, rcut: float, nmax: int) -> float:
+    """
+    Compute the inverse square of the parameter s_n for the given orbital.
+
+    Parameters:
+    -----------
+        n (int): The principal quantum number.
+        rcut (float): The radial cutoff.
+        nmax (int): The maximum number of orbitals.
+
+    Returns:
+    --------
+        float: The computed value of 0.5 / (s_n)^2.
+    """
+    s_n = sigma_n(n, rcut, nmax)
     return 0.5 / (s_n) ** 2
 
 
-def gto_norm(n, rcut, nmax):
-    s_n = sn(n, rcut, nmax)
+def gto_norm(n: int, rcut: float, nmax: int) -> float:
+    """
+    Calculate the normalized Gaussian type orbital (GTO).
+
+    Parameters:
+    -----------
+        n (int): The principal quantum number.
+        rcut (float): The radial cutoff.
+        nmax (int): The maximum number of orbitals.
+
+    Returns:
+    --------
+        float: The normalization factor for the Gaussian type orbital.
+    """
+    s_n = sigma_n(n, rcut, nmax)
     norm2 = 0.5 / (np.power(s_n, 2 * n + 3) * float(gamma(n + 1.5)))
     return np.sqrt(norm2)
 
 
-def ortho_Snn(rcut, nmax):
+def ortho_Snn(rcut: float, nmax: int) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Compute the orthonormalized overlap matrix for orbitals.
+
+    Parameters:
+    -----------
+        rcut (float): The radial cutoff.
+        nmax (int): The maximum number of orbitals.
+
+    Returns:
+    --------
+        tuple: Orthogonal matrix for orbitals and the unnormalized overlap matrix.
+    """
     Snn = np.zeros((nmax, nmax))
     norms = np.array([gto_norm(n, rcut, nmax) for n in range(nmax)])
-    bn = np.array([dn(n, rcut, nmax) for n in range(nmax)])
+    bns = np.array([bn(n, rcut, nmax) for n in range(nmax)])
     for n, m in product(range(nmax), range(nmax)):
         Snn[n, m] = (
             norms[n]
             * norms[m]
             * 0.5
-            * np.power(bn[n] + bn[m], -0.5 * (3 + n + m))
+            * np.power(bns[n] + bns[m], -0.5 * (3 + n + m))
             * float(gamma(0.5 * (3 + m + n)))
         )
     eigenvalues, unitary = np.linalg.eigh(Snn)
@@ -186,36 +289,89 @@ def ortho_Snn(rcut, nmax):
     return orthomatrix, Snn
 
 
-def gto(rcut, nmax, r):
-    ds = np.array([dn(n, rcut, nmax) for n in range(nmax)])
+def gto(rcut: float, nmax: int, r: np.ndarray) -> np.ndarray:
+    """
+    Generate Gaussian type orbitals with radial orthogonalization.
+
+    Parameters:
+    -----------
+        rcut (float): The radial cutoff.
+        nmax (int): The maximum number of orbitals.
+        r (np.ndarray): Array of radial distances.
+
+    Returns:
+    --------
+        np.ndarray: Gaussian type orbitals.
+    """
+    bns = np.array([bn(n, rcut, nmax) for n in range(nmax)])
     ortho, Snn = ortho_Snn(rcut, nmax)
     norms = np.array([gto_norm(n, rcut, nmax) for n in range(nmax)])
     res = np.zeros((r.shape[0], nmax))
     for n in range(nmax):
-        res[:, n] = norms[n] * np.power(r, n + 1) * np.exp(-ds[n] * r**2)
+        res[:, n] = norms[n] * np.power(r, n + 1) * np.exp(-bns[n] * r**2)
     res = res @ ortho
     return res
 
 
-def ri_gto(n, l, rij, c, d, norm):
+def ri_gto(
+    n: int,
+    l: int,
+    rij: Union[float, np.ndarray],
+    c: float,
+    bn: float,
+    norm: float,
+) -> float:
+    """
+    Compute the Radial Integral Gaussian Type Orbital (RI-GTO).
+
+    Parameters:
+    -----------
+        n (int): The principal quantum number.
+        l (int): The angular momentum quantum number.
+        rij (float or np.ndarray): The distance parameter.
+        c (float): A constant used in the computation.
+        bn (float): Another constant used in the computation.
+        norm (float): The normalization factor.
+
+    Returns:
+    --------
+        float: The computed RI-GTO value.
+    """
     res = (
         exp(-c * rij**2)
         * (gamma(0.5 * (l + n + 3)) / gamma(l + 1.5))
         * power(c * rij, l)
-        * power(c + d, -0.5 * (l + n + 3))
+        * power(c + bn, -0.5 * (l + n + 3))
     )
-    res *= hyp1f1(0.5 * (n + l + 3), l + 1.5, power(c * rij, 2) / (c + d))
+    res *= hyp1f1(0.5 * (n + l + 3), l + 1.5, power(c * rij, 2) / (c + bn))
     return norm * float(res)
 
 
-def o_ri_gto(rcut, nmax, lmax, rij, c):
-    ds = np.array([dn(n, rcut, nmax) for n in range(nmax)])
+def o_ri_gto(
+    rcut: float, nmax: int, lmax: int, rij: np.ndarray, c: float
+) -> np.ndarray:
+    """
+    Calculate orthogonalized radial integral Gaussian type orbitals.
+
+    Parameters:
+    -----------
+        rcut (float): The radial cutoff.
+        nmax (int): The maximum number of orbitals.
+        lmax (int): The maximum angular momentum.
+        rij (np.ndarray): Array of radial distances.
+        c (float): A constant used in the computation.
+
+    Returns:
+    --------
+        np.ndarray: Orthogonalized radial integral GTOs.
+    """
+    bns = np.array([bn(n, rcut, nmax) for n in range(nmax)])
     norms = np.array([gto_norm(n, rcut, nmax) for n in range(nmax)])
     ortho, Snn = ortho_Snn(rcut, nmax)
     res = np.zeros((rij.shape[0], lmax, nmax))
     for ii, dist in enumerate(rij):
         for l in range(lmax):
             for n in range(nmax):
-                res[ii, l, n] = ri_gto(n, l, float(dist), c, ds[n], norms[n])
+                res[ii, l, n] = ri_gto(n, l, float(dist), c, bns[n], norms[n])
     res = res @ ortho
     return res
