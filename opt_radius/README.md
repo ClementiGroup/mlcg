@@ -27,6 +27,12 @@ From this directory, run `python setup.py develop`.
 
 Some information from the NVCC will print on the screen. After some minutes, installation should be complete.
 
+When using conda to manage python environments, it might be needed to explicitly point NVCC to the right c compiler, for example: 
+
+```bash
+export  NVCC_PREPEND_FLAGS='-ccbin /path/to/compiler'
+```
+
 ## Usage
 
 If installed, the custom kernel will be used by default without further tweaking.
