@@ -34,6 +34,7 @@ def get_refreshed_cfconv_layer(old_cfconv: CFConv):
     out_channels = old_cfconv.lin2.out_features
     num_filters = old_cfconv.lin1.out_features
     aggr = old_cfconv.aggr
+    discrete_kernel_size = old_cfconv.disc.weight.shape[0]
     # extract the state dict
     # clone is used here, since the state_dict of filter_network
     # will be overwritten by the __init__ of `new_cfconv`
@@ -46,6 +47,7 @@ def get_refreshed_cfconv_layer(old_cfconv: CFConv):
         in_channels=in_channels,
         out_channels=out_channels,
         num_filters=num_filters,
+        discrete_kernel_size=discrete_kernel_size,
         aggr=aggr,
     ).to(device)
     new_cfconv.load_state_dict(state_dict)
