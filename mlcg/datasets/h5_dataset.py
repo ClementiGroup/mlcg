@@ -39,7 +39,7 @@ class MolData:
         weights: np.ndarray = None,
         exclusion_pairs: np.ndarray = None,
         cell: np.ndarray = None,
-        pbc: np.ndarry = None,
+        pbc: np.ndarray = None,
     ):
         self._name = name
         self._embeds = embeds

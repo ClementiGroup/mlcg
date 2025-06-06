@@ -96,13 +96,14 @@ def compute_distances(
     if cell_shifts is None:
         dr = pos[mapping[1]] - pos[mapping[0]]
     else:
-        dr = (pos[mapping[1]] + cell_shifts[:, :, 1]) - pos[mapping[0]]
+        #dr = (pos[mapping[1]] + cell_shifts[:, :, 1]) - pos[mapping[0]]
+       dr = pos[mapping[1]] - pos[mapping[0]] + cell_shifts 
 
     return dr.norm(p=2, dim=1)
 
 
 @torch.jit.script
-def compute_angles(
+def compute_angles_cos(
     pos: torch.Tensor,
     mapping: torch.Tensor,
     cell_shifts: Optional[torch.Tensor] = None,

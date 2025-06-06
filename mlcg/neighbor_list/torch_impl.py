@@ -92,7 +92,7 @@ def compute_images(
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     """TODO: add doc"""
 
-    cell = cell.view((-1, 3, 3)).to(torch.float64)
+    cell = cell.view((-1, 3, 3))
     pbc = pbc.view((-1, 3))
     reciprocal_cell = torch.linalg.inv(cell).transpose(2, 1)
     # print('reciprocal_cell: ', reciprocal_cell.device)
@@ -313,7 +313,48 @@ def torch_neighbor_list_pbc(
     return idx_i, idx_j, cell_shifts, self_interaction_mask
 
 
-def wrap_positions(data: AtomicData, device:str, eps: float = 1e-7) -> None:
+#def wrap_positions(data: AtomicData, device:str, eps: float = 1e-7) -> None:
+#    """Wrap positions to unit cell.
+#
+#    Returns positions changed by a multiple of the unit cell vectors to
+#    fit inside the space spanned by these vectors.
+#
+#    Parameters
+#    ----------
+#    data:
+#        torch_geometric.Data instance
+#    eps: float
+#        Small number to prevent slightly negative coordinates from being
+#        wrapped.
+#    """
+#    pos = data.pos
+#    cell = data.cell.to(pos.dtype)
+#    pbc = data.pbc
+#    batch_ids = data.batch
+#    print(len(batch_ids))
+#
+#    unique_batches = torch.unique(batch_ids)
+#    n_batches = len(unique_batches)
+#
+#    center = torch.tensor((0.5, 0.5, 0.5)).view(1, 3).repeat(n_batches, 1).to(pos.dtype).to(device)
+#    pbc = data.pbc.view(-1, 3)
+#    shift = center - 0.5 - eps
+#
+#    # Don't change coordinates when pbc is False
+#    shift[torch.logical_not(pbc)] = 0.0
+#
+#    fractional = torch.linalg.solve(cell[batch_ids], pos) - shift
+#
+#    for i, periodic in enumerate(pbc.detach()[batch_ids].T):
+#        if torch.any(periodic):
+#            fractional[periodic, i] %= 1.0
+#            fractional[periodic, i] += shift[batch_ids][:, i]
+#    data.pos = torch.einsum("bi,bii->bi", fractional, cell[batch_ids])
+#
+#    return data
+
+
+def wrap_positions(data: AtomicData, device:str) -> None:
     """Wrap positions to unit cell.
 
     Returns positions changed by a multiple of the unit cell vectors to
@@ -321,31 +362,37 @@ def wrap_positions(data: AtomicData, device:str, eps: float = 1e-7) -> None:
 
     Parameters
     ----------
-    data:
-        torch_geometric.Data instance
-    eps: float
-        Small number to prevent slightly negative coordinates from being
-        wrapped.
+    data: AtomicData
+        Contains positions, cell, pbc, and batch information
     """
     pos = data.pos
-    cell = data.cell.to(pos.dtype)
+    cell = data.cell
     pbc = data.pbc
     batch_ids = data.batch
 
-    center = torch.tensor((0.5, 0.5, 0.5)).view(1, 3).to(pos.dtype).to(device)
+    # Get batch information
+    unique_batches = torch.unique(batch_ids)
+    n_batches = len(unique_batches)
+    
+    # If no PBC is set, return early
+    if not pbc.any():
+        return
 
-    pbc = data.pbc.view(1, 3)
-    shift = center - 0.5 - eps
+    # Compute fractional coordinates
+    # cell_batch: [n_atoms, 3, 3] = cell[batch_ids]
+    cell_batch = cell[batch_ids]
+    fractional = torch.linalg.solve(cell_batch, pos.unsqueeze(-1)).squeeze(-1)
 
-    # Don't change coordinates when pbc is False
-    shift[torch.logical_not(pbc)] = 0.0
+    # Create mask for periodic dimensions: [n_atoms, 3]
+    mask = pbc[batch_ids]
 
-    fractional = torch.linalg.solve(cell[batch_ids], pos) - shift
+    # Wrap each periodic dimension
+    for dim in range(3):
+        dim_mask = mask[:, dim]
+        if dim_mask.any():
+            fractional[dim_mask, dim] = fractional[dim_mask, dim] % 1.0
 
-    for i, periodic in enumerate(pbc.detach()[batch_ids].T):
-        if torch.any(periodic):
-            fractional[periodic, i] %= 1.0
-            fractional[periodic, i] += shift[batch_ids][:, i]
-    data.pos = torch.einsum("bi,bii->bi", fractional, cell[batch_ids])
+    # Convert back to cartesian coordinates
+    data.pos = torch.einsum('bi,bij->bj', fractional, cell_batch)
 
     return data
