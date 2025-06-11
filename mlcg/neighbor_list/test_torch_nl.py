@@ -62,7 +62,7 @@ def test_neighborlist(name, frame, cutoff, self_interaction):
         idx_i, idx_j, cell_shifts = ase_neighbor_list(
             data, cutoff, self_interaction=self_interaction
         )
-        dd = (data.pos[idx_j] - data.pos[idx_i] + cell_shifts[:, :, 1]).norm(dim=1)
+        dd = (data.pos[idx_j] - data.pos[idx_i] + cell_shifts).norm(dim=1)
         dd_ref.extend(dd.numpy())
     dd_ref = np.sort(dd_ref)
 
