@@ -323,23 +323,31 @@ def test_exchange_detection(tmp_path):
         ),
     ]
     fn = tmp_path / PTSimulation.__name__
-    simulation = PTSimulation(filename=fn)
-    simulation._attach_configurations(
-        test_data, betas
-    )  # necessary to populate some attributes
-
-    simulation.initial_data["out"]["energy"] = torch.tensor(
-        [low_energy, low_energy, high_energy, high_energy]
-    )
-    # run the exchange 50000 times and assert the average acceptance rate
-    # the acceptances are tracked internally by the `attempts/approved` attributes
     expected_rate = np.exp((low_energy - high_energy) * (betas[0] - betas[1]))
-    for _ in range(100000):
-        simulation._detect_exchange(simulation.initial_data)
+    empirical_rate_arr = []
+    # run 50 independent iterations of 2x1000 exchanges times and
+    # assert the average acceptance rate. the acceptances are
+    # tracked internally by the `attempts/approved` attributes
+    for _ in range(50):
+        simulation = PTSimulation(filename=fn)
+        simulation._attach_configurations(
+            test_data, betas
+        )  # necessary to populate some attributes
+
+        simulation.initial_data["out"]["energy"] = torch.tensor(
+            [low_energy, low_energy, high_energy, high_energy]
+        )
+        for _ in range(1000):
+            simulation._detect_exchange(simulation.initial_data)
+        empirical_rate = (
+            simulation._replica_exchange_approved
+            / simulation._replica_exchange_attempts
+        ).item()
+        empirical_rate_arr.append(empirical_rate)
+
     np.testing.assert_almost_equal(
         expected_rate,
-        simulation._replica_exchange_approved
-        / simulation._replica_exchange_attempts,
+        np.mean(empirical_rate_arr),
         decimal=3,
     )
 

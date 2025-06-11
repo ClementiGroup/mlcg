@@ -115,15 +115,12 @@ lr_scheduler:
     monitor: validation_loss
 # define the dataset through mlcg.pl.DataModule
 data:
-  dataset:
-    class_path: mlcg.datasets.ChignolinDataset
-    init_args:
-      root: /path/to/save/dataset/
-  log_dir: default_root_dir
-  val_ratio: 0.1
-  test_ratio: 0.
-  batch_size: 256
-  inference_batch_size: 256
-  num_workers: 0
-  loading_stride: 1
-  save_local_copy: false
+  h5_file_path: /path/to/h/dataset
+  partition_options: ./partition_settings.yaml
+  loading_options:
+    hdf_key_mapping:
+      embeds: attrs:cg_embeds
+      coords: cg_coords
+      forces: cg_delta_forces
+      exclusion_pairs: attrs:cg_exc_pairs
+  exclude_listed_pairs: true
