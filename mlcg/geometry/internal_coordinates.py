@@ -92,12 +92,10 @@ def compute_distances(
     """
     assert mapping.dim() == 2
     assert mapping.shape[0] == 2
-
     if cell_shifts is None:
         dr = pos[mapping[1]] - pos[mapping[0]]
     else:
-        #dr = (pos[mapping[1]] + cell_shifts[:, :, 1]) - pos[mapping[0]]
-       dr = pos[mapping[1]] - pos[mapping[0]] + cell_shifts 
+        dr = (pos[mapping[1]] + cell_shifts[:, :, 1]) - pos[mapping[0]]
 
     return dr.norm(p=2, dim=1)
 

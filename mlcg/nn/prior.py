@@ -1474,5 +1474,4 @@ def compute_cell_shifts(
                 cell[batch_ids].to(drs.dtype),
                 cell_shifts[:, :, ii],
             )
-    print(cell_shifts.shape)
     return cell_shifts

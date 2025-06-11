@@ -57,7 +57,7 @@ def torch_neighbor_list(
         (
             idx_i,
             idx_j,
-            cell_shifts,
+            cell_shifts_2d,
             self_interaction_mask,
         ) = torch_neighbor_list_pbc(
             data,
@@ -66,6 +66,13 @@ def torch_neighbor_list(
             num_workers=num_workers,
             max_num_neighbors=max_num_neighbors,
         )
+        # Convert cell_shift to match the shape: (n_edges, 3, 2)
+        cell_shifts = torch.zeros(
+            (idx_i.shape[0], 3, 2), 
+            dtype=data.pos.dtype, 
+            device=data.pos.device
+        )
+        cell_shifts[:, :, 1] = cell_shifts_2d
     else:
         idx_i, idx_j, self_interaction_mask = torch_neighbor_list_no_pbc(
             data,
@@ -74,8 +81,9 @@ def torch_neighbor_list(
             num_workers=num_workers,
             max_num_neighbors=max_num_neighbors,
         )
+        # Cell shift must assume the shape of (n_edges, 3, 2) zeros
         cell_shifts = torch.zeros(
-            (idx_i.shape[0], 3), dtype=data.pos.dtype, device=data.pos.device
+            (idx_i.shape[0], 3, 2), dtype=data.pos.dtype, device=data.pos.device
         )
 
     return idx_i, idx_j, cell_shifts, self_interaction_mask
@@ -355,26 +363,25 @@ def torch_neighbor_list_pbc(
 
 
 def wrap_positions(data: AtomicData, device:str) -> None:
-    """Wrap positions to unit cell.
-
-    Returns positions changed by a multiple of the unit cell vectors to
-    fit inside the space spanned by these vectors.
+    """Function to wrap positions back to unit cell when
+    simulations are performed.
 
     Parameters
     ----------
     data: AtomicData
-        Contains positions, cell, pbc, and batch information
+        Contains positions, cell, pbc, and batch information.
+    
+    Returns
+    -------
+    data: AtomicData
+        Contains positions updated by a multiple of the unit cell vectors to wrap
+        back in the original cell.
     """
     pos = data.pos
     cell = data.cell
     pbc = data.pbc
     batch_ids = data.batch
 
-    # Get batch information
-    unique_batches = torch.unique(batch_ids)
-    n_batches = len(unique_batches)
-    
-    # If no PBC is set, return early
     if not pbc.any():
         return
 
@@ -383,7 +390,6 @@ def wrap_positions(data: AtomicData, device:str) -> None:
     cell_batch = cell[batch_ids]
     fractional = torch.linalg.solve(cell_batch, pos.unsqueeze(-1)).squeeze(-1)
 
-    # Create mask for periodic dimensions: [n_atoms, 3]
     mask = pbc[batch_ids]
 
     # Wrap each periodic dimension
