@@ -31,7 +31,7 @@ def make_hdf5(tdir, detailed_idx=True):
         grp.attrs["cg_embeds"] = types
         grp.attrs["N_frames"] = n_frames
         grp.create_dataset("pbc", data=pbcs)
-        grp.create_dataset("cells", data=cells)
+        grp.create_dataset("cell", data=cells)
 
 
     if detailed_idx:
