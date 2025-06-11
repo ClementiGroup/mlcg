@@ -129,11 +129,12 @@ class MACEInterface(torch.nn.Module):
         device = data.pos.device
         types_ids = self.types_mapping[data.atom_types].view(-1, 1)
         one_hot = to_one_hot(types_ids, self.n_atom_types)
+        j_shifts = neighbor_list["cell_shifts"][:, :, 1]
         kwargs = dict(
             edge_index=neighbor_list["index_mapping"],
             positions=data.pos,
             node_attrs=one_hot,
-            shifts=neighbor_list["cell_shifts"],
+            shifts=j_shifts,
             weight=torch.tensor([1], device=device),
         )
         if "forces" in data:
