@@ -128,13 +128,13 @@ def compute_angles_cos(
     if cell_shifts is None:
         dr1 = pos[mapping[0]] - pos[mapping[1]]
         dr2 = pos[mapping[2]] - pos[mapping[1]]
-    
+
     else:
         dr1 = pos[mapping[0]] - (pos[mapping[1]] + cell_shifts[:, :, 1])
         dr2 = (pos[mapping[2]] + cell_shifts[:, :, 2]) - (
             pos[mapping[1]] + cell_shifts[:, :, 1]
         )
-    
+
     cos_theta = (
         (dr1 * dr2).sum(dim=1) / dr1.norm(p=2, dim=1) / dr2.norm(p=2, dim=1)
     )
@@ -177,7 +177,7 @@ def compute_torsions(
         dr1 = pos[mapping[1]] - pos[mapping[0]]
         dr2 = pos[mapping[2]] - pos[mapping[1]]
         dr3 = pos[mapping[3]] - pos[mapping[2]]
-    
+
     else:
         dr1 = (pos[mapping[1]] + cell_shifts[:, :, 1]) - pos[mapping[0]]
         dr2 = (pos[mapping[2]] + cell_shifts[:, :, 2]) - (

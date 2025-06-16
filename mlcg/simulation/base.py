@@ -301,7 +301,7 @@ class _Simulation(object):
         ):
             # step forward in time
             data, potential, forces = self.timestep(data, forces)
-            
+
             pbc = getattr(data, "pbc", None)
             cell = getattr(data, "cell", None)
             if all([feat != None for feat in [pbc, cell]]):

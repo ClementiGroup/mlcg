@@ -24,7 +24,7 @@ class MolData:
         Cartesian coordinates of the molecule, of shape `(n_frames, n_atoms, 3)`
     forces:
         Cartesian forces of the molecule, of shape `(n_frames, n_atoms, 3)`
-    cell: 
+    cell:
         Unit cell of the atomic structure, of shape `(n_frames, 3, 3)`
     pbc:
         Periodic boundary conditions, of shape `(n_frames, 3)`
@@ -95,7 +95,7 @@ class MolData:
     @property
     def n_beads(self):
         return self.coords.shape[1]
-    
+
     @property
     def cell(self):
         return self._cell
@@ -246,8 +246,8 @@ class MetaSet:
                 )
                 split_per_index = False
             selection = select_for_rank(par_range)
-            cell = None # cell is none by default
-            pbc = None # pbc is none by default
+            cell = None  # cell is none by default
+            pbc = None  # pbc is none by default
             if not split_per_index:
                 coords = MetaSet.retrieve_hdf(
                     hdf5_group[mol_name], keys["coords"]
@@ -399,15 +399,23 @@ class MetaSet:
 
     def __getitem__(self, idx):
         dataset_id, data_id = self._locate_idx(idx)
-        cell_frame = self._mol_dataset[dataset_id].cell[data_id] if self._mol_dataset[dataset_id].cell is not None else None
-        pbc_frame  = self._mol_dataset[dataset_id].pbc[data_id] if self._mol_dataset[dataset_id].pbc is not None else None
-        
+        cell_frame = (
+            self._mol_dataset[dataset_id].cell[data_id]
+            if self._mol_dataset[dataset_id].cell is not None
+            else None
+        )
+        pbc_frame = (
+            self._mol_dataset[dataset_id].pbc[data_id]
+            if self._mol_dataset[dataset_id].pbc is not None
+            else None
+        )
+
         atd = AtomicData.from_points(
             pos=self._mol_dataset[dataset_id].coords[data_id],
             forces=self._mol_dataset[dataset_id].forces[data_id],
             atom_types=self._mol_dataset[dataset_id].embeds,
-            cell=cell_frame, 
-            pbc=pbc_frame 
+            cell=cell_frame,
+            pbc=pbc_frame,
         )
         if self._exclude_listed_pairs:
             atd.exc_pair_index = torch.tensor(

@@ -126,7 +126,7 @@ class Harmonic(torch.nn.Module, _Prior):
             target=self.name,
             pbc=pbc,
             cell=cell,
-            batch=data.batch
+            batch=data.batch,
         )
 
     def data2parameters(self, data):
@@ -183,9 +183,7 @@ class Harmonic(torch.nn.Module, _Prior):
         else:
             cell_shifts = None
         return Harmonic._compute_map[target](
-            pos=pos,
-            mapping=mapping,
-            cell_shifts=cell_shifts
+            pos=pos, mapping=mapping, cell_shifts=cell_shifts
         )
 
     @staticmethod
@@ -293,7 +291,7 @@ class HarmonicBonds(Harmonic):
             target=HarmonicBonds.name,
             pbc=pbc,
             cell=cell,
-            batch=batch
+            batch=batch,
         )
 
 
@@ -329,7 +327,7 @@ class HarmonicAngles(Harmonic):
             target=HarmonicAngles.name,
             pbc=pbc,
             cell=cell,
-            batch=batch
+            batch=batch,
         )
 
 
@@ -354,7 +352,7 @@ class HarmonicImpropers(Harmonic):
             target=HarmonicImpropers.name,
             pbc=pbc,
             cell=cell,
-            batch=batch
+            batch=batch,
         )
 
 
@@ -414,7 +412,7 @@ class ShiftedPeriodicHarmonicImpropers(Harmonic):
             target=HarmonicImpropers.name,
             pbc=pbc,
             cell=cell,
-            batch=batch
+            batch=batch,
         )
         features = (
             torch.where(features < 0, features + 2 * torch_pi, features)
@@ -427,11 +425,7 @@ class ShiftedPeriodicHarmonicImpropers(Harmonic):
         pbc = getattr(data, "pbc", None)
         cell = getattr(data, "cell", None)
         return ShiftedPeriodicHarmonicImpropers.compute_features(
-            pos=data.pos,
-            mapping=mapping,
-            pbc=pbc,
-            cell=cell,
-            batch=data.batch
+            pos=data.pos, mapping=mapping, pbc=pbc, cell=cell, batch=data.batch
         )
 
     def forward(self, data):
@@ -564,9 +558,7 @@ class Repulsion(torch.nn.Module, _Prior):
         else:
             cell_shifts = None
         return compute_distances(
-            pos=pos,
-            mapping=mapping,
-            cell_shifts=cell_shifts
+            pos=pos, mapping=mapping, cell_shifts=cell_shifts
         )
 
     @staticmethod
@@ -694,7 +686,7 @@ class GeneralBonds(Harmonic):
             target="bonds",
             pbc=pbc,
             cell=cell,
-            batch=data.batch
+            batch=data.batch,
         )
 
     @staticmethod
@@ -703,9 +695,9 @@ class GeneralBonds(Harmonic):
             pos=pos,
             mapping=mapping,
             target="bonds",
-            pbc=pbc, 
+            pbc=pbc,
             cell=cell,
-            batch=batch
+            batch=batch,
         )
 
 
@@ -729,7 +721,7 @@ class GeneralAngles(Harmonic):
             target="angles",
             pbc=pbc,
             cell=cell,
-            batch=data.batch
+            batch=data.batch,
         )
 
     @staticmethod
@@ -834,6 +826,7 @@ class Dihedral(torch.nn.Module, _Prior):
             cell=cell,
             batch=data.batch,
         )
+
     def forward(self, data: AtomicData) -> AtomicData:
         """Forward pass through the dihedral interaction.
         Parameters
@@ -890,9 +883,7 @@ class Dihedral(torch.nn.Module, _Prior):
         else:
             cell_shifts = None
         return compute_torsions(
-            pos=pos,
-            mapping=mapping,
-            cell_shifts=cell_shifts
+            pos=pos, mapping=mapping, cell_shifts=cell_shifts
         )
 
     @staticmethod
@@ -1195,6 +1186,7 @@ class Dihedral(torch.nn.Module, _Prior):
         nl = topology.neighbor_list(Dihedral.name)
         return {Dihedral.name: nl}
 
+
 class Polynomial(torch.nn.Module, _Prior):
     r"""
     Prior representing a polynomial with
@@ -1296,13 +1288,13 @@ class Polynomial(torch.nn.Module, _Prior):
         pbc = getattr(data, "pbc", None)
         cell = getattr(data, "cell", None)
         return Polynomial.compute_features(
-            pos=data.pos, 
-            mapping=mapping, 
+            pos=data.pos,
+            mapping=mapping,
             target=self.name,
             pbc=pbc,
             cell=cell,
             batch=data.batch,
-            )
+        )
 
     def data2parameters(self, data):
         mapping = data.neighbor_list[self.name]["index_mapping"]
@@ -1337,22 +1329,22 @@ class Polynomial(torch.nn.Module, _Prior):
     @staticmethod
     def compute_features(
         pos: torch.Tensor,
-        mapping: torch.Tensor, 
+        mapping: torch.Tensor,
         target: str,
         pbc: Optional[torch.Tensor] = None,
         cell: Optional[torch.Tensor] = None,
         batch: Optional[torch.Tensor] = None,
-        ) -> torch.Tensor:
+    ) -> torch.Tensor:
         if all([feat != None for feat in [pbc, cell]]):
             cell_shifts = compute_cell_shifts(pos, mapping, pbc, cell, batch)
         else:
             cell_shifts = None
         compute_map_type = Polynomial._neighbor_list_map[target]
         return Polynomial._compute_map[compute_map_type](
-            pos=pos, 
+            pos=pos,
             mapping=mapping,
             cell_shifts=cell_shifts,
-            )
+        )
 
     @staticmethod
     def compute(x: torch.Tensor, ks: torch.Tensor, V0: torch.Tensor):
@@ -1384,13 +1376,14 @@ class QuarticAngles(Polynomial):
     @staticmethod
     def compute_features(pos, mapping, pbc=None, cell=None, batch=None):
         return Polynomial.compute_features(
-            pos=pos, 
-            mapping=mapping, 
+            pos=pos,
+            mapping=mapping,
             target="angles",
             pbc=pbc,
             cell=cell,
-            batch=batch
-            )
+            batch=batch,
+        )
+
 
 class QuarticBonds(Polynomial):
     """Wrapper class for bonds priors
@@ -1407,13 +1400,13 @@ class QuarticBonds(Polynomial):
     @staticmethod
     def compute_features(pos, mapping, pbc=None, cell=None, batch=None):
         return Polynomial.compute_features(
-            pos=pos, 
-            mapping=mapping, 
+            pos=pos,
+            mapping=mapping,
             target="bonds",
             pbc=pbc,
             cell=cell,
-            batch=batch
-            )
+            batch=batch,
+        )
 
 
 def compute_cell_shifts(
@@ -1426,7 +1419,7 @@ def compute_cell_shifts(
     """
     Compute the minimum vector using index 0 as reference
         Scale vectors based on box size and shift if greater than half the box size
-        Initial implementation written by Clark Templeton 
+        Initial implementation written by Clark Templeton
         Adopted from ase.geometry naive_find_mic
             https://gitlab.com/ase/ase/
     Inputs:
@@ -1465,10 +1458,10 @@ def compute_cell_shifts(
                 "bij,bj->bi",
                 cell_inv.to(drs.dtype),
                 drs,
-                )
+            )
             # compute unit number of unit cell shifts
             cell_shifts[:, :, ii] = torch.floor(frac_dr + 0.5)
-            # convert back to cartesian displacement 
+            # convert back to cartesian displacement
             cell_shifts[:, :, ii] = pbc[batch_ids] * torch.einsum(
                 "bij,bj->bi",
                 cell[batch_ids].to(drs.dtype),

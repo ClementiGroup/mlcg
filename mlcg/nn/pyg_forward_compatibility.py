@@ -119,9 +119,9 @@ def fixed_pyg_inspector():
         if version.parse(torch_geometric.__version__) >= version.parse("2.5"):
             # monkey patch for the inspector.py, which has been moved to
             # another place in recent pygs
-            sys.modules["torch_geometric.nn.conv.utils.inspector"] = (
-                torch_geometric.inspector
-            )
+            sys.modules[
+                "torch_geometric.nn.conv.utils.inspector"
+            ] = torch_geometric.inspector
 
             # Inspector.implements was also refactored
             def compat_implements(self, func_name: str) -> bool:
