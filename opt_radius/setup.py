@@ -2,7 +2,7 @@ from setuptools import find_packages, setup, Extension
 from torch.utils import cpp_extension
 
 
-VERSION = "0.0.1"
+VERSION = "0.0.2"
 
 setup(
     name="mlcg_opt_radius",

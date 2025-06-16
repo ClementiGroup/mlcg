@@ -1,0 +1,21 @@
+simulation:
+  friction: 1.0
+  n_timesteps: 500
+  dt: 0.004
+  save_forces: false
+  save_energies: true
+  save_interval: 10
+  random_seed: 103838
+  device: cuda
+  dtype: single
+  exchange_interval: 100
+  export_interval: 50
+  log_interval: 10
+  log_type: write
+  specialize_priors: true
+  create_checkpoints: true
+  read_checkpoint_file: false
+  filename: cln_model
+betas: [1.67, 1.42, 1.16]
+model_file: SOME_PATH
+structure_file: SOME_PATH

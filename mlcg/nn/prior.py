@@ -10,6 +10,7 @@ from ..geometry.topology import Topology
 from ..geometry.internal_coordinates import (
     compute_distances,
     compute_angles_cos,
+    compute_angles_raw,
     compute_torsions,
 )
 from ..data.atomic_data import AtomicData
@@ -329,6 +330,45 @@ class HarmonicAngles(Harmonic):
             cell=cell,
             batch=batch,
         )
+
+
+class HarmonicAnglesRaw(Harmonic):
+    r"""Wrapper class for quickly computing angle priors
+    (order 3 Harmonic priors)
+
+    .. math::
+
+        \theta_{ijk} = &\text{atan2}(\Vert \hat{\mathbf{n}} \vert, \mathbf{r}_{ij} \cdot \mathbf{r}_{kj} ) \\
+        \mathbf{r}_{ij} &= \mathbf{r}_i - \mathbf{r}_j \\
+        \mathbf{r}_{kj} &= \mathbf{r}_k - \mathbf{r}_j \\
+        \mathbf{\hat{n}} &= \frac{\mathbf{r}_{ij} \times \mathbf{r}_{kj}}{\Vert \mathbf{r}_{ij} \times \mathbf{r}_{kj} \Vert} 
+
+    """
+
+    name: Final[str] = "angles"
+    _order = 3
+
+    def __init__(self, statistics, name) -> None:
+        super(HarmonicAnglesRaw, self).__init__(
+            statistics, HarmonicAnglesRaw.name
+        )
+        self.name = name
+
+    @staticmethod
+    def neighbor_list(topology: Topology) -> dict:
+        return Harmonic.neighbor_list(topology, HarmonicAnglesRaw.name)
+
+    def data2features(self, data):
+        mapping = data.neighbor_list[self.name]["index_mapping"]
+        return HarmonicAnglesRaw.compute_features(data.pos, mapping)
+
+    @staticmethod
+    def compute_features(pos, mapping, pbc=None, cell=None, batch=None):
+        if all([feat != None for feat in [pbc, cell]]):
+            cell_shifts = compute_cell_shifts(pos, mapping, pbc, cell, batch)
+        else:
+            cell_shifts = None
+        return compute_angles_raw(pos, mapping, cell_shifts)
 
 
 class HarmonicImpropers(Harmonic):

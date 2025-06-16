@@ -18,9 +18,9 @@ torch_pi = torch.tensor(np.pi)
 
 
 class LangevinSimulation(_Simulation):
-    r"""Langevin simulatin class for trained models.
+    r"""Langevin simulation class for trained models.
 
-    The following `BAOAB integration scheme <https://doi.org/10.1007/978-3-319-16375-8>`_ is used, where::
+    The following [BAOAB]_ integration scheme is used, where::
 
         B = deterministic velocity update
         A = deterministic position update
@@ -42,17 +42,22 @@ class LangevinSimulation(_Simulation):
 
     .. math::
         F(X_t) =& - \nabla  U(X_t)  \\
+        & \\
         \epsilon =& \exp(-\eta \; \Delta t) \\
-        \alpha =& \sqrt{1 - \epsilon^2}
+        & \\
+        \alpha =& \sqrt{(1 - \epsilon^2) / \beta m}
+    
+    Initial velocities are sampled from the Maxwell-Boltzmann distribution for 
+    the provided beta.
 
     A diffusion constant :math:`D` can be back-calculated using
     the Einstein relation:
 
     .. math::
         D = 1 / (\beta  \eta)
-
-    Initial velocities are set to zero if not provided.
-
+    
+    For a larger discussion on Langevin Dynamics integrators, please refer to [MDBook]_.
+        
     Parameters
     ----------
 
@@ -84,10 +89,10 @@ class LangevinSimulation(_Simulation):
         betas:
             The inverse thermodynamic temperature of each atom
         masses:
-            Them masses of each atom
+            The masses of each atom
         """
         assert all([m > 0 for m in masses])
-        scale = torch.sqrt(betas / masses)
+        scale = torch.sqrt(1 / (betas * masses))
         dist = Normal(loc=0.00, scale=scale)
         velocities = dist.sample((3,)).t()
         return velocities
@@ -216,7 +221,9 @@ class LangevinSimulation(_Simulation):
         v_new = data[VELOCITY_KEY].view(-1, self.n_atoms, self.n_dims)
         masses = data.masses.view(self.n_sims, self.n_atoms)
 
-        save_ind = t // self.save_interval
+        save_ind = (
+            t // self.save_interval
+        ) - self._npy_file_index * self._save_size
 
         if self.save_energies:
             kes = 0.5 * torch.sum(
@@ -224,13 +231,11 @@ class LangevinSimulation(_Simulation):
             )
             self.simulated_kinetic_energies[save_ind, :] = kes
 
-    def write(self, iter_: int):
+    def write(self):
         """Utility to save numpy arrays"""
         key = self._get_numpy_count()
         if self.save_energies:
-            kinetic_energies_to_export = self.simulated_kinetic_energies[
-                self._npy_starting_index : iter_
-            ]
+            kinetic_energies_to_export = self.simulated_kinetic_energies
             kinetic_energies_to_export = self._swap_and_export(
                 kinetic_energies_to_export
             )
@@ -239,7 +244,12 @@ class LangevinSimulation(_Simulation):
                 kinetic_energies_to_export,
             )
 
-        super().write(iter_)
+            # Reset simulate_kinetic_energies
+            self.simulated_kinetic_energies = torch.zeros(
+                self._save_size, self.n_sims
+            )
+
+        super().write()
 
     def reshape_output(self):
         super().reshape_output()
@@ -260,7 +270,7 @@ class LangevinSimulation(_Simulation):
 
 # pipe the doc from the base class into the child class so that it's properly
 # displayed by sphinx
-LangevinSimulation.__doc__ += _Simulation.__doc__
+LangevinSimulation.__doc__ += _Simulation.__doc__ + "\n"
 
 
 class OverdampedSimulation(_Simulation):
@@ -269,12 +279,14 @@ class OverdampedSimulation(_Simulation):
     The following Brownian motion scheme is used:
 
     .. math::
-
-        dX_t = - \nabla U( X_t )   D  \Delta t + \sqrt{( 2  D *\Delta t / \beta )} dW_t
+        dX_t = - \nabla U( X_t )   D  \Delta t + \sqrt{( 2  D \Delta t / \beta )} dW_t
 
     for coordinates :math:`X_t` at time :math:`t`, potential energy :math:`U`,
     diffusion :math:`D`, thermodynamic inverse temperature :math:`\beta`,
     time step :math:`\Delta t`, and stochastic Weiner process :math:`W`.
+
+    Due to the nature of Overdamped Langevin dynamics, the masses and velocities
+    are not used.
 
     Parameters
     ----------

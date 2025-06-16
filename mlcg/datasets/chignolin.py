@@ -8,6 +8,14 @@ from torch_geometric.data.collate import collate
 from shutil import copy
 import mdtraj
 
+from aggforce import (
+    LinearMap,
+    guess_pairwise_constraints,
+    project_forces,
+    constraint_aware_uni_map,
+    qp_linear_map,
+)
+
 
 from ..utils import tqdm, download_url
 from ..geometry.topology import Topology
@@ -38,12 +46,23 @@ class ChignolinDataset(InMemoryDataset):
     _priors_cls = [HarmonicBonds, HarmonicAngles, Repulsion]
 
     def __init__(
-        self, root, transform=None, pre_transform=None, pre_filter=None
+        self,
+        root,
+        transform=None,
+        pre_transform=None,
+        pre_filter=None,
+        mapping: str = "slice_aggregate",
+        terminal_embeds: bool = False,
+        max_num_files: int = None,
     ):
+        self.terminal_embeds = terminal_embeds
         self.priors_cls = self._priors_cls
-
+        self.mapping = mapping
         self.beta = 1 / (self.temperature * self.kB)
-
+        if max_num_files is None:
+            self.max_num_files = 100000
+        else:
+            self.max_num_files = max_num_files
         super(ChignolinDataset, self).__init__(
             root, transform, pre_transform, pre_filter
         )
@@ -104,9 +123,11 @@ class ChignolinDataset(InMemoryDataset):
         topo = mdtraj.load(topology_fn).remove_solvent().topology
         topology = Topology.from_mdtraj(topo)
         embeddings, masses, cg_matrix, _ = build_cg_matrix(
-            topology, cg_mapping=CA_MAP
+            topology, cg_mapping=CA_MAP, special_terminal=self.terminal_embeds
         )
-        cg_topo = build_cg_topology(topology, cg_mapping=CA_MAP)
+        cg_topo = build_cg_topology(
+            topology, cg_mapping=CA_MAP, special_terminal=self.terminal_embeds
+        )
         copy(topology_fn, self.processed_paths[1])
         prior_nls = {}
         for cls in self.priors_cls:
@@ -117,25 +138,56 @@ class ChignolinDataset(InMemoryDataset):
 
         coord_fns, forces_fns = self.get_data_filenames(coord_dir, force_dir)
 
-        f_proj = np.dot(
-            np.linalg.inv(np.dot(cg_matrix, cg_matrix.T)), cg_matrix
-        )
+        coords = np.load(next(iter(coord_fns.values())))
+        forces = np.load(next(iter(forces_fns.values())))
+
+        config_map = LinearMap(cg_matrix)
+        cg_matrix = config_map.standard_matrix
+        # taking only first 100 frames gives same results in ~1/15th of time
+        constraints = guess_pairwise_constraints(coords[:], threshold=5e-3)
+        if self.mapping == "slice_aggregate":
+            method = constraint_aware_uni_map
+            force_agg_results = project_forces(
+                coords=coords,
+                forces=forces,
+                coord_map=config_map,
+                constrained_inds=constraints,
+                method=method,
+            )
+        elif self.mapping == "slice_optimize":
+            method = qp_linear_map
+            l2 = 1e3
+            force_agg_results = project_forces(
+                coords=coords,
+                forces=forces,
+                coord_map=config_map,
+                constrained_inds=constraints,
+                method=method,
+                l2_regularization=l2,
+            )
+        else:
+            raise RuntimeError(
+                f"Force mapping {self.mapping} is neither 'slice_aggregate' nor 'slice_optimize'."
+            )
+        f_proj = force_agg_results["tmap"].force_map.standard_matrix
 
         data_list = []
         ii_frame = 0
+        file_counter = 0
         for i_traj, tag in enumerate(tqdm(coord_fns, desc="Load Dataset")):
             forces = np.load(forces_fns[tag])
             cg_forces = np.array(
                 np.einsum("mn, ind-> imd", f_proj, forces), dtype=np.float32
             )
-
             coords = np.load(coord_fns[tag])
             cg_coords = np.array(
                 np.einsum("mn, ind-> imd", cg_matrix, coords), dtype=np.float32
             )
 
             n_frames = cg_coords.shape[0]
-
+            file_counter += 1
+            if file_counter > self.max_num_files:
+                break
             for i_frame in range(n_frames):
                 pos = torch.from_numpy(cg_coords[i_frame].reshape(n_beads, 3))
                 z = torch.from_numpy(embeddings)
