@@ -399,12 +399,15 @@ class MetaSet:
 
     def __getitem__(self, idx):
         dataset_id, data_id = self._locate_idx(idx)
+        cell_frame = self._mol_dataset[dataset_id].cell[data_id] if self._mol_dataset[dataset_id].cell is not None else None
+        pbc_frame  = self._mol_dataset[dataset_id].pbc[data_id] if self._mol_dataset[dataset_id].pbc is not None else None
+        
         atd = AtomicData.from_points(
             pos=self._mol_dataset[dataset_id].coords[data_id],
             forces=self._mol_dataset[dataset_id].forces[data_id],
             atom_types=self._mol_dataset[dataset_id].embeds,
-            cell=self._mol_dataset[dataset_id].cell[data_id],
-            pbc=self._mol_dataset[dataset_id].pbc[data_id],
+            cell=cell_frame, 
+            pbc=pbc_frame 
         )
         if self._exclude_listed_pairs:
             atd.exc_pair_index = torch.tensor(
