@@ -354,78 +354,14 @@ def wrap_positions(data: AtomicData, device: str, eps: float = 1e-7) -> None:
     # Don't change coordinates when pbc is False
     shift[torch.logical_not(pbc)] = 0.0
 
-    #    fractional = torch.linalg.solve(cell[batch_ids], pos) - shift
-    #
-    #    for i, periodic in enumerate(pbc.detach()[batch_ids].T):
-    #        if torch.any(periodic):
-    #            fractional[periodic, i] %= 1.0
-    #            fractional[periodic, i] += shift[batch_ids][:, i]
-    #    data.pos = torch.einsum("bi,bii->bi", fractional, cell[batch_ids])
+    fractional = (
+        torch.linalg.solve(cell[batch_ids], pos[batch_ids]) - shift[batch_ids]
+    )
 
-    ## EFFICIENT WAY to do what above but with no mismatch errors
-    # in solving Ax=b
-    # Iterate over each batch
-    for batch_idx in unique_batches:
-        batch_mask = batch_ids == batch_idx
-        pos_batch = pos[batch_mask]
-        cell_batch = cell[batch_idx]
-
-        inv_cell_batch = torch.linalg.inv(cell_batch)
-
-        fractional_batch = torch.matmul(
-            pos_batch - shift[batch_idx], inv_cell_batch
-        )
-
-        # Apply periodic boundary conditions
-        for i, periodic in enumerate(pbc[batch_idx]):
-            if periodic:
-                fractional_batch[:, i] %= 1.0
-                fractional_batch[:, i] += shift[batch_idx, i]
-
-        # Update positions
-        pos[batch_mask] = torch.matmul(fractional_batch, cell_batch)
-    data.pos = pos
+    for i, periodic in enumerate(pbc.detach()[batch_ids].T):
+        if torch.any(periodic):
+            fractional[periodic, i] %= 1.0
+            fractional[periodic, i] += shift[batch_ids][:, i]
+    data.pos = torch.einsum("bi,bii->bi", fractional, cell[batch_ids])
 
     return data
-
-
-# def wrap_positions(data: AtomicData, device:str) -> None:
-#    """Function to wrap positions back to unit cell when
-#    simulations are performed.
-#
-#    Parameters
-#    ----------
-#    data: AtomicData
-#        Contains positions, cell, pbc, and batch information.
-#
-#    Returns
-#    -------
-#    data: AtomicData
-#        Contains positions updated by a multiple of the unit cell vectors to wrap
-#        back in the original cell.
-#    """
-#    pos = data.pos
-#    cell = data.cell
-#    pbc = data.pbc
-#    batch_ids = data.batch
-#
-#    if not pbc.any():
-#        return
-#
-#    # Compute fractional coordinates
-#    # cell_batch: [n_atoms, 3, 3] = cell[batch_ids]
-#    cell_batch = cell[batch_ids]
-#    fractional = torch.linalg.solve(cell_batch, pos.unsqueeze(-1)).squeeze(-1)
-#
-#    mask = pbc[batch_ids]
-#
-#    # Wrap each periodic dimension
-#    for dim in range(3):
-#        dim_mask = mask[:, dim]
-#        if dim_mask.any():
-#            fractional[dim_mask, dim] = fractional[dim_mask, dim] % 1.0
-#
-#    # Convert back to cartesian coordinates
-#    data.pos = torch.einsum('bi,bij->bj', fractional, cell_batch)
-#
-#    return data
