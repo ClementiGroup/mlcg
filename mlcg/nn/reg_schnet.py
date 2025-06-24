@@ -16,6 +16,7 @@ except ImportError:
     )
     radius_distance = None
 
+
 class RepulsionFilteredSchNet(SchNet):
     """
     Code from Lorenzo Giambagli
@@ -60,21 +61,22 @@ class RepulsionFilteredSchNet(SchNet):
         given as strings, and the values are the lower bounds of the ranges to be considered.
         Example: {'(i,j)': min_value, '(k,l)': min_value, ...}
     """
+
     def __init__(
-            self,
-            rbf_layer: torch.nn.Module,
-            cutoff: torch.nn.Module,
-            output_hidden_layer_widths: List[int],
-            hidden_channels: int = 128,
-            embedding_size: int = 100,
-            num_filters: int = 128,
-            num_interactions: int = 3,
-            activation: torch.nn.Module = torch.nn.Tanh(),
-            max_num_neighbors: int = 1000,
-            aggr: str = "add",
-            # Parameters for RBF rescaling
-            max_bead_type: int = 25,
-            define_ranges: Union[None, Dict] = None
+        self,
+        rbf_layer: torch.nn.Module,
+        cutoff: torch.nn.Module,
+        output_hidden_layer_widths: List[int],
+        hidden_channels: int = 128,
+        embedding_size: int = 100,
+        num_filters: int = 128,
+        num_interactions: int = 3,
+        activation: torch.nn.Module = torch.nn.Tanh(),
+        max_num_neighbors: int = 1000,
+        aggr: str = "add",
+        # Parameters for RBF rescaling
+        max_bead_type: int = 25,
+        define_ranges: Union[None, Dict] = None,
     ):
         if num_interactions < 1:
             raise ValueError("At least one interaction block must be specified")
@@ -115,7 +117,7 @@ class RepulsionFilteredSchNet(SchNet):
             block = InteractionBlock(cfconv, hidden_channels, activation)
             interaction_blocks.append(block)
         output_layer_widths = (
-                [hidden_channels] + output_hidden_layer_widths + [1]
+            [hidden_channels] + output_hidden_layer_widths + [1]
         )
         output_network = MLP(
             output_layer_widths, activation_func=activation, last_bias=False
@@ -130,7 +132,9 @@ class RepulsionFilteredSchNet(SchNet):
         )
 
         i, j = torch.tril_indices(max_bead_type, max_bead_type, offset=-1)
-        filters = torch.ones(max_bead_type, max_bead_type, self.rbf_layer.num_rbf).float()
+        filters = torch.ones(
+            max_bead_type, max_bead_type, self.rbf_layer.num_rbf
+        ).float()
         filters[i, j] *= 0
 
         if define_ranges is not None:
@@ -142,9 +146,10 @@ class RepulsionFilteredSchNet(SchNet):
                 filters[couple[1], couple[0], mask] *= 0
                 self.register_buffer("radial_filters", filters)
         else:
-            self.register_parameter("radial_filters", torch.nn.Parameter(filters,
-                                                                         requires_grad=True))
-
+            self.register_parameter(
+                "radial_filters",
+                torch.nn.Parameter(filters, requires_grad=True),
+            )
 
     def forward(self, data: AtomicData) -> AtomicData:
         r"""Forward pass through the SchNet architecture.
@@ -191,7 +196,7 @@ class RepulsionFilteredSchNet(SchNet):
                 data.pos,
                 self.rbf_layer.cutoff.cutoff_upper,
                 data.batch,
-                False,              # no loop edges due to compatibility & backward breaks with zero distance
+                False,  # no loop edges due to compatibility & backward breaks with zero distance
                 self.max_num_neighbors,
                 exclude_pair_indices=data.get("exc_pair_index"),
             )
@@ -226,7 +231,9 @@ class RepulsionFilteredSchNet(SchNet):
         energy = self.output_network(x, data)
         energy = scatter(energy, data.batch, dim=0, reduce="sum")
         energy = energy.flatten()
-        data.out[self.name] = {ENERGY_KEY: energy,
-                               'radial_filters': self.radial_filters}
+        data.out[self.name] = {
+            ENERGY_KEY: energy,
+            "radial_filters": self.radial_filters,
+        }
 
         return data
