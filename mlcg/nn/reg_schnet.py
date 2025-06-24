@@ -1,14 +1,12 @@
 import warnings
-from typing import List
+from typing import List, Union, Dict
 import torch
 from torch_geometric.nn import MessagePassing
 from torch_scatter import scatter
 from ..data.atomic_data import AtomicData, ENERGY_KEY
 from ..geometry.internal_coordinates import compute_distances
 from .mlp import MLP
-from .attention import (
-    AttentiveInteractionBlock,
-)
+from .schnet import SchNet, CFConv, InteractionBlock
 
 try:
     from mlcg_opt_radius.radius import radius_distance
