@@ -1,8 +1,9 @@
 from .gradients import GradientsOut, SumOut, EnergyOut
 from .schnet import SchNet, StandardSchNet
+from .reg_schnet import RepulsionFilteredSchNet
 from .radial_basis import GaussianBasis, ExpNormalBasis
 from .cutoff import CosineCutoff, IdentityCutoff
-from .losses import ForceMSE, ForceRMSE, Loss
+from .losses import ForceMSE, ForceRMSE, RegL1, Loss
 from .prior import (
     Harmonic,
     HarmonicAngles,
@@ -35,6 +36,7 @@ __all__ = [
     "SumOut",
     "EnergyOut",
     "SchNet",
+    "RepulsionFilteredSchNet",
     "StandardSchNet",
     "GaussianBasis",
     "ExpNormalBasis",
@@ -42,6 +44,7 @@ __all__ = [
     "IdentityCutoff",
     "ForceMSE",
     "ForceRMSE",
+    "RegL1",
     "Loss",
     "Harmonic",
     "HarmonicAngles",
