@@ -19,11 +19,14 @@ try:
 
 except ImportError as e:
     print(e)
-    print("Please install or set mace to your path before using this interface. " +
-          "To install you can either run 'pip install git+https://github.com/ACEsuit/mace.git', " +
-          "or clone the repository and add it to your PYTHONPATH.""")
+    print(
+        "Please install or set mace to your path before using this interface. "
+        + "To install you can either run 'pip install git+https://github.com/ACEsuit/mace.git@v0.3.12', "
+        + "or clone the repository and add it to your PYTHONPATH."
+        ""
+    )
 
-from ..pl.model import get_class_from_str
+# from ..pl.model import get_class_from_str
 from ..data.atomic_data import AtomicData, ENERGY_KEY
 from ..neighbor_list.neighbor_list import (
     atomic_data2neighbor_list,
@@ -35,7 +38,7 @@ from e3nn.util.jit import compile_mode
 
 @compile_mode("script")
 class MACE(torch.nn.Module):
-    name: Final[str] = "MACE"
+    name: Final[str] = "mace"
 
     def __init__(
         self,
@@ -52,9 +55,7 @@ class MACE(torch.nn.Module):
     ):
         super().__init__()
 
-        self.register_buffer(
-                "atomic_numbers", atomic_numbers
-            )
+        self.register_buffer("atomic_numbers", atomic_numbers)
         self.node_embedding = node_embedding
         self.radial_embedding = radial_embedding
         self.spherical_harmonics = spherical_harmonics
@@ -66,10 +67,12 @@ class MACE(torch.nn.Module):
         self.pair_repulsion_fn = pair_repulsion_fn
 
         self.register_buffer(
-                "types_mapping",
-                -1 * torch.ones(atomic_numbers.max() + 1, dtype=torch.long),
-            )
-        self.types_mapping[atomic_numbers] = torch.arange(atomic_numbers.shape[0])
+            "types_mapping",
+            -1 * torch.ones(atomic_numbers.max() + 1, dtype=torch.long),
+        )
+        self.types_mapping[atomic_numbers] = torch.arange(
+            atomic_numbers.shape[0]
+        )
 
     def forward(self, data: AtomicData) -> AtomicData:
         # Setup
@@ -107,12 +110,17 @@ class MACE(torch.nn.Module):
                 lengths, node_attrs, edge_index, self.atomic_numbers
             )
             pair_energy = scatter_sum(
-                src=pair_node_energy, index=data["batch"], dim=-1, dim_size=num_graphs
+                src=pair_node_energy,
+                index=data["batch"],
+                dim=-1,
+                dim_size=num_graphs,
             )  # [n_graphs,]
         else:
-            pair_energy = torch.zeros(data.batch.max() + 1,
-                                      device=data.pos.device,
-                                      dtype=data.pos.dtype)
+            pair_energy = torch.zeros(
+                data.batch.max() + 1,
+                device=data.pos.device,
+                dtype=data.pos.dtype,
+            )
 
         # Interactions
         energies = [pair_energy]
@@ -198,6 +206,8 @@ class StandardMACE(MACE):
         radial_type: Optional[str] = "bessel",
         cueq_config: Optional[Dict[str, Any]] = None,
     ):
+        from mlcg.pl.model import get_class_from_str
+
         atomic_numbers.sort()
         atomic_numbers = torch.as_tensor(atomic_numbers)
         num_elements = atomic_numbers.shape[0]
@@ -209,7 +219,9 @@ class StandardMACE(MACE):
             correlation = [correlation] * num_interactions
         # Embedding
         node_attr_irreps = o3.Irreps([(num_elements, (0, 1))])
-        node_feats_irreps = o3.Irreps([(hidden_irreps.count(o3.Irrep(0, 1)), (0, 1))])
+        node_feats_irreps = o3.Irreps(
+            [(hidden_irreps.count(o3.Irrep(0, 1)), (0, 1))]
+        )
         node_embedding = LinearNodeEmbeddingBlock(
             irreps_in=node_attr_irreps,
             irreps_out=node_feats_irreps,
@@ -239,16 +251,16 @@ class StandardMACE(MACE):
 
         # Interactions and readout
         inter = get_class_from_str(interaction_cls_first)(
-                    node_attrs_irreps=node_attr_irreps,
-                    node_feats_irreps=node_feats_irreps,
-                    edge_attrs_irreps=sh_irreps,
-                    edge_feats_irreps=edge_feats_irreps,
-                    target_irreps=interaction_irreps,
-                    hidden_irreps=hidden_irreps,
-                    avg_num_neighbors=avg_num_neighbors,
-                    radial_MLP=radial_MLP,
-                    cueq_config=cueq_config
-                    )
+            node_attrs_irreps=node_attr_irreps,
+            node_feats_irreps=node_feats_irreps,
+            edge_attrs_irreps=sh_irreps,
+            edge_feats_irreps=edge_feats_irreps,
+            target_irreps=interaction_irreps,
+            hidden_irreps=hidden_irreps,
+            avg_num_neighbors=avg_num_neighbors,
+            radial_MLP=radial_MLP,
+            cueq_config=cueq_config,
+        )
         interactions = [inter]
 
         # Use the appropriate self connection at the first layer for proper E0
@@ -268,10 +280,8 @@ class StandardMACE(MACE):
         products = [prod]
 
         readouts = [
-            LinearReadoutBlock(
-                hidden_irreps, o3.Irreps("1x0e"), cueq_config
-                )
-            ]
+            LinearReadoutBlock(hidden_irreps, o3.Irreps("1x0e"), cueq_config)
+        ]
 
         for i in range(num_interactions - 1):
             if i == num_interactions - 2:
@@ -281,16 +291,16 @@ class StandardMACE(MACE):
             else:
                 hidden_irreps_out = hidden_irreps
             inter = get_class_from_str(interaction_cls)(
-                        node_attrs_irreps=node_attr_irreps,
-                        node_feats_irreps=hidden_irreps,
-                        edge_attrs_irreps=sh_irreps,
-                        edge_feats_irreps=edge_feats_irreps,
-                        target_irreps=interaction_irreps,
-                        hidden_irreps=hidden_irreps_out,
-                        avg_num_neighbors=avg_num_neighbors,
-                        radial_MLP=radial_MLP,
-                        cueq_config=cueq_config
-                        )
+                node_attrs_irreps=node_attr_irreps,
+                node_feats_irreps=hidden_irreps,
+                edge_attrs_irreps=sh_irreps,
+                edge_feats_irreps=edge_feats_irreps,
+                target_irreps=interaction_irreps,
+                hidden_irreps=hidden_irreps_out,
+                avg_num_neighbors=avg_num_neighbors,
+                radial_MLP=radial_MLP,
+                cueq_config=cueq_config,
+            )
             interactions.append(inter)
             prod = EquivariantProductBasisBlock(
                 node_feats_irreps=interaction_irreps,
