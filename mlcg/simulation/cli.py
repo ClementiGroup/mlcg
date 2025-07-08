@@ -104,7 +104,10 @@ def parse_simulation_config(
         config["simulation"].pop("save_subroutine", None)
 
     model_fn = config.pop("model_file")
-    model = load_and_adapt_old_checkpoint(
+    #model = load_and_adapt_old_checkpoint(
+    #    (model_fn if isinstance(model_fn, str) else model_fn())
+    #)
+    model = torch.load(
         (model_fn if isinstance(model_fn, str) else model_fn())
     )
 
