@@ -219,7 +219,7 @@ class RepulsionFilteredSchNet(SchNet):
 
         rbf_filters = self.radial_filters[senders, receivers]
 
-        rbf_expansion = self.rbf_layer(distances) * rbf_filters
+        rbf_expansion = self.rbf_layer(distances) * torch.abs(rbf_filters)
         # End of addition
 
         num_batch = data.batch[-1] + 1
