@@ -95,10 +95,10 @@ class StandardAllegro(torch.nn.Module):
         batch_flat = atomic_data[AtomicDataDict.BATCH_KEY]               # shape: (F*A,)
         mapped_types = atomic_data[AtomicDataDict.ATOM_TYPE_KEY]
 
-          # DEBUG: Check actual data sizes
-        print(f"Total positions: {positions_flat.shape[0]}")
-        print(f"Requesting {num_frames_to_use} frames")
-        print(f"Batch range: {batch_flat.min().item()} to {batch_flat.max().item()}")
+        #   # DEBUG: Check actual data sizes
+        # print(f"Total positions: {positions_flat.shape[0]}")
+        # print(f"Requesting {num_frames_to_use} frames")
+        # print(f"Batch range: {batch_flat.min().item()} to {batch_flat.max().item()}")
         
 
         # num_frames_to_use <= 2
