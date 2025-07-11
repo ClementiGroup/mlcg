@@ -1,0 +1,29 @@
+model:
+  type_names: ["Li", "C", "O", "F", "Ne", "Mg", "Al", "Si", "P", "S", "K", "Ca", "Sc", "Ti", "V", "Cr"]
+  learning_rate: 0.001
+  weight_decay: 0.00001
+  r_max: 4.0
+  num_layers: 3
+  l_max: 2
+  num_scalar_features: 32
+
+data:
+  h5_file_path: "/srv/data/kamenrur95/mlcg/examples/h5_pl/single_molecule/1L2Y_prior_tag.h5"
+  partition_options:
+    train:
+      metasets:
+        "1L2Y":
+          molecules: ["1L2Y"]
+      batch_sizes:
+        "1L2Y": 8
+    val:
+      metasets:
+        "1L2Y":
+          molecules: ["1L2Y"]
+      batch_sizes:
+        "1L2Y": 8
+
+trainer:
+  max_epochs: 2
+  accelerator: cpu
+  devices: 1

@@ -12,6 +12,11 @@ from allegro.model.allegro_models import FullAllegroModel, AllegroModel
 from tqdm import tqdm
 from torch_cluster import radius_graph
 from nequip.utils.global_state import set_global_state, get_latest_global_state, global_state_initialized
+import h5py
+import pytorch_lightning as pl
+import torch.optim as optim
+
+from torch.utils.data import Dataset, DataLoader
 
 ELEMENT_MAP = {
     1: "H",   2: "He",  3: "Li",  4: "Be",  5: "B",   6: "C",   7: "N",   8: "O",   9: "F",   10: "Ne",
@@ -28,9 +33,40 @@ ELEMENT_MAP = {
     111: "Rg", 112: "Cn", 113: "Nh", 114: "Fl", 115: "Mc", 116: "Lv", 117: "Ts", 118: "Og"
 }
 
-class StandardAllegro(torch.nn.Module):
-    def __init__(self, **kwargs):
+
+
+class StandardAllegro(pl.LightningModule):
+    def __init__(
+        self,
+        learning_rate: float = 0.001,
+        weight_decay: float = 0.0,
+        type_names: list[str] = None,
+        r_max: float = 4.0,
+        avg_num_neighbors: float = 20.0,
+        num_layers: int = 2,
+        l_max: int = 2,
+        num_scalar_features: int = 32,
+        num_tensor_features: int = 4,
+        radial_chemical_embed_dim: int = 16,
+        scalar_embed_mlp_hidden_layers_depth: int = 1,
+        scalar_embed_mlp_hidden_layers_width: int = 32,
+        allegro_mlp_hidden_layers_depth: int = 2,
+        allegro_mlp_hidden_layers_width: int = 32,
+        readout_mlp_hidden_layers_depth: int = 1,
+        readout_mlp_hidden_layers_width: int = 8,
+        model_dtype: str = "float32",
+        seed: int = 123,
+        **kwargs
+    ):
         super().__init__()
+
+        self.save_hyperparameters()  # Important for Lightning
+
+        set_global_state()
+        
+        # Extract learning rate and other training params
+        self.learning_rate = kwargs.pop('learning_rate', 1e-3)
+        self.weight_decay = kwargs.pop('weight_decay', 0.0)
 
         default_params = {
             "seed": 123,
@@ -55,21 +91,48 @@ class StandardAllegro(torch.nn.Module):
             },
         }
 
+        self.atom_type_mapping = None
+
+
         # Override default parameters with any provided kwargs
         default_params.update(kwargs)
 
         self.r_max = default_params["r_max"]
         self.allegro_model = AllegroModel(**default_params)
 
+                # ADD THIS LINE
+
+    def map_atom_types(self, raw_atom_types):
+        if self.atom_type_mapping is None:
+            unique_types = torch.unique(raw_atom_types).cpu().numpy()
+            self.atom_type_mapping = {int(atomic_num): i for i, atomic_num in enumerate(sorted(unique_types))}
+            # If type_names is not set, generate it from atomic numbers
+            if not getattr(self, "hparams", None) or not self.hparams.get("type_names"):
+                self.hparams.type_names = [ELEMENT_MAP.get(int(num), f"X{num}") for num in sorted(unique_types)]
+                print(f"[Auto] Generated type_names: {self.hparams.type_names}")
+            print(f"Auto-created mapping: {self.atom_type_mapping}")
+        mapped = torch.zeros_like(raw_atom_types)
+        for i, raw_type in enumerate(raw_atom_types):
+            mapped[i] = self.atom_type_mapping[raw_type.item()]
+        return mapped
+
     # # does the class need a forward method to be defined? I could dispatch to the correct method based on the input type
     # def forward(self, atomic_data):
     #     return self.forward_collated(atomic_data)
+
+    def forward(self, atomic_data: AtomicData, is_collated: bool = True):
+        return self.forward_collated(atomic_data)
+        # else:
+        #     return self.forward_single_frame(atomic_data)
 
     def forward_single_frame(self, atomic_data: AtomicData):
         # Convert AtomicData to dict format
        # Extract required inputs from atomic_data
         positions = atomic_data[AtomicDataDict.POSITIONS_KEY]        # shape: (n_atoms, 3)
         mapped_types = atomic_data[AtomicDataDict.ATOM_TYPE_KEY]     # already mapped to Allegro type indices
+
+        # raw_atom_types = atomic_data[AtomicDataDict.ATOM_TYPE_KEY]
+        # mapped_types = self.map_atom_types(raw_atom_types)
 
         # Create batch: assume all atoms belong to the same frame
         batch = torch.zeros(positions.shape[0], dtype=torch.long, device=positions.device)
@@ -94,6 +157,18 @@ class StandardAllegro(torch.nn.Module):
         positions_flat = atomic_data[AtomicDataDict.POSITIONS_KEY]       # shape: (F*A, 3)
         batch_flat = atomic_data[AtomicDataDict.BATCH_KEY]               # shape: (F*A,)
         mapped_types = atomic_data[AtomicDataDict.ATOM_TYPE_KEY]
+
+        raw_atom_types = atomic_data[AtomicDataDict.ATOM_TYPE_KEY]
+        mapped_types = self.map_atom_types(raw_atom_types)
+
+        print("raw_atom_types[:20]:", raw_atom_types[:20])
+        print("mapped_types[:20]:", mapped_types[:20])
+        print("mapped_types min/max:", mapped_types.min().item(), mapped_types.max().item())
+        print("embedding table size:", len(self.hparams.type_names))
+
+        print("raw_atom_types[:20]:", raw_atom_types[:20])
+        print("type_names:", self.hparams.type_names)
+        print("atom_type_mapping:", self.atom_type_mapping)
 
         #   # DEBUG: Check actual data sizes
         # print(f"Total positions: {positions_flat.shape[0]}")
@@ -121,6 +196,16 @@ class StandardAllegro(torch.nn.Module):
             r=self.r_max,
             batch=batch_subset
         )
+
+        center_types = mapped_types_subset[edge_index_subset[0]]
+        neighbor_types = mapped_types_subset[edge_index_subset[1]]
+        print("center_types min/max:", center_types.min().item(), center_types.max().item())
+        print("neighbor_types min/max:", neighbor_types.min().item(), neighbor_types.max().item())
+        print("Any negative center_types?", (center_types < 0).any().item())
+        print("Any negative neighbor_types?", (neighbor_types < 0).any().item())
+        print("Any center_types >= embedding size?", (center_types >= len(self.hparams.type_names)).any().item())
+        print("Any neighbor_types >= embedding size?", (neighbor_types >= len(self.hparams.type_names)).any().item())
+
         allegro_subset_data = {
             AtomicDataDict.POSITIONS_KEY: positions_subset,
             AtomicDataDict.ATOM_TYPE_KEY: mapped_types_subset,
@@ -129,9 +214,62 @@ class StandardAllegro(torch.nn.Module):
             AtomicDataDict.NUM_NODES_KEY: num_nodes_per_frame,
         }
 
+        print("\n\n\n", allegro_subset_data, "\n\n\n")
+
         collated_output = self.allegro_model(allegro_subset_data)
 
         return collated_output
+    
+    def training_step(self, batch, batch_idx):
+        """Training step for Lightning"""
+        output = self.forward(batch)
+        
+        # Force loss
+        if 'forces' in batch and 'forces' in output:
+            force_loss = torch.nn.functional.mse_loss(output['forces'], batch['forces'])
+            self.log('train_force_loss', force_loss, prog_bar=True)
+        else:
+            force_loss = 0.0
+            
+        # Energy loss (if available)
+        if 'total_energy' in batch and 'total_energy' in output:
+            energy_loss = torch.nn.functional.mse_loss(output['total_energy'], batch['total_energy'])
+            self.log('train_energy_loss', energy_loss, prog_bar=True)
+        else:
+            energy_loss = 0.0
+            
+        total_loss = force_loss + energy_loss
+        self.log('train_loss', total_loss, prog_bar=True)
+        return total_loss
+
+    def validation_step(self, batch, batch_idx):
+        """Validation step for Lightning"""
+        output = self.forward(batch)
+        
+        if 'forces' in batch and 'forces' in output:
+            val_force_loss = torch.nn.functional.mse_loss(output['forces'], batch['forces'])
+            self.log('val_force_loss', val_force_loss, sync_dist=True)
+            
+        if 'total_energy' in batch and 'total_energy' in output:
+            val_energy_loss = torch.nn.functional.mse_loss(output['total_energy'], batch['total_energy'])
+            self.log('val_energy_loss', val_energy_loss, sync_dist=True)
+
+    def configure_optimizers(self):
+        """Configure optimizer for Lightning"""
+        optimizer = torch.optim.Adam(
+            self.parameters(), 
+            lr=self.learning_rate,
+            weight_decay=self.weight_decay
+        )
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer, mode='min', factor=0.5, patience=10
+        )
+        return {
+            "optimizer": optimizer,
+            "lr_scheduler": scheduler,
+            "monitor": "val_force_loss"
+        }
+
     
 def small_test():
     set_global_state()
@@ -145,26 +283,25 @@ def small_test():
     with open(PRIOS_PATH, "rb") as f:
         nls = pkl.load(f)
     
+    print("cg_embads: ", cg_embeds)
     print(f"Loaded data: {cg_coords.shape[0]} frames, {cg_coords.shape[1]} atoms")
 
-    unique_atoms = np.unique(cg_embeds)
-    print("Unique atomic numbers found:", unique_atoms)
+    # print("Unique atomic numbers found:", unique_atoms)
 
-    # Create mapping for all found atomic numbers
-    # Common atomic numbers: 1=H, 4=Be, 6=C, 7=N, 8=O, etc.
-    mapping = {}
-    type_names = []
 
-    for i, atomic_num in enumerate(sorted(unique_atoms)):
-        mapping[int(atomic_num)] = i
-        # Map atomic numbers to element names
-        type_names.append(ELEMENT_MAP.get(int(atomic_num), f"X{atomic_num}"))
+# --- Mapping logic ---
+    unique_atomic_numbers = sorted(set(int(z) for z in cg_embeds))
+    print("Unique atomic numbers found:", unique_atomic_numbers)
 
-    print("Mapping:", mapping)
+    type_names = [ELEMENT_MAP.get(num, f"X{num}") for num in unique_atomic_numbers]
     print("Type names:", type_names)
 
+    mapping = {num: idx for idx, num in enumerate(unique_atomic_numbers)}
+    print("Mapping:", mapping)
+
     mapped_embeds = np.array([mapping[int(z)] for z in cg_embeds])
-    
+    # --- End mapping logic ---
+
     # Create AtomicData
     frame_idx = 0
     single_frame_atom_data = AtomicData.from_points(
@@ -285,9 +422,51 @@ def bigger_test():
             if energy_shape[0] > 0:
                 print(f"  Sample energies: {output['total_energy'][:3]}")
 
+class AllegroDataset(Dataset):
+    def __init__(self, coords, forces):
+        self.coords = torch.tensor(coords, dtype=torch.float32)
+        self.forces = torch.tensor(forces, dtype=torch.float32)
+
+    def __len__(self):
+        return len(self.coords)
+
+    def __getitem__(self, idx):
+        return {
+            "coords": self.coords[idx],
+            "forces": self.forces[idx]
+        }
+
+def collate_fn(batch):
+    # batch is a list of AtomicData objects
+    # Collate to a single AtomicDataDict
+    return AtomicData.from_AtomicData_list(batch).to_AtomicDataDict()
+
+# train_loader = DataLoader(
+#     AllegroDataset(train_data_list),
+#     batch_size=4,
+#     shuffle=True,
+#     collate_fn=collate_fn,
+# )
+
+def collate_fn(batch):
+    # batch is a list of AtomicData objects
+    # Collate to a single AtomicDataDict
+    return AtomicData.from_AtomicData_list(batch).to_AtomicDataDict()
+
+mlcg_single_molecule_example_h5_file_path = "/srv/data/kamenrur95/mlcg/examples/h5_pl/single_molecule/1L2Y_prior_tag.h5"
+
 def main():
     small_test()
-    bigger_test()
+    # bigger_test()
+    with h5py.File(mlcg_single_molecule_example_h5_file_path, "r") as f:
+        coords = np.array(f["1L2Y/1L2Y/cg_coords"])
+        forces = np.array(f["1L2Y/1L2Y/cg_delta_forces"])
+    
+    print("Coordinates shape:", coords.shape)
+    print("Forces shape:", forces.shape)
+    dataset = AllegroDataset(coords, forces)
+    dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
+
 
 
 if __name__ == "__main__":
