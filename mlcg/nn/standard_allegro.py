@@ -68,6 +68,7 @@ class StandardAllegro(pl.LightningModule):
         self.learning_rate = kwargs.pop('learning_rate', 1e-3)
         self.weight_decay = kwargs.pop('weight_decay', 0.0)
 
+
         default_params = {
             "seed": 123,
             "type_names": ["H", "C", "N", "O"],
@@ -91,7 +92,14 @@ class StandardAllegro(pl.LightningModule):
             },
         }
 
-        self.atom_type_mapping = None
+        symbol_to_num = {v: k for k, v in ELEMENT_MAP.items()}
+        self.atom_type_mapping = {}
+        for idx, symbol in enumerate(self.type_names):
+            atomic_num = symbol_to_num.get(symbol)
+            if atomic_num is None:
+                raise ValueError(f"Unknown element symbol in type_names: {symbol}")
+            self.atom_type_mapping[atomic_num] = idx
+        print(f"Global mapping: {self.atom_type_mapping}")
 
 
         # Override default parameters with any provided kwargs
@@ -103,17 +111,12 @@ class StandardAllegro(pl.LightningModule):
                 # ADD THIS LINE
 
     def map_atom_types(self, raw_atom_types):
-        if self.atom_type_mapping is None:
-            unique_types = torch.unique(raw_atom_types).cpu().numpy()
-            self.atom_type_mapping = {int(atomic_num): i for i, atomic_num in enumerate(sorted(unique_types))}
-            # If type_names is not set, generate it from atomic numbers
-            if not getattr(self, "hparams", None) or not self.hparams.get("type_names"):
-                self.hparams.type_names = [ELEMENT_MAP.get(int(num), f"X{num}") for num in sorted(unique_types)]
-                print(f"[Auto] Generated type_names: {self.hparams.type_names}")
-            print(f"Auto-created mapping: {self.atom_type_mapping}")
-        mapped = torch.zeros_like(raw_atom_types)
+        mapped = torch.full_like(raw_atom_types, -1)
         for i, raw_type in enumerate(raw_atom_types):
-            mapped[i] = self.atom_type_mapping[raw_type.item()]
+            mapped[i] = self.atom_type_mapping.get(int(raw_type.item()), -1)
+        # Safety check
+        if (mapped < 0).any() or (mapped >= len(self.type_names)).any():
+            raise ValueError(f"Found unmapped or out-of-range atom type in batch: {raw_atom_types}")
         return mapped
 
     # # does the class need a forward method to be defined? I could dispatch to the correct method based on the input type
@@ -125,86 +128,53 @@ class StandardAllegro(pl.LightningModule):
         # else:
         #     return self.forward_single_frame(atomic_data)
 
-    def forward_single_frame(self, atomic_data: AtomicData):
-        # Convert AtomicData to dict format
-       # Extract required inputs from atomic_data
-        positions = atomic_data[AtomicDataDict.POSITIONS_KEY]        # shape: (n_atoms, 3)
-        mapped_types = atomic_data[AtomicDataDict.ATOM_TYPE_KEY]     # already mapped to Allegro type indices
+    # def forward_single_frame(self, atomic_data: AtomicData):
+    #     positions = atomic_data[AtomicDataDict.POSITIONS_KEY]
+    #     mapped_types = atomic_data[AtomicDataDict.ATOM_TYPE_KEY]
+    #     batch = torch.zeros(positions.shape[0], dtype=torch.long, device=positions.device)
+    #     edge_index = radius_graph(positions, r=4.0, batch=batch, loop=False)
+    #     num_nodes = torch.tensor([positions.shape[0]])
 
-        # raw_atom_types = atomic_data[AtomicDataDict.ATOM_TYPE_KEY]
-        # mapped_types = self.map_atom_types(raw_atom_types)
+    #     model_input = {
+    #         AtomicDataDict.POSITIONS_KEY: positions,
+    #         AtomicDataDict.EDGE_INDEX_KEY: edge_index,
+    #         AtomicDataDict.ATOM_TYPE_KEY: mapped_types,
+    #         AtomicDataDict.BATCH_KEY: batch,
+    #         AtomicDataDict.NUM_NODES_KEY: num_nodes,
+    #     }
 
-        # Create batch: assume all atoms belong to the same frame
-        batch = torch.zeros(positions.shape[0], dtype=torch.long, device=positions.device)
+    #     print("mapped_types:", mapped_types)
+    #     print("mapped_types min/max:", mapped_types.min().item(), mapped_types.max().item())
+    #     print("embedding table size:", len(self.hparams.type_names))
 
-        # Compute edges using radius graph
-        edge_index = radius_graph(positions, r=4.0, batch=batch, loop=False)
-
-        # Pack input dict for Allegro
-        model_input = {
-            AtomicDataDict.POSITIONS_KEY: positions,
-            AtomicDataDict.EDGE_INDEX_KEY: edge_index,
-            AtomicDataDict.ATOM_TYPE_KEY: mapped_types,
-        }
-
-        # Run model
-        output = self.allegro_model(model_input)
-        return output
+    #     output = self.allegro_model(model_input)
+    #     return output
     
     
     def forward_collated(self, atomic_data: AtomicData, num_frames_to_use=2):
+        positions_flat = atomic_data[AtomicDataDict.POSITIONS_KEY]
+        batch_flat = atomic_data[AtomicDataDict.BATCH_KEY]
+        raw_types = atomic_data[AtomicDataDict.ATOM_TYPE_KEY]
 
-        positions_flat = atomic_data[AtomicDataDict.POSITIONS_KEY]       # shape: (F*A, 3)
-        batch_flat = atomic_data[AtomicDataDict.BATCH_KEY]               # shape: (F*A,)
-        mapped_types = atomic_data[AtomicDataDict.ATOM_TYPE_KEY]
+        print("Unique atomic numbers in batch:", torch.unique(raw_types))
+        print("Type names:", self.type_names)
+        print("Mapping:", self.atom_type_mapping)
 
-        raw_atom_types = atomic_data[AtomicDataDict.ATOM_TYPE_KEY]
-        mapped_types = self.map_atom_types(raw_atom_types)
+        # Always map using the global mapping
+        mapped_types = self.map_atom_types(raw_types)
 
-        print("raw_atom_types[:20]:", raw_atom_types[:20])
-        print("mapped_types[:20]:", mapped_types[:20])
-        print("mapped_types min/max:", mapped_types.min().item(), mapped_types.max().item())
-        print("embedding table size:", len(self.hparams.type_names))
-
-        print("raw_atom_types[:20]:", raw_atom_types[:20])
-        print("type_names:", self.hparams.type_names)
-        print("atom_type_mapping:", self.atom_type_mapping)
-
-        #   # DEBUG: Check actual data sizes
-        # print(f"Total positions: {positions_flat.shape[0]}")
-        # print(f"Requesting {num_frames_to_use} frames")
-        # print(f"Batch range: {batch_flat.min().item()} to {batch_flat.max().item()}")
-        
-
-        # num_frames_to_use <= 2
-        mask = batch_flat < num_frames_to_use  # (F*A,) boolean mask
-
-        print(f"Mask selects {mask.sum().item()} atoms out of {mask.shape[0]} total")
-
-
+        mask = batch_flat < num_frames_to_use
         positions_subset = positions_flat[mask]
-        # forces_subset = forces_flat[mask]
         batch_subset = batch_flat[mask]
         mapped_types_subset = mapped_types[mask]
 
         num_nodes_per_frame = torch.tensor([(batch_subset == i).sum().item() for i in range(num_frames_to_use)])
 
-
-        # _, batch_subset_reindexed = torch.unique(batch_subset, return_inverse=True)
         edge_index_subset = radius_graph(
             positions_subset,
             r=self.r_max,
             batch=batch_subset
         )
-
-        center_types = mapped_types_subset[edge_index_subset[0]]
-        neighbor_types = mapped_types_subset[edge_index_subset[1]]
-        print("center_types min/max:", center_types.min().item(), center_types.max().item())
-        print("neighbor_types min/max:", neighbor_types.min().item(), neighbor_types.max().item())
-        print("Any negative center_types?", (center_types < 0).any().item())
-        print("Any negative neighbor_types?", (neighbor_types < 0).any().item())
-        print("Any center_types >= embedding size?", (center_types >= len(self.hparams.type_names)).any().item())
-        print("Any neighbor_types >= embedding size?", (neighbor_types >= len(self.hparams.type_names)).any().item())
 
         allegro_subset_data = {
             AtomicDataDict.POSITIONS_KEY: positions_subset,
@@ -214,10 +184,10 @@ class StandardAllegro(pl.LightningModule):
             AtomicDataDict.NUM_NODES_KEY: num_nodes_per_frame,
         }
 
-        print("\n\n\n", allegro_subset_data, "\n\n\n")
+        print("mapped_types_subset min/max:", mapped_types_subset.min().item(), mapped_types_subset.max().item())
+        print("embedding table size:", len(self.type_names))
 
         collated_output = self.allegro_model(allegro_subset_data)
-
         return collated_output
     
     def training_step(self, batch, batch_idx):
@@ -325,12 +295,16 @@ def small_test():
     # Collate ALL frames
     collated_data, _, _ = collate(AtomicData, frame_data_list)
 
+    print("\n\n\n type names: ",type_names, "\n\n\n")
+
     model = StandardAllegro(type_names=type_names)
 
-    print("Running single frame inference...")
-    # Single frame inference
-    single_output = model.forward_single_frame(single_frame_atom_data)
-    print(single_output)
+
+
+    # print("Running single frame inference...")
+    # # Single frame inference
+    # single_output = model.forward_single_frame(single_frame_atom_data)
+    # print(single_output)
     
     print("Running collated inference (2 frames)...")
     # Collated inference with subset of frames
@@ -436,36 +410,36 @@ class AllegroDataset(Dataset):
             "forces": self.forces[idx]
         }
 
-def collate_fn(batch):
-    # batch is a list of AtomicData objects
-    # Collate to a single AtomicDataDict
-    return AtomicData.from_AtomicData_list(batch).to_AtomicDataDict()
+# def collate_fn(batch):
+#     # batch is a list of AtomicData objects
+#     # Collate to a single AtomicDataDict
+#     return AtomicData.from_AtomicData_list(batch).to_AtomicDataDict()
 
-# train_loader = DataLoader(
-#     AllegroDataset(train_data_list),
-#     batch_size=4,
-#     shuffle=True,
-#     collate_fn=collate_fn,
-# )
+# # train_loader = DataLoader(
+# #     AllegroDataset(train_data_list),
+# #     batch_size=4,
+# #     shuffle=True,
+# #     collate_fn=collate_fn,
+# # )
 
-def collate_fn(batch):
-    # batch is a list of AtomicData objects
-    # Collate to a single AtomicDataDict
-    return AtomicData.from_AtomicData_list(batch).to_AtomicDataDict()
+# def collate_fn(batch):
+#     # batch is a list of AtomicData objects
+#     # Collate to a single AtomicDataDict
+#     return AtomicData.from_AtomicData_list(batch).to_AtomicDataDict()
 
 mlcg_single_molecule_example_h5_file_path = "/srv/data/kamenrur95/mlcg/examples/h5_pl/single_molecule/1L2Y_prior_tag.h5"
 
 def main():
-    small_test()
-    # bigger_test()
+    # small_test()
+    bigger_test()
     with h5py.File(mlcg_single_molecule_example_h5_file_path, "r") as f:
         coords = np.array(f["1L2Y/1L2Y/cg_coords"])
         forces = np.array(f["1L2Y/1L2Y/cg_delta_forces"])
     
     print("Coordinates shape:", coords.shape)
     print("Forces shape:", forces.shape)
-    dataset = AllegroDataset(coords, forces)
-    dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
+    # dataset = AllegroDataset(coords, forces)
+    # dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
 
 
 
