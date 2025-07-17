@@ -21,14 +21,10 @@ from .pyg_forward_compatibility import (
     fixed_pyg_inspector,
 )
 from .painn import PaiNN, StandardPaiNN
+from .mace import MACE, StandardMACE
 from .lr_scheduler import CustomStepLR
 from .utils import sparsify_prior_module, desparsify_prior_module
 
-try:
-    from .mace_interface import MACEInterface
-except Exception as e:
-    print(e)
-    print("MACE installation not found ...")
 
 __all__ = [
     "GradientsOut",
@@ -62,5 +58,7 @@ __all__ = [
     "fixed_pyg_inspector",
     "PaiNN",
     "StandardPaiNN",
+    "MACE",
+    "StandardMACE",
     "CustomStepLR",
 ]

@@ -1,100 +1,117 @@
-seed_everything: 19384
+seed_everything: 6832135
+ckpt_path: null
+# define the training
 trainer:
-  max_epochs: 40
-  devices: 4
-  accelerator: gpu
-  strategy: ddp_find_unused_parameters_false
+  # Work directory for the session
+  default_root_dir: ./train_test
+  # set a limit to the training (#epochs and/or time limit)
+  max_epochs: 5 
+  max_time: null
+  profiler: null
+
+  # Training on one/multiple GPU
+  accelerator: 'gpu'
+  strategy: 'ddp'
+  devices: 1
   precision: 32
-  default_root_dir: .
-  resume_from_checkpoint: null
+
+  benchmark: false
+  
   logger:
     - class_path: pytorch_lightning.loggers.TensorBoardLogger
       init_args:
+        # save_dir will be set to default_root_dir
         save_dir: default_root_dir
         name: tensorboard
         version: ''
-  checkpoint_callback: null
+
   enable_checkpointing: true
   callbacks:
     - class_path: pytorch_lightning.callbacks.LearningRateMonitor
       init_args:
         logging_interval: epoch
         log_momentum: false
-    - class_path: pytorch_lightning.callbacks.model_checkpoint.ModelCheckpoint
+    - class_path: mlcg.pl.OffsetCheckpoint
       init_args:
+        start_epoch: 1
         dirpath: default_root_dir
-        filename: '{epoch}-{validation_loss:.4f}'
         monitor: validation_loss
-        save_last: true
         save_top_k: -1
-    - class_path: pytorch_lightning.callbacks.StochasticWeightAveraging
-      init_args:
-        swa_epoch_start: 30
-        swa_lrs: null
-        annealing_epochs: 5
-        annealing_strategy: cos
-        device: cpu
-    - class_path: pytorch_lightning.callbacks.TQDMProgressBar
-      init_args:
-        refresh_rate: 20
-  benchmark: false
+        every_n_epochs: 1
+        filename: '{epoch}-{validation_loss:.5f}'
+        save_last: true
+
+  log_every_n_steps: 500
+  gradient_clip_val: 10.0 #0
+  gradient_clip_algorithm: norm
+  check_val_every_n_epoch: 1
+  fast_dev_run: false
+  accumulate_grad_batches: 1 # you can change this to enable a even higher effective batch size
   deterministic: false
-  reload_dataloaders_every_n_epochs: 0
-  auto_lr_find: false
-  replace_sampler_ddp: false
-  detect_anomaly: false
-  auto_scale_batch_size: false
-  prepare_data_per_node: null
-  plugins: null
-  move_metrics_to_cpu: false
-  multiple_trainloader_mode: max_size_cycle
-  stochastic_weight_avg: false
-  terminate_on_nan: null
+  detect_anomaly: false 
+  enable_progress_bar: true # uncomment this in production (e.g., when redirecting the stdout to a file), otherwise it will generate huge a huge log file and harm the disk
+
 optimizer:
-  class_path: torch_optimizer.Lamb
+  class_path: torch.optim.AdamW
   init_args:
-    lr: 0.0003
+    lr: 0.0001
+    weight_decay: 0.01
+data:
+  h5_file_path: /net/scratch-sheldon/jacopo/projects/range-cg/datasets/ntl9/polinomial_angle_min_repulsion_4/NTL9_cgschnet_min_pair_4_delta_dataset.h5
+  partition_options: /local_scratch2/jacopo/test_software/mace_mlcg/partition_4321684.yaml
+  loading_options:
+    hdf_key_mapping:
+      embeds: attrs:cg_embeds
+      coords: cg_coords
+      forces: cg_delta_forces
+
 model:
   loss:
     class_path: mlcg.nn.Loss
     init_args:
       # list of losses to optimize
       losses:
-        - class_path: mlcg.nn.ForceRMSE
+        - class_path: mlcg.nn.ForceMSE
           init_args:
             force_kwd: forces
   # model specifications
   model:
-    class_path: mlcg.nn.MACEInterface
+    class_path: mlcg.nn.GradientsOut
     init_args:
-      max_num_neighbors: 15
-      gate:
-          class_path: torch.nn.Tanh
-          init_args: {}
-      config:
-        r_max: 10
-        num_bessel: 10
-        num_polynomial_cutoff: 5
-        max_ell: 1
-        interaction_cls: RealAgnosticResidualInteractionBlock
-        interaction_cls_first: RealAgnosticInteractionBlock
-        num_interactions: 1
-        num_elements: 8
-        hidden_irreps: 128x0e
-        MLP_irreps: 16x0e
-        avg_num_neighbors: 9
-        correlation: 4
-        atomic_numbers: [3,  6,  7, 15, 17, 18, 19, 40]
-data:
-  dataset:
-    class_path: mlcg.datasets.ChignolinDataset
-    init_args:
-      root: /path/to/save/dataset/
-  log_dir: default_root_dir
-  val_ratio: 0.1
-  test_ratio: 0.
-  batch_size: 256
-  inference_batch_size: 256
-  num_workers: 0
-  loading_stride: 1
-  save_local_copy: false
+      targets: forces
+      model:
+        class_path: mlcg.nn.StandardMACE
+        init_args:
+            r_max: 30.0
+            num_bessel: 8
+            num_polynomial_cutoff: 5
+            max_ell: 3
+            interaction_cls: mace.modules.blocks.RealAgnosticResidualInteractionBlock
+            interaction_cls_first: mace.modules.blocks.RealAgnosticResidualInteractionBlock
+            num_interactions: 2
+            hidden_irreps: '128x0e + 128x1o'
+            MLP_irreps: '16x0e'
+            avg_num_neighbors: 10
+            correlation: 2
+            gate: torch.nn.Tanh
+            max_num_neighbors: 1000
+            pair_repulsion: false
+            distance_transform: null
+            radial_MLP:
+              - 64
+              - 64
+            radial_type: bessel
+            atomic_numbers:
+              - 1
+              - 3
+              - 4
+              - 5
+              - 6
+              - 8
+              - 9
+              - 10
+              - 11
+              - 12
+              - 14
+              - 18
+              - 20
