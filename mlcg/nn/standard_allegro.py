@@ -15,6 +15,7 @@ from nequip.utils.global_state import set_global_state, get_latest_global_state,
 import h5py
 import pytorch_lightning as pl
 import torch.optim as optim
+import copy
 
 from torch.utils.data import Dataset, DataLoader
 
@@ -33,14 +34,37 @@ ELEMENT_MAP = {
     111: "Rg", 112: "Cn", 113: "Nh", 114: "Fl", 115: "Mc", 116: "Lv", 117: "Ts", 118: "Og"
 }
 
+DEFAULT_ALLEGRO_MODEL_PARAMS = {
+    "seed": 123,
+    "type_names": ["ALA", "CYS", "ASP", "GLU", "PHE", "GLY", "HIS", "ILE", "LYS", "LEU", "MET", "ASN", "PRO", "GLN", "ARG", "SER", "THR", "VAL", "TRP", "TYR"],
+    "model_dtype": "float32",
+    "r_max": 4.0,
+    "avg_num_neighbors": 20.0,
+    "radial_chemical_embed_dim": 16,
+    "scalar_embed_mlp_hidden_layers_depth": 1,
+    "scalar_embed_mlp_hidden_layers_width": 32,
+    "num_layers": 2,
+    "l_max": 2,
+    "num_scalar_features": 32,
+    "num_tensor_features": 4,
+    "allegro_mlp_hidden_layers_depth": 2,
+    "allegro_mlp_hidden_layers_width": 32,
+    "readout_mlp_hidden_layers_depth": 1,
+    "readout_mlp_hidden_layers_width": 8,
+    "radial_chemical_embed": {
+        "_target_": "allegro.nn.TwoBodyBesselScalarEmbed",
+        "num_bessels": 8,
+    },
+}
+
 
 
 class StandardAllegro(pl.LightningModule):
     def __init__(
         self,
+        type_names: list[str] = ["ALA", "CYS", "ASP", "GLU", "PHE", "GLY", "HIS", "ILE", "LYS", "LEU", "MET", "ASN", "PRO", "GLN", "ARG", "SER", "THR", "VAL", "TRP", "TYR"],
         learning_rate: float = 0.001,
         weight_decay: float = 0.0,
-        type_names: list[str] = None,
         r_max: float = 4.0,
         avg_num_neighbors: float = 20.0,
         num_layers: int = 2,
@@ -68,60 +92,43 @@ class StandardAllegro(pl.LightningModule):
         self.learning_rate = kwargs.pop('learning_rate', 1e-3)
         self.weight_decay = kwargs.pop('weight_decay', 0.0)
 
-
-        default_params = {
-            "seed": 123,
-            "type_names": ["H", "C", "N", "O"],
-            "model_dtype": "float32",
-            "r_max": 4.0,
-            "avg_num_neighbors": 20.0,
-            "radial_chemical_embed_dim": 16,
-            "scalar_embed_mlp_hidden_layers_depth": 1,
-            "scalar_embed_mlp_hidden_layers_width": 32,
-            "num_layers": 2,
-            "l_max": 2,
-            "num_scalar_features": 32,
-            "num_tensor_features": 4,
-            "allegro_mlp_hidden_layers_depth": 2,
-            "allegro_mlp_hidden_layers_width": 32,
-            "readout_mlp_hidden_layers_depth": 1,
-            "readout_mlp_hidden_layers_width": 8,
-            "radial_chemical_embed": {
-                "_target_": "allegro.nn.TwoBodyBesselScalarEmbed",
-                "num_bessels": 8,
-            },
-        }
-
-        symbol_to_num = {v: k for k, v in ELEMENT_MAP.items()}
-        self.atom_type_mapping = {}
-        for idx, symbol in enumerate(self.type_names):
-            atomic_num = symbol_to_num.get(symbol)
-            if atomic_num is None:
-                raise ValueError(f"Unknown element symbol in type_names: {symbol}")
-            self.atom_type_mapping[atomic_num] = idx
-        print(f"Global mapping: {self.atom_type_mapping}")
+        # symbol_to_num = {v: k for k, v in ELEMENT_MAP.items()}
+        # self.atom_type_mapping = {}
+        # for idx, symbol in enumerate(self.type_names):
+        #     atomic_num = symbol_to_num.get(symbol)
+        #     if atomic_num is None:
+        #         raise ValueError(f"Unknown element symbol in type_names: {symbol}")
+        #     self.atom_type_mapping[atomic_num] = idx
+        # print(f"Global mapping: {self.atom_type_mapping}")
 
 
         # Override default parameters with any provided kwargs
-        default_params.update(kwargs)
+        model_params = copy.deepcopy(DEFAULT_ALLEGRO_MODEL_PARAMS)
+        model_params.update(kwargs)
+        # model_params["output_forces"] = False
 
-        self.r_max = default_params["r_max"]
-        self.allegro_model = AllegroModel(**default_params)
+        self.current_model_params = model_params
+        self.r_max = model_params["r_max"]
+        self.allegro_model = AllegroModel(**model_params)
 
-                # ADD THIS LINE
+    #             # ADD THIS LINE
 
-    def map_atom_types(self, raw_atom_types):
-        mapped = torch.full_like(raw_atom_types, -1)
-        for i, raw_type in enumerate(raw_atom_types):
-            mapped[i] = self.atom_type_mapping.get(int(raw_type.item()), -1)
-        # Safety check
-        if (mapped < 0).any() or (mapped >= len(self.type_names)).any():
-            raise ValueError(f"Found unmapped or out-of-range atom type in batch: {raw_atom_types}")
-        return mapped
+    # def map_atom_types(self, raw_atom_types):
+    #     mapped = torch.full_like(raw_atom_types, -1)
+    #     for i, raw_type in enumerate(raw_atom_types):
+    #         mapped[i] = self.atom_type_mapping.get(int(raw_type.item()), -1)
+    #     # Safety check
+    #     if (mapped < 0).any() or (mapped >= len(self.type_names)).any():
+    #         raise ValueError(f"Found unmapped or out-of-range atom type in batch: {raw_atom_types}")
+    #     return mapped
 
     # # does the class need a forward method to be defined? I could dispatch to the correct method based on the input type
     # def forward(self, atomic_data):
     #     return self.forward_collated(atomic_data)
+
+    # # assumes collated!!!
+    # def reset_model(self, atomic_data: AtomicData):
+    #     self.allegro_model = AllegroModel(**model_params)
 
     def forward(self, atomic_data: AtomicData, is_collated: bool = True):
         return self.forward_collated(atomic_data)
@@ -152,29 +159,82 @@ class StandardAllegro(pl.LightningModule):
     
     
     def forward_collated(self, atomic_data: AtomicData, num_frames_to_use=2):
-        positions_flat = atomic_data[AtomicDataDict.POSITIONS_KEY]
-        batch_flat = atomic_data[AtomicDataDict.BATCH_KEY]
-        raw_types = atomic_data[AtomicDataDict.ATOM_TYPE_KEY]
 
-        print("Unique atomic numbers in batch:", torch.unique(raw_types))
-        print("Type names:", self.type_names)
-        print("Mapping:", self.atom_type_mapping)
+        # positions_flat = atomic_data[AtomicDataDict.POSITIONS_KEY]       # shape: (F*A, 3)
+        # batch_flat = atomic_data[AtomicDataDict.BATCH_KEY]               # shape: (F*A,)
+        # mapped_types = atomic_data[AtomicDataDict.ATOM_TYPE_KEY]
 
-        # Always map using the global mapping
-        mapped_types = self.map_atom_types(raw_types)
+        if 'atom_types' in atomic_data:
+            print("Batch atom types:", atomic_data['atom_types'].unique())
+            print("Model type_names:", self.current_model_params["type_names"])
+    
 
-        mask = batch_flat < num_frames_to_use
+        # Get positions and set requires_grad
+        positions_flat = atomic_data['pos']
+        print(f"Original positions requires_grad: {positions_flat.requires_grad}")
+        
+        # Make a new tensor that definitely has gradients
+        positions_flat = positions_flat.detach().clone().requires_grad_(True)
+        print(f"After clone positions requires_grad: {positions_flat.requires_grad}")
+        
+        batch_flat = atomic_data['batch']
+        raw_types = atomic_data['atom_types']
+
+        unique_types = torch.unique(raw_types)
+        type_to_idx = {int(t): i for i, t in enumerate(unique_types)}
+        mapped_types = torch.tensor([type_to_idx[int(t)] for t in raw_types])
+    
+
+        print("Original unique types:", raw_types.unique())
+        print("Mapped unique types:", mapped_types.unique())    
+
+        # num_frames_to_use <= 2
+        mask = batch_flat < num_frames_to_use  # (F*A,) boolean mask
+
+        # Check gradient status after masking
         positions_subset = positions_flat[mask]
+        print(f"After mask positions_subset requires_grad: {positions_subset.requires_grad}")
+            
+        # Force requires_grad to be True and verify immediately
+        positions_subset = positions_subset.detach().clone().requires_grad_(True)
+        print(f"Final positions_subset requires_grad: {positions_subset.requires_grad}")
+    
+
+
+        # forces_subset = forces_flat[mask]
         batch_subset = batch_flat[mask]
+        # batch_subset = batch_subset.requires_grad_(True)
         mapped_types_subset = mapped_types[mask]
+        # mapped_types_subset = mapped_types_subset.requires_grad_(True)
+
 
         num_nodes_per_frame = torch.tensor([(batch_subset == i).sum().item() for i in range(num_frames_to_use)])
 
+
+        # _, batch_subset_reindexed = torch.unique(batch_subset, return_inverse=True)
         edge_index_subset = radius_graph(
             positions_subset,
             r=self.r_max,
             batch=batch_subset
         )
+
+        print("\n----- TENSOR DEBUG INFO -----")
+
+        print(f"positions_subset: type={positions_subset.dtype}, shape={positions_subset.shape}, "
+            f"requires_grad={positions_subset.requires_grad}, is_leaf={positions_subset.is_leaf}")
+
+        print(f"mapped_types_subset: type={mapped_types_subset.dtype}, shape={mapped_types_subset.shape}, "
+            f"requires_grad={mapped_types_subset.requires_grad if mapped_types_subset.is_floating_point() else 'N/A - int tensor'}")
+
+        print(f"edge_index_subset: type={edge_index_subset.dtype}, shape={edge_index_subset.shape}, "
+            f"requires_grad={edge_index_subset.requires_grad if edge_index_subset.is_floating_point() else 'N/A - int tensor'}")
+
+        print(f"batch_subset: type={batch_subset.dtype}, shape={batch_subset.shape}, "
+            f"requires_grad={batch_subset.requires_grad if batch_subset.is_floating_point() else 'N/A - int tensor'}")
+
+        print(f"num_nodes_per_frame: type={num_nodes_per_frame.dtype}, shape={num_nodes_per_frame.shape}, "
+            f"requires_grad={num_nodes_per_frame.requires_grad if num_nodes_per_frame.is_floating_point() else 'N/A - int tensor'}")
+
 
         allegro_subset_data = {
             AtomicDataDict.POSITIONS_KEY: positions_subset,
@@ -184,10 +244,8 @@ class StandardAllegro(pl.LightningModule):
             AtomicDataDict.NUM_NODES_KEY: num_nodes_per_frame,
         }
 
-        print("mapped_types_subset min/max:", mapped_types_subset.min().item(), mapped_types_subset.max().item())
-        print("embedding table size:", len(self.type_names))
-
         collated_output = self.allegro_model(allegro_subset_data)
+
         return collated_output
     
     def training_step(self, batch, batch_idx):
