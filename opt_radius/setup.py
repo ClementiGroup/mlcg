@@ -19,7 +19,7 @@ setup(
     python_requires=">=3.9",
     license="MIT",
     author="Paul Mifsud, Yaoyi Chen",
-    install_requires=["torch", "mlcg"],
+    install_requires=["torch"],
     cmdclass={'build_ext': cpp_extension.BuildExtension.with_options(no_python_abi_suffix=True, use_ninja=False)},
     options={"bdist_wheel": {"py_limited_api": "cp39"}},
 )

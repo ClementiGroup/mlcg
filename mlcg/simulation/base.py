@@ -155,6 +155,7 @@ class _Simulation(object):
         self.sim_subroutine_interval = sim_subroutine_interval
         self.save_subroutine = save_subroutine
         self.tqdm_refresh = tqdm_refresh
+        self.sim_t = 0
 
         # check to make sure input options for the simulation
         self.input_option_checks()
@@ -300,7 +301,7 @@ class _Simulation(object):
         ):
             # step forward in time
             data, potential, forces = self.timestep(data, forces)
-
+            self.sim_t = t
             # save to arrays if relevant
             if (t + 1) % self.save_interval == 0:
                 # save arrays
@@ -718,7 +719,8 @@ class _Simulation(object):
 
         pos_spread = x_new.std(dim=(1, 2)).detach().max().cpu()
         # print(pos_spread.min(),pos_spread.max(),pos_spread.mean())
-        if torch.any(pos_spread > 1e3 * self.initial_pos_spread):
+        if torch.any(pos_spread > 1e3 * self.initial_pos_spread) or torch.any(torch.isnan(x_new)):
+        #if torch.any(pos_spread > 1e3 * self.initial_pos_spread):
             raise RuntimeError(
                 f"Simulation of trajectory blew up at #timestep={t}"
             )
