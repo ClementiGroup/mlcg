@@ -103,6 +103,7 @@ class PTSimulation(LangevinSimulation):
             self.n_replicas, self.n_replicas
         ).to(self.device)
 
+    
     def attach_model_and_configurations(
         self,
         model: torch.nn.Module,
@@ -130,6 +131,7 @@ class PTSimulation(LangevinSimulation):
                 (deepcopy(model), deepcopy(configurations)),
                 f"{self.filename}_specialized_model_and_config.pt",
             )
+    """"""
 
     def _manually_reattach_configurations(
         self, configurations: List[AtomicData]

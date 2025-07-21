@@ -330,12 +330,30 @@ def test_exchange_detection():
     # run the exchange 50000 times and assert the average acceptance rate
     # the acceptances are tracked internally by the `attempts/approved` attributes
     expected_rate = np.exp((low_energy - high_energy) * (betas[0] - betas[1]))
-    for _ in range(100000):
-        simulation._detect_exchange(simulation.initial_data)
+    empirical_rate_arr = []
+    # run 50 independent iterations of 2x1000 exchanges times and
+    # assert the average acceptance rate. the acceptances are
+    # tracked internally by the `attempts/approved` attributes
+    for _ in range(50):
+        simulation = PTSimulation()
+        simulation._attach_configurations(
+            test_data, betas
+        )  # necessary to populate some attributes
+
+        simulation.initial_data["out"]["energy"] = torch.tensor(
+            [low_energy, low_energy, high_energy, high_energy]
+        )
+        for _ in range(2000):
+            simulation._detect_exchange(simulation.initial_data)
+        empirical_rate = (
+            simulation._replica_exchange_approved
+            / simulation._replica_exchange_attempts
+        ).item()
+        empirical_rate_arr.append(empirical_rate)
+
     np.testing.assert_almost_equal(
         expected_rate,
-        simulation._replica_exchange_approved
-        / simulation._replica_exchange_attempts,
+        np.mean(empirical_rate_arr),
         decimal=3,
     )
 
@@ -367,7 +385,7 @@ def test_exchange_and_rescale():
 
     simulation = PTSimulation()
     simulation._attach_configurations(configurations, betas)
-
+    simulation._set_up_simulation()
     # randomize coordinates and velocites - as if we had run some simulation and the replicas
     # evolved independently in time.
 
@@ -444,8 +462,8 @@ def test_maxwell_boltzmann_stats():
         (sampled_velocities**2).sum(dim=1)
     ).mean()
     emperical_expectation_2 = (sampled_velocities**2).sum(dim=1).mean()
-    theory_expectation = torch.sqrt(8 * betas[0] / (torch_pi * masses[0]))
-    theory_expectation_2 = 3 * betas[0] / (masses[0])
+    theory_expectation = torch.sqrt(8 / (torch_pi * betas[0] * masses[0]))
+    theory_expectation_2 = 3 / (betas[0] * masses[0])
 
     np.testing.assert_almost_equal(
         emperical_expectation.numpy(), theory_expectation.numpy(), decimal=2
@@ -480,8 +498,8 @@ def test_pt_velocity_init():
 
     mass = 1.00
     for i, beta in enumerate(betas):
-        theory_expectation = torch.sqrt(8 * beta / (torch_pi * mass))
-        theory_expectation_2 = torch.tensor(3 * beta / (mass))
+        theory_expectation = torch.sqrt(8 / (beta * torch_pi * mass))
+        theory_expectation_2 = torch.tensor(3 / (beta * mass))
 
         velocities = simulation.initial_data.velocities[
             (n_indep * n_atoms) * i : (n_indep * n_atoms) * (i + 1)
