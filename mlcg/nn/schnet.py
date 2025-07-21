@@ -110,6 +110,7 @@ class SchNet(torch.nn.Module):
             )
             exclude_pairs = True
         else:
+            exclude_pairs = False
             exc_pair_xs, y_level_ptr = None, None
         if not self.is_nl_compatible(neighbor_list):
             # we need to generate the neighbor list
@@ -117,6 +118,7 @@ class SchNet(torch.nn.Module):
             # 1. mlcg_opt_radius is installed
             # 2. input data is on CUDA
             # 3. not using PBC (TODO)
+            use_custom_kernel = False
             if (radius_cuda is not None) and x.is_cuda:
                 use_custom_kernel = True
             if not use_custom_kernel:
