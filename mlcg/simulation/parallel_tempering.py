@@ -221,22 +221,32 @@ class PTSimulation(LangevinSimulation):
         self.n_dims = new_configurations[0].pos.shape[1]
 
         # Initialize velocities according to Maxwell-Boltzmann distribution
-        self.initial_data[VELOCITY_KEY] = (
-            LangevinSimulation.sample_maxwell_boltzmann(
-                self.beta.repeat_interleave(self.n_atoms),
-                self.initial_data[MASS_KEY],
-            ).to(self.dtype)
-        )
-        self.initial_data[MASS_KEY] = self.initial_data[MASS_KEY].to(self.dtype)
-        self.initial_data[POSITIONS_KEY] = self.initial_data[POSITIONS_KEY].to(
-            self.dtype
-        )
-        self.beta_mass_ratio = torch.sqrt(
-            1.0
-            / self.beta.repeat_interleave(self.n_atoms)
-            / self.initial_data[MASS_KEY]
-        )[:, None]
 
+        if self.checkpointed_data is not None:
+            # Load in checkpointed data values and then wipe to conserve space
+            self.initial_data[VELOCITY_KEY] = self.checkpointed_data[
+                VELOCITY_KEY
+            ]
+            self.initial_data[POSITIONS_KEY] = self.checkpointed_data[
+                POSITIONS_KEY
+            ]
+            self.checkpointed_data = None
+
+        else:
+            self.initial_data[POSITIONS_KEY] = self.initial_data[POSITIONS_KEY].to(
+                self.dtype
+            )
+            # Initialize velocities according to Maxwell-Boltzmann distribution
+            self.initial_data[VELOCITY_KEY] = (
+                LangevinSimulation.sample_maxwell_boltzmann(
+                    self.beta.repeat_interleave(self.n_atoms),
+                    self.initial_data[MASS_KEY],
+                ).to(self.dtype)
+            )
+        
+        
+        self.initial_data[MASS_KEY] = self.initial_data[MASS_KEY].to(self.dtype)
+        
         # Setup alternating even/odd pair exchanges
         self._propose_even_pairs = True
 
