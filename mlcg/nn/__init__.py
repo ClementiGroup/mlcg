@@ -23,7 +23,7 @@ from .pyg_forward_compatibility import (
 from .painn import PaiNN, StandardPaiNN
 from .lr_scheduler import CustomStepLR
 from .utils import sparsify_prior_module, desparsify_prior_module
-
+from .allegro import StandardAllegro
 try:
     from .mace_interface import MACEInterface
 except Exception as e:
@@ -63,4 +63,5 @@ __all__ = [
     "PaiNN",
     "StandardPaiNN",
     "CustomStepLR",
+    "StandardAllegro",
 ]

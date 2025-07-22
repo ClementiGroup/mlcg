@@ -207,7 +207,6 @@ class GradientsOut(torch.nn.Module):
 
         data.pos.requires_grad_(True)
         data = self.model(data)
-
         if FORCE_KEY in self.targets:
             if self.name == "SumOut":
                 y = data.out[ENERGY_KEY]

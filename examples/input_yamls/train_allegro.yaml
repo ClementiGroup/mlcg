@@ -1,0 +1,75 @@
+seed_everything: 678549326
+# define the training
+# dataset configuration
+data:
+  h5_file_path: /group/ag_clementi_cmb/users/sayeg84/mlcg-proteins/bba_ca/data/1FME_badn_min_pair_4_delta_dataset.h5
+  partition_options: /group/ag_clementi_cmb/users/sayeg84/mlcg-proteins/bba_ca/data/partition_1FME_badn_4321684_strided.yaml
+  loading_options:
+    hdf_key_mapping:
+      embeds: attrs:cg_embeds
+      coords: cg_coords
+      forces: cg_delta_forces
+trainer:
+  # Work directory for the session
+  default_root_dir: .
+  max_epochs: 150
+  accelerator: gpu
+  num_nodes: 1
+  precision: 32
+  logger:
+    - class_path: pytorch_lightning.loggers.TensorBoardLogger
+      init_args:
+        save_dir: default_root_dir
+        name: tensorboard
+        version: ''
+  benchmark: false
+  enable_checkpointing: true
+  callbacks:
+    - class_path: pytorch_lightning.callbacks.LearningRateMonitor
+      init_args:
+        logging_interval: epoch
+        log_momentum: false
+    - class_path: pytorch_lightning.callbacks.model_checkpoint.ModelCheckpoint
+      init_args:
+        dirpath: default_root_dir
+        monitor: validation_loss
+        save_top_k: -1
+        every_n_epochs: 1
+        filename: '{epoch}-{validation_loss:.4f}'
+        save_last: true
+  log_every_n_steps: 100
+  gradient_clip_val: 0
+  gradient_clip_algorithm: norm
+  track_grad_norm: -1
+  check_val_every_n_epoch: 1
+  fast_dev_run: false
+  accumulate_grad_batches: 4 #
+  enable_model_summary: false
+  deterministic: false
+  auto_lr_find: false
+  resume_from_checkpoint: last
+  detect_anomaly: false # setting this to true enables detection of NaN after every small-batch update, but will slow down the training by 30%~50%
+  enable_progress_bar: True # uncomment this in production (e.g., when redirecting the stdout to a file), otherwise it will generate huge a huge log file and harm the disk
+model:
+  loss:
+    class_path: mlcg.nn.Loss
+    init_args:
+      losses:
+        - class_path: mlcg.nn.ForceMSE
+          init_args:
+            force_kwd: forces
+  model:
+    class_path: mlcg.nn.allegro.StandardAllegro
+    init_args:
+      embedding_size: 20
+      r_max: 20.0
+      l_max: 2
+      radial_chemical_embed: 
+        _target_: allegro.nn.TwoBodyBesselScalarEmbed
+        num_bessels: 8
+optimizer:
+  class_path: torch.optim.Adam
+  init_args:
+    lr: 0.0001
+    weight_decay: 0
+
