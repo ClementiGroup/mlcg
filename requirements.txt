@@ -29,4 +29,7 @@ coverage[toml]
 pytest
 # by mlcg_opt_radius
 ninja
+# 
+nequip==0.12.1
+nequip-allegro==0.7.0
 
