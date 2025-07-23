@@ -1,6 +1,6 @@
 aggforce @ git+https://github.com/noegroup/aggforce.git
 ase
-e3nn<=0.5.1
+e3nn>=0.5.6
 h5py
 ipython
 ipywidgets
@@ -29,7 +29,7 @@ coverage[toml]
 pytest
 # by mlcg_opt_radius
 ninja
-# 
+# allegro dependencies
 nequip==0.12.1
 nequip-allegro==0.7.0
 

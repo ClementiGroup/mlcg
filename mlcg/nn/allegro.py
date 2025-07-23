@@ -37,44 +37,44 @@ def embedding_size_to_type_names(embedding_size:int) -> List[str]:
 class StandardAllegro(torch.nn.Module):
     r"""Small wrapper class for an allegro model. The implementation is taken
     from the allegro package. We give access to some of the hyperparameters, 
-    and take the documentation from them.
+    and take the documentation from the allegro package.
 
     Parameters
     ----------
-    embedding_size (int): 
+    embedding_size: 
         number of different atom types in the system
-    r_max (float): 
+    r_max: 
         cutoff radius
-    l_max (int): 
-        maximum order :math:`\\ell` to use in spherical harmonics embedding, 1 is baseline (fast), 2 is more accurate, but slower, 3 highly accurate but slow
-    radial_chemical_embed (Optional[dict]): 
+    l_max: 
+        maximum order :math:`\ell` to use in spherical harmonics embedding, 1 is baseline (fast), 2 is more accurate, but slower, 3 highly accurate but slow
+    radial_chemical_embed: 
         an Allegro-compatible two-body radial-chemical embedding module, e.g. :class:`allegro.nn.TwoBodyBesselScalarEmbed`.
         (default `None` will use `allegro.nn.TwoBodyBesselScalarEmbed` with `n_bessels=8`)
-    radial_chemical_output_dim (Optional[int]): 
+    radial_chemical_output_dim: 
         output dimension of the radial_che embedding module (default ``None`` will use ``num_scalar_features``)
-    num_layers (int): 
+    num_layers: 
         number of Allegro layers
-    num_scalar_features (int): 
+    num_scalar_features: 
         multiplicity of scalar features in the Allegro layers 
-    num_tensor_features (int): 
+    num_tensor_features: 
         multiplicity of tensor features in the Allegro layers
-    allegro_mlp_hidden_layers_depth (int): 
+    allegro_mlp_hidden_layers_depth: 
         number of hidden layers in the Allegro scalar MLPs
-    allegro_mlp_hidden_layers_width (int): 
+    allegro_mlp_hidden_layers_width: 
         width of hidden layers in the Allegro scalar MLPs (reasonable to set it to be the same as ``num_scalar_features``)
-    allegro_mlp_nonlinearity (str): 
+    allegro_mlp_nonlinearity: 
         ``silu``, ``mish``, ``gelu``, or ``None`` (default ``silu``)
-    readout_mlp_hidden_layers_depth (int): 
+    readout_mlp_hidden_layers_depth: 
         number of hidden layers in the readout MLP (default ``1``)
-    readout_mlp_hidden_layers_width (int): 
+    readout_mlp_hidden_layers_width: 
         width of hidden layers in the readout MLP (reasonable to set it to be the same as ``num_scalar_features``)
-    readout_mlp_nonlinearity (str): 
+    readout_mlp_nonlinearity: 
         ``silu``, ``mish``, ``gelu``, or ``None`` (default ``silu``)
-    avg_num_neighbors (Optional[float): 
+    avg_num_neighbors: 
         used to normalize edge sums for better numerics (default ``None``)
-    parity (bool): 
+    parity: 
         whether to include features with odd mirror parity (default ``True``)
-    seed (int):
+    seed:
         seed used to initialize the allegro model.
     dtype: 
         data typed used for the model 
@@ -82,12 +82,12 @@ class StandardAllegro(torch.nn.Module):
     Notes
     ------
 
-    Allegro by default provides an interface to obtain forces from their 
+    -Allegro by default provides an interface to obtain forces from their 
     model. To avoid any further problems, we use their interface by default.
     This means that the allegro model doesn't need to be wrapped in a 
     `GradientsOut` to get the forces. 
 
-    Nequip (on which allegro depends) requires to set a global state in 
+    -Nequip (on which allegro depends) requires to set a global state in 
     which a seed is hardcoded to 123 and the dtype to float32. Check 
     `nequi/utils/global-state.py:set_global_state` for more details.
 
