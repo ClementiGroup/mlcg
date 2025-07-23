@@ -75,18 +75,19 @@ model:
       scalar_embed_mlp_hidden_layers_width:  64
       scalar_embed_mlp_nonlinearity: "silu"
       # allegro layers
-      num_layers: 2
+      num_layers: 3 # equivalent of interaction layers
       num_scalar_features: 64
       num_tensor_features: 8
       allegro_mlp_hidden_layers_depth: 2
       allegro_mlp_hidden_layers_width: 32
       allegro_mlp_nonlinearity:  "silu"
       # readout
-      readout_mlp_hidden_layers_depth: 1
-      readout_mlp_hidden_layers_width: 8
+      readout_mlp_hidden_layers_depth: 3
+      readout_mlp_hidden_layers_width: 32
       readout_mlp_nonlinearity:  "silu"
       # edge sum normalization
-      avg_num_neighbors: 28
+      # arbitrary but needed for "better numerics"
+      avg_num_neighbors: 28 
       parity: false
 data:
   h5_file_path: /path/to/h5
