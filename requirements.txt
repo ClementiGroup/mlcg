@@ -4,7 +4,7 @@ e3nn<=0.5.1
 h5py
 ipython
 ipywidgets
-jsonargparse[signatures]==4.20.0
+jsonargparse[signatures]==4.27.7
 matplotlib
 mdtraj
 mpmath
@@ -13,7 +13,7 @@ nglview
 numpy<2.0
 packaging
 pandas
-pytorch_lightning==1.9.4
+pytorch_lightning==2.2.1
 pyyaml>=6.0
 requests
 ruamel.yaml

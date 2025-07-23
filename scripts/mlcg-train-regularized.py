@@ -10,7 +10,7 @@ SCRIPT_DIR = osp.abspath(osp.dirname(__file__))
 
 sys.path.insert(0, osp.join(SCRIPT_DIR, "../"))
 
-from mlcg.pl import PLModel, DataModule, LightningCLI
+from mlcg.pl import RegularizedPLModel, DataModule, LightningCLI
 
 
 if __name__ == "__main__":
@@ -24,10 +24,11 @@ if __name__ == "__main__":
     print("Start: {}".format(ctime()))
 
     cli = LightningCLI(
-        PLModel,
+        RegularizedPLModel,
         DataModule,
         save_config_kwargs={"overwrite": True},
         parser_kwargs={"error_handler": None},
+        auto_configure_optimizers=False,
     )
 
     print("Finish: {}".format(ctime()))
