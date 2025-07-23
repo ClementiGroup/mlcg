@@ -57,8 +57,8 @@ optimizer:
     lr: 0.0001
     weight_decay: 0.01
 data:
-  h5_file_path: /net/scratch-sheldon/jacopo/projects/range-cg/datasets/ntl9/polinomial_angle_min_repulsion_4/NTL9_cgschnet_min_pair_4_delta_dataset.h5
-  partition_options: /local_scratch2/jacopo/test_software/mace_mlcg/partition_4321684.yaml
+  h5_file_path: /path/to/h5
+  partition_options: /path/to/partition
   loading_options:
     hdf_key_mapping:
       embeds: attrs:cg_embeds

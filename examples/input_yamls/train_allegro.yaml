@@ -1,63 +1,65 @@
-seed_everything: 678549326
+seed_everything: 6832135
+ckpt_path: null
 # define the training
-# dataset configuration
-data:
-  h5_file_path: /group/ag_clementi_cmb/users/sayeg84/mlcg-proteins/bba_ca/data/1FME_badn_min_pair_4_delta_dataset.h5
-  partition_options: /group/ag_clementi_cmb/users/sayeg84/mlcg-proteins/bba_ca/data/partition_1FME_badn_4321684_strided.yaml
-  loading_options:
-    hdf_key_mapping:
-      embeds: attrs:cg_embeds
-      coords: cg_coords
-      forces: cg_delta_forces
 trainer:
   # Work directory for the session
   default_root_dir: .
-  max_epochs: 150
-  accelerator: gpu
-  num_nodes: 1
+  # set a limit to the training (#epochs and/or time limit)
+  max_epochs: 5 
+  max_time: null
+  profiler: null
+  # Training on one/multiple GPU
+  accelerator: 'gpu'
+  strategy: 'ddp'
+  devices: 1
   precision: 32
+  benchmark: false
   logger:
     - class_path: pytorch_lightning.loggers.TensorBoardLogger
       init_args:
+        # save_dir will be set to default_root_dir
         save_dir: default_root_dir
         name: tensorboard
         version: ''
-  benchmark: false
   enable_checkpointing: true
   callbacks:
     - class_path: pytorch_lightning.callbacks.LearningRateMonitor
       init_args:
         logging_interval: epoch
         log_momentum: false
-    - class_path: pytorch_lightning.callbacks.model_checkpoint.ModelCheckpoint
+    - class_path: mlcg.pl.OffsetCheckpoint
       init_args:
+        start_epoch: 1
         dirpath: default_root_dir
         monitor: validation_loss
         save_top_k: -1
         every_n_epochs: 1
-        filename: '{epoch}-{validation_loss:.4f}'
+        filename: '{epoch}-{validation_loss:.5f}'
         save_last: true
-  log_every_n_steps: 100
-  gradient_clip_val: 0
+  log_every_n_steps: 500
+  gradient_clip_val: 10.0 #0
   gradient_clip_algorithm: norm
-  track_grad_norm: -1
   check_val_every_n_epoch: 1
   fast_dev_run: false
-  accumulate_grad_batches: 4 #
-  enable_model_summary: false
+  accumulate_grad_batches: 1 # you can change this to enable a even higher effective batch size
   deterministic: false
-  auto_lr_find: false
-  resume_from_checkpoint: last
-  detect_anomaly: false # setting this to true enables detection of NaN after every small-batch update, but will slow down the training by 30%~50%
-  enable_progress_bar: True # uncomment this in production (e.g., when redirecting the stdout to a file), otherwise it will generate huge a huge log file and harm the disk
+  detect_anomaly: false 
+  enable_progress_bar: true # uncomment this in production (e.g., when redirecting the stdout to a file), otherwise it will generate huge a huge log file and harm the disk
+optimizer:
+  class_path: torch.optim.AdamW
+  init_args:
+    lr: 0.0001
+    weight_decay: 0.01                                                                                                                                                                    
 model:
   loss:
     class_path: mlcg.nn.Loss
     init_args:
+      # list of losses to optimize
       losses:
         - class_path: mlcg.nn.ForceMSE
           init_args:
             force_kwd: forces
+  # model specifications
   model:
     class_path: mlcg.nn.allegro.StandardAllegro
     init_args:
@@ -67,9 +69,30 @@ model:
       radial_chemical_embed: 
         _target_: allegro.nn.TwoBodyBesselScalarEmbed
         num_bessels: 8
-optimizer:
-  class_path: torch.optim.Adam
-  init_args:
-    lr: 0.0001
-    weight_decay: 0
-
+      radial_chemical_embed_dim: 8 
+      # scalar embed mlp
+      scalar_embed_mlp_hidden_layers_depth:  2
+      scalar_embed_mlp_hidden_layers_width:  64
+      scalar_embed_mlp_nonlinearity: "silu"
+      # allegro layers
+      num_layers: 2
+      num_scalar_features: 64
+      num_tensor_features: 8
+      allegro_mlp_hidden_layers_depth: 2
+      allegro_mlp_hidden_layers_width: 32
+      allegro_mlp_nonlinearity:  "silu"
+      # readout
+      readout_mlp_hidden_layers_depth: 1
+      readout_mlp_hidden_layers_width: 8
+      readout_mlp_nonlinearity:  "silu"
+      # edge sum normalization
+      avg_num_neighbors: 28
+      parity: false
+data:
+  h5_file_path: /path/to/h5
+  partition_options: /path/to/partition
+  loading_options:
+    hdf_key_mapping:
+      embeds: attrs:cg_embeds
+      coords: cg_coords
+      forces: cg_delta_forces
