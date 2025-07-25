@@ -389,23 +389,31 @@
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Wrapper class for quickly computing angle priors</span>
 <span class="sd">    (order 3 Harmonic priors)</span>
 
-<span class="sd">    This class uses the raw angles in rad calculated via the atan2 to ensure numerical stability</span>
+<span class="sd">    .. math::</span>
 
-<span class="sd">    \angle(x, y) := 2 \arctan\left( \frac{ \|x \cdot \|y\| - y \cdot \|x\| \|  }{ \|x \cdot \|y\| + y \cdot \|x\| \| } \right)</span>
-
-<span class="sd">    See: How Futile are Mindless Assessments of Roundoff in Floating-Point Computation? §12: Mangled Angles by William Kahan</span>
+<span class="sd">        \theta_{ijk} = &amp;\text{atan2}(\Vert \hat{\mathbf{n}} \vert, \mathbf{r}_{ij} \cdot \mathbf{r}_{kj} ) \\</span>
+<span class="sd">        \mathbf{r}_{ij} &amp;= \mathbf{r}_i - \mathbf{r}_j \\</span>
+<span class="sd">        \mathbf{r}_{kj} &amp;= \mathbf{r}_k - \mathbf{r}_j \\</span>
+<span class="sd">        \mathbf{\hat{n}} &amp;= \frac{\mathbf{r}_{ij} \times \mathbf{r}_{kj}}{\Vert \mathbf{r}_{ij} \times \mathbf{r}_{kj} \Vert} </span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">name</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;angles&quot;</span>
     <span class="n">_order</span> <span class="o">=</span> <span class="mi">3</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">statistics</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">HarmonicAngles</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">statistics</span><span class="p">,</span> <span class="n">HarmonicAngles</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">statistics</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">HarmonicAnglesRaw</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">statistics</span><span class="p">,</span> <span class="n">HarmonicAnglesRaw</span><span class="o">.</span><span class="n">name</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">neighbor_list</span><span class="p">(</span><span class="n">topology</span><span class="p">:</span> <span class="n">Topology</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">Harmonic</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">(</span><span class="n">topology</span><span class="p">,</span> <span class="n">HarmonicAngles</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Harmonic</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">(</span><span class="n">topology</span><span class="p">,</span> <span class="n">HarmonicAnglesRaw</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">data2features</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="n">mapping</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;index_mapping&quot;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">HarmonicAnglesRaw</span><span class="o">.</span><span class="n">compute_features</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span> <span class="n">mapping</span><span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_features</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">mapping</span><span class="p">):</span>
