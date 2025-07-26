@@ -374,10 +374,8 @@ class PTSimulation(LangevinSimulation):
             pair_b, all possible
         """
         if self._propose_even_pairs:
-            self._propose_even_pairs = False
             return self._even_pairs
         else:
-            self._propose_even_pairs = True
             return self._odd_pairs
 
     def _detect_exchange(self, data: AtomicData) -> Dict:
@@ -456,8 +454,9 @@ class PTSimulation(LangevinSimulation):
         """
         pair_a, pair_b = pairs_for_exchange["a"], pairs_for_exchange["b"]
         save_t_idx = (self.sim_t + 1) // self.save_interval
-        self.exchange_arr[pairs_for_exchange["a"],save_t_idx-1] = 1
-        self.exchange_arr[pairs_for_exchange["b"],save_t_idx-1] = -1
+        exchange_parity = 2 if self._propose_even_pairs else 1
+        self.exchange_arr[pairs_for_exchange["a"],save_t_idx-1] = exchange_parity
+        self.exchange_arr[pairs_for_exchange["b"],save_t_idx-1] = -exchange_parity
         # exchange the coordinates
         # Here we must make swaps in the coordinates and velocities
         # according to to the collated batch attribute
@@ -517,6 +516,7 @@ class PTSimulation(LangevinSimulation):
         """
         pairs_for_exchange = self._detect_exchange(data)
         data = self._perform_exchange(data, pairs_for_exchange)
+        self._propose_even_pairs = not self._propose_even_pairs
         return data
 
     def save_exchanges(self, data: AtomicData, save_step: int) -> None:
