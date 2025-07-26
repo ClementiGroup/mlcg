@@ -86,7 +86,15 @@ class PTSimulation(LangevinSimulation):
 
         self._replica_exchange_approved = 0
         self._replica_exchange_attempts = 0
-        self._old_save_step = 0
+        if self.read_checkpoint_file is None:
+            self._old_save_step = 0
+        else:
+            self._old_save_step = (
+                self.current_timestep
+                * self.export_interval
+                // self.save_interval
+            )
+
 
     def _reset_exchange_stats(self):
         """Setup function that resets exchange statistics before running a simulation"""
