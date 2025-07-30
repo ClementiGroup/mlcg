@@ -6,7 +6,6 @@ import warnings
 
 import torch
 import torch.nn as nn
-from torch_geometric.nn import MessagePassing
 from torch_geometric.utils import scatter
 import math
 import itertools as it
@@ -108,7 +107,7 @@ def make_l0_contraction_fn(degrees, dtype=torch.float32):
     return contraction_fn
 
 
-class So3kratesInteraction(MessagePassing):
+class So3kratesInteraction(nn.Module):
     """SO3krates interaction layer implementing feature and geometric blocks."""
 
     def __init__(
@@ -123,9 +122,8 @@ class So3kratesInteraction(MessagePassing):
         gb_sph_filter_features: List[int],
         n_heads: int = 4,
         activation: nn.Module = nn.SiLU(),
-        aggr: str = "add",
     ):
-        super().__init__(aggr=aggr)
+        super().__init__()
         self.hidden_channels = hidden_channels
         self.degrees = degrees
         self.n_heads = n_heads
@@ -177,7 +175,7 @@ class So3kratesInteraction(MessagePassing):
         C = self.cutoff(edge_weight)
 
         # Compute distance-based features for geometric filtering
-        chi_ij = chi[edge_index[1]] - chi[edge_index[0]]  # (n_edges, m_tot)
+        chi_ij = chi[edge_index[0]] - chi[edge_index[1]]  # (n_edges, m_tot)
 
         # Contract to get degree-wise distances
         d_chi_ij_l = self.l0_contraction_fn(chi_ij)  # (n_edges, len(degrees))
@@ -231,9 +229,9 @@ class ConvAttention(nn.Module):
         v = self.v_proj(x).view(-1, self.n_heads, self.head_dim)
 
         # Compute attention coefficients
-        q_i = q[edge_index[0]]  # (n_edges, n_heads, head_dim)
-        k_j = k[edge_index[1]]  # (n_edges, n_heads, head_dim)
-        v_j = v[edge_index[1]]  # (n_edges, n_heads, head_dim)
+        q_i = q[edge_index[1]]  # (n_edges, n_heads, head_dim)
+        k_j = k[edge_index[0]]  # (n_edges, n_heads, head_dim)
+        v_j = v[edge_index[0]]  # (n_edges, n_heads, head_dim)
 
         # Reshape w_ij for heads
         w_ij = w_ij.view(-1, self.n_heads, self.head_dim)
@@ -244,7 +242,7 @@ class ConvAttention(nn.Module):
 
         # Apply attention to values and aggregate messages
         out = scatter(alpha.unsqueeze(-1) * v_j,  # (n_edges, n_heads, head_dim)
-                      edge_index[0],
+                      edge_index[1],
                       dim=0,
                       dim_size=x.size(0))
         out = out.view(-1, self.hidden_channels)
@@ -288,8 +286,8 @@ class SphConvAttention(nn.Module):
         q = self.q_proj(x).view(-1, self.n_heads, self.head_dim)
         k = self.k_proj(x).view(-1, self.n_heads, self.head_dim)
 
-        q_i = q[edge_index[0]]  # (n_edges, n_heads, head_dim)
-        k_j = k[edge_index[1]]  # (n_edges, n_heads, head_dim)
+        q_i = q[edge_index[1]]  # (n_edges, n_heads, head_dim)
+        k_j = k[edge_index[0]]  # (n_edges, n_heads, head_dim)
 
         # Reshape w_ij for heads
         w_ij = w_ij.view(-1, self.n_heads, self.head_dim)
@@ -304,7 +302,7 @@ class SphConvAttention(nn.Module):
 
         # Apply attention to spherical harmonics and aggregate messages
         chi_out = scatter(alpha_expanded * sph_ij,
-                          edge_index[0],
+                          edge_index[1],
                           dim=0,
                           dim_size=chi.size(0))
 
