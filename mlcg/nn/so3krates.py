@@ -1,6 +1,6 @@
 """Code adapted from https://github.com/thorben-frank/mlff"""
 
-from typing import List, Final, Optional
+from typing import List, Final
 import os
 import warnings
 
@@ -172,6 +172,7 @@ class So3kratesInteraction(nn.Module):
         sph_ij: torch.Tensor,  # (n_edges, m_tot)
         edge_weight: torch.Tensor,  # (n_edges,)
     ):
+
         C = self.cutoff(edge_weight)
 
         # Compute distance-based features for geometric filtering
@@ -601,14 +602,10 @@ class StandardSo3krates(So3krates):
         rbf_layer: nn.Module,
         cutoff: nn.Module,
         output_hidden_layer_widths: List[int],
-        hidden_channels: int = 128,
+        hidden_channels: int = 132,
         embedding_size: int = 100,
-        num_interactions: int = 3,
+        num_interactions: int = 6,
         degrees: List[int] = [1, 2, 3],
-        fb_rad_filter_features: Optional[List[int]] = None,
-        fb_sph_filter_features: Optional[List[int]] = None,
-        gb_rad_filter_features: Optional[List[int]] = None,
-        gb_sph_filter_features: Optional[List[int]] = None,
         n_heads: int = 4,
         activation: nn.Module = nn.SiLU(),
         max_num_neighbors: int = 1000,
@@ -632,14 +629,13 @@ class StandardSo3krates(So3krates):
                 )
             )
 
-        if fb_rad_filter_features is None:
-            fb_rad_filter_features = [hidden_channels, hidden_channels]
-        if fb_sph_filter_features is None:
-            fb_sph_filter_features = [hidden_channels // 4, hidden_channels]
-        if gb_rad_filter_features is None:
-            gb_rad_filter_features = [hidden_channels, hidden_channels]
-        if gb_sph_filter_features is None:
-            gb_sph_filter_features = [hidden_channels // 4, hidden_channels]
+        assert hidden_channels % len(degrees) == 0, "hidden_channels must be divisible by len(degrees)."
+        assert hidden_channels % n_heads == 0, "hidden_channels must be divisible by n_heads."
+
+        fb_rad_filter_features = [hidden_channels, hidden_channels]
+        fb_sph_filter_features = [hidden_channels // 4, hidden_channels]
+        gb_rad_filter_features = [hidden_channels, hidden_channels]
+        gb_sph_filter_features = [hidden_channels // 4, hidden_channels]
 
         embedding_layer = nn.Embedding(embedding_size, hidden_channels)
 
