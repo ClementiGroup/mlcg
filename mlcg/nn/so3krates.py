@@ -58,38 +58,41 @@ def init_clebsch_gordan_matrix(degrees, l_out_max=None):
     _cg = load_cgmatrix()
     return _cg[offset_corr:indx_fn(_l_out_max), offset_corr:indx_fn(l_in_max), offset_corr:indx_fn(l_in_max)]
 
+class L0Contraction:
+    def __init__(self, degrees, dtype=torch.float32):
+        """
+            Create L0 contraction function that matches the JAX implementation.
 
-def make_l0_contraction_fn(degrees, dtype=torch.float32):
-    """
-    Create L0 contraction function that matches the JAX implementation.
+            Args:
+                degrees (List[int]): List of spherical harmonic degrees
+                dtype: Data type for computations
 
-    Args:
-        degrees (List[int]): List of spherical harmonic degrees
-        dtype: Data type for computations
+            Methods:
+                __call__(sphc): 
+                    Contract spherical harmonic coordinates to L0.
+        """
+        self.degrees = degrees
+        self.dtype = dtype
 
-    Returns:
-        Contraction function
-    """
-    # Get CG coefficients. Take diagonal for l=0 contraction
-    cg = torch.diagonal(init_clebsch_gordan_matrix(degrees=list({0, *degrees}), l_out_max=0), dim1=1, dim2=2)[0]
+        # Get CG coefficients. Take diagonal for l=0 contraction
+        cg = torch.diagonal(init_clebsch_gordan_matrix(degrees=list({0, *degrees}), l_out_max=0), dim1=1, dim2=2)[0]
+        cg_rep = []
+        unique_degrees, counts = torch.unique(torch.tensor(degrees), return_counts=True)
 
-    cg_rep = []
-    unique_degrees, counts = torch.unique(torch.tensor(degrees), return_counts=True)
+        for d, r in zip(unique_degrees, counts):
+            start_idx = indx_fn(d.item() - 1)
+            end_idx = indx_fn(d.item())
+            cg_segment = cg[start_idx:end_idx]
+            cg_rep.append(cg_segment.repeat(r.item()))
 
-    for d, r in zip(unique_degrees, counts):
-        start_idx = indx_fn(d.item() - 1)
-        end_idx = indx_fn(d.item())
-        cg_segment = cg[start_idx:end_idx]
-        cg_rep.append(cg_segment.repeat(r.item()))
+        self.cg_rep = torch.cat(cg_rep).to(dtype) # shape: (m_tot), m_tot = \sum_l 2l+1 for l in degrees
 
-    cg_rep = torch.cat(cg_rep).to(dtype)  # shape: (m_tot), m_tot = \sum_l 2l+1 for l in degrees
+        # Create segment ids for each degree. Using it.chain() is more efficient than .extend()
+        self.segment_ids = torch.tensor([
+            y for y in it.chain(*[[n] * int(2 * degrees[n] + 1) for n in range(len(degrees))])
+        ])
 
-    # Create segment ids for each degree. Using it.chain() is more efficient than .extend()
-    segment_ids = torch.tensor([
-        y for y in it.chain(*[[n] * int(2 * degrees[n] + 1) for n in range(len(degrees))])
-    ])
-
-    def contraction_fn(sphc):
+    def __call__(self, sphc):
         """
         Contract spherical harmonic coordinates to L0.
 
@@ -100,11 +103,9 @@ def make_l0_contraction_fn(degrees, dtype=torch.float32):
             torch.Tensor: L0 contracted features, shape (n, len(degrees))
         """
         # Element-wise multiplication and contraction
-        weighted_sphc = sphc * sphc * cg_rep.to(sphc.device).unsqueeze(0)  # shape: (n, m_tot)
+        weighted_sphc = sphc * sphc * self.cg_rep.to(sphc.device).unsqueeze(0)  # shape: (n, m_tot)
 
-        return scatter(weighted_sphc, segment_ids.to(sphc.device), dim=1, dim_size=len(degrees))
-
-    return contraction_fn
+        return scatter(weighted_sphc, self.segment_ids.to(sphc.device), dim=1, dim_size=len(self.degrees))
 
 
 class So3kratesInteraction(nn.Module):
@@ -161,7 +162,7 @@ class So3kratesInteraction(nn.Module):
         self.gb_attention = SphConvAttention(hidden_channels, self.m_tot, degrees)
 
         # Initialize l0 contraction function using CG coefficients
-        self.l0_contraction_fn = make_l0_contraction_fn(degrees)
+        self.l0_contraction_fn = L0Contraction(degrees)
 
     def forward(
         self,
@@ -446,7 +447,7 @@ class FeatureSphInteraction(nn.Module):
         self.activation = activation
 
         # Initialize L0 contraction function using CG coefficients
-        self.l0_contraction_fn = make_l0_contraction_fn(degrees)
+        self.l0_contraction_fn = L0Contraction(degrees)
 
         # MLP for computing interaction coefficients
         self.interaction_mlp = MLP(
