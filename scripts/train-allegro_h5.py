@@ -9,7 +9,7 @@ sys.path.insert(0, osp.join(SCRIPT_DIR, "../"))
 sys.path.insert(0, "/srv/data/kamenrur95/mlcg/")  # Add MLCG path
 
 from mlcg.pl import H5DataModule, LightningCLI
-from mlcg.nn.standard_allegro import StandardAllegro  # Import your class
+from mlcg.nn.allegro import StandardAllegro  # Import your class
 
 if __name__ == "__main__":
     torch.jit.set_fusion_strategy([("DYNAMIC", 3)])
