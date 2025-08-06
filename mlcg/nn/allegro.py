@@ -131,7 +131,7 @@ class StandardAllegro(torch.nn.Module):
             local_params["radial_chemical_embed"] = {
                 "_target_": "allegro.nn.TwoBodyBesselScalarEmbed",
                 "num_bessels": 8,
-            },
+            }
         model_params = local_params
         model_params["type_names"] = embedding_size_to_type_names(embedding_size)
         print("--------------------------------------------")
@@ -170,7 +170,7 @@ class StandardAllegro(torch.nn.Module):
             AtomicDataDict.NUM_NODES_KEY: atoms_per_batch,
         }
         allegro_output = self.allegro_model(allegro_subset_data)
-        data.out[self.name] = {ENERGY_KEY: allegro_output["total_energy"].flatten(),FORCE_KEY: allegro_output["forces"]}
+        data.out[self.name] = {ENERGY_KEY: allegro_output["total_energy"].flatten().to(allegro_output["forces"].dtype),FORCE_KEY: allegro_output["forces"]}
         data.pos = data.pos.detach()
         return data
     
