@@ -7,12 +7,8 @@ from mlcg.nn import ForceMSE
 from mlcg.nn.gradients import GradientsOut
 from mlcg.data._keys import FORCE_KEY
 
-from mlcg.nn import StandardAllegro as RaveledModel
-from unraveled_allegro import StandardAllegro as UnraveledModel
-# from mlcg.nn import StandardSo3krates as Model
-# from mlcg.nn import StandardMACE as Model
-
-# Model = RaveledModel
+from mlcg.nn.allegro import StandardAllegro as RaveledModel
+from mlcg.nn.allegro import StandardAllegro as UnraveledModel
 
 from mlcg.nn import CosineCutoff, ExpNormalBasis
 
@@ -24,6 +20,7 @@ from tqdm import tqdm
 import warnings
 warnings.filterwarnings("ignore")
 
+# SET PATHS FOR YOUR OWN ENVIRONMENT
 DATASET_PATH = "/srv/data/kamenrur95/datasets/AQMgas/mlcg/"
 DATASET_SPLITS = "/srv/data/kamenrur95/datasets/AQMgas/mlcg/selection_n_atoms_2_train_0.85_val_0.1_seed_4272389.npz"
 
@@ -346,9 +343,8 @@ if __name__ == "__main__":
     
     # hparam_dict = {}
 
-    raveled_model = RaveledModel(**hparam_dict)
-    unraveled_model = GradientsOut(UnraveledModel(**hparam_dict), targets=FORCE_KEY)
-
+    # raveled_model = RaveledModel(**hparam_dict)
+    # unraveled_model = GradientsOut(UnraveledModel(**hparam_dict), targets=FORCE_KEY)
     # compare_model_dimensions(raveled_model, unraveled_model, loader, device='cpu')
 
 
