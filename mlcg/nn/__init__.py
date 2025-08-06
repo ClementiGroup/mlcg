@@ -21,7 +21,7 @@ from .pyg_forward_compatibility import (
     fixed_pyg_inspector,
 )
 from .painn import PaiNN, StandardPaiNN
-from .mace import MACE, StandardMACE
+from .mace import MACE, StandardMACE, ScaleShiftMACE, StandardScaleShiftMACE
 from .so3krates import So3krates, StandardSo3krates
 from .lr_scheduler import CustomStepLR
 from .utils import sparsify_prior_module, desparsify_prior_module
@@ -61,6 +61,8 @@ __all__ = [
     "StandardPaiNN",
     "MACE",
     "StandardMACE",
+    "ScaleShiftMACE",
+    "StandardScaleShiftMACE",
     "So3krates",
     "StandardSo3krates",
     "CustomStepLR",
