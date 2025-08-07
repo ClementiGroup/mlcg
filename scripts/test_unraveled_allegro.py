@@ -20,7 +20,7 @@ from tqdm import tqdm
 import warnings
 warnings.filterwarnings("ignore")
 
-# SET PATHS FOR YOUR OWN ENVIRONMENT
+# SET PATHS FOR YOUR OWN ENVIRONMENT!!!
 DATASET_PATH = "/srv/data/kamenrur95/datasets/AQMgas/mlcg/"
 DATASET_SPLITS = "/srv/data/kamenrur95/datasets/AQMgas/mlcg/selection_n_atoms_2_train_0.85_val_0.1_seed_4272389.npz"
 

@@ -434,18 +434,6 @@ class StandardAllegro(Allegro):
             scalar_embed_field=AtomicDataDict.EDGE_EMBEDDING_KEY,
             irreps_in=edge_norm.irreps_out,
         )
-        # radial_chemical_embed_module = instantiate(
-        #     radial_chemical_embed,
-        #     type_names=type_names,
-        #     module_output_dim=(
-        #         num_scalar_features
-        #         if radial_chemical_embed_dim is None
-        #         else radial_chemical_embed_dim
-        #     ),
-        #     forward_weight_init=forward_normalize,
-        #     scalar_embed_field=AtomicDataDict.EDGE_EMBEDDING_KEY,
-        #     irreps_in=edge_norm.irreps_out,
-        # )
 
         scalar_embed_mlp = ScalarMLP(
             output_dim=num_scalar_features,
