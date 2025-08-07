@@ -3,13 +3,9 @@ import pytest
 try:
     import mace
     from mlcg.nn.mace import StandardMACE
-    from mace.modules.blocks import (
-        EquivariantProductBasisBlock,
-        LinearNodeEmbeddingBlock,
-        LinearReadoutBlock,
-        NonLinearReadoutBlock,
-        RadialEmbeddingBlock,
-    )
+    from mace.modules.blocks import LinearNodeEmbeddingBlock
+    _ = LinearNodeEmbeddingBlock
+        
 except:
     pytest.skip("MACE installation not found...", allow_module_level=True)
 
