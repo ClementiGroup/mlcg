@@ -2,7 +2,7 @@ from .gradients import GradientsOut, SumOut, EnergyOut
 from .schnet import SchNet, StandardSchNet
 from .radial_basis import GaussianBasis, ExpNormalBasis
 from .cutoff import CosineCutoff, IdentityCutoff
-from .losses import ForceMSE, ForceRMSE, Loss
+from .losses import ForceMSE, ForceRMSE, Loss, EnergyMSE
 from .prior import (
     Harmonic,
     HarmonicAngles,
@@ -40,6 +40,7 @@ __all__ = [
     "ForceMSE",
     "ForceRMSE",
     "Loss",
+    "EnergyMSE",
     "Harmonic",
     "HarmonicAngles",
     "HarmonicBonds",
