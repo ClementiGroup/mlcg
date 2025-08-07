@@ -274,6 +274,7 @@ class Allegro(torch.nn.Module):
         }
 
 
+        
 class StandardAllegro(Allegro):
     """
     Standard implementation of the Allegro model with configurable parameters.
@@ -415,10 +416,11 @@ class StandardAllegro(Allegro):
             r_max=r_max,
             type_names=type_names,
             per_edge_type_cutoff=per_edge_type_cutoff,
-        )
+        )  
 
         from mlcg.pl.model import get_class_from_str
 
+       
         radial_chemical_embed_module = get_class_from_str(
             radial_chemical_embed["_target_"]
         )(
@@ -447,6 +449,10 @@ class StandardAllegro(Allegro):
             irreps_in=radial_chemical_embed_module.irreps_out,
         )
 
+        ## haking jit for module
+        _original_script = torch.jit.script
+        torch.jit.script = lambda fn: fn  # No-op
+        ##
         tensor_embed = TwoBodySphericalHarmonicTensorEmbed(
             irreps_edge_sh=irreps_edge_sh,
             num_tensor_features=num_tensor_features,
@@ -456,6 +462,8 @@ class StandardAllegro(Allegro):
             tensor_embedding_out_field=AtomicDataDict.EDGE_FEATURES_KEY,
             irreps_in=scalar_embed_mlp.irreps_out,
         )
+        ## Restoring jit
+        torch.jit.script = _original_script
 
         allegro = Allegro_Module(
             num_layers=num_layers,
@@ -524,6 +532,7 @@ class StandardAllegro(Allegro):
             per_type_energy_scale_shift=per_type_energy_scale_shift,
             pair_potential=pair_potential,
         )
+        
 
     @staticmethod
     def embedding_size_to_type_names(embedding_size: int) -> List[str]:
