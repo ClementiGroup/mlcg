@@ -58,6 +58,7 @@ def init_clebsch_gordan_matrix(degrees, l_out_max=None):
     _cg = load_cgmatrix()
     return _cg[offset_corr:indx_fn(_l_out_max), offset_corr:indx_fn(l_in_max), offset_corr:indx_fn(l_in_max)]
 
+
 class L0Contraction:
     def __init__(self, degrees, dtype=torch.float32):
         """
@@ -68,7 +69,7 @@ class L0Contraction:
                 dtype: Data type for computations
 
             Methods:
-                __call__(sphc): 
+                __call__(sphc):
                     Contract spherical harmonic coordinates to L0.
         """
         self.degrees = degrees
@@ -355,7 +356,7 @@ class So3kratesLayer(nn.Module):
         )
 
         # Feature-spherical interaction
-        self.feature_sph_interaction = FeatureSphInteraction(
+        self.mixing = So3kratesMixing(
             hidden_channels, self.m_tot, degrees, activation
         )
 
@@ -407,7 +408,7 @@ class So3kratesLayer(nn.Module):
         x = self.x_norm(x)
 
         # Feature-spherical interaction
-        delta_x, delta_chi = self.feature_sph_interaction(x, chi)
+        delta_x, delta_chi = self.mixing(x, chi)
 
         # Second residual connection
         x = x + delta_x
@@ -419,7 +420,7 @@ class So3kratesLayer(nn.Module):
 
     def reset_parameters(self):
         self.interaction.reset_parameters()
-        self.feature_sph_interaction.reset_parameters()
+        self.mixing.reset_parameters()
         for module in self.residual_delta_1:
             init_xavier_uniform(module)
         for module in self.residual_out_1:
@@ -430,7 +431,7 @@ class So3kratesLayer(nn.Module):
             init_xavier_uniform(module)
 
 
-class FeatureSphInteraction(nn.Module):
+class So3kratesMixing(nn.Module):
     """Interaction between scalar features and spherical harmonics."""
 
     def __init__(
