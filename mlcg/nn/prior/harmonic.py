@@ -261,6 +261,7 @@ class HarmonicAngles(Harmonic):
     ) -> torch.Tensor:
         return compute_angles_cos(pos, mapping)
 
+
 class HarmonicAnglesRaw(Harmonic):
     r"""Wrapper class for quickly computing angle priors
     (order 3 Harmonic priors)
@@ -294,7 +295,6 @@ class HarmonicAnglesRaw(Harmonic):
     @staticmethod
     def compute_features(pos, mapping):
         return compute_angles_raw(pos, mapping)
-
 
 
 class HarmonicImpropers(Harmonic):
