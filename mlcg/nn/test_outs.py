@@ -57,7 +57,7 @@ try:
     }
     mace_model = StandardMACE(**mace_config)
     mace_force_model = GradientsOut(mace_model, targets=[FORCE_KEY]).float()
-except ImportError or NameError as e:
+except Exception as e:
     print(e)
     mace_force_model = DummyGradientModel("mace")
     print("MACE installation not found")
