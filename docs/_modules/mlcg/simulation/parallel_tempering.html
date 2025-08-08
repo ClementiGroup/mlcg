@@ -303,16 +303,31 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">n_dims</span> <span class="o">=</span> <span class="n">new_configurations</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
 
         <span class="c1"># Initialize velocities according to Maxwell-Boltzmann distribution</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">initial_data</span><span class="p">[</span><span class="n">VELOCITY_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">LangevinSimulation</span><span class="o">.</span><span class="n">sample_maxwell_boltzmann</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_atoms</span><span class="p">),</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">initial_data</span><span class="p">[</span><span class="n">MASS_KEY</span><span class="p">],</span>
-            <span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
-        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">checkpointed_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Load in checkpointed data values and then wipe to conserve space</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">initial_data</span><span class="p">[</span><span class="n">VELOCITY_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">checkpointed_data</span><span class="p">[</span>
+                <span class="n">VELOCITY_KEY</span>
+            <span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">initial_data</span><span class="p">[</span><span class="n">POSITIONS_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">checkpointed_data</span><span class="p">[</span>
+                <span class="n">POSITIONS_KEY</span>
+            <span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">checkpointed_data</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">initial_data</span><span class="p">[</span><span class="n">POSITIONS_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_data</span><span class="p">[</span>
+                <span class="n">POSITIONS_KEY</span>
+            <span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="c1"># Initialize velocities according to Maxwell-Boltzmann distribution</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">initial_data</span><span class="p">[</span><span class="n">VELOCITY_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">LangevinSimulation</span><span class="o">.</span><span class="n">sample_maxwell_boltzmann</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_atoms</span><span class="p">),</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">initial_data</span><span class="p">[</span><span class="n">MASS_KEY</span><span class="p">],</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">initial_data</span><span class="p">[</span><span class="n">MASS_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_data</span><span class="p">[</span><span class="n">MASS_KEY</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">initial_data</span><span class="p">[</span><span class="n">POSITIONS_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_data</span><span class="p">[</span><span class="n">POSITIONS_KEY</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span>
-        <span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">beta_mass_ratio</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span>
             <span class="mf">1.0</span>
             <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_atoms</span><span class="p">)</span>
