@@ -48,7 +48,7 @@ trainer:
 optimizer:
   class_path: torch.optim.AdamW
   init_args:
-    lr: 0.0001
+    lr: 0.001
     weight_decay: 0.01                                                                                                                                                                    
 model:
   loss:
@@ -63,7 +63,7 @@ model:
   model:
     class_path: mlcg.nn.allegro.StandardAllegro
     init_args:
-      embedding_size: 20
+      embedding_size: 30
       r_max: 20.0
       l_max: 2
       radial_chemical_embed: 
@@ -90,8 +90,8 @@ model:
       avg_num_neighbors: 28 
       parity: false
 data:
-  h5_file_path: /path/to/h5
-  partition_options: /path/to/partition
+  h5_file_path: /srv/data/kamenrur95/mlcg/examples/h5_pl/single_molecule/1L2Y_prior_tag.h5
+  partition_options: /srv/data/kamenrur95/mlcg/examples/h5_pl/single_molecule/partition_1L2Y_prior_tag.yaml
   loading_options:
     hdf_key_mapping:
       embeds: attrs:cg_embeds
