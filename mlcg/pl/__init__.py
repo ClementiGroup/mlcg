@@ -6,6 +6,7 @@ from .utils import (
     extract_model_from_checkpoint,
     LossScheduler,
     OffsetCheckpoint,
+    GradNormLogger,
 )
 from .cli import LightningCLI
 from .h5_data import H5DataModule
@@ -20,4 +21,5 @@ __all__ = [
     "LossScheduler",
     "OffsetCheckpoint",
     "LightningCLI",
+    "GradNormLogger",
 ]
