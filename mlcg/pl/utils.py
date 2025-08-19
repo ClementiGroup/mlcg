@@ -119,15 +119,20 @@ class OffsetCheckpoint(ModelCheckpoint):
 
 
 class GradNormLogger(pl.Callback):
-    def __init__(self, norm_type: float = 2.0, log_total: bool = True):
+    def __init__(self, norm_type: float = 2.0, log_total: bool = True, log_every_n_steps: int = 100):
         """
         norm_type = which p-norm to compute (1, 2, inf, etc.)
         log_total = whether to also log the total grad norm across all params
+        log_every_n_steps: only log every N training steps
         """
         self.norm_type = norm_type
         self.log_total = log_total
 
     def on_after_backward(self, trainer, pl_module):
+        
+        if trainer.global_step % self.log_every_n_steps != 0:
+            return
+        
         norms = {}
         total_norm = 0.0
 
