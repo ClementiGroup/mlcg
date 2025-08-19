@@ -127,6 +127,7 @@ class GradNormLogger(pl.Callback):
         """
         self.norm_type = norm_type
         self.log_total = log_total
+        self.log_every_n_steps = log_every_n_steps
 
     def on_after_backward(self, trainer, pl_module):
         
