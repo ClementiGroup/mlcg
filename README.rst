@@ -18,14 +18,24 @@ This repository collects a set of tools to apply machine learning techniques to 
 Installation
 ------------
 .. start-install
-The dependencies are defined in `requirements.txt` but some packages are not well handled by pip. So start by installing `pytorch <https://pytorch.org/>`_ and `pytorch-geometric <https://pytorch-geometric.readthedocs.io/en/latest/>`_ with conda, e.g.::
+First we suggets to create a new clean virtual environment, then install the following prerequisites:
 
-    conda install pytorch cudatoolkit=11.3 -c pytorch
-    conda install pyg -c pyg -c conda-forge
+.. code:: bash
+    conda install python==3.12
+    pip install --extra-index-url=https://download.pytorch.org/whl/cu124 torch==2.5.0 torchvision==0.20.0 torchaudio==2.5.0
+    pip install torch_geometric
+    pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.5.0+cu124.html
+    pip install lightning tensorboard torchtnt
+    pip install --no-deps git+https://github.com/ACEsuit/mace.git@v0.3.12
+    pip install --no-deps nequip==0.12.1 nequip-allegro==0.7.0
 
-Support for the MACE model can be enabled with::
+Then clone and install this repository with:
+.. code:: bash
+    git clone git@github.com:ClementiGroup/mlcg.git
+    cd mlcg
+    pip install .
 
-    pip install git+https://github.com/ACEsuit/mace.git@v0.3.12
+This will likely rize an error due to some dependency issue about `e3nn` that you can safely ignore.
 
 Support for the TorchMD-Net models can be enabled with::
 
