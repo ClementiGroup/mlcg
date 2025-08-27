@@ -32,16 +32,18 @@ RUN chmod 777 /home/user
 ENV CONDA_AUTO_UPDATE_CONDA=false \
     PATH=/home/user/miniconda/bin:$PATH
 
+
 RUN curl -Lo ~/miniconda.sh https://repo.continuum.io/miniconda/Miniconda3-py39_4.10.3-Linux-x86_64.sh \
  && chmod +x ~/miniconda.sh \
  && ~/miniconda.sh -b -p ~/miniconda \
  && rm ~/miniconda.sh
 
-RUN conda create -n mlcg python==3.12 -y &&\
-    conda clean -a -y
 
-# Activate the environment and install packages
-SHELL ["conda", "run", "-n", "mlcg", "/bin/bash", "-c"]
+# Create conda environment
+RUN conda create -n mlcg python=3.12 -y && conda clean -a -y
+# Make the environment the default for all subsequent commands and for when the container runs
+ENV PATH=/home/user/miniconda/envs/mlcg/bin:$PATH
+
 RUN pip install torch==2.5.0+cpu torchvision==0.20.0+cpu torchaudio==2.5.0+cpu --extra-index-url https://download.pytorch.org/whl/cpu
 RUN pip install torch_geometric
 RUN pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.5.0+cpu.html
