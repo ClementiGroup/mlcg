@@ -37,7 +37,8 @@ RUN curl -Lo ~/miniconda.sh https://repo.continuum.io/miniconda/Miniconda3-py39_
  && ~/miniconda.sh -b -p ~/miniconda \
  && rm ~/miniconda.sh
 
-RUN conda install python==3.12
+RUN conda create -n mlcg python==3.12 -y
+RUN conda activate mlcg
 RUN pip install torch==2.5.0+cpu torchvision==0.20.0+cpu torchaudio==2.5.0+cpu --extra-index-url https://download.pytorch.org/whl/cpu
 RUN pip install torch_geometric
 RUN pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.5.0+cpu.html
