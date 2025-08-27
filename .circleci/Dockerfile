@@ -38,9 +38,10 @@ RUN curl -Lo ~/miniconda.sh https://repo.continuum.io/miniconda/Miniconda3-py39_
  && rm ~/miniconda.sh
 
 RUN conda install python==3.12
-RUN pip install torch==2.5.0+cpu torchvision==0.20.0+cpu torchaudio==2.5.0+cpu --extra-index-url https://download.pytorch.org/whl/cpu
+RUN conda install pytorch==1.12.0 torchvision==0.13.0 torchaudio==0.12.0 cpuonly -c pytorch
 RUN pip install torch_geometric
-RUN pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.5.0+cpu.html
+RUN pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv torch_geometric -f https://data.pyg.org/whl/torch-1.12.0+cpu.html
+
 RUN pip install lightning tensorboard torchtnt
 
 RUN pip install --no-deps git+https://github.com/ACEsuit/mace.git@v0.3.12
