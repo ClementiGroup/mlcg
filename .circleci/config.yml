@@ -3,7 +3,7 @@ version: 2.0
 jobs:
   test:
     docker:
-      - image: nec4/pytorch_geometric_cpu:v1.5
+      - image: jacopo/pytorch_geometric_cpu:v0.1
     steps:
       - checkout
       - run:
