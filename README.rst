@@ -21,6 +21,7 @@ Installation
 First we suggets to create a new clean virtual environment, then install the following prerequisites:
 
 .. code:: bash
+
     conda install python==3.12
     pip install --extra-index-url=https://download.pytorch.org/whl/cu124 torch==2.5.0 torchvision==0.20.0 torchaudio==2.5.0
     pip install torch_geometric
@@ -31,6 +32,7 @@ First we suggets to create a new clean virtual environment, then install the fol
 
 Then clone and install this repository with:
 .. code:: bash
+    
     git clone git@github.com:ClementiGroup/mlcg.git
     cd mlcg
     pip install .
