@@ -45,7 +45,7 @@ from nequip.nn.mlp import ScalarLinearLayer
 def init_xavier_uniform(
     module: torch.nn.Module, zero_bias: bool = True
 ) -> None:
-    """initialize (in place) weights of the input module using xavier uniform.
+    r"""initialize (in place) weights of the input module using xavier uniform.
     Works only on `torch.nn.Linear` at the moment and the bias are set to 0
     by default.
 
@@ -386,6 +386,10 @@ class StandardAllegro(Allegro):
         forward_normalize: bool = True,
     ):
 
+        ## haking jit for module
+        _original_script = torch.jit.script
+        torch.jit.script = lambda fn: fn  # No-op
+        
         self.r_max = r_max
         irreps_edge_sh = repr(o3.Irreps.spherical_harmonics(l_max, p=-1))
         # set tensor_track_allowed_irreps
@@ -449,9 +453,7 @@ class StandardAllegro(Allegro):
             irreps_in=radial_chemical_embed_module.irreps_out,
         )
 
-        ## haking jit for module
-        _original_script = torch.jit.script
-        torch.jit.script = lambda fn: fn  # No-op
+        
         ##
         tensor_embed = TwoBodySphericalHarmonicTensorEmbed(
             irreps_edge_sh=irreps_edge_sh,
@@ -462,8 +464,7 @@ class StandardAllegro(Allegro):
             tensor_embedding_out_field=AtomicDataDict.EDGE_FEATURES_KEY,
             irreps_in=scalar_embed_mlp.irreps_out,
         )
-        ## Restoring jit
-        torch.jit.script = _original_script
+        
 
         allegro = Allegro_Module(
             num_layers=num_layers,
@@ -532,6 +533,8 @@ class StandardAllegro(Allegro):
             per_type_energy_scale_shift=per_type_energy_scale_shift,
             pair_potential=pair_potential,
         )
+        ## Restoring jit
+        torch.jit.script = _original_script
         
 
     @staticmethod
