@@ -31,8 +31,9 @@ First we suggets to create a new clean virtual environment, then install the fol
     pip install --no-deps nequip==0.12.1 nequip-allegro==0.7.0
 
 Then clone and install this repository with:
+
 .. code:: bash
-    
+
     git clone git@github.com:ClementiGroup/mlcg.git
     cd mlcg
     pip install .
