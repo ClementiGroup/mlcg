@@ -12,7 +12,6 @@ try:
         EquivariantProductBasisBlock,
         LinearNodeEmbeddingBlock,
         LinearReadoutBlock,
-        NonLinearReadoutBlock,
         RadialEmbeddingBlock,
     )
     from mace.modules.utils import get_edge_vectors_and_lengths
@@ -101,7 +100,7 @@ class MACE(torch.nn.Module):
             shifts=neighbor_list["cell_shifts"],
         )
         edge_attrs = self.spherical_harmonics(vectors)
-        edge_feats = self.radial_embedding(
+        edge_feats, cutoff = self.radial_embedding(
             lengths, node_attrs, edge_index, self.atomic_numbers
         )
 
@@ -124,8 +123,10 @@ class MACE(torch.nn.Module):
 
         # Interactions
         energies = [pair_energy]
-        for interaction, product, readout in zip(
-            self.interactions, self.products, self.readouts
+        node_feats_concat: List[torch.Tensor] = []
+
+        for i, (interaction, product) in enumerate(
+            zip(self.interactions, self.products)
         ):
             node_feats, sc = interaction(
                 node_attrs=node_attrs,
@@ -133,11 +134,17 @@ class MACE(torch.nn.Module):
                 edge_attrs=edge_attrs,
                 edge_feats=edge_feats,
                 edge_index=edge_index,
+                cutoff=cutoff,
+                first_layer=(i == 0),
             )
             node_feats = product(
                 node_feats=node_feats, sc=sc, node_attrs=node_attrs
             )
-            node_energies = readout(node_feats, node_heads)[
+            node_feats_concat.append(node_feats)
+
+        for i, readout in enumerate(self.readouts):
+            feat_idx = -1 if len(self.readouts) == 1 else i
+            node_energies = readout(node_feats_concat[feat_idx], node_heads)[
                 num_atoms_arange, node_heads
             ]  # [n_nodes, len(heads)]
             energy = scatter_sum(
@@ -199,12 +206,21 @@ class StandardMACE(MACE):
         atomic_numbers: List[int],
         correlation: Union[int, List[int]],
         gate: Optional[Callable],
-        max_num_neighbors: int = 1000,
         pair_repulsion: bool = False,
+        apply_cutoff: bool = True,
+        use_reduced_cg: bool = True,
+        use_so3: bool = False,
+        use_agnostic_product: bool = False,
+        use_last_readout_only: bool = False,
         distance_transform: str = "None",
+        edge_irreps: Optional[o3.Irreps] = None,
         radial_MLP: Optional[List[int]] = None,
         radial_type: Optional[str] = "bessel",
+        heads: Optional[List[str]] = None,
         cueq_config: Optional[Dict[str, Any]] = None,
+        oeq_config: Optional[Dict[str, Any]] = None,
+        readout_cls: Optional[str] = "mace.modules.blocks.NonLinearReadoutBlock",
+        max_num_neighbors: int = 1000,
     ):
         from mlcg.pl.model import get_class_from_str
 
@@ -215,6 +231,8 @@ class StandardMACE(MACE):
         hidden_irreps = o3.Irreps(hidden_irreps)
         MLP_irreps = o3.Irreps(MLP_irreps)
 
+        if heads is None:
+            heads = ["Default"]
         if isinstance(correlation, int):
             correlation = [correlation] * num_interactions
 
@@ -234,6 +252,7 @@ class StandardMACE(MACE):
             num_polynomial_cutoff=num_polynomial_cutoff,
             radial_type=radial_type,
             distance_transform=distance_transform,
+            apply_cutoff=apply_cutoff,
         )
         edge_feats_irreps = o3.Irreps(f"{radial_embedding.out_dim}x0e")
 
@@ -241,9 +260,22 @@ class StandardMACE(MACE):
         if pair_repulsion:
             pair_repulsion_fn = ZBLBasis(p=num_polynomial_cutoff)
 
-        sh_irreps = o3.Irreps.spherical_harmonics(max_ell)
+        if not use_so3:
+            sh_irreps = o3.Irreps.spherical_harmonics(max_ell)
+        else:
+            sh_irreps = o3.Irreps.spherical_harmonics(max_ell, p=1)
         num_features = hidden_irreps.count(o3.Irrep(0, 1))
-        interaction_irreps = (sh_irreps * num_features).sort()[0].simplify()
+
+        def generate_irreps(l):
+            str_irrep = "+".join([f"1x{i}e+1x{i}o" for i in range(l + 1)])
+            return o3.Irreps(str_irrep)
+
+        sh_irreps_inter = sh_irreps
+        if hidden_irreps.count(o3.Irrep(0, -1)) > 0:
+            sh_irreps_inter = generate_irreps(max_ell)
+        interaction_irreps = (sh_irreps_inter * num_features).sort()[0].simplify()
+        interaction_irreps_first = (sh_irreps * num_features).sort()[0].simplify()
+
         spherical_harmonics = o3.SphericalHarmonics(
             sh_irreps, normalize=True, normalization="component"
         )
@@ -256,11 +288,12 @@ class StandardMACE(MACE):
             node_feats_irreps=node_feats_irreps,
             edge_attrs_irreps=sh_irreps,
             edge_feats_irreps=edge_feats_irreps,
-            target_irreps=interaction_irreps,
+            target_irreps=interaction_irreps_first,
             hidden_irreps=hidden_irreps,
             avg_num_neighbors=avg_num_neighbors,
             radial_MLP=radial_MLP,
             cueq_config=cueq_config,
+            oeq_config=oeq_config,
         )
         interactions = [inter]
 
@@ -277,12 +310,22 @@ class StandardMACE(MACE):
             num_elements=num_elements,
             use_sc=use_sc_first,
             cueq_config=cueq_config,
+            oeq_config=oeq_config,
+            use_reduced_cg=use_reduced_cg,
+            use_agnostic_product=use_agnostic_product,
         )
         products = [prod]
 
-        readouts = [
-            LinearReadoutBlock(hidden_irreps, o3.Irreps("1x0e"), cueq_config)
-        ]
+        readouts = []
+        if not use_last_readout_only:
+            readouts.append(
+                LinearReadoutBlock(
+                    hidden_irreps,
+                    o3.Irreps(f"{len(heads)}1x0e"),
+                    cueq_config,
+                    oeq_config,
+                )
+            )
 
         for i in range(num_interactions - 1):
             if i == num_interactions - 2:
@@ -299,8 +342,10 @@ class StandardMACE(MACE):
                 target_irreps=interaction_irreps,
                 hidden_irreps=hidden_irreps_out,
                 avg_num_neighbors=avg_num_neighbors,
+                edge_irreps=edge_irreps,
                 radial_MLP=radial_MLP,
                 cueq_config=cueq_config,
+                oeq_config=oeq_config,
             )
             interactions.append(inter)
             prod = EquivariantProductBasisBlock(
@@ -310,23 +355,30 @@ class StandardMACE(MACE):
                 num_elements=num_elements,
                 use_sc=True,
                 cueq_config=cueq_config,
+                oeq_config=oeq_config,
+                use_reduced_cg=use_reduced_cg,
+                use_agnostic_product=use_agnostic_product,
             )
             products.append(prod)
             if i == num_interactions - 2:
                 readouts.append(
-                    NonLinearReadoutBlock(
+                    get_class_from_str(readout_cls)(
                         hidden_irreps_out,
-                        (1 * MLP_irreps).simplify(),
+                        (len(heads) * MLP_irreps).simplify(),
                         gate,
-                        o3.Irreps("1x0e"),
-                        1,
+                        o3.Irreps(f"{len(heads)}x0e"),
+                        len(heads),
                         cueq_config,
+                        oeq_config,
                     )
                 )
-            else:
+            elif not use_last_readout_only:
                 readouts.append(
                     LinearReadoutBlock(
-                        hidden_irreps, o3.Irreps("1x0e"), cueq_config
+                        hidden_irreps,
+                        o3.Irreps("1x0e"),
+                        cueq_config,
+                        oeq_config,
                     )
                 )
 
@@ -409,7 +461,7 @@ class ScaleShiftMACE(MACE):
             shifts=neighbor_list["cell_shifts"],
         )
         edge_attrs = self.spherical_harmonics(vectors)
-        edge_feats = self.radial_embedding(
+        edge_feats, cutoff = self.radial_embedding(
             lengths, node_attrs, edge_index, self.atomic_numbers
         )
 
@@ -434,10 +486,12 @@ class ScaleShiftMACE(MACE):
                 dtype=data.pos.dtype,
             )
 
-        node_interaction_energies = []
+        # Interactions
+        node_es_list = [pair_node_energy]
+        node_feats_list: List[torch.Tensor] = []
 
-        for interaction, product, readout in zip(
-            self.interactions, self.products, self.readouts
+        for i, (interaction, product) in enumerate(
+            zip(self.interactions, self.products)
         ):
             node_feats, sc = interaction(
                 node_attrs=node_attrs,
@@ -445,19 +499,24 @@ class ScaleShiftMACE(MACE):
                 edge_attrs=edge_attrs,
                 edge_feats=edge_feats,
                 edge_index=edge_index,
+                cutoff=cutoff,
+                first_layer=(i == 0),
             )
             node_feats = product(
                 node_feats=node_feats, sc=sc, node_attrs=node_attrs
             )
-            node_energies = readout(node_feats, node_heads)[
-                num_atoms_arange, node_heads
-            ]  # [n_nodes]
-            node_interaction_energies.append(node_energies)
+            node_feats_list.append(node_feats)
+
+        for i, readout in enumerate(self.readouts):
+            feat_idx = -1 if len(self.readouts) == 1 else i
+            node_es_list.append(
+                readout(node_feats_list[feat_idx], node_heads)[
+                    num_atoms_arange, node_heads
+                ]  # [n_nodes, len(heads)]
+            )
 
         # Sum all interaction energy contributions per node
-        node_inter_es = torch.sum(torch.stack(node_interaction_energies, dim=0), dim=0)
-
-        node_inter_es = node_inter_es + pair_node_energy
+        node_inter_es = torch.sum(torch.stack(node_es_list, dim=0), dim=0)
 
         # Apply scaling and shifting to interaction energies
         node_inter_es = self.scale_shift(node_inter_es, node_heads)
@@ -465,7 +524,7 @@ class ScaleShiftMACE(MACE):
         interaction_energy = scatter_sum(
             src=node_inter_es,
             index=data["batch"],
-            dim=0,
+            dim=-1,
             dim_size=num_graphs
         )
 
@@ -499,12 +558,21 @@ class StandardScaleShiftMACE(ScaleShiftMACE):
         atomic_numbers: List[int],
         correlation: Union[int, List[int]],
         gate: Optional[Callable],
-        max_num_neighbors: int = 1000,
         pair_repulsion: bool = False,
+        apply_cutoff: bool = True,
+        use_reduced_cg: bool = True,
+        use_so3: bool = False,
+        use_agnostic_product: bool = False,
+        use_last_readout_only: bool = False,
         distance_transform: str = "None",
+        edge_irreps: Optional[o3.Irreps] = None,
         radial_MLP: Optional[List[int]] = None,
         radial_type: Optional[str] = "bessel",
+        heads: Optional[List[str]] = None,
         cueq_config: Optional[Dict[str, Any]] = None,
+        oeq_config: Optional[Dict[str, Any]] = None,
+        readout_cls: Optional[str] = "mace.modules.blocks.NonLinearReadoutBlock",
+        max_num_neighbors: int = 1000,
     ):
         from mlcg.pl.model import get_class_from_str
 
@@ -515,6 +583,8 @@ class StandardScaleShiftMACE(ScaleShiftMACE):
         hidden_irreps = o3.Irreps(hidden_irreps)
         MLP_irreps = o3.Irreps(MLP_irreps)
 
+        if heads is None:
+            heads = ["Default"]
         if isinstance(correlation, int):
             correlation = [correlation] * num_interactions
 
@@ -534,6 +604,7 @@ class StandardScaleShiftMACE(ScaleShiftMACE):
             num_polynomial_cutoff=num_polynomial_cutoff,
             radial_type=radial_type,
             distance_transform=distance_transform,
+            apply_cutoff=apply_cutoff,
         )
         edge_feats_irreps = o3.Irreps(f"{radial_embedding.out_dim}x0e")
 
@@ -541,9 +612,22 @@ class StandardScaleShiftMACE(ScaleShiftMACE):
         if pair_repulsion:
             pair_repulsion_fn = ZBLBasis(p=num_polynomial_cutoff)
 
-        sh_irreps = o3.Irreps.spherical_harmonics(max_ell)
+        if not use_so3:
+            sh_irreps = o3.Irreps.spherical_harmonics(max_ell)
+        else:
+            sh_irreps = o3.Irreps.spherical_harmonics(max_ell, p=1)
         num_features = hidden_irreps.count(o3.Irrep(0, 1))
-        interaction_irreps = (sh_irreps * num_features).sort()[0].simplify()
+
+        def generate_irreps(l):
+            str_irrep = "+".join([f"1x{i}e+1x{i}o" for i in range(l + 1)])
+            return o3.Irreps(str_irrep)
+
+        sh_irreps_inter = sh_irreps
+        if hidden_irreps.count(o3.Irrep(0, -1)) > 0:
+            sh_irreps_inter = generate_irreps(max_ell)
+        interaction_irreps = (sh_irreps_inter * num_features).sort()[0].simplify()
+        interaction_irreps_first = (sh_irreps * num_features).sort()[0].simplify()
+
         spherical_harmonics = o3.SphericalHarmonics(
             sh_irreps, normalize=True, normalization="component"
         )
@@ -556,11 +640,12 @@ class StandardScaleShiftMACE(ScaleShiftMACE):
             node_feats_irreps=node_feats_irreps,
             edge_attrs_irreps=sh_irreps,
             edge_feats_irreps=edge_feats_irreps,
-            target_irreps=interaction_irreps,
+            target_irreps=interaction_irreps_first,
             hidden_irreps=hidden_irreps,
             avg_num_neighbors=avg_num_neighbors,
             radial_MLP=radial_MLP,
             cueq_config=cueq_config,
+            oeq_config=oeq_config,
         )
         interactions = [inter]
 
@@ -577,12 +662,22 @@ class StandardScaleShiftMACE(ScaleShiftMACE):
             num_elements=num_elements,
             use_sc=use_sc_first,
             cueq_config=cueq_config,
+            oeq_config=oeq_config,
+            use_reduced_cg=use_reduced_cg,
+            use_agnostic_product=use_agnostic_product,
         )
         products = [prod]
 
-        readouts = [
-            LinearReadoutBlock(hidden_irreps, o3.Irreps("1x0e"), cueq_config)
-        ]
+        readouts = []
+        if not use_last_readout_only:
+            readouts.append(
+                LinearReadoutBlock(
+                    hidden_irreps,
+                    o3.Irreps(f"{len(heads)}1x0e"),
+                    cueq_config,
+                    oeq_config,
+                )
+            )
 
         for i in range(num_interactions - 1):
             if i == num_interactions - 2:
@@ -599,8 +694,10 @@ class StandardScaleShiftMACE(ScaleShiftMACE):
                 target_irreps=interaction_irreps,
                 hidden_irreps=hidden_irreps_out,
                 avg_num_neighbors=avg_num_neighbors,
+                edge_irreps=edge_irreps,
                 radial_MLP=radial_MLP,
                 cueq_config=cueq_config,
+                oeq_config=oeq_config,
             )
             interactions.append(inter)
             prod = EquivariantProductBasisBlock(
@@ -610,23 +707,30 @@ class StandardScaleShiftMACE(ScaleShiftMACE):
                 num_elements=num_elements,
                 use_sc=True,
                 cueq_config=cueq_config,
+                oeq_config=oeq_config,
+                use_reduced_cg=use_reduced_cg,
+                use_agnostic_product=use_agnostic_product,
             )
             products.append(prod)
             if i == num_interactions - 2:
                 readouts.append(
-                    NonLinearReadoutBlock(
+                    get_class_from_str(readout_cls)(
                         hidden_irreps_out,
-                        (1 * MLP_irreps).simplify(),
+                        (len(heads) * MLP_irreps).simplify(),
                         gate,
-                        o3.Irreps("1x0e"),
-                        1,
+                        o3.Irreps(f"{len(heads)}x0e"),
+                        len(heads),
                         cueq_config,
+                        oeq_config,
                     )
                 )
-            else:
+            elif not use_last_readout_only:
                 readouts.append(
                     LinearReadoutBlock(
-                        hidden_irreps, o3.Irreps("1x0e"), cueq_config
+                        hidden_irreps,
+                        o3.Irreps("1x0e"),
+                        cueq_config,
+                        oeq_config,
                     )
                 )
 
