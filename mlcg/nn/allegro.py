@@ -165,7 +165,6 @@ class Allegro(torch.nn.Module):
 
         # populates 'edge_vectors', 'edge_lengths', 'normed_edge_lengths'
         data = self.edge_norm(data)
-
         # populates 'edge_cutoff', 'edge_embedding'
         data = self.radial_chemical_embed(data)
         data = self.scalar_embed_mlp(data)
@@ -200,7 +199,10 @@ class Allegro(torch.nn.Module):
         )
 
         data.out[self.name] = {ENERGY_KEY: energy}
-
+        # cleaning edge-related properties
+        for key in data.keys():
+            if "edge_" in key:
+                del data[key]
         return data
 
     def reset_parameters(self):
