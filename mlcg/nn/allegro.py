@@ -102,6 +102,19 @@ class Allegro(torch.nn.Module):
     """
 
     name: Final[str] = "allegro"
+    # list of labels that need to be removed after a forward pass
+    # from an atomic data to avoid mismatches
+    cleanup_labels: List[str] = [
+        "edge_attrs",
+        "edge_cutoff",
+        "edge_features",
+        "edge_embedding",
+        "edge_index",
+        "normed_edge_lengths",
+        "edge_vectors",
+        "edge_energy",
+        "edge_lengths",
+    ]
 
     def __init__(
         self,
@@ -200,9 +213,8 @@ class Allegro(torch.nn.Module):
 
         data.out[self.name] = {ENERGY_KEY: energy}
         # cleaning edge-related properties
-        for key in data.keys():
-            if "edge_" in key:
-                del data[key]
+        for key in self.cleanup_labels:
+            del data[key]
         return data
 
     def reset_parameters(self):
@@ -276,7 +288,6 @@ class Allegro(torch.nn.Module):
         }
 
 
-        
 class StandardAllegro(Allegro):
     """
     Standard implementation of the Allegro model with configurable parameters.
@@ -391,7 +402,7 @@ class StandardAllegro(Allegro):
         ## haking jit for module
         _original_script = torch.jit.script
         torch.jit.script = lambda fn: fn  # No-op
-        
+
         self.r_max = r_max
         irreps_edge_sh = repr(o3.Irreps.spherical_harmonics(l_max, p=-1))
         # set tensor_track_allowed_irreps
@@ -422,11 +433,10 @@ class StandardAllegro(Allegro):
             r_max=r_max,
             type_names=type_names,
             per_edge_type_cutoff=per_edge_type_cutoff,
-        )  
+        )
 
         from mlcg.pl.model import get_class_from_str
 
-       
         radial_chemical_embed_module = get_class_from_str(
             radial_chemical_embed["_target_"]
         )(
@@ -455,7 +465,6 @@ class StandardAllegro(Allegro):
             irreps_in=radial_chemical_embed_module.irreps_out,
         )
 
-        
         ##
         tensor_embed = TwoBodySphericalHarmonicTensorEmbed(
             irreps_edge_sh=irreps_edge_sh,
@@ -466,7 +475,6 @@ class StandardAllegro(Allegro):
             tensor_embedding_out_field=AtomicDataDict.EDGE_FEATURES_KEY,
             irreps_in=scalar_embed_mlp.irreps_out,
         )
-        
 
         allegro = Allegro_Module(
             num_layers=num_layers,
@@ -537,7 +545,6 @@ class StandardAllegro(Allegro):
         )
         ## Restoring jit
         torch.jit.script = _original_script
-        
 
     @staticmethod
     def embedding_size_to_type_names(embedding_size: int) -> List[str]:
