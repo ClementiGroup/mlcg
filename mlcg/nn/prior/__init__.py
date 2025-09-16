@@ -1,4 +1,4 @@
-from .base import _Prior
+from .base import _Prior, compute_cell_shifts
 from .harmonic import (
     Harmonic,
     HarmonicAngles,

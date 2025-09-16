@@ -59,23 +59,19 @@ class Repulsion(_Prior):
             sigma[key] = statistics[key]["sigma"]
         self.register_buffer("sigma", sigma)
 
-    def data2features(self, data: AtomicData) -> torch.Tensor:
-        """Computes features for the harmonic interaction from
-        an AtomicData instance)
-
-        Parameters
-        ----------
-        data:
-            Input `AtomicData` instance
-
-        Returns
-        -------
-        torch.Tensor:
-            Tensor of computed features
-        """
-
+    def data2features(self, data):
         mapping = data.neighbor_list[self.name]["index_mapping"]
-        return Repulsion.compute_features(data.pos, mapping)
+        pbc = getattr(data, "pbc", None)
+        cell = getattr(data, "cell", None)
+        return self.compute_features(
+            pos=data.pos,
+            mapping=mapping,
+            target=self.name,
+            pbc=pbc,
+            cell=cell,
+            batch=data.batch
+        )
+    
 
     def forward(self, data: AtomicData) -> AtomicData:
         """Forward pass through the repulsion interaction.
@@ -110,9 +106,19 @@ class Repulsion(_Prior):
         return data
 
     @staticmethod
-    def compute_features(pos, mapping):
-        return compute_distances(pos, mapping)
-
+    def compute_features(
+        pos: torch.Tensor,
+        mapping: torch.Tensor,
+        pbc: Optional[torch.Tensor] = None,
+        cell: Optional[torch.Tensor] = None,
+        batch: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+        cell_shifts = _Prior._get_cell_shifts(pos, mapping, pbc, cell, batch)
+        return compute_distances(
+            pos=pos,
+            mapping=mapping,
+            cell_shifts=cell_shifts
+        )
     @staticmethod
     def compute(x, sigma):
         """Method defining the repulsion interaction"""
@@ -336,10 +342,7 @@ class LennardJonesShifted(torch.nn.Module, _Prior):
         cell: Optional[torch.Tensor] = None,
         batch: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
-        if all([feat != None for feat in [pbc, cell]]):
-            cell_shifts = compute_cell_shifts(pos, mapping, pbc, cell, batch)
-        else:
-            cell_shifts = None
+        cell_shifts = _Prior._get_cell_shifts(pos, mapping, pbc, cell, batch)
         return compute_distances(
             pos=pos,
             mapping=mapping,
