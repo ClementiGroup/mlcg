@@ -40,19 +40,6 @@ trainer:
   resume_from_checkpoint: null
   stochastic_weight_avg: false
   terminate_on_nan: null
-data:
-  dataset:
-    class_path: mlcg.datasets.ChignolinDataset
-    init_args:
-      root: /path/to/save/dataset/
-  log_dir: default_root_dir
-  val_ratio: 0.1
-  test_ratio: 0.
-  batch_size: 256
-  inference_batch_size: 256
-  num_workers: 0
-  loading_stride: 1
-  save_local_copy: false
 model:
   loss:
     class_path: mlcg.nn.Loss
@@ -102,3 +89,16 @@ optimizer:
   class_path: torch.optim.Adam
   init_args:
     lr: 0.0001
+data:
+  dataset:
+    class_path: mlcg.datasets.ChignolinDataset
+    init_args:
+      root: /path/to/save/dataset/
+  log_dir: default_root_dir
+  val_ratio: 0.1
+  test_ratio: 0.
+  batch_size: 256
+  inference_batch_size: 256
+  num_workers: 0
+  loading_stride: 1
+  save_local_copy: false

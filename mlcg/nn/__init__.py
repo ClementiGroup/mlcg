@@ -3,7 +3,16 @@ from .schnet import SchNet, StandardSchNet
 from .radial_basis import GaussianBasis, ExpNormalBasis
 from .cutoff import CosineCutoff, IdentityCutoff
 from .losses import ForceMSE, ForceRMSE, Loss, VarianceRegularizedMSE, DistributionMatchingMSE
-from .prior import Harmonic, HarmonicAngles, HarmonicBonds, Repulsion, Dihedral, LennardJonesShifted
+from .prior import (
+    Harmonic,
+    HarmonicAngles,
+    HarmonicBonds,
+    Repulsion,
+    Dihedral,
+    Polynomial,
+    QuarticAngles,
+    LennardJonesShifted,
+)
 from .mlp import MLP, TypesMLP
 from .attention import ExactAttention, FavorAttention, Nonlocalinteractionblock
 from .pyg_forward_compatibility import (

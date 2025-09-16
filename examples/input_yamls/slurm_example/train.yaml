@@ -3,7 +3,7 @@ seed_everything: 6785326
 # define the training
 trainer:
   # Work directory for the session
-  default_root_dir: /scratch/usr/bepmusil/opep/results/torchmd_net/test_0
+  default_root_dir: /path/to/save
   max_epochs: 150
   max_time: null
   strategy: ddp_find_unused_parameters_false
@@ -62,7 +62,7 @@ lr_scheduler:
     min_lr: 0.000001
     monitor: validation_loss
 data:
-  h5_file_path: /scratch/musil/opep/results/torchmd_net/cln_delta_dataset.h5
+  h5_file_path: /path/to/h5/dataset
   loading_options:
     hdf_key_mapping:
       coords: cg_coords

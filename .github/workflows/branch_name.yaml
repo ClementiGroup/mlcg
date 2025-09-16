@@ -1,0 +1,28 @@
+name: Check Pull Request
+on: pull_request
+
+jobs:
+  check_pr:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check if PR target branch is ok
+        run: |
+          branch_name=${GITHUB_HEAD_REF}
+          echo "pr branch name: $branch_name"
+          
+          target_branch=${GITHUB_BASE_REF}
+          echo "target branch: $target_branch"
+          dev_regex="^(bugfix|feat|cleanup)/.+$"
+
+          if [[ "$branch_name" =~ $dev_regex ]]; then
+            echo "Branch name matches the regex pattern."
+            if [[ "$target_branch" != "main" ]]; then
+              echo "but doesn't match target branch"
+              exit 1
+            fi
+          else
+            echo "Branch name does not match any regex. Exiting..."
+            exit 1
+          fi
+        shell: bash

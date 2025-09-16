@@ -37,4 +37,4 @@ To enable the exclusion of certain edges from the neighbohrlist, you need to pas
 the exclusion list as an attribute of the molecule in an H5 dataset. See the 
 description of the structure in  documentation of `H5Dataset` for further idea.
 
-An example of the training input yaml enabling the eexlusions  can be found in `examples/h5_pl/train_h5_1_10_exclusion.yaml`
+An example of the training input yaml enabling the exclusions  can be found in `examples/input_yamls/train_schnet_exclusions.yaml`
