@@ -23,7 +23,7 @@ First we suggest to create a new clean virtual environment with python 3.12.0, t
 .. code:: bash
 
     pip install -r env_with_hashes.in
-    pip install --no-deps git+https://github.com/ACEsuit/mace.git@v0.3.12
+    pip install --no-deps git+https://github.com/ACEsuit/mace.git@v0.3.13
     pip install --no-deps nequip==0.12.1 nequip-allegro==0.7.0
 
 Then clone and install this repository with:
