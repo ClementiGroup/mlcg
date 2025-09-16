@@ -66,7 +66,6 @@ class Repulsion(_Prior):
         return self.compute_features(
             pos=data.pos,
             mapping=mapping,
-            target=self.name,
             pbc=pbc,
             cell=cell,
             batch=data.batch
