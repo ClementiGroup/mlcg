@@ -97,7 +97,7 @@ def compute_distances(
         dr = pos[mapping[1]] - pos[mapping[0]]
     else:
         dr = (pos[mapping[1]] + cell_shifts[:, :, 1]) - pos[mapping[0]]
-        print("cell taken into account for bonds")
+        #print("cell taken into account for bonds")
 
     return dr.norm(p=2, dim=1)
 
@@ -136,7 +136,7 @@ def compute_angles(
         dr2 = (pos[mapping[2]] + cell_shifts[:, :, 2]) - (
             pos[mapping[1]] + cell_shifts[:, :, 1]
         )
-        print("cell taken into account for angles")
+        #print("cell taken into account for angles")
 
     n = torch.cross(dr1,dr2)
     n = n.norm(p=2, dim=1)

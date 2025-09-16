@@ -1235,7 +1235,7 @@ def compute_cell_shifts(
             atom_groups, 3, mapping_order, dtype=pos.dtype
         ).to(pos.device)
         if batch == None:
-            batch = torch.zeros(pos.shape[0], dtype=int)
+            batch = torch.zeros(pos.shape[0], dtype=int,device=pos.device)
         batch_ids = batch[mapping[0]]
         cell_inv = torch.linalg.inv(cell[batch_ids])
         for ii in range(1, cell_shifts.shape[-1]):
