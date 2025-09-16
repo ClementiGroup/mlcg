@@ -225,7 +225,7 @@ class Repulsion(_Prior):
 
 
 
-class LennardJonesShifted(torch.nn.Module, _Prior):
+class LennardJonesShifted(_Prior):
     r"""1-D Lennard-Jones potential with shift modification for feature :math:`x` of the form:
 
     .. math::
