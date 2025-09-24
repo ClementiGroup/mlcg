@@ -11,6 +11,8 @@ The following table descrives each folder and the script to which they can be pa
 |`train_schnet.yaml`| Pytorch Lightning Yaml for the training of a traditional CGSchNet model |Training with `./scripts/mlcg-train_h5.py`|`mlcg-train_h5.py fit --config train_schnet_atention.yaml`|
 |`train_schnet_attention.yaml`| Pytorch Lightning Yaml for the training of a CGSchNet model with an attention modification  | Training with `./scripts/mlcg-train_h5.py` |`mlcg-train_h5.py fit --config train_schnet_atention.yaml`|
 |`train_mace.yaml`| Pytorch Lightning Yaml for the training of a CGMace model | Training with `./scripts/mlcg-train_h5.py` |`mlcg-train_h5.py fit --config train_mace.yaml`|
+|`train_so3krates.yaml`| Pytorch Lightning Yaml for the training of a CGSO3krates model | Training with `./scripts/mlcg-train_h5.py` |`mlcg-train_h5.py fit --config train_so3krates.yaml`|
+|`train_allegro.yaml`| Pytorch Lightning Yaml for the training of a CGAllegro model | Training with `./scripts/mlcg-train_h5.py` |`mlcg-train_h5.py fit --config train_allegro.yaml`|
 |`langevin.yaml`|Yaml describing the parameters needed to run a Langevin simulation |Simulating with `./scripts/mlcg-nvt_langevin.py`|`mlcg-nvt_langevin.py --config langevin.yaml`|
 |`paralel_tempering.yaml`| Yaml describing the parameters needed to run a parallel tempering simulation |Simulating with `./scripts/mlcg-nvt_pt_langevin.py`|`mlcg-nvt_pt_langevin.py --config parallel_tempering.yaml`|
 

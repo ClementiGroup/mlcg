@@ -5,9 +5,10 @@ trainer:
   # Work directory for the session
   default_root_dir: .
   # set a limit to the training (#epochs and/or time limit)
-  max_epochs: 5 
+  max_epochs: 40 
   max_time: null
   profiler: null
+
   # Training on one/multiple GPU
   accelerator: 'gpu'
   strategy: 'ddp_find_unused_parameters_true'
@@ -29,16 +30,16 @@ trainer:
         log_momentum: false
     - class_path: mlcg.pl.OffsetCheckpoint
       init_args:
-        start_epoch: 1
+        start_epoch: 0
         dirpath: default_root_dir
         monitor: validation_loss
-        save_top_k: -1
+        save_top_k: 1
         every_n_epochs: 1
         filename: '{epoch}-{validation_loss:.5f}'
         save_last: true
   log_every_n_steps: 500
-  gradient_clip_val: 10.0 #0
-  gradient_clip_algorithm: norm
+  gradient_clip_val: 1.0 #0
+  gradient_clip_algorithm: value
   check_val_every_n_epoch: 1
   fast_dev_run: false
   accumulate_grad_batches: 1 # you can change this to enable a even higher effective batch size
@@ -49,8 +50,16 @@ trainer:
 optimizer:
   class_path: torch.optim.AdamW
   init_args:
-    lr: 0.001
+    lr: 0.0001
     weight_decay: 0.01
+data:
+  h5_file_path: /path/to/h5
+  partition_options: /path/to/partition
+  loading_options:
+    hdf_key_mapping:
+      embeds: attrs:cg_embeds
+      coords: cg_coords
+      forces: cg_delta_forces
 
 model:
   loss:
@@ -61,46 +70,38 @@ model:
         - class_path: mlcg.nn.ForceMSE
           init_args:
             force_kwd: forces
+
   # model specifications
   model:
     class_path: mlcg.nn.GradientsOut
     init_args:
       targets: forces
       model:
-        class_path: mlcg.nn.allegro.StandardAllegro
+        class_path: mlcg.nn.StandardSo3krates
         init_args:
-          embedding_size: 30
-          r_max: 20.0
-          l_max: 2
-          radial_chemical_embed: 
-            _target_: allegro.nn.TwoBodyBesselScalarEmbed
-            num_bessels: 8
-          radial_chemical_embed_dim: 8 
-          # scalar embed mlp
-          scalar_embed_mlp_hidden_layers_depth:  2
-          scalar_embed_mlp_hidden_layers_width:  64
-          scalar_embed_mlp_nonlinearity: "silu"
-          # allegro layers
-          num_layers: 3 # equivalent of interaction layers
-          num_scalar_features: 64
-          num_tensor_features: 8
-          allegro_mlp_hidden_layers_depth: 2
-          allegro_mlp_hidden_layers_width: 32
-          allegro_mlp_nonlinearity:  "silu"
-          # readout
-          readout_mlp_hidden_layers_depth: 3
-          readout_mlp_hidden_layers_width: 32
-          readout_mlp_nonlinearity:  "silu"
-          # edge sum normalization
-          # arbitrary but needed for "better numerics"
-          avg_num_neighbors: 28 
-          parity: false
-          
-data:
-  h5_file_path: /path/to/h5
-  partition_options: /path/to/partition
-  loading_options:
-    hdf_key_mapping:
-      embeds: attrs:cg_embeds
-      coords: cg_coords
-      forces: cg_delta_forces
+          hidden_channels: 132
+          embedding_size: 25
+          num_interactions: 2
+          degrees: [1, 2, 3]
+          n_heads: 4
+          activation: torch.nn.SiLU
+          max_num_neighbors: 100
+          normalize_sph: true
+          output_hidden_layer_widths:
+            - 128
+            - 64
+          rbf_layer:
+            class_path: mlcg.nn.ExpNormalBasis
+            init_args:
+              cutoff:
+                class_path: mlcg.nn.CosineCutoff
+                init_args:
+                  cutoff_lower: 0
+                  cutoff_upper: 5.0
+              num_rbf: 32
+              trainable: false
+          cutoff:
+            class_path: mlcg.nn.CosineCutoff
+            init_args:
+              cutoff_lower: 0
+              cutoff_upper: 5.0
