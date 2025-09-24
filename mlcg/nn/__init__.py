@@ -21,11 +21,11 @@ from .pyg_forward_compatibility import (
     fixed_pyg_inspector,
 )
 from .painn import PaiNN, StandardPaiNN
-from .mace import MACE, StandardMACE, ScaleShiftMACE, StandardScaleShiftMACE
+from .mace import MACE, StandardMACE
 from .so3krates import So3krates, StandardSo3krates
 from .lr_scheduler import CustomStepLR
 from .utils import sparsify_prior_module, desparsify_prior_module
-
+from .allegro import StandardAllegro
 
 __all__ = [
     "GradientsOut",
@@ -67,4 +67,5 @@ __all__ = [
     "So3krates",
     "StandardSo3krates",
     "CustomStepLR",
+    "StandardAllegro",
 ]

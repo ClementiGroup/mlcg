@@ -3,20 +3,17 @@ ckpt_path: null
 # define the training
 trainer:
   # Work directory for the session
-  default_root_dir: ./train_test
+  default_root_dir: .
   # set a limit to the training (#epochs and/or time limit)
   max_epochs: 5 
   max_time: null
   profiler: null
-
   # Training on one/multiple GPU
   accelerator: 'gpu'
   strategy: 'ddp'
   devices: 1
   precision: 32
-
   benchmark: false
-  
   logger:
     - class_path: pytorch_lightning.loggers.TensorBoardLogger
       init_args:
@@ -24,7 +21,6 @@ trainer:
         save_dir: default_root_dir
         name: tensorboard
         version: ''
-
   enable_checkpointing: true
   callbacks:
     - class_path: pytorch_lightning.callbacks.LearningRateMonitor
@@ -40,7 +36,6 @@ trainer:
         every_n_epochs: 1
         filename: '{epoch}-{validation_loss:.5f}'
         save_last: true
-
   log_every_n_steps: 500
   gradient_clip_val: 10.0 #0
   gradient_clip_algorithm: norm
@@ -50,21 +45,11 @@ trainer:
   deterministic: false
   detect_anomaly: false 
   enable_progress_bar: true # uncomment this in production (e.g., when redirecting the stdout to a file), otherwise it will generate huge a huge log file and harm the disk
-
 optimizer:
   class_path: torch.optim.AdamW
   init_args:
-    lr: 0.0001
-    weight_decay: 0.01
-data:
-  h5_file_path: /path/to/h5
-  partition_options: /path/to/partition
-  loading_options:
-    hdf_key_mapping:
-      embeds: attrs:cg_embeds
-      coords: cg_coords
-      forces: cg_delta_forces
-
+    lr: 0.001
+    weight_decay: 0.01                                                                                                                                                                    
 model:
   loss:
     class_path: mlcg.nn.Loss
@@ -76,42 +61,39 @@ model:
             force_kwd: forces
   # model specifications
   model:
-    class_path: mlcg.nn.GradientsOut
+    class_path: mlcg.nn.allegro.StandardAllegro
     init_args:
-      targets: forces
-      model:
-        class_path: mlcg.nn.StandardMACE
-        init_args:
-            r_max: 30.0
-            num_bessel: 8
-            num_polynomial_cutoff: 5
-            max_ell: 3
-            interaction_cls: mace.modules.blocks.RealAgnosticResidualInteractionBlock
-            interaction_cls_first: mace.modules.blocks.RealAgnosticResidualInteractionBlock
-            num_interactions: 2
-            hidden_irreps: '128x0e + 128x1o'
-            MLP_irreps: '16x0e'
-            avg_num_neighbors: 10
-            correlation: 2
-            gate: torch.nn.Tanh
-            max_num_neighbors: 1000
-            pair_repulsion: false
-            distance_transform: null
-            radial_MLP:
-              - 64
-              - 64
-            radial_type: bessel
-            atomic_numbers:
-              - 1
-              - 3
-              - 4
-              - 5
-              - 6
-              - 8
-              - 9
-              - 10
-              - 11
-              - 12
-              - 14
-              - 18
-              - 20
+      embedding_size: 30
+      r_max: 20.0
+      l_max: 2
+      radial_chemical_embed: 
+        _target_: allegro.nn.TwoBodyBesselScalarEmbed
+        num_bessels: 8
+      radial_chemical_embed_dim: 8 
+      # scalar embed mlp
+      scalar_embed_mlp_hidden_layers_depth:  2
+      scalar_embed_mlp_hidden_layers_width:  64
+      scalar_embed_mlp_nonlinearity: "silu"
+      # allegro layers
+      num_layers: 3 # equivalent of interaction layers
+      num_scalar_features: 64
+      num_tensor_features: 8
+      allegro_mlp_hidden_layers_depth: 2
+      allegro_mlp_hidden_layers_width: 32
+      allegro_mlp_nonlinearity:  "silu"
+      # readout
+      readout_mlp_hidden_layers_depth: 3
+      readout_mlp_hidden_layers_width: 32
+      readout_mlp_nonlinearity:  "silu"
+      # edge sum normalization
+      # arbitrary but needed for "better numerics"
+      avg_num_neighbors: 28 
+      parity: false
+data:
+  h5_file_path: /srv/data/kamenrur95/mlcg/examples/h5_pl/single_molecule/1L2Y_prior_tag.h5
+  partition_options: /srv/data/kamenrur95/mlcg/examples/h5_pl/single_molecule/partition_1L2Y_prior_tag.yaml
+  loading_options:
+    hdf_key_mapping:
+      embeds: attrs:cg_embeds
+      coords: cg_coords
+      forces: cg_delta_forces

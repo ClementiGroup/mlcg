@@ -6,7 +6,9 @@ from copy import deepcopy
 
 from ..data import AtomicData
 from ..data._keys import N_ATOMS_KEY
-from ..nn import Loss, GradientsOut
+from ..nn import Loss, GradientsOut, StandardAllegro
+from ._fix_hparams_saving import yaml
+from .sam import SAM
 
 
 def get_class_from_str(class_path):
@@ -44,7 +46,7 @@ class PLModel(pl.LightningModule):
 
         self.derivative = getattr(self.model, "derivative", False)
         for module in self.modules():
-            if isinstance(module, GradientsOut):
+            if isinstance(module, GradientsOut) or isinstance(module,StandardAllegro):
                 self.derivative = True
 
     def on_train_epoch_start(self):

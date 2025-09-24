@@ -32,6 +32,16 @@ may find the class `StandardMACE` to be helpful in getting started quickly.
 .. autoclass:: mlcg.nn.StandardMACE
 .. autoclass:: mlcg.nn.mace.MACE
 
+
+Allegro Utilities
+----------------
+
+These classes are used to define a MACE graph neural network, for which the base implementation is required and available `here <https://github.com/ACEsuit/mace.git>`_. For "typical" MACE models, users
+may find the class `StandardMACE` to be helpful in getting started quickly.
+
+.. autoclass:: mlcg.nn.StandardAllegro
+
+
 Radial Basis Functions
 ----------------------
 

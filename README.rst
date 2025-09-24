@@ -18,14 +18,24 @@ This repository collects a set of tools to apply machine learning techniques to 
 Installation
 ------------
 .. start-install
-The dependencies are defined in `requirements.txt` but some packages are not well handled by pip. So start by installing `pytorch <https://pytorch.org/>`_ and `pytorch-geometric <https://pytorch-geometric.readthedocs.io/en/latest/>`_ with conda, e.g.::
+First we suggest to create a new clean virtual environment with python 3.12.0, then install the following prerequisites:
 
-    conda install pytorch cudatoolkit=11.3 -c pytorch
-    conda install pyg -c pyg -c conda-forge
+.. code:: bash
 
-Support for the MACE model can be enabled with::
+    pip install -r env_with_hashes.in
+    pip install --no-deps git+https://github.com/ACEsuit/mace.git@v0.3.13
+    pip install --no-deps nequip==0.12.1 nequip-allegro==0.7.0
 
-    pip install git+https://github.com/ACEsuit/mace.git@v0.3.14
+Then clone and install this repository with:
+
+.. code:: bash
+
+    git clone git@github.com:ClementiGroup/mlcg.git
+    cd mlcg
+    pip install .
+
+
+This will likely rise an error due to some dependency issue about `e3nn` that you can safely ignore.
 
 Support for the TorchMD-Net models can be enabled with::
 
@@ -36,7 +46,7 @@ Support for the TorchMD-Net models can be enabled with::
 CLI
 ---
 
-The models defined in this library can be convinietly trained using the pytorch-lightning
+The models defined in this library can be conveniently trained using the pytorch-lightning
 `CLI <https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_cli.html>`_ utilities.
 
 Examples
@@ -73,8 +83,8 @@ How to build
 How to update the online documentation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This udapte should be done after any update of the `main` branch so that the
-documentation is synchronised with the main version of the repository.
+This update should be done after any update of the `main` branch so that the
+documentation is synchronized with the main version of the repository.
 
 .. code:: bash
 
@@ -98,3 +108,16 @@ To produce a report locally run:
     coverage run -m pytest
     coverage report
 
+
+Troubleshooting
+---------------
+
+If it is not possible to install an environment with `pip install -r env_with_hashes.in`, the
+following commands can do a similar job.
+
+.. code:: bash
+
+    pip install --extra-index-url=https://download.pytorch.org/whl/cu124 torch==2.5.0 torchvision==0.20.0 torchaudio==2.5.0
+    pip install torch_geometric
+    pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.5.0+cu124.html
+    pip install lightning tensorboard torchtnt

@@ -1,6 +1,55 @@
-seed_everything: 678549326
+seed_everything: 6832135
+ckpt_path: last
 # define the training
-# dataset configuration
+trainer:
+  # Work directory for the session
+  default_root_dir: .
+  # set a limit to the training (#epochs and/or time limit)
+  max_epochs: 300
+  max_time: null
+  profiler: null
+  # Training on one/multiple GPU
+  accelerator: 'gpu'
+  strategy: 'ddp'
+  devices: 1
+  precision: 32
+  benchmark: false
+  logger:
+    - class_path: pytorch_lightning.loggers.TensorBoardLogger
+      init_args:
+        # save_dir will be set to default_root_dir
+        save_dir: default_root_dir
+        name: tensorboard
+        version: ''
+  enable_checkpointing: true
+  callbacks:
+    - class_path: pytorch_lightning.callbacks.LearningRateMonitor
+      init_args:
+        logging_interval: epoch
+        log_momentum: false
+    - class_path: mlcg.pl.OffsetCheckpoint
+      init_args:
+        start_epoch: 0
+        dirpath: default_root_dir
+        monitor: validation_loss
+        save_top_k: -1
+        every_n_epochs: 1
+        filename: '{epoch}-{validation_loss:.5f}'
+        save_last: true
+  log_every_n_steps: 500
+  gradient_clip_val: 10.0 #0
+  gradient_clip_algorithm: norm
+  check_val_every_n_epoch: 1
+  fast_dev_run: false
+  accumulate_grad_batches: 1 # you can change this to enable a even higher effective batch size
+  deterministic: false
+  detect_anomaly: false 
+  enable_progress_bar: true # uncomment this in production (e.g., when redirecting the stdout to a file), otherwise it will generate huge a huge log file and harm the disk
+optimizer:
+  class_path: torch.optim.AdamW
+  init_args:
+    lr: 0.0001
+    weight_decay: 0.01                                                                                                                                                                    
 data:
   h5_file_path: ./1L2Y_prior_tag.h5
   partition_options: ./partition_1L2Y_prior_tag.yaml
@@ -9,46 +58,6 @@ data:
       embeds: attrs:cg_embeds
       coords: cg_coords
       forces: cg_delta_forces
-trainer:
-  # Work directory for the session
-  default_root_dir: .
-  max_epochs: 150
-  accelerator: gpu
-  num_nodes: 1
-  precision: 32
-  logger:
-    - class_path: pytorch_lightning.loggers.TensorBoardLogger
-      init_args:
-        save_dir: default_root_dir
-        name: tensorboard
-        version: ''
-  benchmark: false
-  enable_checkpointing: true
-  callbacks:
-    - class_path: pytorch_lightning.callbacks.LearningRateMonitor
-      init_args:
-        logging_interval: epoch
-        log_momentum: false
-    - class_path: pytorch_lightning.callbacks.model_checkpoint.ModelCheckpoint
-      init_args:
-        dirpath: default_root_dir
-        monitor: validation_loss
-        save_top_k: -1
-        every_n_epochs: 1
-        filename: '{epoch}-{validation_loss:.4f}'
-        save_last: true
-  log_every_n_steps: 100
-  gradient_clip_val: 0
-  gradient_clip_algorithm: norm
-  track_grad_norm: -1
-  check_val_every_n_epoch: 1
-  fast_dev_run: false
-  accumulate_grad_batches: 4 #
-  enable_model_summary: false
-  deterministic: false
-  auto_lr_find: false
-  detect_anomaly: false # setting this to true enables detection of NaN after every small-batch update, but will slow down the training by 30%~50%
-  enable_progress_bar: True # uncomment this in production (e.g., when redirecting the stdout to a file), otherwise it will generate huge a huge log file and harm the disk
 model:
   loss:
     class_path: mlcg.nn.Loss
@@ -88,9 +97,4 @@ model:
               cutoff: 15
               num_rbf: 64
               trainable: false
-optimizer:
-  class_path: torch.optim.Adam
-  init_args:
-    lr: 0.0001
-    weight_decay: 0
 
