@@ -34,6 +34,7 @@ Then clone and install this repository with:
     cd mlcg
     pip install .
 
+
 This will likely rise an error due to some dependency issue about `e3nn` that you can safely ignore.
 
 Support for the TorchMD-Net models can be enabled with::

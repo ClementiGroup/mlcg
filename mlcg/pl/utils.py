@@ -1,4 +1,5 @@
 import torch
+from torch.nn.utils import clip_grad_norm_
 from pytorch_lightning.plugins.environments import (
     ClusterEnvironment,
 )
@@ -115,3 +116,42 @@ class OffsetCheckpoint(ModelCheckpoint):
         if trainer.current_epoch >= self.start_epoch:
             # Call the parent class's save logic
             super().on_train_epoch_end(trainer, pl_module)
+
+
+class GradNormLogger(pl.Callback):
+    def __init__(self, norm_type: float = 2.0, log_total: bool = True, log_every_n_steps: int = 100):
+        """
+        norm_type = which p-norm to compute (1, 2, inf, etc.)
+        log_total = whether to also log the total grad norm across all params
+        log_every_n_steps: only log every N training steps
+        """
+        self.norm_type = norm_type
+        self.log_total = log_total
+        self.log_every_n_steps = log_every_n_steps
+
+    def on_after_backward(self, trainer, pl_module):
+        
+        if trainer.global_step % self.log_every_n_steps != 0:
+            return
+        
+        norms = {}
+        total_norm = 0.0
+
+        for name, p in pl_module.named_parameters():
+            if p.grad is not None:
+                # compute this parameter's gradient norm
+                param_norm = p.grad.data.norm(self.norm_type)
+                norms[f"grad_norm/{name}"] = param_norm.item()
+
+                # accumulate into total if requested
+                if self.log_total:
+                    total_norm += param_norm.pow(self.norm_type).item()
+
+        # add total grad norm if enabled
+        if self.log_total and total_norm > 0:
+            norms[f"grad_norm/total_{self.norm_type}"] = total_norm ** (
+                1.0 / self.norm_type
+            )
+
+        # log all at once — works with TensorBoard, WandB, MLflow, etc.
+        trainer.logger.log_metrics(norms, step=trainer.global_step)
