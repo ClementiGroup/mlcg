@@ -124,7 +124,7 @@ class SumOut(torch.nn.Module):
 
 
 class EnergyOut(torch.nn.Module):
-    r"""Extractor for energy computed via SchNet
+    r"""Extractor for energy computed via an mlcg compatible model.
 
     Parameters
     ----------

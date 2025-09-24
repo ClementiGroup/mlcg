@@ -27,7 +27,7 @@ try:
         "atomic_numbers": database.atomic_numbers,
     }
     test_mace = StandardMACE(**mace_config)
-        
+
 except:
     pytest.skip("MACE installation not found...", allow_module_level=True)
 
@@ -35,9 +35,6 @@ import torch
 
 from mlcg.nn.gradients import GradientsOut
 from mlcg.data._keys import ENERGY_KEY, FORCE_KEY
-
-
-
 
 
 @pytest.mark.parametrize(

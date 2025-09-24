@@ -179,21 +179,21 @@ class ForceMSE(_Loss):
             reduction=self.reduction,
         )
 
+
 class EnergyMSE(_Loss):
-    r"""Force mean square error loss, as defined by:
+    r"""Energy mean square error per atom loss, as defined by:
 
     .. math::
 
-        L\left(f,\hat{f}\right) = \frac{1}{Nd}\sum_{i}^{N} \left\Vert f_i - \hat{f}_i \right\Vert ^2
+        L\left(E,\hat{E}\right) = \frac{1}{N}\sum_{i}^{N}\frac{1}{n_i} \left\Vert E_i - \hat{E}_i \right\Vert ^2
 
-    where :math:`f` are predicted forces, :math:`\hat{f}` are reference forces, :math:`N` is
-    the number of examples/structures, and :math:`d` is the real space dimensionality
-    (eg, :math:`d=3` for proteins)
+    where :math:`E` are predicted energy, :math:`\hat{E}` are reference energy, :math:`n_i` is
+    the number of atoms for examples/structures, :math:`N` is the total number of examples/structures.
 
     Parameters
     ----------
     energy_kwd:
-        string to specify the force key in an AtomicData instance
+        string to specify the energy key in an AtomicData instance
     size_average:
         If True, the loss is normalized by the batch size
     reduce:
@@ -205,24 +205,32 @@ class EnergyMSE(_Loss):
 
     def __init__(
         self,
-        force_kwd: str = ENERGY_KEY,
+        energy_kwd: str = ENERGY_KEY,
         size_average: Optional[bool] = None,
         reduce: Optional[bool] = None,
+        **kwargs,
     ) -> None:
         super(EnergyMSE, self).__init__(
-            size_average=size_average, reduce=reduce, reduction='none'
+            size_average=size_average, reduce=reduce, reduction="none"
         )
 
-        self.force_kwd = force_kwd
+        self.energy_kwd = energy_kwd
 
     def forward(self, data: AtomicData) -> torch.Tensor:
-        if self.force_kwd not in data.out:
+        if self.energy_kwd not in data.out:
             raise RuntimeError(
-                f"target property {self.force_kwd} has not been computed in data.out {list(data.out.keys())}"
+                f"target property {self.energy_kwd} has not been computed in data.out {list(data.out.keys())}"
             )
-        if self.force_kwd not in data:
+        if self.energy_kwd not in data:
             raise RuntimeError(
-                f"target property {self.force_kwd} has no reference in data {list(data.keys())}"
+                f"target property {self.energy_kwd} has no reference in data {list(data.keys())}"
             )
 
-        return (F.mse_loss(data.out[self.force_kwd],data[self.force_kwd],reduction='none')/data.n_atoms).mean()
+        return (
+            F.mse_loss(
+                data.out[self.energy_kwd],
+                data[self.energy_kwd],
+                reduction="none",
+            )
+            / data.n_atoms
+        ).mean()

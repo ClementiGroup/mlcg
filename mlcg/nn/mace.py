@@ -38,6 +38,32 @@ from e3nn.util.jit import compile_mode
 
 @compile_mode("script")
 class MACE(torch.nn.Module):
+    """
+    Implementation of MACE neural network model from https://github.com/ACEsuit/mace
+
+    Args:
+        atomic_numbers (torch.Tensor):
+            Tensor of atomic numbers present in the system.
+        node_embedding (torch.nn.Module):
+            Module for embedding node (atom) attributes.
+        radial_embedding (torch.nn.Module):
+            Module for embedding radial (distance) features.
+        spherical_harmonics (torch.nn.Module):
+            Module for computing spherical harmonics of edge vectors.
+        interactions (List[torch.nn.Module]):
+            List of interaction blocks.
+        products (List[torch.nn.Module]):
+            List of product basis blocks.
+        readouts (List[torch.nn.Module]):
+            List of readout blocks.
+        r_max (float):
+            Cutoff radius for neighbor list.
+        max_num_neighbors (int):
+            Maximum number of neighbors per atom.
+        pair_repulsion_fn (torch.nn.Module, optional):
+            Optional pairwise repulsion energy function.
+    """
+
     name: Final[str] = "mace"
 
     def __init__(
@@ -75,6 +101,17 @@ class MACE(torch.nn.Module):
         )
 
     def forward(self, data: AtomicData) -> AtomicData:
+        """
+        Forward pass of the MACE model.
+
+        Args:
+            data (AtomicData):
+                Input atomic data object.
+
+        Returns:
+            AtomicData:
+                Output data with predicted energies in `data.out`.
+        """
         # Setup
         num_atoms_arange = torch.arange(data.pos.shape[0])
         num_graphs = data.ptr.numel() - 1  # data.batch.max()
@@ -184,6 +221,56 @@ class MACE(torch.nn.Module):
 
 @compile_mode("script")
 class StandardMACE(MACE):
+    """
+    Standard configuration of the MACE model.
+
+    This class provides a convenient interface for constructing a MACE model
+    with typical settings and block choices, including embedding, interaction,
+    and readout modules.
+
+    Args:
+        r_max (float):
+            Cutoff radius for neighbor list.
+        num_bessel (int):
+            Number of Bessel functions for radial basis.
+        num_polynomial_cutoff (int):
+            Number of polynomial cutoff functions.
+        max_ell (int):
+            Maximum angular momentum for spherical harmonics.
+        interaction_cls (str):
+            Class name for interaction blocks.
+        interaction_cls_first (str):
+            Class name for the first interaction block.
+        num_interactions (int):
+            Number of interaction blocks.
+        hidden_irreps (str):
+            Irreducible representations for hidden features. For example if only
+            a scalar representation with 128 channels is used can be "128x0e". If
+            also a vector representation is used can be "128x0e + 128x1o".
+        MLP_irreps (str):
+            Irreducible representations for MLP layers.
+        avg_num_neighbors (float):
+            Average number of neighbors per atom used for normalization and numerical stability.
+        atomic_numbers (List[int]):
+            List of atomic numbers in the system.
+        correlation (Union[int, List[int]]):
+            Correlation order(s) for product blocks.
+        gate (Optional[Callable]):
+            Activation function for non-linearities.
+        max_num_neighbors (int, optional):
+            Maximum number of neighbors per atom.
+        pair_repulsion (bool, optional):
+            Whether to use pairwise repulsion.
+        distance_transform (str, optional):
+            Distance transformation type.
+        radial_MLP (Optional[List[int]], optional):
+            Radial MLP architecture.
+        radial_type (Optional[str], optional):
+            Radial basis type.
+        cueq_config (Optional[Dict[str, Any]], optional):
+            Configuration for charge equilibration.
+    """
+
     def __init__(
         self,
         r_max: float,

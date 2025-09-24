@@ -24,15 +24,15 @@ from mlcg.neighbor_list.neighbor_list import (
 
 def indx_fn(x):
     """Index function for CG matrix indexing."""
-    return int((x + 1)**2) if x >= 0 else 0
+    return int((x + 1) ** 2) if x >= 0 else 0
 
 
 def load_cgmatrix():
     """Load Clebsch-Gordan matrix from torch file."""
     # Get the directory of the current file
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    cgmatrix_path = os.path.join(current_dir, 'cgmatrix.pt')
-    return torch.load(cgmatrix_path, map_location='cpu')
+    cgmatrix_path = os.path.join(current_dir, "cgmatrix.pt")
+    return torch.load(cgmatrix_path, map_location="cpu")
 
 
 def init_clebsch_gordan_matrix(degrees, l_out_max=None):
@@ -56,29 +56,41 @@ def init_clebsch_gordan_matrix(degrees, l_out_max=None):
 
     offset_corr = indx_fn(l_in_min - 1)
     _cg = load_cgmatrix()
-    return _cg[offset_corr:indx_fn(_l_out_max), offset_corr:indx_fn(l_in_max), offset_corr:indx_fn(l_in_max)]
+    return _cg[
+        offset_corr : indx_fn(_l_out_max),
+        offset_corr : indx_fn(l_in_max),
+        offset_corr : indx_fn(l_in_max),
+    ]
 
 
 class L0Contraction:
     def __init__(self, degrees, dtype=torch.float32):
         """
-            Create L0 contraction function that matches the JAX implementation.
+        Create L0 contraction function that matches the JAX implementation.
 
-            Args:
-                degrees (List[int]): List of spherical harmonic degrees
-                dtype: Data type for computations
+        Args:
+            degrees (List[int]): List of spherical harmonic degrees
+            dtype: Data type for computations
 
-            Methods:
-                __call__(sphc):
-                    Contract spherical harmonic coordinates to L0.
+        Methods:
+            __call__(sphc):
+                Contract spherical harmonic coordinates to L0.
         """
         self.degrees = degrees
         self.dtype = dtype
 
         # Get CG coefficients. Take diagonal for l=0 contraction
-        cg = torch.diagonal(init_clebsch_gordan_matrix(degrees=list({0, *degrees}), l_out_max=0), dim1=1, dim2=2)[0]
+        cg = torch.diagonal(
+            init_clebsch_gordan_matrix(
+                degrees=list({0, *degrees}), l_out_max=0
+            ),
+            dim1=1,
+            dim2=2,
+        )[0]
         cg_rep = []
-        unique_degrees, counts = torch.unique(torch.tensor(degrees), return_counts=True)
+        unique_degrees, counts = torch.unique(
+            torch.tensor(degrees), return_counts=True
+        )
 
         for d, r in zip(unique_degrees, counts):
             start_idx = indx_fn(d.item() - 1)
@@ -86,12 +98,22 @@ class L0Contraction:
             cg_segment = cg[start_idx:end_idx]
             cg_rep.append(cg_segment.repeat(r.item()))
 
-        self.cg_rep = torch.cat(cg_rep).to(dtype) # shape: (m_tot), m_tot = \sum_l 2l+1 for l in degrees
+        self.cg_rep = torch.cat(cg_rep).to(
+            dtype
+        )  # shape: (m_tot), m_tot = \sum_l 2l+1 for l in degrees
 
         # Create segment ids for each degree. Using it.chain() is more efficient than .extend()
-        self.segment_ids = torch.tensor([
-            y for y in it.chain(*[[n] * int(2 * degrees[n] + 1) for n in range(len(degrees))])
-        ])
+        self.segment_ids = torch.tensor(
+            [
+                y
+                for y in it.chain(
+                    *[
+                        [n] * int(2 * degrees[n] + 1)
+                        for n in range(len(degrees))
+                    ]
+                )
+            ]
+        )
 
     def __call__(self, sphc):
         """
@@ -104,13 +126,44 @@ class L0Contraction:
             torch.Tensor: L0 contracted features, shape (n, len(degrees))
         """
         # Element-wise multiplication and contraction
-        weighted_sphc = sphc * sphc * self.cg_rep.to(sphc.device).unsqueeze(0)  # shape: (n, m_tot)
+        weighted_sphc = (
+            sphc * sphc * self.cg_rep.to(sphc.device).unsqueeze(0)
+        )  # shape: (n, m_tot)
 
-        return scatter(weighted_sphc, self.segment_ids.to(sphc.device), dim=1, dim_size=len(self.degrees))
+        return scatter(
+            weighted_sphc,
+            self.segment_ids.to(sphc.device),
+            dim=1,
+            dim_size=len(self.degrees),
+        )
 
 
 class So3kratesInteraction(nn.Module):
-    """SO3krates interaction layer implementing feature and geometric blocks."""
+    """
+    SO3krates interaction layer implementing both feature and geometric attention blocks.
+
+    Args:
+        hidden_channels (int):
+            Number of hidden channels for features.
+        degrees (List[int]):
+            List of spherical harmonic degrees.
+        edge_attr_dim (int):
+            Dimension of edge attributes.
+        cutoff (nn.Module):
+            Cutoff function for edge weights.
+        fb_rad_filter_features (List[int]):
+            MLP widths for feature block radial filter.
+        fb_sph_filter_features (List[int]):
+            MLP widths for feature block spherical filter.
+        gb_rad_filter_features (List[int]):
+            MLP widths for geometric block radial filter.
+        gb_sph_filter_features (List[int]):
+            MLP widths for geometric block spherical filter.
+        n_heads (int):
+            Number of attention heads.
+        activation (nn.Module):
+            Activation function.
+    """
 
     def __init__(
         self,
@@ -139,28 +192,30 @@ class So3kratesInteraction(nn.Module):
         self.fb_rad_filter = MLP(
             [edge_attr_dim] + fb_rad_filter_features,
             activation_func=activation,
-            last_bias=True
+            last_bias=True,
         )
         self.fb_sph_filter = MLP(
             [len(degrees)] + fb_sph_filter_features,
             activation_func=activation,
-            last_bias=True
+            last_bias=True,
         )
 
         # Geometric block components
         self.gb_rad_filter = MLP(
             [edge_attr_dim] + gb_rad_filter_features,
             activation_func=activation,
-            last_bias=True
+            last_bias=True,
         )
         self.gb_sph_filter = MLP(
             [len(degrees)] + gb_sph_filter_features,
             activation_func=activation,
-            last_bias=True
+            last_bias=True,
         )
 
         self.fb_attention = ConvAttention(hidden_channels, n_heads)
-        self.gb_attention = SphConvAttention(hidden_channels, self.m_tot, degrees)
+        self.gb_attention = SphConvAttention(
+            hidden_channels, self.m_tot, degrees
+        )
 
         # Initialize l0 contraction function using CG coefficients
         self.l0_contraction_fn = L0Contraction(degrees)
@@ -184,16 +239,24 @@ class So3kratesInteraction(nn.Module):
         d_chi_ij_l = self.l0_contraction_fn(chi_ij)  # (n_edges, len(degrees))
 
         # Feature block
-        w_rad = self.fb_rad_filter(edge_attr)  # (n_edges, fb_rad_filter_features[-1])
-        w_sph = self.fb_sph_filter(d_chi_ij_l)  # (n_edges, fb_sph_filter_features[-1])
-        w_fb = (w_rad + w_sph)  # (n_edges, hidden_channels)
+        w_rad = self.fb_rad_filter(
+            edge_attr
+        )  # (n_edges, fb_rad_filter_features[-1])
+        w_sph = self.fb_sph_filter(
+            d_chi_ij_l
+        )  # (n_edges, fb_sph_filter_features[-1])
+        w_fb = w_rad + w_sph  # (n_edges, hidden_channels)
 
         x_local = self.fb_attention(x, w_fb, edge_index, C)
 
         # Geometric block
-        w_rad_gb = self.gb_rad_filter(edge_attr)  # (n_edges, gb_rad_filter_features[-1])
-        w_sph_gb = self.gb_sph_filter(d_chi_ij_l)  # (n_edges, gb_sph_filter_features[-1])
-        w_gb = (w_rad_gb + w_sph_gb)  # (n_edges, hidden_channels)
+        w_rad_gb = self.gb_rad_filter(
+            edge_attr
+        )  # (n_edges, gb_rad_filter_features[-1])
+        w_sph_gb = self.gb_sph_filter(
+            d_chi_ij_l
+        )  # (n_edges, gb_sph_filter_features[-1])
+        w_gb = w_rad_gb + w_sph_gb  # (n_edges, hidden_channels)
 
         chi_local = self.gb_attention(chi, sph_ij, x, w_gb, edge_index, C)
 
@@ -209,6 +272,17 @@ class So3kratesInteraction(nn.Module):
 
 
 class ConvAttention(nn.Module):
+    """
+    Multi-head attention mechanism for scalar node features.
+
+    Args:
+        hidden_channels (int):
+            Number of hidden channels.
+        n_heads (int):
+            Number of attention heads.
+
+    """
+
     def __init__(self, hidden_channels: int, n_heads: int):
         super().__init__()
         self.hidden_channels = hidden_channels
@@ -244,10 +318,12 @@ class ConvAttention(nn.Module):
         alpha = alpha * cutoff  # (n_edges, n_heads)
 
         # Apply attention to values and aggregate messages
-        out = scatter(alpha.unsqueeze(-1) * v_j,  # (n_edges, n_heads, head_dim)
-                      edge_index[1],
-                      dim=0,
-                      dim_size=x.size(0))
+        out = scatter(
+            alpha.unsqueeze(-1) * v_j,  # (n_edges, n_heads, head_dim)
+            edge_index[1],
+            dim=0,
+            dim_size=x.size(0),
+        )
         out = out.view(-1, self.hidden_channels)
 
         return out
@@ -259,7 +335,17 @@ class ConvAttention(nn.Module):
 
 
 class SphConvAttention(nn.Module):
-    """Spherical convolution attention for geometric features."""
+    """
+    Spherical convolution attention for geometric (spherical harmonic) features.
+
+    Args:
+        hidden_channels (int):
+            Number of hidden channels.
+        m_tot (int):
+            Total number of spherical harmonic coefficients.
+        degrees (List[int]):
+            List of spherical harmonic degrees.
+    """
 
     def __init__(self, hidden_channels: int, m_tot: int, degrees: List[int]):
         super().__init__()
@@ -301,13 +387,14 @@ class SphConvAttention(nn.Module):
 
         # Expand attention to full spherical harmonics
         # alpha has shape (n_edges, n_heads), repeats has shape (n_heads,)
-        alpha_expanded = torch.repeat_interleave(alpha, self.repeats, dim=1)  # (n_edges, m_tot)
+        alpha_expanded = torch.repeat_interleave(
+            alpha, self.repeats, dim=1
+        )  # (n_edges, m_tot)
 
         # Apply attention to spherical harmonics and aggregate messages
-        chi_out = scatter(alpha_expanded * sph_ij,
-                          edge_index[1],
-                          dim=0,
-                          dim_size=chi.size(0))
+        chi_out = scatter(
+            alpha_expanded * sph_ij, edge_index[1], dim=0, dim_size=chi.size(0)
+        )
 
         return chi_out
 
@@ -317,7 +404,33 @@ class SphConvAttention(nn.Module):
 
 
 class So3kratesLayer(nn.Module):
-    """Complete SO3krates layer with interaction and mixing."""
+    """
+    Complete SO3krates layer combining interaction and feature-spherical mixing.
+
+    Args:
+        hidden_channels (int):
+            Number of hidden channels.
+        degrees (List[int]):
+            List of spherical harmonic degrees.
+        edge_attr_dim (int):
+            Dimension of edge attributes.
+        cutoff (nn.Module):
+            Cutoff function for edge weights.
+        fb_rad_filter_features (List[int]):
+            MLP widths for feature block radial filter.
+        fb_sph_filter_features (List[int]):
+            MLP widths for feature block spherical filter.
+        gb_rad_filter_features (List[int]):
+            MLP widths for geometric block radial filter.
+        gb_sph_filter_features (List[int]):
+            MLP widths for geometric block spherical filter.
+        n_heads (int):
+            Number of attention heads.
+        activation (nn.Module):
+            Activation function.
+        parity (bool):
+            Whether to use parity in the layer.
+    """
 
     def __init__(
         self,
@@ -432,7 +545,19 @@ class So3kratesLayer(nn.Module):
 
 
 class So3kratesMixing(nn.Module):
-    """Interaction between scalar features and spherical harmonics."""
+    """
+    Mixing block for interaction between scalar features and spherical harmonics.
+
+    Args:
+        hidden_channels (int):
+            Number of hidden channels.
+        m_tot (int):
+            Total number of spherical harmonic coefficients.
+        degrees (List[int]):
+            List of spherical harmonic degrees.
+        activation (nn.Module):
+            Activation function.
+    """
 
     def __init__(
         self,
@@ -454,7 +579,7 @@ class So3kratesMixing(nn.Module):
         self.interaction_mlp = MLP(
             [hidden_channels + len(degrees), hidden_channels + len(degrees)],
             activation_func=activation,
-            last_bias=True
+            last_bias=True,
         )
 
         # Create repeat indices
@@ -466,14 +591,16 @@ class So3kratesMixing(nn.Module):
         d_chi = self.l0_contraction_fn(chi)  # (n_nodes, len(degrees))
 
         # Concatenate features and contracted spherical harmonics
-        y = torch.cat([x, d_chi], dim=-1)  # (n_nodes, hidden_channels + len(degrees))
+        y = torch.cat(
+            [x, d_chi], dim=-1
+        )  # (n_nodes, hidden_channels + len(degrees))
 
         # Apply MLP
         output = self.interaction_mlp(y)
 
         # Split output
-        delta_x = output[:, :self.hidden_channels]
-        coeff = output[:, self.hidden_channels:]
+        delta_x = output[:, : self.hidden_channels]
+        coeff = output[:, self.hidden_channels :]
 
         # Expand coefficients and multiply with spherical harmonics
         coeff_expanded = torch.repeat_interleave(coeff, self.repeats, dim=1)
@@ -486,6 +613,28 @@ class So3kratesMixing(nn.Module):
 
 
 class So3krates(nn.Module):
+    """
+    Main SO3krates model for equivariant message passing neural networks.
+
+    Args:
+        embedding_layer (nn.Module):
+            Embedding layer for atom types.
+        rbf_layer (nn.Module):
+            Radial basis function layer to project distances.
+        interaction_blocks (List[So3kratesLayer]):
+            List of SO3krates layers.
+        layer_norm (nn.Module):
+            Layer normalization module.
+        output_network (nn.Module):
+            Output network for final energy prediction.
+        degrees (List[int]):
+            List of spherical harmonic degrees.
+        max_num_neighbors (int):
+            Maximum number of neighbors per atom.
+        normalize_sph (bool):
+            Whether to normalize spherical harmonics, default is True.
+    """
+
     name: Final[str] = "So3krates"
 
     def __init__(
@@ -549,11 +698,15 @@ class So3krates(nn.Module):
             data.pos, edge_index, neighbor_list["cell_shifts"]
         )
 
-        rbf_expansion = self.rbf_layer(distances.squeeze(-1))  # Remove last dimension if size 1
+        rbf_expansion = self.rbf_layer(
+            distances.squeeze(-1)
+        )  # Remove last dimension if size 1
 
         sph_ij = self.sph_harmonics(directions)
         # Concatenate only the required degrees
-        sph_ij = torch.cat([sph_ij[l] for l in self.degrees], dim=-1)  # (n_pairs, sum_l 2l + 1 = m_tot)
+        sph_ij = torch.cat(
+            [sph_ij[l] for l in self.degrees], dim=-1
+        )  # (n_pairs, sum_l 2l + 1 = m_tot)
 
         x = self.embedding_layer(data.atom_types)  # (n_atoms, hidden_channels)
 
@@ -599,6 +752,37 @@ class So3krates(nn.Module):
 
 
 class StandardSo3krates(So3krates):
+    """
+    Standard configuration for the SO3krates model.
+
+    Provides a convenient interface for constructing a SO3krates model with typical
+    settings, including embedding, interaction, and output modules.
+
+    Args:
+        rbf_layer (nn.Module):
+            Radial basis function layer.
+        cutoff (nn.Module):
+            Cutoff function for edge weights.
+        output_hidden_layer_widths (List[int]):
+            Widths for hidden layers in output MLP.
+        hidden_channels (int):
+            Number of hidden channels.
+        embedding_size (int):
+            Size of atom type embedding.
+        num_interactions (int):
+            Number of SO3krates layers.
+        degrees (List[int]):
+            List of spherical harmonic degrees.
+        n_heads (int):
+            Number of attention heads.
+        activation (nn.Module):
+            Activation function.
+        max_num_neighbors (int):
+            Maximum number of neighbors per atom.
+        normalize_sph (bool):
+            Whether to normalize spherical harmonics, default is True.
+    """
+
     def __init__(
         self,
         rbf_layer: nn.Module,
@@ -631,8 +815,12 @@ class StandardSo3krates(So3krates):
                 )
             )
 
-        assert hidden_channels % len(degrees) == 0, "hidden_channels must be divisible by len(degrees)."
-        assert hidden_channels % n_heads == 0, "hidden_channels must be divisible by n_heads."
+        assert (
+            hidden_channels % len(degrees) == 0
+        ), "hidden_channels must be divisible by len(degrees)."
+        assert (
+            hidden_channels % n_heads == 0
+        ), "hidden_channels must be divisible by n_heads."
 
         fb_rad_filter_features = [hidden_channels, hidden_channels]
         fb_sph_filter_features = [hidden_channels // 4, hidden_channels]

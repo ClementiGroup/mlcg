@@ -6,9 +6,7 @@ from copy import deepcopy
 
 from ..data import AtomicData
 from ..data._keys import N_ATOMS_KEY
-from ..nn import Loss, GradientsOut, StandardAllegro
-from ._fix_hparams_saving import yaml
-from .sam import SAM
+from ..nn import Loss, GradientsOut
 
 
 def get_class_from_str(class_path):
@@ -46,7 +44,7 @@ class PLModel(pl.LightningModule):
 
         self.derivative = getattr(self.model, "derivative", False)
         for module in self.modules():
-            if isinstance(module, GradientsOut) or isinstance(module,StandardAllegro):
+            if isinstance(module, GradientsOut):
                 self.derivative = True
 
     def on_train_epoch_start(self):
@@ -103,7 +101,7 @@ class PLModel(pl.LightningModule):
         be alphabetically ascending with respect to the Metaset names in the multi-metaset scenario.
         """
         loss, batch_size = self.step(data, "validation")
-        self.validation_step_outputs.append((loss,batch_size))
+        self.validation_step_outputs.append((loss, batch_size))
         return loss, batch_size
 
     def test_step(
