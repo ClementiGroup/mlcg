@@ -609,7 +609,7 @@ class Repulsion(torch.nn.Module, _Prior):
 
     @staticmethod
     def neighbor_list(topology: Topology) -> Dict:
-        r"""Method for computing a neighbor list from a topology
+        """Method for computing a neighbor list from a topology
         and a chosen feature type.
 
         Parameters
@@ -1250,7 +1250,7 @@ class Polynomial(torch.nn.Module, _Prior):
 
     @staticmethod
     def compute(x: torch.Tensor, ks: torch.Tensor, V0: torch.Tensor):
-        r"""Harmonic interaction in the form of a series. The shape of the tensors
+        """Harmonic interaction in the form of a series. The shape of the tensors
             should match between each other.
 
         .. math:
