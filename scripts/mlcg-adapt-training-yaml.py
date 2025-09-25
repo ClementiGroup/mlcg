@@ -1,6 +1,7 @@
 from mlcg.utils import load_yaml, dump_yaml
 import argparse
 
+
 def parse_cli():
     parser = argparse.ArgumentParser(
         description="Command line tool for adapting training yamls from lightning version 1.9.4 to 2.2.1"
@@ -20,6 +21,7 @@ def parse_cli():
 
     return parser
 
+
 _keys_to_remove = [
     "multiple_trainloader_mode",
     "move_metrics_to_cpu",
@@ -32,17 +34,15 @@ _keys_to_remove = [
     "tpu_cores",
     "auto_select_gpus",
     "gpus",
-    "num_processes"
+    "num_processes",
 ]
 
 if __name__ == "__main__":
     parser = parse_cli()
-    args = parser.parse_args() 
+    args = parser.parse_args()
     old_yaml = load_yaml(args.training_yaml)
     if "trainer" not in old_yaml.keys():
-        raise ValueError(
-            "Provided yaml doesn't contain a `trainer` section."
-        )
+        raise ValueError("Provided yaml doesn't contain a `trainer` section.")
     else:
         trainer_section = old_yaml["trainer"]
 
@@ -55,7 +55,7 @@ if __name__ == "__main__":
             )
 
         assert "track_grad_norm" not in old_yaml["trainer"].keys()
-        
+
         # remove unsupported args
         for key in _keys_to_remove:
             trainer_section.pop(key, None)
@@ -65,4 +65,4 @@ if __name__ == "__main__":
         if "resume_from_checkpoint" in trainer_section.keys():
             old_ckpt = trainer_section.pop("resume_from_checkpoint")
             old_yaml["ckpt_path"] = old_ckpt
-        dump_yaml(args.out,old_yaml)
+        dump_yaml(args.out, old_yaml)
