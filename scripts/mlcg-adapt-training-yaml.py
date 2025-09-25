@@ -20,6 +20,20 @@ def parse_cli():
 
     return parser
 
+_keys_to_remove = [
+    "multiple_trainloader_mode",
+    "move_metrics_to_cpu",
+    "amp_backend",
+    "amp_level",
+    "auto_scale_batch_size",
+    "replace_sampler_ddp",
+    "auto_lr_find",
+    "ipus",
+    "tpu_cores",
+    "auto_select_gpus",
+    "gpus",
+    "num_processes"
+]
 
 if __name__ == "__main__":
     parser = parse_cli()
@@ -31,17 +45,22 @@ if __name__ == "__main__":
         )
     else:
         trainer_section = old_yaml["trainer"]
-        # remove unsupported args
-        trainer_section.pop("track_grad_norm")
-        trainer_section.pop("auto_lr_find")
+
+        # adapt grad norm tracking
+        track_grad_norm = trainer_section.pop("track_grad_norm", -1)
+        if track_grad_norm != -1:
+            print(
+                "Grad norm tracking is not directly supported in lightning 2.2.1. "
+                "You can instead add an mlcg.pl.GradNormLogger callback to your callbacks list."
+            )
+
         assert "track_grad_norm" not in old_yaml["trainer"].keys()
-        # change callbacks name
-        if "callbacks" in trainer_section.keys():
-            for callback_dict in trainer_section["callbacks"]:
-                if callback_dict["class_path"]=="pytorch_lightning.callbacks.model_checkpoint.ModelCheckpoint":
-                    callback_dict["class_path"]="mlcg.pl.OffsetCheckpoint"
-                    if "start_epoch" not in callback_dict["init_args"]:
-                        callback_dict["init_args"]["start_epoch"] = 0
+        
+        # remove unsupported args
+        for key in _keys_to_remove:
+            trainer_section.pop(key, None)
+            assert key not in old_yaml["trainer"].keys()
+
         # change location of resuming checkpoint argument
         if "resume_from_checkpoint" in trainer_section.keys():
             old_ckpt = trainer_section.pop("resume_from_checkpoint")
