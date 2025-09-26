@@ -85,14 +85,14 @@ model:
             r_max: 30.0
             num_bessel: 8
             num_polynomial_cutoff: 5
-            max_ell: 3
+            max_ell: 1
             interaction_cls: mace.modules.blocks.RealAgnosticResidualInteractionBlock
             interaction_cls_first: mace.modules.blocks.RealAgnosticResidualInteractionBlock
             num_interactions: 2
-            hidden_irreps: '128x0e + 128x1o'
+            hidden_irreps: '32x0e + 32x1o'
             MLP_irreps: '16x0e'
             avg_num_neighbors: 10
-            correlation: 2
+            correlation: 1
             gate: torch.nn.Tanh
             max_num_neighbors: 1000
             pair_repulsion: false
@@ -103,15 +103,26 @@ model:
             radial_type: bessel
             atomic_numbers:
               - 1
+              - 2
               - 3
               - 4
               - 5
               - 6
+              - 7
               - 8
               - 9
               - 10
               - 11
               - 12
+              - 13
               - 14
+              - 15
+              - 16
+              - 17
               - 18
+              - 19
               - 20
+              - 21
+              - 22
+              - 23
+              - 24

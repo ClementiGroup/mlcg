@@ -68,32 +68,32 @@ model:
     init_args:
       targets: forces
       model:
-        class_path: mlcg.nn.schnet.StandardSchNet
+        class_path: mlcg.nn.StandardPaiNN
         init_args:
           hidden_channels: 128
-          embedding_size: 50
-          num_filters: 128
+          embedding_size: 25
           num_interactions: 2
+          activation: torch.nn.Tanh
+          max_num_neighbors: 100
           output_hidden_layer_widths:
-            - 100
-            - 60
-            - 30
-          activation:
-            class_path: torch.nn.Tanh
-            init_args: {}
-          max_num_neighbors: 20
-          aggr: "add"
+            - 128
+            - 64
+          rbf_layer:
+            class_path: mlcg.nn.ExpNormalBasis
+            init_args:
+              cutoff:
+                class_path: mlcg.nn.CosineCutoff
+                init_args:
+                  cutoff_lower: 0
+                  cutoff_upper: 15.0
+              num_rbf: 32
+              trainable: false
           cutoff:
             class_path: mlcg.nn.CosineCutoff
             init_args:
               cutoff_lower: 0
-              cutoff_upper: 15
-          rbf_layer:
-            class_path: mlcg.nn.ExpNormalBasis
-            init_args:
-              cutoff: 15
-              num_rbf: 30
-              trainable: false
+              cutoff_upper: 15.0
+
 optimizer:
   class_path: torch.optim.AdamW
   init_args:

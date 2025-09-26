@@ -71,17 +71,18 @@ model:
         init_args:
           embedding_size: 30
           r_max: 20.0
-          l_max: 2
+          l_max: 1
           radial_chemical_embed: 
             _target_: allegro.nn.TwoBodyBesselScalarEmbed
             num_bessels: 8
+            polynomial_cutoff_p: 6
           radial_chemical_embed_dim: 8 
           # scalar embed mlp
           scalar_embed_mlp_hidden_layers_depth:  2
           scalar_embed_mlp_hidden_layers_width:  64
           scalar_embed_mlp_nonlinearity: "silu"
           # allegro layers
-          num_layers: 3 # equivalent of interaction layers
+          num_layers: 1 # equivalent of interaction layers
           num_scalar_features: 64
           num_tensor_features: 8
           allegro_mlp_hidden_layers_depth: 2

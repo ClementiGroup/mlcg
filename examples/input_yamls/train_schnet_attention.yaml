@@ -1,7 +1,6 @@
 seed_everything: 16384
+ckpt_path: null
 trainer:
-  auto_lr_find: false
-  auto_scale_batch_size: false
   benchmark: false
   callbacks:
     - class_path: pytorch_lightning.callbacks.model_checkpoint.ModelCheckpoint
@@ -11,10 +10,6 @@ trainer:
         monitor: validation_loss
         save_last: true
         save_top_k: -1
-    - class_path: pytorch_lightning.callbacks.TQDMProgressBar
-      init_args:
-        refresh_rate: 20
-  checkpoint_callback: null
   default_root_dir: .
   detect_anomaly: false
   deterministic: false
@@ -31,15 +26,8 @@ trainer:
       save_dir: default_root_dir
       version: ''
   max_epochs: 550
-  move_metrics_to_cpu: false
-  multiple_trainloader_mode: max_size_cycle
   plugins: null
-  prepare_data_per_node: null
   reload_dataloaders_every_n_epochs: 0
-  replace_sampler_ddp: false
-  resume_from_checkpoint: null
-  stochastic_weight_avg: false
-  terminate_on_nan: null
 model:
   loss:
     class_path: mlcg.nn.Loss
