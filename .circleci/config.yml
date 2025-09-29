@@ -3,7 +3,6 @@ jobs:
   test:
     docker:
       - image: jacopoventurin/mlcg_python_312:v0.1
-    resource_class: xlarge
     steps:
       - checkout
       - run:
