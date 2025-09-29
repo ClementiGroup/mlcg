@@ -1,4 +1,5 @@
 import torch
+import warnings
 from torch.nn.modules.loss import _Loss
 from torch.nn import functional as F
 from typing import Optional, List
@@ -194,6 +195,8 @@ class EnergyMSE(_Loss):
     ----------
     energy_kwd:
         string to specify the energy key in an AtomicData instance
+    force_kwd:
+        (deprecated) old key for energy. Will be mapped to `energy_kwd` if provided.
     size_average:
         If True, the loss is normalized by the batch size
     reduce:
@@ -205,14 +208,25 @@ class EnergyMSE(_Loss):
 
     def __init__(
         self,
-        energy_kwd: str = ENERGY_KEY,
+        energy_kwd: Optional[str] = ENERGY_KEY,
         size_average: Optional[bool] = None,
         reduce: Optional[bool] = None,
+        force_kwd: Optional[str] = None,
         **kwargs,
     ) -> None:
         super(EnergyMSE, self).__init__(
             size_average=size_average, reduce=reduce, reduction="none"
         )
+
+        if force_kwd is not None:
+            warnings.warn(
+                "`force_kwd` is deprecated and will be removed in a future version. "
+                "Please use `energy_kwd` instead.",
+                UserWarning,
+                stacklevel=2,
+            )
+            if energy_kwd is not ENERGY_KEY:
+                energy_kwd = force_kwd
 
         self.energy_kwd = energy_kwd
 
