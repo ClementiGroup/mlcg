@@ -79,17 +79,17 @@ model:
       model:
         class_path: mlcg.nn.StandardSo3krates
         init_args:
-          hidden_channels: 132
+          hidden_channels: 32
           embedding_size: 25
-          num_interactions: 2
-          degrees: [1, 2, 3]
+          num_interactions: 1
+          degrees: [1, 2]
           n_heads: 4
           activation: torch.nn.SiLU
           max_num_neighbors: 100
           normalize_sph: true
           output_hidden_layer_widths:
-            - 128
-            - 64
+            - 32
+            - 16
           rbf_layer:
             class_path: mlcg.nn.ExpNormalBasis
             init_args:
@@ -97,11 +97,11 @@ model:
                 class_path: mlcg.nn.CosineCutoff
                 init_args:
                   cutoff_lower: 0
-                  cutoff_upper: 5.0
+                  cutoff_upper: 15.0
               num_rbf: 32
               trainable: false
           cutoff:
             class_path: mlcg.nn.CosineCutoff
             init_args:
               cutoff_lower: 0
-              cutoff_upper: 5.0
+              cutoff_upper: 15.0

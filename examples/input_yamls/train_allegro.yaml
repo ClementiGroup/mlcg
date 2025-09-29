@@ -78,19 +78,19 @@ model:
             polynomial_cutoff_p: 6
           radial_chemical_embed_dim: 8 
           # scalar embed mlp
-          scalar_embed_mlp_hidden_layers_depth:  2
-          scalar_embed_mlp_hidden_layers_width:  64
+          scalar_embed_mlp_hidden_layers_depth:  1
+          scalar_embed_mlp_hidden_layers_width:  32
           scalar_embed_mlp_nonlinearity: "silu"
           # allegro layers
           num_layers: 1 # equivalent of interaction layers
-          num_scalar_features: 64
+          num_scalar_features: 32
           num_tensor_features: 8
-          allegro_mlp_hidden_layers_depth: 2
-          allegro_mlp_hidden_layers_width: 32
+          allegro_mlp_hidden_layers_depth: 1
+          allegro_mlp_hidden_layers_width: 16
           allegro_mlp_nonlinearity:  "silu"
           # readout
-          readout_mlp_hidden_layers_depth: 3
-          readout_mlp_hidden_layers_width: 32
+          readout_mlp_hidden_layers_depth: 1
+          readout_mlp_hidden_layers_width: 16
           readout_mlp_nonlinearity:  "silu"
           # edge sum normalization
           # arbitrary but needed for "better numerics"

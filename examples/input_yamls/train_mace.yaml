@@ -88,8 +88,8 @@ model:
             max_ell: 1
             interaction_cls: mace.modules.blocks.RealAgnosticResidualInteractionBlock
             interaction_cls_first: mace.modules.blocks.RealAgnosticResidualInteractionBlock
-            num_interactions: 2
-            hidden_irreps: '32x0e + 32x1o'
+            num_interactions: 1
+            hidden_irreps: '16x0e + 16x1o'
             MLP_irreps: '16x0e'
             avg_num_neighbors: 10
             correlation: 1
@@ -98,8 +98,8 @@ model:
             pair_repulsion: false
             distance_transform: null
             radial_MLP:
-              - 64
-              - 64
+              - 16
+              - 16
             radial_type: bessel
             atomic_numbers:
               - 1

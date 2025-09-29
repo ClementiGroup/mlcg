@@ -66,14 +66,13 @@ model:
       model:
         class_path: mlcg.nn.schnet.StandardSchNet
         init_args:
-          hidden_channels: 128
+          hidden_channels: 32
           embedding_size: 50
-          num_filters: 128
-          num_interactions: 2
+          num_filters: 32
+          num_interactions: 1
           output_hidden_layer_widths:
-            - 100
-            - 60
-            - 30
+            - 32
+            - 16
           activation:
             class_path: torch.nn.Tanh
             init_args: {}

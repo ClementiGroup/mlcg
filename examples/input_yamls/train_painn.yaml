@@ -70,14 +70,14 @@ model:
       model:
         class_path: mlcg.nn.StandardPaiNN
         init_args:
-          hidden_channels: 128
+          hidden_channels: 32
           embedding_size: 25
-          num_interactions: 2
+          num_interactions: 1
           activation: torch.nn.Tanh
           max_num_neighbors: 100
           output_hidden_layer_widths:
-            - 128
-            - 64
+            - 32
+            - 16
           rbf_layer:
             class_path: mlcg.nn.ExpNormalBasis
             init_args:
