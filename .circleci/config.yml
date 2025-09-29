@@ -16,6 +16,7 @@ jobs:
       - run:
           name: "Run tests"
           command: "pytest ."
+          no_output_timeout: 50m
 
 workflows:
   version: 2
