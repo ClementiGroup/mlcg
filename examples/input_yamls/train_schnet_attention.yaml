@@ -52,14 +52,14 @@ model:
               cutoff_lower: 0
               cutoff_upper: 30
           embedding_size: 43
-          hidden_channels: 32
+          hidden_channels: 128
           max_num_neighbors: 200
-          num_filters: 32
+          num_filters: 128
           attention_block:
             class_path: mlcg.nn.ExactAttention
           num_interactions: 1
-          num_features_in: 32
-          num_features_out: 32
+          num_features_in: 128
+          num_features_out: 128
           num_residual_k: 1
           num_residual_q: 1
           num_residual_v: 1
@@ -70,7 +70,7 @@ model:
             class_path: mlcg.nn.ExpNormalBasis
             init_args:
               cutoff: 30
-              num_rbf: 32
+              num_rbf: 128
               trainable: false
       targets: forces
 optimizer:
