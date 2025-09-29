@@ -1,7 +1,7 @@
 train:
   batch_sizes:
-    CATH: 13
-    DIMER: 21
+    CATH: 4
+    DIMER: 7
   max_epoch_samples: null
   metasets:
     CATH:
@@ -113,8 +113,8 @@ train:
   subsample_random_seed: 42
 val:
   batch_sizes:
-    CATH: 13
-    DIMER: 21
+    CATH: 4
+    DIMER: 7
   max_epoch_samples: null
   metasets:
     CATH:
