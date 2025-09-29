@@ -2,7 +2,7 @@ version: 2.1
 jobs:
   test:
     docker:
-      - image: jacopoventurin/mlcg_pytorch_geometric_cpu:v0.1
+      - image: jacopoventurin/mlcg_python_312:v0.1
     steps:
       - checkout
       - run:
