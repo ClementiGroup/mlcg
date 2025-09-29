@@ -3,6 +3,7 @@ jobs:
   test:
     docker:
       - image: jacopoventurin/mlcg_python_312:v0.1
+    parallelism: 6   # run tests across 6 parallel containers
     steps:
       - checkout
       - run:
@@ -15,8 +16,16 @@ jobs:
             pip install .
       - run:
           name: "Run tests"
-          command: "pytest ."
+          command: |
+            set -e
+            TEST_FILES=$(circleci tests glob "**/test_*.py" | circleci tests split --split-by=timings)
+            mkdir -p test-results
+            pytest --verbose --junitxml=test-results/junit.xml $TEST_FILES
           no_output_timeout: 50m
+      - store_test_results:
+          path: test-results
+      - store_artifacts:
+          path: test-results
 
 workflows:
   version: 2
