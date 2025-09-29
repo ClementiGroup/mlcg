@@ -1,5 +1,4 @@
-version: 2.0
-
+version: 2.1
 jobs:
   test:
     docker:
@@ -7,10 +6,12 @@ jobs:
     steps:
       - checkout
       - run:
-          name: "Install dependencies and repo"
+          name: "Install enviroment and repo"
           command: |
             pip --version
-            pip install -r requirements.txt
+            pip install --extra-index-url https://download.pytorch.org/whl/cpu -r env_cpu_with_hashes.in
+            pip install --no-deps git+https://github.com/ACEsuit/mace.git@v0.3.13
+            pip install --no-deps nequip==0.12.1 nequip-allegro==0.7.0
             pip install .
       - run:
           name: "Run tests"

@@ -40,18 +40,9 @@ RUN curl -Lo ~/miniconda.sh https://repo.continuum.io/miniconda/Miniconda3-py39_
 
 
 # Create conda environment
-RUN conda create -n mlcg python=3.12 -y && conda clean -a -y
+RUN conda create -n mlcg python=3.12.0 -y && conda clean -a -y
 # Make the environment the default for all subsequent commands and for when the container runs
 ENV PATH=/home/user/miniconda/envs/mlcg/bin:$PATH
-
-RUN pip install torch==2.5.0+cpu torchvision==0.20.0+cpu torchaudio==2.5.0+cpu --extra-index-url https://download.pytorch.org/whl/cpu
-RUN pip install torch_geometric
-RUN pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.5.0+cpu.html
-RUN pip install lightning tensorboard torchtnt
-
-RUN pip install --no-deps git+https://github.com/ACEsuit/mace.git@v0.3.12
-RUN pip install --no-deps nequip==0.12.1 nequip-allegro==0.7.0
-
 
 RUN conda clean -a -y
 # Set the default command to python3
