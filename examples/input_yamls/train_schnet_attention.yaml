@@ -70,7 +70,7 @@ model:
             class_path: mlcg.nn.ExpNormalBasis
             init_args:
               cutoff: 30
-              num_rbf: 128
+              num_rbf: 128git 
               trainable: false
       targets: forces
 optimizer:
