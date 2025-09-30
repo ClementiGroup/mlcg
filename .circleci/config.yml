@@ -15,10 +15,18 @@ jobs:
             pip install --no-deps nequip==0.12.1 nequip-allegro==0.7.0
             pip install -e .
       - run:
-          name: "Run tests"
+          name: "Run code tests"
           command: |
             set -e
-            TEST_FILES=$(circleci tests glob "**/test_*.py" | circleci tests split --split-by=timings)
+            TEST_FILES=$(circleci tests glob "mlcg/**/test_*.py" | circleci tests split --split-by=timings)
+            mkdir -p test-results
+            pytest --verbose --junitxml=test-results/junit.xml $TEST_FILES
+          no_output_timeout: 50m
+      - run:
+          name: "Run examples tests"
+          command: |
+            set -e
+            TEST_FILES=$(circleci tests glob "examples/**/test_*.py" | circleci tests split --split-by=timings)
             mkdir -p test-results
             pytest --verbose --junitxml=test-results/junit.xml $TEST_FILES
           no_output_timeout: 50m
