@@ -62,10 +62,12 @@ def runner_idx(request):
 def num_containers(request):
     return request.config.getoption("--num_containers")
 
+
 # All yield fixtures in pytest are executed untill the
 # yield in the order they are provided to the test function and
 # after the function is finished the code after the yeld is executed
 # for all the fixtures in reverse order
+
 
 @pytest.fixture
 def test_dir(runner_idx):
@@ -75,6 +77,7 @@ def test_dir(runner_idx):
     # Teardown: always run also if the test fails
     if dir_path.exists():
         rmtree(dir_path)
+
 
 def test_architecture(runner_idx, num_containers, test_dir):
     archs_per_runner = training_yaml_list[runner_idx::num_containers]
@@ -107,7 +110,9 @@ def test_architecture(runner_idx, num_containers, test_dir):
                 if model_yaml.name in line:
                     sub_processes.append(line.split("`")[-2].strip())
         assert len(sub_processes) > 0, f"No command found for {model_yaml}"
-        assert len(sub_processes) < 2, f"Multiple commands found for {model_yaml}"
+        assert (
+            len(sub_processes) < 2
+        ), f"Multiple commands found for {model_yaml}"
 
         # Run the training command
         process = sub_processes[0]
@@ -145,7 +150,9 @@ def test_architecture(runner_idx, num_containers, test_dir):
         )
         print("STDOUT:\n", result.stdout)
         print("STDERR:\n", result.stderr)
-        assert result.returncode == 0, f"Failed extracting model with {model_yaml}"
+        assert (
+            result.returncode == 0
+        ), f"Failed extracting model with {model_yaml}"
 
         # Setup simulation yaml
         simulation_yaml = load_yaml(sim_yaml)
@@ -173,7 +180,9 @@ def test_architecture(runner_idx, num_containers, test_dir):
         )
         print("STDOUT:\n", result.stdout)
         print("STDERR:\n", result.stderr)
-        assert result.returncode == 0, f"Failed simulating model with {model_yaml}"
+        assert (
+            result.returncode == 0
+        ), f"Failed simulating model with {model_yaml}"
         # Clean after every iteration: always run also if the test fails
         if test_dir.exists():
             for filename in os.listdir(test_dir):
