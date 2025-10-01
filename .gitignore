@@ -5,6 +5,7 @@ sims
 splits.npy
 model_with_prior.pt
 partition_settings_new.yaml
+pytest_run_?
 
 # Byte-compiled / optimized / DLL files
 *__pycache__*

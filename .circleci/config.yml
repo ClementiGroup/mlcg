@@ -27,8 +27,8 @@ jobs:
           command: |
             set -e
             mkdir -p test-results
-            pytest --verbose --junitxml=test-results/examples.xml examples
-          no_output_timeout: 90m
+            pytest --verbose --junitxml=test-results/examples.xml examples  --runner_idx=${CIRCLE_NODE_INDEX} --num_containers=${CIRCLE_NODE_TOTAL}
+          no_output_timeout: 80m
       - store_test_results:
           path: test-results
       - store_artifacts:
