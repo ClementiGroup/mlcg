@@ -52,13 +52,20 @@
 <li class="toctree-l1"><a class="reference internal" href="priors.html">Priors</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Models</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#schnet-utilities">SchNet Utilities</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#mlcg.nn.StandardSchNet"><code class="docutils literal notranslate"><span class="pre">StandardSchNet</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#mlcg.nn.schnet.SchNet"><code class="docutils literal notranslate"><span class="pre">SchNet</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#mlcg.nn.schnet.InteractionBlock"><code class="docutils literal notranslate"><span class="pre">InteractionBlock</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#mlcg.nn.schnet.CFConv"><code class="docutils literal notranslate"><span class="pre">CFConv</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#mace-utilities">MACE Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#painn-utilities">PaiNN Utilities</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#mlcg.nn.painn.PaiNN"><code class="docutils literal notranslate"><span class="pre">PaiNN</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#mace-utilities">MACE Utilities</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#mlcg.nn.mace.MACE"><code class="docutils literal notranslate"><span class="pre">MACE</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#allegro-utilities">Allegro Utilities</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#radial-basis-functions">Radial Basis Functions</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#mlcg.nn.radial_basis.GaussianBasis"><code class="docutils literal notranslate"><span class="pre">GaussianBasis</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#mlcg.nn.radial_basis.ExpNormalBasis"><code class="docutils literal notranslate"><span class="pre">ExpNormalBasis</span></code></a></li>
@@ -123,35 +130,6 @@
 <h2>SchNet Utilities<a class="headerlink" href="#schnet-utilities" title="Link to this heading"></a></h2>
 <p>These classes are used to define a SchNet graph neural network. For “typical” SchNet models, users
 may find the class <cite>StandardSchNet</cite> to be helpful in getting started quickly.</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="mlcg.nn.StandardSchNet">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcg.nn.</span></span><span class="sig-name descname"><span class="pre">StandardSchNet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rbf_layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_hidden_layer_widths</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hidden_channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embedding_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_filters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_interactions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Tanh()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_neighbors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aggr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'add'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/schnet.html#StandardSchNet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.StandardSchNet" title="Link to this definition"></a></dt>
-<dd><p>Small wrapper class for <span class="xref std std-ref">SchNet</span> to simplify the definition of the
-SchNet model through an input file. The upper distance cutoff attribute
-in is set by default to match the upper cutoff value in the cutoff function.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>rbf_layer</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – radial basis function used to project the distances <span class="math notranslate nohighlight">\(r_{ij}\)</span>.</p></li>
-<li><p><strong>cutoff</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – smooth cutoff function to supply to the CFConv</p></li>
-<li><p><strong>output_hidden_layer_widths</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]</span>) – List giving the number of hidden nodes of each hidden layer of the MLP
-used to predict the target property from the learned representation.</p></li>
-<li><p><strong>hidden_channels</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – dimension of the learned representation, i.e. dimension of the embeding projection, convolution layers, and interaction block.</p></li>
-<li><p><strong>embedding_size</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – dimension of the input embeddings (should be larger than <code class="xref py py-obj docutils literal notranslate"><span class="pre">AtomicData.atom_types.max()+1</span></code>).</p></li>
-<li><p><strong>num_filters</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – number of nodes of the networks used to filter the projected distances</p></li>
-<li><p><strong>num_interactions</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – number of interaction blocks</p></li>
-<li><p><strong>activation</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – activation function</p></li>
-<li><p><strong>max_num_neighbors</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – The maximum number of neighbors to return for each atom in <code class="xref py py-obj docutils literal notranslate"><span class="pre">data</span></code>.
-If the number of actual neighbors is greater than
-<code class="xref py py-obj docutils literal notranslate"><span class="pre">max_num_neighbors</span></code>, returned neighbors are picked randomly.</p></li>
-<li><p><strong>aggr</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Aggregation scheme for continuous filter output. For all options,
-see <a class="reference external" href="https://pytorch-geometric.readthedocs.io/en/latest/notes/create_gnn.html?highlight=MessagePassing#the-messagepassing-base-class">here</a>
-for more options.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
 <dl class="py class">
 <dt class="sig sig-object py" id="mlcg.nn.schnet.SchNet">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcg.nn.schnet.</span></span><span class="sig-name descname"><span class="pre">SchNet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">embedding_layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interaction_blocks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rbf_layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_network</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">self_interaction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_neighbors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/schnet.html#SchNet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.schnet.SchNet" title="Link to this definition"></a></dt>
@@ -225,9 +203,75 @@ see <cite>here &lt;https://pytorch-geometric.readthedocs.io/en/latest/notes/crea
 </dd></dl>
 
 </section>
+<section id="painn-utilities">
+<h2>PaiNN Utilities<a class="headerlink" href="#painn-utilities" title="Link to this heading"></a></h2>
+<p>These classes are used to define a PaiNN graph neural network. For “typical” PaiNN models, users
+may find the class <cite>StandardPaiNN</cite> to be helpful in getting started quickly.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcg.nn.painn.PaiNN">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcg.nn.painn.</span></span><span class="sig-name descname"><span class="pre">PaiNN</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">embedding_layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interaction_blocks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mixing_blocks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rbf_layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_network</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_neighbors</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/painn.html#PaiNN"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.painn.PaiNN" title="Link to this definition"></a></dt>
+<dd><p>Implementation of PaiNN - polarizable interaction neural network
+Code adapted from <a class="reference external" href="https://schnetpack.readthedocs.io/en/latest/api/generated/representation.PaiNN.html">https://schnetpack.readthedocs.io/en/latest/api/generated/representation.PaiNN.html</a>
+which is based on the architecture described in <a class="reference external" href="http://proceedings.mlr.press/v139/schutt21a.html">http://proceedings.mlr.press/v139/schutt21a.html</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>embedding_layer</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Initial embedding layer that transforms atoms/coarse grain bead
+types into embedded features</p></li>
+<li><p><strong>interaction_blocks</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<a class="reference internal" href="autodoc.html#mlcg.nn.painn.PaiNNInteraction" title="mlcg.nn.painn.PaiNNInteraction"><code class="xref py py-class docutils literal notranslate"><span class="pre">PaiNNInteraction</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<a class="reference internal" href="autodoc.html#mlcg.nn.painn.PaiNNInteraction" title="mlcg.nn.painn.PaiNNInteraction"><code class="xref py py-class docutils literal notranslate"><span class="pre">PaiNNInteraction</span></code></a>]]</span>) – list of PaiNNInteraction or single PaiNNInteraction block.
+Sequential interaction blocks of the model, where each interaction
+block applies.</p></li>
+<li><p><strong>mixing_blocks</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<a class="reference internal" href="autodoc.html#mlcg.nn.painn.PaiNNMixing" title="mlcg.nn.painn.PaiNNMixing"><code class="xref py py-class docutils literal notranslate"><span class="pre">PaiNNMixing</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<a class="reference internal" href="autodoc.html#mlcg.nn.painn.PaiNNMixing" title="mlcg.nn.painn.PaiNNMixing"><code class="xref py py-class docutils literal notranslate"><span class="pre">PaiNNMixing</span></code></a>]]</span>) – List of PaiNNMixing or single PaiNNMixing block.
+Sequential mixing blocks of the model, where each mixing
+applies after each interaction block.</p></li>
+<li><p><strong>rbf_layer</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – The set of radial basis functions that expands pairwise distances
+between atoms/CG beads.</p></li>
+<li><p><strong>output_network</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Output neural network that predicts scalar energies from scalar PaiNN
+features. This network should transform (num_examples * num_atoms,
+hidden_channels) to (num_examples * num atoms, 1).</p></li>
+<li><p><strong>max_num_neighbors</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Maximum number of neighbors to return for a
+given node/atom when constructing the molecular graph during forward
+passes. This attribute is passed to the torch_cluster radius_graph
+routine keyword max_num_neighbors, which normally defaults to 32.
+Users should set this to higher values if they are using higher upper
+distance cutoffs and expect more than 32 neighbors per node/atom.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
 <section id="mace-utilities">
 <h2>MACE Utilities<a class="headerlink" href="#mace-utilities" title="Link to this heading"></a></h2>
-<p><cite>mlcg</cite> provides wrapper utitilies for <a class="reference internal" href="bibliography.html#mace" id="id3"><span>[MACE]</span></a> models, the base implementation of which is available <a class="reference external" href="https://github.com/felixmusil/mace.git">here</a> in the <cite>develop</cite> branch.</p>
+<p>These classes are used to define a MACE graph neural network, for which the base implementation is required and available <a class="reference external" href="https://github.com/ACEsuit/mace.git">here</a>. For “typical” MACE models, users
+may find the class <cite>StandardMACE</cite> to be helpful in getting started quickly.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcg.nn.mace.MACE">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcg.nn.mace.</span></span><span class="sig-name descname"><span class="pre">MACE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">atomic_numbers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_embedding</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radial_embedding</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spherical_harmonics</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interactions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">products</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readouts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_neighbors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pair_repulsion_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/mace.html#MACE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.mace.MACE" title="Link to this definition"></a></dt>
+<dd><p>Implementation of MACE neural network model from <a class="reference external" href="https://github.com/ACEsuit/mace">https://github.com/ACEsuit/mace</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>atomic_numbers</strong> (<em>torch.Tensor</em>) – Tensor of atomic numbers present in the system.</p></li>
+<li><p><strong>node_embedding</strong> (<em>torch.nn.Module</em>) – Module for embedding node (atom) attributes.</p></li>
+<li><p><strong>radial_embedding</strong> (<em>torch.nn.Module</em>) – Module for embedding radial (distance) features.</p></li>
+<li><p><strong>spherical_harmonics</strong> (<em>torch.nn.Module</em>) – Module for computing spherical harmonics of edge vectors.</p></li>
+<li><p><strong>interactions</strong> (<em>List</em><em>[</em><em>torch.nn.Module</em><em>]</em>) – List of interaction blocks.</p></li>
+<li><p><strong>products</strong> (<em>List</em><em>[</em><em>torch.nn.Module</em><em>]</em>) – List of product basis blocks.</p></li>
+<li><p><strong>readouts</strong> (<em>List</em><em>[</em><em>torch.nn.Module</em><em>]</em>) – List of readout blocks.</p></li>
+<li><p><strong>r_max</strong> (<em>float</em>) – Cutoff radius for neighbor list.</p></li>
+<li><p><strong>max_num_neighbors</strong> (<em>int</em>) – Maximum number of neighbors per atom.</p></li>
+<li><p><strong>pair_repulsion_fn</strong> (<em>torch.nn.Module</em><em>, </em><em>optional</em>) – Optional pairwise repulsion energy function.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="allegro-utilities">
+<h2>Allegro Utilities<a class="headerlink" href="#allegro-utilities" title="Link to this heading"></a></h2>
+<p>These classes are used to define a MACE graph neural network, for which the base implementation is required and available <a class="reference external" href="https://github.com/ACEsuit/mace.git">here</a>. For “typical” MACE models, users
+may find the class <cite>StandardMACE</cite> to be helpful in getting started quickly.</p>
 </section>
 <section id="radial-basis-functions">
 <h2>Radial Basis Functions<a class="headerlink" href="#radial-basis-functions" title="Link to this heading"></a></h2>
@@ -259,7 +303,7 @@ instead fixed in an unoptimizable buffer.</p></li>
 <dt class="sig sig-object py" id="mlcg.nn.radial_basis.ExpNormalBasis">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcg.nn.radial_basis.</span></span><span class="sig-name descname"><span class="pre">ExpNormalBasis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_rbf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/radial_basis/exp_normal.html#ExpNormalBasis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.radial_basis.ExpNormalBasis" title="Link to this definition"></a></dt>
 <dd><p>Class for generating a set of exponential normal radial basis functions,
-as described in <a class="reference internal" href="bibliography.html#physnet" id="id5"><span>[Physnet]</span></a> . The functions have the following form:</p>
+as described in <a class="reference internal" href="bibliography.html#physnet" id="id4"><span>[Physnet]</span></a> . The functions have the following form:</p>
 <div class="math notranslate nohighlight">
 \[f_n(r_{ij};\alpha, r_{low},r_{high}) = f_{cut}(r_{ij},r_{low},r_{high})
 \times \exp\left[-\beta_n \left(e^{\alpha (r_{ij} -r_{high}) }

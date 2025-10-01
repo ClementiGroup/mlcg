@@ -79,11 +79,12 @@
              
   <h1>Source code for mlcg.nn.losses</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torch.nn.modules.loss</span><span class="w"> </span><span class="kn">import</span> <span class="n">_Loss</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">functional</span> <span class="k">as</span> <span class="n">F</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">List</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">..data._keys</span><span class="w"> </span><span class="kn">import</span> <span class="n">FORCE_KEY</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..data._keys</span><span class="w"> </span><span class="kn">import</span> <span class="n">FORCE_KEY</span><span class="p">,</span> <span class="n">ENERGY_KEY</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..data</span><span class="w"> </span><span class="kn">import</span> <span class="n">AtomicData</span>
 
 
@@ -267,6 +268,75 @@
             <span class="n">reduction</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">reduction</span><span class="p">,</span>
         <span class="p">)</span></div>
 
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">EnergyMSE</span><span class="p">(</span><span class="n">_Loss</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Energy mean square error per atom loss, as defined by:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        L\left(E,\hat{E}\right) = \frac{1}{N}\sum_{i}^{N}\frac{1}{n_i} \left\Vert E_i - \hat{E}_i \right\Vert ^2</span>
+
+<span class="sd">    where :math:`E` are predicted energy, :math:`\hat{E}` are reference energy, :math:`n_i` is</span>
+<span class="sd">    the number of atoms for examples/structures, :math:`N` is the total number of examples/structures.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    energy_kwd:</span>
+<span class="sd">        string to specify the energy key in an AtomicData instance</span>
+<span class="sd">    force_kwd:</span>
+<span class="sd">        (deprecated) old key for energy. Will be mapped to `energy_kwd` if provided.</span>
+<span class="sd">    size_average:</span>
+<span class="sd">        If True, the loss is normalized by the batch size</span>
+<span class="sd">    reduce:</span>
+<span class="sd">        If True, the loss is reduced to a scalar</span>
+<span class="sd">    reduction:</span>
+<span class="sd">        Specifies the method of reduction. See `here &lt;https://github.com/pytorch/pytorch/blob/acb035f5130fabe258ff27049c73a15ba3a52dbd/torch/nn/modules/loss.py#L6L9&gt;`_</span>
+<span class="sd">        for more options.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">energy_kwd</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">ENERGY_KEY</span><span class="p">,</span>
+        <span class="n">size_average</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">reduce</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">force_kwd</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">EnergyMSE</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">size_average</span><span class="o">=</span><span class="n">size_average</span><span class="p">,</span> <span class="n">reduce</span><span class="o">=</span><span class="n">reduce</span><span class="p">,</span> <span class="n">reduction</span><span class="o">=</span><span class="s2">&quot;none&quot;</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">force_kwd</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;`force_kwd` is deprecated and will be removed in a future version. &quot;</span>
+                <span class="s2">&quot;Please use `energy_kwd` instead.&quot;</span><span class="p">,</span>
+                <span class="ne">UserWarning</span><span class="p">,</span>
+                <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">energy_kwd</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">ENERGY_KEY</span><span class="p">:</span>
+                <span class="n">energy_kwd</span> <span class="o">=</span> <span class="n">force_kwd</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">energy_kwd</span> <span class="o">=</span> <span class="n">energy_kwd</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">energy_kwd</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">out</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;target property </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">energy_kwd</span><span class="si">}</span><span class="s2"> has not been computed in data.out </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">out</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">energy_kwd</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;target property </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">energy_kwd</span><span class="si">}</span><span class="s2"> has no reference in data </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">F</span><span class="o">.</span><span class="n">mse_loss</span><span class="p">(</span>
+                <span class="n">data</span><span class="o">.</span><span class="n">out</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">energy_kwd</span><span class="p">],</span>
+                <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">energy_kwd</span><span class="p">],</span>
+                <span class="n">reduction</span><span class="o">=</span><span class="s2">&quot;none&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="o">/</span> <span class="n">data</span><span class="o">.</span><span class="n">n_atoms</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
 </pre></div>
 
            </div>

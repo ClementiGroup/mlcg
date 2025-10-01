@@ -87,23 +87,27 @@
 <p>This repository collects a set of tools to apply machine learning techniques to coarse grain atomic systems.</p>
 <section id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
-<p>The dependencies are defined in <cite>requirements.txt</cite> but some packages are not well handled by pip. So start by installing <a class="reference external" href="https://pytorch.org/">pytorch</a> and <a class="reference external" href="https://pytorch-geometric.readthedocs.io/en/latest/">pytorch-geometric</a> with conda, e.g.:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">install</span> <span class="n">pytorch</span> <span class="n">cudatoolkit</span><span class="o">=</span><span class="mf">11.3</span> <span class="o">-</span><span class="n">c</span> <span class="n">pytorch</span>
-<span class="n">conda</span> <span class="n">install</span> <span class="n">pyg</span> <span class="o">-</span><span class="n">c</span> <span class="n">pyg</span> <span class="o">-</span><span class="n">c</span> <span class="n">conda</span><span class="o">-</span><span class="n">forge</span>
+<p>First we suggest to create a new clean virtual environment with python 3.12.0, then install the following prerequisites:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>env_with_hashes.in
+pip<span class="w"> </span>install<span class="w"> </span>--no-deps<span class="w"> </span>git+https://github.com/ACEsuit/mace.git@v0.3.13
+pip<span class="w"> </span>install<span class="w"> </span>--no-deps<span class="w"> </span><span class="nv">nequip</span><span class="o">==</span><span class="m">0</span>.12.1<span class="w"> </span>nequip-allegro<span class="o">==</span><span class="m">0</span>.7.0
 </pre></div>
 </div>
-<p>Support for the MACE model can be enabled with:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">git</span><span class="o">+</span><span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">felixmusil</span><span class="o">/</span><span class="n">mace</span><span class="o">.</span><span class="n">git</span><span class="nd">@develop</span>
+<p>Then clone and install this repository with:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>git@github.com:ClementiGroup/mlcg.git
+<span class="nb">cd</span><span class="w"> </span>mlcg
+pip<span class="w"> </span>install<span class="w"> </span>.
 </pre></div>
 </div>
+<p>This will likely rise an error due to some dependency issue about <cite>e3nn</cite> that you can safely ignore.</p>
 <p>Support for the TorchMD-Net models can be enabled with:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">git</span><span class="o">+</span><span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">felixmusil</span><span class="o">/</span><span class="n">torchmd</span><span class="o">-</span><span class="n">net</span><span class="o">.</span><span class="n">git</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">git</span><span class="o">+</span><span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">torchmd</span><span class="o">/</span><span class="n">torchmd</span><span class="o">-</span><span class="n">net</span><span class="o">.</span><span class="n">git</span>
 </pre></div>
 </div>
 </section>
 <section id="cli">
 <h2>CLI<a class="headerlink" href="#cli" title="Link to this heading"></a></h2>
-<p>The models defined in this library can be convinietly trained using the pytorch-lightning
+<p>The models defined in this library can be conveniently trained using the pytorch-lightning
 <a class="reference external" href="https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_cli.html">CLI</a> utilities.</p>
 </section>
 <section id="examples">
@@ -151,7 +155,9 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="models.html">Models</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="models.html#schnet-utilities">SchNet Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html#painn-utilities">PaiNN Utilities</a></li>
 <li class="toctree-l2"><a class="reference internal" href="models.html#mace-utilities">MACE Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html#allegro-utilities">Allegro Utilities</a></li>
 <li class="toctree-l2"><a class="reference internal" href="models.html#radial-basis-functions">Radial Basis Functions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="models.html#cutoff-functions">Cutoff Functions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="models.html#model-building-utilities">Model Building Utilities</a></li>
@@ -165,7 +171,7 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="simulation.html">Simulations</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="simulation.html#nvt-ensemble">NVT ensemble</a></li>
-<li class="toctree-l2"><a class="reference internal" href="simulation.html#module-mlcg.simulation.specialize_prior">Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="simulation.html#utilities">Utilities</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="dev/dev.html">Developer Documentation</a><ul>

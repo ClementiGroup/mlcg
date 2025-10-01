@@ -1,0 +1,552 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mlcg.nn.mace &mdash; mlcg 0.0.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=e3a6060d"></script>
+      <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            mlcg
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../data.html">Data Representation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../neighbor_list.html">Neighbor Lists</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../coarse_graining.html">Coarse Graining</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../datasets.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../priors.html">Priors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../models.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../training.html">Training</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../simulation.html">Simulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dev/dev.html">Developer Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../bibliography.html">Bibliography</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">mlcg</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">mlcg.nn.mace</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for mlcg.nn.mace</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Final</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">e3nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">o3</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">mace.modules.radial</span><span class="w"> </span><span class="kn">import</span> <span class="n">ZBLBasis</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">mace.tools.scatter</span><span class="w"> </span><span class="kn">import</span> <span class="n">scatter_sum</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">mace.tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">to_one_hot</span>
+
+    <span class="kn">from</span><span class="w"> </span><span class="nn">mace.modules.blocks</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+        <span class="n">EquivariantProductBasisBlock</span><span class="p">,</span>
+        <span class="n">LinearNodeEmbeddingBlock</span><span class="p">,</span>
+        <span class="n">LinearReadoutBlock</span><span class="p">,</span>
+        <span class="n">NonLinearReadoutBlock</span><span class="p">,</span>
+        <span class="n">RadialEmbeddingBlock</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">mace.modules.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_edge_vectors_and_lengths</span>
+
+<span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span>
+        <span class="s2">&quot;Please install or set mace to your path before using this interface. &quot;</span>
+        <span class="o">+</span> <span class="s2">&quot;To install you can either run &#39;pip install git+https://github.com/ACEsuit/mace.git@v0.3.13&#39;, &quot;</span>
+        <span class="o">+</span> <span class="s2">&quot;or clone the repository and add it to your PYTHONPATH.&quot;</span>
+        <span class="s2">&quot;&quot;</span>
+    <span class="p">)</span>
+
+<span class="c1"># from ..pl.model import get_class_from_str</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..data.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">AtomicData</span><span class="p">,</span> <span class="n">ENERGY_KEY</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..neighbor_list.neighbor_list</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">atomic_data2neighbor_list</span><span class="p">,</span>
+    <span class="n">validate_neighborlist</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">e3nn.util.jit</span><span class="w"> </span><span class="kn">import</span> <span class="n">compile_mode</span>
+
+
+<div class="viewcode-block" id="MACE">
+<a class="viewcode-back" href="../../../models.html#mlcg.nn.mace.MACE">[docs]</a>
+<span class="nd">@compile_mode</span><span class="p">(</span><span class="s2">&quot;script&quot;</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MACE</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Implementation of MACE neural network model from https://github.com/ACEsuit/mace</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        atomic_numbers (torch.Tensor):</span>
+<span class="sd">            Tensor of atomic numbers present in the system.</span>
+<span class="sd">        node_embedding (torch.nn.Module):</span>
+<span class="sd">            Module for embedding node (atom) attributes.</span>
+<span class="sd">        radial_embedding (torch.nn.Module):</span>
+<span class="sd">            Module for embedding radial (distance) features.</span>
+<span class="sd">        spherical_harmonics (torch.nn.Module):</span>
+<span class="sd">            Module for computing spherical harmonics of edge vectors.</span>
+<span class="sd">        interactions (List[torch.nn.Module]):</span>
+<span class="sd">            List of interaction blocks.</span>
+<span class="sd">        products (List[torch.nn.Module]):</span>
+<span class="sd">            List of product basis blocks.</span>
+<span class="sd">        readouts (List[torch.nn.Module]):</span>
+<span class="sd">            List of readout blocks.</span>
+<span class="sd">        r_max (float):</span>
+<span class="sd">            Cutoff radius for neighbor list.</span>
+<span class="sd">        max_num_neighbors (int):</span>
+<span class="sd">            Maximum number of neighbors per atom.</span>
+<span class="sd">        pair_repulsion_fn (torch.nn.Module, optional):</span>
+<span class="sd">            Optional pairwise repulsion energy function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;mace&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">atomic_numbers</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">node_embedding</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+        <span class="n">radial_embedding</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+        <span class="n">spherical_harmonics</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+        <span class="n">interactions</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">],</span>
+        <span class="n">products</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">],</span>
+        <span class="n">readouts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">],</span>
+        <span class="n">r_max</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">max_num_neighbors</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">pair_repulsion_fn</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">&quot;atomic_numbers&quot;</span><span class="p">,</span> <span class="n">atomic_numbers</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">node_embedding</span> <span class="o">=</span> <span class="n">node_embedding</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">radial_embedding</span> <span class="o">=</span> <span class="n">radial_embedding</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spherical_harmonics</span> <span class="o">=</span> <span class="n">spherical_harmonics</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interactions</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">(</span><span class="n">interactions</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">products</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">(</span><span class="n">products</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">readouts</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">(</span><span class="n">readouts</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">r_max</span> <span class="o">=</span> <span class="n">r_max</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_num_neighbors</span> <span class="o">=</span> <span class="n">max_num_neighbors</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pair_repulsion_fn</span> <span class="o">=</span> <span class="n">pair_repulsion_fn</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span>
+            <span class="s2">&quot;types_mapping&quot;</span><span class="p">,</span>
+            <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">atomic_numbers</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">types_mapping</span><span class="p">[</span><span class="n">atomic_numbers</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span>
+            <span class="n">atomic_numbers</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="MACE.forward">
+<a class="viewcode-back" href="../../../autodoc.html#mlcg.nn.mace.MACE.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AtomicData</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Forward pass of the MACE model.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data (AtomicData):</span>
+<span class="sd">                Input atomic data object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            AtomicData:</span>
+<span class="sd">                Output data with predicted energies in `data.out`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Setup</span>
+        <span class="n">num_atoms_arange</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">num_graphs</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">ptr</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span>  <span class="c1"># data.batch.max()</span>
+        <span class="n">node_heads</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">batch</span><span class="p">)</span>
+
+        <span class="n">types_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">types_mapping</span><span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">atom_types</span><span class="p">]</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">node_attrs</span> <span class="o">=</span> <span class="n">to_one_hot</span><span class="p">(</span><span class="n">types_ids</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">atomic_numbers</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="c1"># Embeddings</span>
+        <span class="n">node_feats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">node_embedding</span><span class="p">(</span><span class="n">node_attrs</span><span class="p">)</span>
+
+        <span class="n">neighbor_list</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_nl_compatible</span><span class="p">(</span><span class="n">neighbor_list</span><span class="p">):</span>
+            <span class="n">neighbor_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">(</span>
+                <span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">r_max</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_num_neighbors</span>
+            <span class="p">)[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+
+        <span class="n">edge_index</span> <span class="o">=</span> <span class="n">neighbor_list</span><span class="p">[</span><span class="s2">&quot;index_mapping&quot;</span><span class="p">]</span>
+
+        <span class="n">vectors</span><span class="p">,</span> <span class="n">lengths</span> <span class="o">=</span> <span class="n">get_edge_vectors_and_lengths</span><span class="p">(</span>
+            <span class="n">positions</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span>
+            <span class="n">edge_index</span><span class="o">=</span><span class="n">edge_index</span><span class="p">,</span>
+            <span class="n">shifts</span><span class="o">=</span><span class="n">neighbor_list</span><span class="p">[</span><span class="s2">&quot;cell_shifts&quot;</span><span class="p">],</span>
+        <span class="p">)</span>
+        <span class="n">edge_attrs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spherical_harmonics</span><span class="p">(</span><span class="n">vectors</span><span class="p">)</span>
+        <span class="n">edge_feats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">radial_embedding</span><span class="p">(</span>
+            <span class="n">lengths</span><span class="p">,</span> <span class="n">node_attrs</span><span class="p">,</span> <span class="n">edge_index</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">atomic_numbers</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pair_repulsion_fn</span><span class="p">:</span>
+            <span class="n">pair_node_energy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pair_repulsion_fn</span><span class="p">(</span>
+                <span class="n">lengths</span><span class="p">,</span> <span class="n">node_attrs</span><span class="p">,</span> <span class="n">edge_index</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">atomic_numbers</span>
+            <span class="p">)</span>
+            <span class="n">pair_energy</span> <span class="o">=</span> <span class="n">scatter_sum</span><span class="p">(</span>
+                <span class="n">src</span><span class="o">=</span><span class="n">pair_node_energy</span><span class="p">,</span>
+                <span class="n">index</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;batch&quot;</span><span class="p">],</span>
+                <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+                <span class="n">dim_size</span><span class="o">=</span><span class="n">num_graphs</span><span class="p">,</span>
+            <span class="p">)</span>  <span class="c1"># [n_graphs,]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pair_energy</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+                <span class="n">data</span><span class="o">.</span><span class="n">batch</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="n">device</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Interactions</span>
+        <span class="n">energies</span> <span class="o">=</span> <span class="p">[</span><span class="n">pair_energy</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">interaction</span><span class="p">,</span> <span class="n">product</span><span class="p">,</span> <span class="n">readout</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">interactions</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">products</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">readouts</span>
+        <span class="p">):</span>
+            <span class="n">node_feats</span><span class="p">,</span> <span class="n">sc</span> <span class="o">=</span> <span class="n">interaction</span><span class="p">(</span>
+                <span class="n">node_attrs</span><span class="o">=</span><span class="n">node_attrs</span><span class="p">,</span>
+                <span class="n">node_feats</span><span class="o">=</span><span class="n">node_feats</span><span class="p">,</span>
+                <span class="n">edge_attrs</span><span class="o">=</span><span class="n">edge_attrs</span><span class="p">,</span>
+                <span class="n">edge_feats</span><span class="o">=</span><span class="n">edge_feats</span><span class="p">,</span>
+                <span class="n">edge_index</span><span class="o">=</span><span class="n">edge_index</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">node_feats</span> <span class="o">=</span> <span class="n">product</span><span class="p">(</span>
+                <span class="n">node_feats</span><span class="o">=</span><span class="n">node_feats</span><span class="p">,</span> <span class="n">sc</span><span class="o">=</span><span class="n">sc</span><span class="p">,</span> <span class="n">node_attrs</span><span class="o">=</span><span class="n">node_attrs</span>
+            <span class="p">)</span>
+            <span class="n">node_energies</span> <span class="o">=</span> <span class="n">readout</span><span class="p">(</span><span class="n">node_feats</span><span class="p">,</span> <span class="n">node_heads</span><span class="p">)[</span>
+                <span class="n">num_atoms_arange</span><span class="p">,</span> <span class="n">node_heads</span>
+            <span class="p">]</span>  <span class="c1"># [n_nodes, len(heads)]</span>
+            <span class="n">energy</span> <span class="o">=</span> <span class="n">scatter_sum</span><span class="p">(</span>
+                <span class="n">src</span><span class="o">=</span><span class="n">node_energies</span><span class="p">,</span>
+                <span class="n">index</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;batch&quot;</span><span class="p">],</span>
+                <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="n">dim_size</span><span class="o">=</span><span class="n">num_graphs</span><span class="p">,</span>
+            <span class="p">)</span>  <span class="c1"># [n_graphs,]</span>
+            <span class="n">energies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">energy</span><span class="p">)</span>
+
+        <span class="c1"># Sum over energy contributions</span>
+        <span class="n">contributions</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">energies</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">total_energy</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">contributions</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># [n_graphs, ]</span>
+
+        <span class="n">data</span><span class="o">.</span><span class="n">out</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">ENERGY_KEY</span><span class="p">:</span> <span class="n">total_energy</span><span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">data</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_nl_compatible</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nl</span><span class="p">):</span>
+        <span class="n">is_compatible</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">validate_neighborlist</span><span class="p">(</span><span class="n">nl</span><span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">nl</span><span class="p">[</span><span class="s2">&quot;order&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span>
+                <span class="ow">and</span> <span class="n">nl</span><span class="p">[</span><span class="s2">&quot;self_interaction&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">False</span>
+                <span class="ow">and</span> <span class="n">nl</span><span class="p">[</span><span class="s2">&quot;rcut&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">r_max</span>
+            <span class="p">):</span>
+                <span class="n">is_compatible</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="n">is_compatible</span>
+
+<div class="viewcode-block" id="MACE.neighbor_list">
+<a class="viewcode-back" href="../../../autodoc.html#mlcg.nn.mace.MACE.neighbor_list">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">neighbor_list</span><span class="p">(</span>
+        <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">,</span> <span class="n">rcut</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">max_num_neighbors</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Computes the neighborlist for :obj:`data` using a strict cutoff of :obj:`rcut`.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="n">MACE</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">atomic_data2neighbor_list</span><span class="p">(</span>
+                <span class="n">data</span><span class="p">,</span>
+                <span class="n">rcut</span><span class="p">,</span>
+                <span class="n">self_interaction</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">max_num_neighbors</span><span class="o">=</span><span class="n">max_num_neighbors</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">}</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="StandardMACE">
+<a class="viewcode-back" href="../../../autodoc.html#mlcg.nn.mace.StandardMACE">[docs]</a>
+<span class="nd">@compile_mode</span><span class="p">(</span><span class="s2">&quot;script&quot;</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">StandardMACE</span><span class="p">(</span><span class="n">MACE</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Standard configuration of the MACE model.</span>
+
+<span class="sd">    This class provides a convenient interface for constructing a MACE model</span>
+<span class="sd">    with typical settings and block choices, including embedding, interaction,</span>
+<span class="sd">    and readout modules.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        r_max (float):</span>
+<span class="sd">            Cutoff radius for neighbor list.</span>
+<span class="sd">        num_bessel (int):</span>
+<span class="sd">            Number of Bessel functions for radial basis.</span>
+<span class="sd">        num_polynomial_cutoff (int):</span>
+<span class="sd">            Number of polynomial cutoff functions.</span>
+<span class="sd">        max_ell (int):</span>
+<span class="sd">            Maximum angular momentum for spherical harmonics.</span>
+<span class="sd">        interaction_cls (str):</span>
+<span class="sd">            Class name for interaction blocks.</span>
+<span class="sd">        interaction_cls_first (str):</span>
+<span class="sd">            Class name for the first interaction block.</span>
+<span class="sd">        num_interactions (int):</span>
+<span class="sd">            Number of interaction blocks.</span>
+<span class="sd">        hidden_irreps (str):</span>
+<span class="sd">            Irreducible representations for hidden features. For example if only</span>
+<span class="sd">            a scalar representation with 128 channels is used can be &quot;128x0e&quot;. If</span>
+<span class="sd">            also a vector representation is used can be &quot;128x0e + 128x1o&quot;.</span>
+<span class="sd">        MLP_irreps (str):</span>
+<span class="sd">            Irreducible representations for MLP layers.</span>
+<span class="sd">        avg_num_neighbors (float):</span>
+<span class="sd">            Average number of neighbors per atom used for normalization and numerical stability.</span>
+<span class="sd">        atomic_numbers (List[int]):</span>
+<span class="sd">            List of atomic numbers in the system.</span>
+<span class="sd">        correlation (Union[int, List[int]]):</span>
+<span class="sd">            Correlation order(s) for product blocks.</span>
+<span class="sd">        gate (Optional[Callable]):</span>
+<span class="sd">            Activation function for non-linearities.</span>
+<span class="sd">        max_num_neighbors (int, optional):</span>
+<span class="sd">            Maximum number of neighbors per atom.</span>
+<span class="sd">        pair_repulsion (bool, optional):</span>
+<span class="sd">            Whether to use pairwise repulsion.</span>
+<span class="sd">        distance_transform (str, optional):</span>
+<span class="sd">            Distance transformation type.</span>
+<span class="sd">        radial_MLP (Optional[List[int]], optional):</span>
+<span class="sd">            Radial MLP architecture.</span>
+<span class="sd">        radial_type (Optional[str], optional):</span>
+<span class="sd">            Radial basis type.</span>
+<span class="sd">        cueq_config (Optional[Dict[str, Any]], optional):</span>
+<span class="sd">            Configuration for charge equilibration.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">r_max</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">num_bessel</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">num_polynomial_cutoff</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">max_ell</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">interaction_cls</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">interaction_cls_first</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">num_interactions</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">hidden_irreps</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">MLP_irreps</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">avg_num_neighbors</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">atomic_numbers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+        <span class="n">correlation</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span>
+        <span class="n">gate</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">],</span>
+        <span class="n">max_num_neighbors</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
+        <span class="n">pair_repulsion</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">distance_transform</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;None&quot;</span><span class="p">,</span>
+        <span class="n">radial_MLP</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">radial_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;bessel&quot;</span><span class="p">,</span>
+        <span class="n">cueq_config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">mlcg.pl.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_class_from_str</span>
+
+        <span class="n">atomic_numbers</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+        <span class="n">atomic_numbers</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">atomic_numbers</span><span class="p">)</span>
+        <span class="n">num_elements</span> <span class="o">=</span> <span class="n">atomic_numbers</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">hidden_irreps</span> <span class="o">=</span> <span class="n">o3</span><span class="o">.</span><span class="n">Irreps</span><span class="p">(</span><span class="n">hidden_irreps</span><span class="p">)</span>
+        <span class="n">MLP_irreps</span> <span class="o">=</span> <span class="n">o3</span><span class="o">.</span><span class="n">Irreps</span><span class="p">(</span><span class="n">MLP_irreps</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">correlation</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">correlation</span> <span class="o">=</span> <span class="p">[</span><span class="n">correlation</span><span class="p">]</span> <span class="o">*</span> <span class="n">num_interactions</span>
+        <span class="c1"># Embedding</span>
+        <span class="n">node_attr_irreps</span> <span class="o">=</span> <span class="n">o3</span><span class="o">.</span><span class="n">Irreps</span><span class="p">([(</span><span class="n">num_elements</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))])</span>
+        <span class="n">node_feats_irreps</span> <span class="o">=</span> <span class="n">o3</span><span class="o">.</span><span class="n">Irreps</span><span class="p">(</span>
+            <span class="p">[(</span><span class="n">hidden_irreps</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">o3</span><span class="o">.</span><span class="n">Irrep</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))]</span>
+        <span class="p">)</span>
+        <span class="n">node_embedding</span> <span class="o">=</span> <span class="n">LinearNodeEmbeddingBlock</span><span class="p">(</span>
+            <span class="n">irreps_in</span><span class="o">=</span><span class="n">node_attr_irreps</span><span class="p">,</span>
+            <span class="n">irreps_out</span><span class="o">=</span><span class="n">node_feats_irreps</span><span class="p">,</span>
+            <span class="n">cueq_config</span><span class="o">=</span><span class="n">cueq_config</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">radial_embedding</span> <span class="o">=</span> <span class="n">RadialEmbeddingBlock</span><span class="p">(</span>
+            <span class="n">r_max</span><span class="o">=</span><span class="n">r_max</span><span class="p">,</span>
+            <span class="n">num_bessel</span><span class="o">=</span><span class="n">num_bessel</span><span class="p">,</span>
+            <span class="n">num_polynomial_cutoff</span><span class="o">=</span><span class="n">num_polynomial_cutoff</span><span class="p">,</span>
+            <span class="n">radial_type</span><span class="o">=</span><span class="n">radial_type</span><span class="p">,</span>
+            <span class="n">distance_transform</span><span class="o">=</span><span class="n">distance_transform</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">edge_feats_irreps</span> <span class="o">=</span> <span class="n">o3</span><span class="o">.</span><span class="n">Irreps</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">radial_embedding</span><span class="o">.</span><span class="n">out_dim</span><span class="si">}</span><span class="s2">x0e&quot;</span><span class="p">)</span>
+
+        <span class="n">pair_repulsion_fn</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">pair_repulsion</span><span class="p">:</span>
+            <span class="n">pair_repulsion_fn</span> <span class="o">=</span> <span class="n">ZBLBasis</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="n">num_polynomial_cutoff</span><span class="p">)</span>
+
+        <span class="n">sh_irreps</span> <span class="o">=</span> <span class="n">o3</span><span class="o">.</span><span class="n">Irreps</span><span class="o">.</span><span class="n">spherical_harmonics</span><span class="p">(</span><span class="n">max_ell</span><span class="p">)</span>
+        <span class="n">num_features</span> <span class="o">=</span> <span class="n">hidden_irreps</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">o3</span><span class="o">.</span><span class="n">Irrep</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">interaction_irreps</span> <span class="o">=</span> <span class="p">(</span><span class="n">sh_irreps</span> <span class="o">*</span> <span class="n">num_features</span><span class="p">)</span><span class="o">.</span><span class="n">sort</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">simplify</span><span class="p">()</span>
+        <span class="n">spherical_harmonics</span> <span class="o">=</span> <span class="n">o3</span><span class="o">.</span><span class="n">SphericalHarmonics</span><span class="p">(</span>
+            <span class="n">sh_irreps</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">normalization</span><span class="o">=</span><span class="s2">&quot;component&quot;</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">radial_MLP</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">radial_MLP</span> <span class="o">=</span> <span class="p">[</span><span class="mi">64</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">64</span><span class="p">]</span>
+
+        <span class="c1"># Interactions and readout</span>
+        <span class="n">inter</span> <span class="o">=</span> <span class="n">get_class_from_str</span><span class="p">(</span><span class="n">interaction_cls_first</span><span class="p">)(</span>
+            <span class="n">node_attrs_irreps</span><span class="o">=</span><span class="n">node_attr_irreps</span><span class="p">,</span>
+            <span class="n">node_feats_irreps</span><span class="o">=</span><span class="n">node_feats_irreps</span><span class="p">,</span>
+            <span class="n">edge_attrs_irreps</span><span class="o">=</span><span class="n">sh_irreps</span><span class="p">,</span>
+            <span class="n">edge_feats_irreps</span><span class="o">=</span><span class="n">edge_feats_irreps</span><span class="p">,</span>
+            <span class="n">target_irreps</span><span class="o">=</span><span class="n">interaction_irreps</span><span class="p">,</span>
+            <span class="n">hidden_irreps</span><span class="o">=</span><span class="n">hidden_irreps</span><span class="p">,</span>
+            <span class="n">avg_num_neighbors</span><span class="o">=</span><span class="n">avg_num_neighbors</span><span class="p">,</span>
+            <span class="n">radial_MLP</span><span class="o">=</span><span class="n">radial_MLP</span><span class="p">,</span>
+            <span class="n">cueq_config</span><span class="o">=</span><span class="n">cueq_config</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">interactions</span> <span class="o">=</span> <span class="p">[</span><span class="n">inter</span><span class="p">]</span>
+
+        <span class="c1"># Use the appropriate self connection at the first layer for proper E0</span>
+        <span class="n">use_sc_first</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="s2">&quot;Residual&quot;</span> <span class="ow">in</span> <span class="n">interaction_cls_first</span><span class="p">:</span>
+            <span class="n">use_sc_first</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="n">node_feats_irreps_out</span> <span class="o">=</span> <span class="n">inter</span><span class="o">.</span><span class="n">target_irreps</span>
+        <span class="n">prod</span> <span class="o">=</span> <span class="n">EquivariantProductBasisBlock</span><span class="p">(</span>
+            <span class="n">node_feats_irreps</span><span class="o">=</span><span class="n">node_feats_irreps_out</span><span class="p">,</span>
+            <span class="n">target_irreps</span><span class="o">=</span><span class="n">hidden_irreps</span><span class="p">,</span>
+            <span class="n">correlation</span><span class="o">=</span><span class="n">correlation</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="n">num_elements</span><span class="o">=</span><span class="n">num_elements</span><span class="p">,</span>
+            <span class="n">use_sc</span><span class="o">=</span><span class="n">use_sc_first</span><span class="p">,</span>
+            <span class="n">cueq_config</span><span class="o">=</span><span class="n">cueq_config</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">products</span> <span class="o">=</span> <span class="p">[</span><span class="n">prod</span><span class="p">]</span>
+
+        <span class="n">readouts</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">LinearReadoutBlock</span><span class="p">(</span><span class="n">hidden_irreps</span><span class="p">,</span> <span class="n">o3</span><span class="o">.</span><span class="n">Irreps</span><span class="p">(</span><span class="s2">&quot;1x0e&quot;</span><span class="p">),</span> <span class="n">cueq_config</span><span class="p">)</span>
+        <span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_interactions</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">num_interactions</span> <span class="o">-</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">hidden_irreps_out</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span>
+                    <span class="n">hidden_irreps</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="p">)</span>  <span class="c1"># Select only scalars for last layer</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">hidden_irreps_out</span> <span class="o">=</span> <span class="n">hidden_irreps</span>
+            <span class="n">inter</span> <span class="o">=</span> <span class="n">get_class_from_str</span><span class="p">(</span><span class="n">interaction_cls</span><span class="p">)(</span>
+                <span class="n">node_attrs_irreps</span><span class="o">=</span><span class="n">node_attr_irreps</span><span class="p">,</span>
+                <span class="n">node_feats_irreps</span><span class="o">=</span><span class="n">hidden_irreps</span><span class="p">,</span>
+                <span class="n">edge_attrs_irreps</span><span class="o">=</span><span class="n">sh_irreps</span><span class="p">,</span>
+                <span class="n">edge_feats_irreps</span><span class="o">=</span><span class="n">edge_feats_irreps</span><span class="p">,</span>
+                <span class="n">target_irreps</span><span class="o">=</span><span class="n">interaction_irreps</span><span class="p">,</span>
+                <span class="n">hidden_irreps</span><span class="o">=</span><span class="n">hidden_irreps_out</span><span class="p">,</span>
+                <span class="n">avg_num_neighbors</span><span class="o">=</span><span class="n">avg_num_neighbors</span><span class="p">,</span>
+                <span class="n">radial_MLP</span><span class="o">=</span><span class="n">radial_MLP</span><span class="p">,</span>
+                <span class="n">cueq_config</span><span class="o">=</span><span class="n">cueq_config</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">interactions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">inter</span><span class="p">)</span>
+            <span class="n">prod</span> <span class="o">=</span> <span class="n">EquivariantProductBasisBlock</span><span class="p">(</span>
+                <span class="n">node_feats_irreps</span><span class="o">=</span><span class="n">interaction_irreps</span><span class="p">,</span>
+                <span class="n">target_irreps</span><span class="o">=</span><span class="n">hidden_irreps_out</span><span class="p">,</span>
+                <span class="n">correlation</span><span class="o">=</span><span class="n">correlation</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span>
+                <span class="n">num_elements</span><span class="o">=</span><span class="n">num_elements</span><span class="p">,</span>
+                <span class="n">use_sc</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">cueq_config</span><span class="o">=</span><span class="n">cueq_config</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">products</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">prod</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">num_interactions</span> <span class="o">-</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">readouts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">NonLinearReadoutBlock</span><span class="p">(</span>
+                        <span class="n">hidden_irreps_out</span><span class="p">,</span>
+                        <span class="p">(</span><span class="mi">1</span> <span class="o">*</span> <span class="n">MLP_irreps</span><span class="p">)</span><span class="o">.</span><span class="n">simplify</span><span class="p">(),</span>
+                        <span class="n">gate</span><span class="p">,</span>
+                        <span class="n">o3</span><span class="o">.</span><span class="n">Irreps</span><span class="p">(</span><span class="s2">&quot;1x0e&quot;</span><span class="p">),</span>
+                        <span class="mi">1</span><span class="p">,</span>
+                        <span class="n">cueq_config</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">readouts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">LinearReadoutBlock</span><span class="p">(</span>
+                        <span class="n">hidden_irreps</span><span class="p">,</span> <span class="n">o3</span><span class="o">.</span><span class="n">Irreps</span><span class="p">(</span><span class="s2">&quot;1x0e&quot;</span><span class="p">),</span> <span class="n">cueq_config</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">atomic_numbers</span><span class="p">,</span>
+            <span class="n">node_embedding</span><span class="p">,</span>
+            <span class="n">radial_embedding</span><span class="p">,</span>
+            <span class="n">spherical_harmonics</span><span class="p">,</span>
+            <span class="n">interactions</span><span class="p">,</span>
+            <span class="n">products</span><span class="p">,</span>
+            <span class="n">readouts</span><span class="p">,</span>
+            <span class="n">r_max</span><span class="p">,</span>
+            <span class="n">max_num_neighbors</span><span class="p">,</span>
+            <span class="n">pair_repulsion_fn</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Felix Musil &amp; Nick Charron.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
