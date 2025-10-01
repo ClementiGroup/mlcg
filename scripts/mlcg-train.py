@@ -26,7 +26,8 @@ if __name__ == "__main__":
     cli = LightningCLI(
         PLModel,
         DataModule,
-        save_config_overwrite=True,
+        save_config_kwargs={"overwrite": True},
+        parser_kwargs={"error_handler": None},
     )
 
     print("Finish: {}".format(ctime()))
