@@ -21,15 +21,14 @@ jobs:
             TEST_FILES=$(circleci tests glob "mlcg/**/test_*.py" | circleci tests split --split-by=timings)
             mkdir -p test-results
             pytest --verbose --junitxml=test-results/junit.xml $TEST_FILES
-          no_output_timeout: 50m
+          no_output_timeout: 5m
       - run:
           name: "Run examples tests"
           command: |
             set -e
-            TEST_FILES=$(circleci tests glob "examples/**/test_*.py" | circleci tests split --split-by=timings)
             mkdir -p test-results
-            pytest --verbose --junitxml=test-results/junit.xml $TEST_FILES
-          no_output_timeout: 50m
+            pytest --verbose --junitxml=test-results/examples.xml examples
+          no_output_timeout: 90m
       - store_test_results:
           path: test-results
       - store_artifacts:
