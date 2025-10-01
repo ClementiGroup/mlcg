@@ -1,10 +1,23 @@
-seed_everything: 16384
+seed_everything: 19384
+ckpt_path: null
+# define the training
 trainer:
   # Work directory for the session
   default_root_dir: .
-  max_epochs: 150
-  accelerator: cpu
-  num_nodes: 1
+  # set a limit to the training (#epochs and/or time limit)
+  max_epochs: 6
+  max_time: null
+  profiler: null
+
+  # Training on one/multiple GPU
+  # accelerator: gpu
+  # strategy: ddp_find_unused_parameters_false
+  # devices: 4
+  # precision: 32
+
+  # Training on the CPU
+  accelerator: 'cpu'
+  devices: 1
   precision: 32
   logger:
     - class_path: pytorch_lightning.loggers.TensorBoardLogger
@@ -27,18 +40,15 @@ trainer:
         every_n_epochs: 1
         filename: '{epoch}-{validation_loss:.4f}'
         save_last: true
-  log_every_n_steps: 100
+  log_every_n_steps: 10
   gradient_clip_val: 0
   gradient_clip_algorithm: norm
-  track_grad_norm: -1
   check_val_every_n_epoch: 1
   fast_dev_run: false
-  accumulate_grad_batches: 4 #
-  enable_model_summary: false
+  accumulate_grad_batches: 1
   deterministic: false
-  auto_lr_find: false
-  detect_anomaly: false # setting this to true enables detection of NaN after every small-batch update, but will slow down the training by 30%~50%
-  enable_progress_bar: True # un
+  detect_anomaly: true
+# define the model and training objectives using mlcg.pl.PLModel
 model:
   loss:
     class_path: mlcg.nn.Loss
@@ -56,14 +66,13 @@ model:
       model:
         class_path: mlcg.nn.schnet.StandardSchNet
         init_args:
-          hidden_channels: 128
+          hidden_channels: 32
           embedding_size: 50
-          num_filters: 128
-          num_interactions: 2
+          num_filters: 32
+          num_interactions: 1
           output_hidden_layer_widths:
-            - 100
-            - 60
-            - 30
+            - 32
+            - 16
           activation:
             class_path: torch.nn.Tanh
             init_args: {}

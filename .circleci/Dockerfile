@@ -32,17 +32,17 @@ RUN chmod 777 /home/user
 ENV CONDA_AUTO_UPDATE_CONDA=false \
     PATH=/home/user/miniconda/bin:$PATH
 
+
 RUN curl -Lo ~/miniconda.sh https://repo.continuum.io/miniconda/Miniconda3-py39_4.10.3-Linux-x86_64.sh \
  && chmod +x ~/miniconda.sh \
  && ~/miniconda.sh -b -p ~/miniconda \
  && rm ~/miniconda.sh
 
 
-RUN conda install pytorch==1.12.0 torchvision==0.13.0 torchaudio==0.12.0 cpuonly -c pytorch
-RUN conda install mdtraj h5py ipython scikit-learn -c conda-forge
-RUN pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv torch_geometric -f https://data.pyg.org/whl/torch-1.12.0+cpu.html
-
-RUN pip install git+https://github.com/felixmusil/mace.git@develop
+# Create conda environment
+RUN conda create -n mlcg python=3.12.0 -y && conda clean -a -y
+# Make the environment the default for all subsequent commands and for when the container runs
+ENV PATH=/home/user/miniconda/envs/mlcg/bin:$PATH
 
 RUN conda clean -a -y
 # Set the default command to python3
