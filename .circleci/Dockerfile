@@ -40,7 +40,7 @@ RUN curl -Lo ~/miniconda.sh https://repo.continuum.io/miniconda/Miniconda3-py39_
 
 
 # Create conda environment
-RUN conda create -n mlcg python=3.12.0 -y && conda clean -a -y
+RUN conda create -n mlcg python=3.12 -y && conda clean -a -y
 # Make the environment the default for all subsequent commands and for when the container runs
 ENV PATH=/home/user/miniconda/envs/mlcg/bin:$PATH
 
