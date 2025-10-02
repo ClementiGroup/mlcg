@@ -18,20 +18,20 @@ This repository collects a set of tools to apply machine learning techniques to 
 Installation
 ------------
 .. start-install
-First we suggest to create a new clean virtual environment with python 3.12.0, then install the following prerequisites:
+First we suggest to create a new clean empty virtual environment with **python 3.12.0**, then clone the repo and 
+install the following prerequisites:
 
 .. code:: bash
-
+    git clone git@github.com:ClementiGroup/mlcg.git
+    cd mlcg
     pip install -r env_with_hashes.in
     pip install --no-deps git+https://github.com/ACEsuit/mace.git@v0.3.13
     pip install --no-deps nequip==0.12.1 nequip-allegro==0.7.0
 
-Then clone and install this repository with:
+Then install this repository with:
 
 .. code:: bash
 
-    git clone git@github.com:ClementiGroup/mlcg.git
-    cd mlcg
     pip install .
 
 
