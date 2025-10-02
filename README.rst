@@ -18,7 +18,7 @@ This repository collects a set of tools to apply machine learning techniques to 
 Installation
 ------------
 .. start-install
-First we suggest to create a new clean empty virtual environment with **python 3.12.0**, then clone the repo and 
+First we suggest to create a new clean empty virtual environment with **python 3.12**, then clone the repo and 
 install the following prerequisites:
 
 .. code:: bash
@@ -36,10 +36,6 @@ Then install this repository with:
 
 
 This will likely rise an error due to some dependency issue about `e3nn` that you can safely ignore.
-
-Support for the TorchMD-Net models can be enabled with::
-
-    pip install git+https://github.com/torchmd/torchmd-net.git
 
 .. end-install
 
