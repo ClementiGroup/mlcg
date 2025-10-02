@@ -18,10 +18,12 @@ This repository collects a set of tools to apply machine learning techniques to 
 Installation
 ------------
 .. start-install
+
 First we suggest to create a new clean empty virtual environment with **python 3.12**, then clone the repo and 
 install the following prerequisites:
 
 .. code:: bash
+
     git clone git@github.com:ClementiGroup/mlcg.git
     cd mlcg
     pip install -r env_with_hashes.in
