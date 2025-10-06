@@ -3,7 +3,7 @@ from .schnet import SchNet, StandardSchNet
 from .reg_schnet import RepulsionFilteredSchNet
 from .radial_basis import GaussianBasis, ExpNormalBasis
 from .cutoff import CosineCutoff, IdentityCutoff
-from .losses import ForceMSE, ForceRMSE, RegL1, Loss
+from .losses import ForceMSE, ForceRMSE, RegL1, Loss, EnergyMSE
 from .prior import (
     Harmonic,
     HarmonicAngles,
@@ -22,14 +22,11 @@ from .pyg_forward_compatibility import (
     fixed_pyg_inspector,
 )
 from .painn import PaiNN, StandardPaiNN
+from .mace import MACE, StandardMACE
+from .so3krates import So3krates, StandardSo3krates
 from .lr_scheduler import CustomStepLR
 from .utils import sparsify_prior_module, desparsify_prior_module
-
-try:
-    from .mace_interface import MACEInterface
-except Exception as e:
-    print(e)
-    print("MACE installation not found ...")
+from .allegro import StandardAllegro
 
 __all__ = [
     "GradientsOut",
@@ -46,6 +43,7 @@ __all__ = [
     "ForceRMSE",
     "RegL1",
     "Loss",
+    "EnergyMSE",
     "Harmonic",
     "HarmonicAngles",
     "HarmonicBonds",
@@ -65,5 +63,12 @@ __all__ = [
     "fixed_pyg_inspector",
     "PaiNN",
     "StandardPaiNN",
+    "MACE",
+    "StandardMACE",
+    "ScaleShiftMACE",
+    "StandardScaleShiftMACE",
+    "So3krates",
+    "StandardSo3krates",
     "CustomStepLR",
+    "StandardAllegro",
 ]

@@ -2,39 +2,39 @@ import pytest
 
 try:
     import mace
-    from mlcg.nn.mace_interface import MACEInterface
+    from mlcg.nn.mace import StandardMACE
+    from mlcg.nn.test_schnet import MolDatabase
+
+    database = MolDatabase()
+    mace_config = {
+        "r_max": 10,
+        "num_bessel": 10,
+        "num_polynomial_cutoff": 5,
+        "max_ell": 1,
+        "interaction_cls": "mace.modules.blocks.RealAgnosticResidualInteractionBlock",
+        "interaction_cls_first": "mace.modules.blocks.RealAgnosticResidualInteractionBlock",
+        "num_interactions": 1,
+        "hidden_irreps": "32x0e",
+        "MLP_irreps": "16x0e",
+        "avg_num_neighbors": 9,
+        "correlation": 2,
+        "gate": torch.nn.Tanh(),
+        "max_num_neighbors": 1000,
+        "pair_repulsion": False,
+        "distance_transform": None,
+        "radial_MLP": [32, 32],
+        "radial_type": "bessel",
+        "atomic_numbers": database.atomic_numbers,
+    }
+    test_mace = StandardMACE(**mace_config)
+
 except:
     pytest.skip("MACE installation not found...", allow_module_level=True)
 
 import torch
-import numpy as np
-from torch_geometric.data.collate import collate
 
-from mlcg.nn.schnet import StandardSchNet
 from mlcg.nn.gradients import GradientsOut
-from mlcg.geometry import Topology
-from mlcg.data.atomic_data import AtomicData
 from mlcg.data._keys import ENERGY_KEY, FORCE_KEY
-
-from mlcg.nn.test_schnet import MolDatabase
-
-database = MolDatabase()
-
-mace_config = {
-    "r_max": 10,
-    "num_bessel": 10,
-    "num_polynomial_cutoff": 5,
-    "max_ell": 1,
-    "interaction_cls": "RealAgnosticResidualInteractionBlock",
-    "interaction_cls_first": "RealAgnosticInteractionBlock",
-    "num_interactions": 2,
-    "num_elements": len(database.atomic_numbers),
-    "hidden_irreps": "64x0e",
-    "MLP_irreps": "16x0e",
-    "avg_num_neighbors": 9,
-    "correlation": 2,
-    "atomic_numbers": database.atomic_numbers,
-}
 
 
 @pytest.mark.parametrize(
@@ -54,7 +54,7 @@ def test_prediction(collated_data, out_keys, expected_shapes):
     """
     print(collated_data.pos.dtype)
 
-    test_mace = MACEInterface(config=mace_config, gate=torch.nn.Tanh())
+    test_mace = StandardMACE(**mace_config)
     model = GradientsOut(test_mace, targets=FORCE_KEY).float()
     collated_data = model(collated_data)
     assert len(collated_data.out) != 0

@@ -140,7 +140,7 @@ class SphericalHarmonics(torch.nn.Module):
 
     def forward(self, x: torch.Tensor) -> List[torch.Tensor]:
         if self.normalize:
-            norms = safe_norm(x, dim=-1)
+            norms = safe_norm(x, dim=[-1])
             x = safe_normalization(x, norms)
 
         sh = _spherical_harmonics(self._lmax, x[..., 0], x[..., 1], x[..., 2])

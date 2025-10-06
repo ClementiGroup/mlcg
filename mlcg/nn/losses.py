@@ -1,9 +1,10 @@
 import torch
+import warnings
 from torch.nn.modules.loss import _Loss
 from torch.nn import functional as F
 from typing import Optional, List
 
-from ..data._keys import FORCE_KEY
+from ..data._keys import FORCE_KEY, ENERGY_KEY
 from ..data import AtomicData
 
 
@@ -178,6 +179,75 @@ class ForceMSE(_Loss):
             data[self.force_kwd],
             reduction=self.reduction,
         )
+
+
+class EnergyMSE(_Loss):
+    r"""Energy mean square error per atom loss, as defined by:
+
+    .. math::
+
+        L\left(E,\hat{E}\right) = \frac{1}{N}\sum_{i}^{N}\frac{1}{n_i} \left\Vert E_i - \hat{E}_i \right\Vert ^2
+
+    where :math:`E` are predicted energy, :math:`\hat{E}` are reference energy, :math:`n_i` is
+    the number of atoms for examples/structures, :math:`N` is the total number of examples/structures.
+
+    Parameters
+    ----------
+    energy_kwd:
+        string to specify the energy key in an AtomicData instance
+    force_kwd:
+        (deprecated) old key for energy. Will be mapped to `energy_kwd` if provided.
+    size_average:
+        If True, the loss is normalized by the batch size
+    reduce:
+        If True, the loss is reduced to a scalar
+    reduction:
+        Specifies the method of reduction. See `here <https://github.com/pytorch/pytorch/blob/acb035f5130fabe258ff27049c73a15ba3a52dbd/torch/nn/modules/loss.py#L6L9>`_
+        for more options.
+    """
+
+    def __init__(
+        self,
+        energy_kwd: Optional[str] = ENERGY_KEY,
+        size_average: Optional[bool] = None,
+        reduce: Optional[bool] = None,
+        force_kwd: Optional[str] = None,
+        **kwargs,
+    ) -> None:
+        super(EnergyMSE, self).__init__(
+            size_average=size_average, reduce=reduce, reduction="none"
+        )
+
+        if force_kwd is not None:
+            warnings.warn(
+                "`force_kwd` is deprecated and will be removed in a future version. "
+                "Please use `energy_kwd` instead.",
+                UserWarning,
+                stacklevel=2,
+            )
+            if energy_kwd is not ENERGY_KEY:
+                energy_kwd = force_kwd
+
+        self.energy_kwd = energy_kwd
+
+    def forward(self, data: AtomicData) -> torch.Tensor:
+        if self.energy_kwd not in data.out:
+            raise RuntimeError(
+                f"target property {self.energy_kwd} has not been computed in data.out {list(data.out.keys())}"
+            )
+        if self.energy_kwd not in data:
+            raise RuntimeError(
+                f"target property {self.energy_kwd} has no reference in data {list(data.keys())}"
+            )
+
+        return (
+            F.mse_loss(
+                data.out[self.energy_kwd],
+                data[self.energy_kwd],
+                reduction="none",
+            )
+            / data.n_atoms
+        ).mean()
 
 class RegL1(_Loss):
     def __init__(
