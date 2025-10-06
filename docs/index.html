@@ -89,6 +89,13 @@
 <h2>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
 <p>First we suggest to create a new clean empty virtual environment with <strong>python 3.12</strong>, then clone the repo and
 install the following prerequisites:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>git@github.com:ClementiGroup/mlcg.git
+<span class="nb">cd</span><span class="w"> </span>mlcg
+pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>env_with_hashes.in
+pip<span class="w"> </span>install<span class="w"> </span>--no-deps<span class="w"> </span>git+https://github.com/ACEsuit/mace.git@v0.3.13
+pip<span class="w"> </span>install<span class="w"> </span>--no-deps<span class="w"> </span><span class="nv">nequip</span><span class="o">==</span><span class="m">0</span>.12.1<span class="w"> </span>nequip-allegro<span class="o">==</span><span class="m">0</span>.7.0
+</pre></div>
+</div>
 <p>Then install this repository with:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>.
 </pre></div>
