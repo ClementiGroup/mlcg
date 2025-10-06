@@ -7,6 +7,8 @@ from typing import List, Optional, Tuple, Union, Callable
 import torch
 import numpy as np
 import warnings
+
+from torch.xpu import device
 from torch_geometric.data.collate import collate
 import os
 import time
@@ -137,6 +139,7 @@ class _Simulation(object):
         sim_subroutine: Optional[Callable] = None,
         sim_subroutine_interval: Optional[int] = None,
         save_subroutine: Optional[Callable] = None,
+        rescaler_path: Optional[str] = None
     ):
         self.model = None
         self.initial_data = None
@@ -180,6 +183,10 @@ class _Simulation(object):
             self.rng = torch.Generator(device=self.device).manual_seed(
                 random_seed
             )
+        if rescaler_path:
+            self.rescaler = 1 / torch.load(rescaler_path, map_location='cuda')
+            print("Rescaler = ", self.rescaler)
+            print("Rescaling the model 1 / rescaler.pt")
         self.random_seed = random_seed
         self._simulated = False
 
@@ -412,13 +419,10 @@ class _Simulation(object):
         """
         
         # REBALANCING BEADS
-        # rescaler = torch.ones(10, device=data.pos.device)
-        # rebalance_beads = [0, 1, 8, 9]
-        # for b in rebalance_beads:
-        #     rescaler[b] = 0.1
-        # data = self.model(data, rescaler.repeat(30).view(-1,1))
-
-        data = self.model(data)
+        if hasattr(self, 'rescaler'):
+            data = self.model(data, self.rescaler.repeat(60).view(-1,1))
+        else:
+            data = self.model(data)
         potential = data.out[ENERGY_KEY].detach()
         forces = data.out[FORCE_KEY].detach()
         return potential, forces

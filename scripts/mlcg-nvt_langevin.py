@@ -15,8 +15,9 @@ from mlcg.simulation import (
     LangevinSimulation,
 )
 
-
+from repulsion_fitted import Repulsion
 if __name__ == "__main__":
+    
     torch.jit.set_fusion_strategy([("DYNAMIC", 3)])
     # to levarage the tensor core if available
     torch.set_float32_matmul_precision("high")

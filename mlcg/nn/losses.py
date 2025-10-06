@@ -178,3 +178,58 @@ class ForceMSE(_Loss):
             data[self.force_kwd],
             reduction=self.reduction,
         )
+
+
+# My stuff
+
+class RegL1(_Loss):
+    def __init__(
+        self,
+        regularization_factor: float,
+        reg_kwd: str = "regL1",
+        size_average: Optional[bool] = None,
+        reduce: Optional[bool] = None,
+        reduction: str = "mean",
+    ) -> None:
+        super().__init__(size_average=size_average, reduce=reduce, reduction=reduction)
+
+        self.reg_kwd = reg_kwd
+        self.reg_factor = regularization_factor
+
+    """
+    Computes the L1 regularization loss for a given property.
+
+    Attributes:
+        reg_kwd (str):
+            The key for retrieving the regularization property from `data.out`.
+
+    Args:
+        reg_kwd (str, optional): The target regularization keyword. Defaults to "regL1".
+        size_average (Optional[bool], optional): Whether to average the loss. Defaults to None.
+        reduce (Optional[bool], optional): Whether to reduce the loss. Defaults to None.
+        reduction (str, optional): The reduction method to apply to the loss. Defaults to "mean".
+    """
+
+    def forward(self, data: AtomicData) -> torch.Tensor:
+        """
+        Computes the L1 loss for the specified regularization property.
+
+        Args:
+            data (AtomicData): The input data containing computed regularization values.
+
+        Returns:
+            torch.Tensor: The computed L1 loss.
+
+        Raises:
+            RuntimeError: If the target property is not found in `data.out`.
+        """
+        if self.reg_kwd not in data.out:
+            raise RuntimeError(
+                f"target property {self.reg_kwd} has not been computed in data.out {list(data.out.keys())}"
+            )
+
+        return self.reg_factor * torch.nn.functional.l1_loss(
+                                                            data.out[self.reg_kwd],
+                                                            torch.zeros_like(data.out[self.reg_kwd]),
+                                                            reduction=self.reduction,
+                                                        )

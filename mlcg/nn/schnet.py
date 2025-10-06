@@ -24,6 +24,7 @@ except ImportError:
         "`mlcg_opt_radius` not installed. Please check the `opt_radius` folder and follow the instructions."
     )
     radius_distance = None
+# Added my stuff
 
 
 class SchNet(torch.nn.Module):
@@ -670,3 +671,343 @@ class AttentiveSchNet(SchNet):
             output_network=output_network,
             max_num_neighbors=max_num_neighbors,
         )
+
+### Lorenzo Addition
+
+class EdgeAwareInteractionBlock(InteractionBlock):
+    def __init__(self,
+                 cfconv_layer: torch.nn.Module,
+                 hidden_channels: int = 128,
+                 activation: torch.nn.Module = torch.nn.Tanh(),
+                 ):
+        super().__init__(cfconv_layer,
+                         hidden_channels,
+                         activation)
+
+
+    def forward(
+        self,
+        x: torch.Tensor,
+        edge_index: torch.Tensor,
+        edge_weight: torch.Tensor,
+        edge_attr: torch.Tensor,
+        edge_params: torch.Tensor
+    ) -> torch.Tensor:
+        x = self.conv(x, edge_index, edge_weight, edge_attr, edge_params)
+        x = self.activation(x)
+        x = self.lin(x)
+        return x
+
+
+class EdgeAwareCFConv(CFConv):
+    def forward(
+        self,
+        x: torch.Tensor,
+        edge_index: torch.Tensor,
+        edge_weight: torch.Tensor,
+        edge_attr: torch.Tensor,
+        edge_params: torch.Tensor,
+    ) -> torch.Tensor:
+        C = self.cutoff(edge_weight)
+        W = self.filter_network(edge_attr) * C.view(-1, 1)
+        x = self.lin1(x)
+        x = self.propagate(edge_index, x=x, W=W, edge_params=edge_params)
+        x = self.lin2(x)
+        return x
+
+    def message(
+        self,
+        x_j: torch.Tensor,
+        W: torch.Tensor,
+        edge_params: torch.Tensor
+    ) -> torch.Tensor:
+
+        return x_j * (torch.abs(edge_params.view(-1, 1)) * W)
+
+    def propagate(self, edge_index, size=None, **kwargs):
+        # Manually control the flow of arguments
+        kwargs['edge_params'] = kwargs.get('edge_params')
+        return super().propagate(edge_index, size=size, **kwargs)
+
+def cantor_pairing(k1, k2):
+    return (k1 + k2) * (k1 + k2 + 1) // 2 + k2
+
+
+class RepulsionFilteredSchNet(SchNet):
+    """
+    This is a StandardSchNet model where the RBF components are weighted via Hadamard product with couple-specific
+    vectors. Each tuple of bead types has its own vector. The models also adds the key radial_filters to the
+
+    Parameters
+    ----------
+    rbf_layer:
+        radial basis function used to project the distances :math:`r_{ij}`.
+    cutoff:
+        smooth cutoff function to supply to the CFConv
+    output_hidden_layer_widths:
+        List giving the number of hidden nodes of each hidden layer of the MLP
+        used to predict the target property from the learned representation.
+    hidden_channels:
+        dimension of the learned representation, i.e. dimension of the embeding projection, convolution layers, and interaction block.
+    embedding_size:
+        dimension of the input embeddings (should be larger than :obj:`AtomicData.atom_types.max()+1`).
+    num_filters:
+        number of nodes of the networks used to filter the projected distances
+    num_interactions:
+        number of interaction blocks
+    activation:
+        activation function
+    max_num_neighbors:
+        The maximum number of neighbors to return for each atom in :obj:`data`.
+        If the number of actual neighbors is greater than
+        :obj:`max_num_neighbors`, returned neighbors are picked randomly.
+    aggr:
+        Aggregation scheme for continuous filter output. For all options,
+        see `here <https://pytorch-geometric.readthedocs.io/en/latest/notes/create_gnn.html?highlight=MessagePassing#the-messagepassing-base-class>`_
+        for more options.
+
+    CLASS SPECIFIC PARAMETERS -------------------------------------------------------------
+
+    max_bead_type: int
+        The maximal value of the bead_type needed to calculate all possible couples in the system.
+        This considers that all bead_type couples to be tracked are in the range [0, max_bead_type-1].
+    define_ranges: Dict
+        A dictionary containing the ranges of the type couples to be tracked. The keys are the bead-type couples
+        given as strings, and the values are the lower bounds of the ranges to be considered.
+        Example: {'(i,j)': min_value, '(k,l)': min_value, ...}
+    edge_reg: bool
+       If True, the edge rescaling is applied. Every mesage is mutliplied by a scalar that is the regularized.
+    total_nodes: int
+        If edge_reg is True, the total number of nodes in the system is needed to calculate the regularization factor as each 
+        interaction has its own value. (N^2 - N)/2 new parameters.
+    """
+    def __init__(
+            self,
+            rbf_layer: torch.nn.Module,
+            cutoff: torch.nn.Module,
+            output_hidden_layer_widths: List[int],
+            hidden_channels: int = 128,
+            embedding_size: int = 100,
+            num_filters: int = 128,
+            num_interactions: int = 3,
+            activation: torch.nn.Module = torch.nn.Tanh(),
+            max_num_neighbors: int = 1000,
+            aggr: str = "add",
+
+            # Parameters for RBF rescaling
+            max_bead_type: int = 10,
+            # define_ranges: Union[None, Dict] = None,
+
+            # Parameters for Edge rescaling
+            edge_reg: bool = False,
+            total_nodes: Optional[int] = None
+    ):
+        
+        if num_interactions < 1:
+            raise ValueError("At least one interaction block must be specified")
+
+        if cutoff.cutoff_lower != rbf_layer.cutoff.cutoff_lower:
+            warnings.warn(
+                "Cutoff function lower cutoff, {}, and radial basis function "
+                " lower cutoff, {}, do not match.".format(
+                    cutoff.cutoff_lower, rbf_layer.cutoff.cutoff_lower
+                )
+            )
+        if cutoff.cutoff_upper != rbf_layer.cutoff.cutoff_upper:
+            warnings.warn(
+                "Cutoff function upper cutoff, {}, and radial basis function "
+                " upper cutoff, {}, do not match.".format(
+                    cutoff.cutoff_upper, rbf_layer.cutoff.cutoff_upper
+                )
+            )
+
+        embedding_layer = torch.nn.Embedding(embedding_size, hidden_channels)
+
+        interaction_blocks = []
+        for _ in range(num_interactions):
+            filter_network = MLP(
+                layer_widths=[rbf_layer.num_rbf, num_filters, num_filters],
+                activation_func=activation,
+                last_bias=False,
+            )
+
+            if edge_reg:
+                cfconv = EdgeAwareCFConv(
+                    filter_network,
+                    cutoff=cutoff,
+                    num_filters=num_filters,
+                    in_channels=hidden_channels,
+                    out_channels=hidden_channels,
+                    aggr=aggr
+                )
+            else:
+                cfconv = CFConv(
+                    filter_network,
+                    cutoff=cutoff,
+                    num_filters=num_filters,
+                    in_channels=hidden_channels,
+                    out_channels=hidden_channels,
+                    aggr=aggr,
+                )
+
+            if edge_reg:
+                block = EdgeAwareInteractionBlock(cfconv, hidden_channels, activation)
+            else:
+                block = InteractionBlock(cfconv, hidden_channels, activation)
+
+            interaction_blocks.append(block)
+
+        output_layer_widths = (
+                [hidden_channels] + output_hidden_layer_widths + [1]
+        )
+        
+        output_network = MLP(
+            output_layer_widths, 
+            activation_func=activation, 
+            last_bias=False
+        )
+
+        super(RepulsionFilteredSchNet, self).__init__(
+            embedding_layer,
+            interaction_blocks,
+            rbf_layer,
+            output_network,
+            max_num_neighbors=max_num_neighbors,
+        )
+
+        # Creating the tensors for RBF modulation
+        i, j = torch.tril_indices(max_bead_type, max_bead_type, offset=-1)
+        filters = torch.ones(max_bead_type, max_bead_type, self.rbf_layer.num_rbf).float()
+        filters[i, j] *= 0
+
+        self.register_parameter("radial_filters", torch.nn.Parameter(filters,
+                                                                         requires_grad=True))
+        if edge_reg:
+            assert total_nodes is not None, "total_nodes must be defined if edge_reg is True"
+            # Creating the tensors for edge regularization
+            edge_list = [(i, j) for i in range(total_nodes) for j in range(total_nodes) if i < j]
+
+            # Convert the edge list to a tensor and transpose it to match the edge_index format
+            edge_index_template = torch.tensor(edge_list, dtype=torch.long).t()
+            self.register_buffer("edge_index_template", edge_index_template)
+            # self.edge_regularization_factor = edge_regularization_factor
+            # Raise a warning saying that the edge_index_template is fixed
+            warnings.warn("The edge_index_template is ONLY for a SINGLE MOLECULE training")
+            num_edges = edge_index_template.size(1)
+
+            # Initialize trainable edge parameters
+            tmp = torch.ones(num_interactions,num_edges) 
+            self.register_parameter("edge_params_all", torch.nn.Parameter(tmp, requires_grad=edge_reg))
+        
+        self.edge_reg = edge_reg
+
+    def forward(self, data: AtomicData) -> AtomicData:
+        r"""Forward pass through the SchNet architecture.
+        Parameters
+        ----------
+        data:
+            Input data object containing batch atom/bead positions
+            and atom/bead types.
+
+        Returns
+        -------
+        data:
+           Data dictionary, updated with predicted energy of shape
+           (num_examples * num_atoms, 1), as well as neighbor list
+           information.
+        """
+        x = self.embedding_layer(data.atom_types)
+
+        neighbor_list = data.neighbor_list.get(self.name)
+
+        if not self.is_nl_compatible(neighbor_list):
+            # we need to generate the neighbor list
+            # check whether we are using the custom kernel
+            # 1. mlcg_opt_radius is installed
+            # 2. input data is on CUDA
+            # 3. not using PBC (TODO)
+            use_custom_kernel = False
+            if (radius_distance is not None) and x.is_cuda:
+                use_custom_kernel = True
+            if not use_custom_kernel:
+                if hasattr(data, "exc_pair_index"):
+                    raise NotImplementedError(
+                        "Excluding pairs requires `mlcg_opt_radius` "
+                        "to be available and model running with CUDA."
+                    )
+                neighbor_list = self.neighbor_list(
+                    data,
+                    self.rbf_layer.cutoff.cutoff_upper,
+                    self.max_num_neighbors,
+                )[self.name]
+
+
+        if use_custom_kernel:
+            distances, edge_index = radius_distance(
+                data.pos,
+                self.rbf_layer.cutoff.cutoff_upper,
+                data.batch,
+                False,              # no loop edges due to compatibility & backward breaks with zero distance
+                self.max_num_neighbors,
+                exclude_pair_indices=data.get("exc_pair_index"),
+            )
+
+
+        else:
+            edge_index = neighbor_list["index_mapping"]
+            distances = compute_distances(
+                data.pos,
+                edge_index,
+                neighbor_list["cell_shifts"],
+            )
+
+        # Addition for filtering
+        senders = data.atom_types[edge_index[0]]
+        receivers = data.atom_types[edge_index[1]]
+
+        # Ensure senders is always smaller than receivers, flip otherwise
+        mask = senders > receivers
+        senders[mask], receivers[mask] = receivers[mask], senders[mask]
+
+        rbf_filters = torch.clamp(self.radial_filters[senders, receivers], min=0.0, max=1.0)
+
+        rbf_expansion = self.rbf_layer(distances) * rbf_filters
+        # End of addition
+        
+        num_batch = data.batch[-1] + 1
+
+        if self.edge_reg:
+            # Calculate the number of nodes per graph (ASSUMED CONSTANT)
+            num_nodes_per_graph = data.num_nodes // num_batch
+            N = num_nodes_per_graph
+            mock_matrix = torch.triu(torch.ones(N, N, device=x.device))
+            
+            for i, block in enumerate(self.interaction_blocks):
+                mock_matrix[self.edge_index_template[0], self.edge_index_template[1]] = self.edge_params_all[i]
+                mock_matrix = mock_matrix + mock_matrix.T - torch.diag(mock_matrix.diag())
+
+                rescaled_edges_index = edge_index % N
+
+                expanded_edges = mock_matrix[rescaled_edges_index[0], rescaled_edges_index[1]]
+
+                edge_params_mapped = expanded_edges.flatten()
+
+                x = x + block(
+                    x, edge_index, distances, rbf_expansion, edge_params_mapped
+                )
+            
+        else:
+            for block in self.interaction_blocks:
+                x = x + block(
+                    x, edge_index, distances, rbf_expansion, num_batch, data.batch
+                )
+
+        energy = self.output_network(x, data)
+        energy = scatter(energy, data.batch, dim=0, reduce="sum")
+        energy = energy.flatten()
+        data.out[self.name] = {ENERGY_KEY: energy,
+                               'radial_filters': self.radial_filters}
+        if self.edge_reg:
+            data.out[self.name]['edge_params'] = self.edge_params_all
+
+        return data

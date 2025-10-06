@@ -3,7 +3,6 @@ pyyaml>=6.0
  # `ruamel.yaml` used mostly because it support scientific notation
 ruamel.yaml
 pytorch_lightning == 2.2.1
-jsonargparse[signatures]==4.27.7
 tqdm
 aggforce @ git+https://github.com/noegroup/aggforce.git
 ase
@@ -20,7 +19,6 @@ nglview
 numpy<2.0
 packaging
 pandas
-pytorch_lightning==1.9.4
 pyyaml>=6.0
 requests
 ruamel.yaml
