@@ -12,6 +12,7 @@ from .prior import (
     Polynomial,
     QuarticAngles,
     LennardJonesShifted,
+    QuarticRawAngles,
 )
 from .mlp import MLP, TypesMLP
 from .attention import ExactAttention, FavorAttention, Nonlocalinteractionblock

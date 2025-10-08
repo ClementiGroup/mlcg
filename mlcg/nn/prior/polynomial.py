@@ -7,6 +7,7 @@ from .base import _Prior
 from ...data.atomic_data import AtomicData
 from ...geometry.internal_coordinates import (
     compute_angles_cos,
+    compute_angles_raw,
 )
 
 
@@ -147,6 +148,19 @@ class Polynomial(_Prior):
             V += k * torch.pow(x, p)
         V += V0
         return V
+        #V = torch.zeros_like(x)
+        #for k in reversed(ks):
+        #    V *= x
+        #    V += k
+        #V *= x
+        #V += V0
+        #return V
+        #coefs = torch.concatenate((V0.reshape(1,-1),ks),dim=0)
+        #powers = torch.arange(coefs.shape[0], device=x.device).unsqueeze(1)  # Shape (degree, 1)
+        #x_powers = x.unsqueeze(0) ** powers                                  # Shape (degree, num_x)
+        #result = x_powers * coefs
+        #return result.sum(dim=0)
+
 
 
 class QuarticAngles(Polynomial):
@@ -179,3 +193,54 @@ class QuarticAngles(Polynomial):
         pos: AtomicData, mapping: torch.Tensor
     ) -> torch.Tensor:
         return compute_angles_cos(pos, mapping)
+
+class QuarticRawAngles(Polynomial):
+    """Wrapper class for angle priors
+    (order 3 Polynomial priors of degree 4)
+    """
+
+    def __init__(self, statistics, name="angles", n_degs: int = 4) -> None:
+        super(QuarticRawAngles, self).__init__(
+            statistics, name, order=3, n_degs=n_degs
+        )
+
+    def data2features(self, data: AtomicData) -> torch.Tensor:
+        r"""Computes features for the QuarticAngle interaction from
+        an AtomicData instance)
+        Parameters
+        ----------
+        data:
+            Input `AtomicData` instance
+        Returns
+        -------
+        torch.Tensor:
+            Tensor of computed features
+        """
+        mapping = data.neighbor_list[self.name]["index_mapping"]
+        pbc = getattr(data, "pbc", None)
+        cell = getattr(data, "cell", None)
+        return self.compute_features(
+            pos=data.pos,
+            mapping=mapping,
+            pbc=pbc,
+            cell=cell,
+            batch=data.batch
+        )
+    
+
+    @staticmethod
+    def compute_features(
+        pos: torch.Tensor,
+        mapping: torch.Tensor,
+        pbc: Optional[torch.Tensor] = None,
+        cell: Optional[torch.Tensor] = None,
+        batch: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+
+        cell_shifts = _Prior._get_cell_shifts(pos, mapping, pbc, cell, batch)
+        return compute_angles_raw(
+            pos=pos,
+            mapping=mapping,
+            cell_shifts=cell_shifts
+        )
+
