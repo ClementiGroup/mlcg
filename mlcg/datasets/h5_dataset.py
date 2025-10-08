@@ -261,13 +261,19 @@ class MetaSet:
                         hdf5_group[mol_name], keys["weights"]
                     )[selection]
                 if "cell" in hdf_key_mapping:
-                    cell = MetaSet.retrieve_hdf(
-                        hdf5_group[mol_name], keys["cell"]
-                    )[selection]
+                    try:
+                        cell = MetaSet.retrieve_hdf(
+                            hdf5_group[mol_name], keys["cell"]
+                        )[selection]
+                    except Exception:
+                        pass
                 if "pbc" in hdf_key_mapping:
-                    pbc = MetaSet.retrieve_hdf(
-                        hdf5_group[mol_name], keys["pbc"]
-                    )[selection]
+                    try:
+                        pbc = MetaSet.retrieve_hdf(
+                            hdf5_group[mol_name], keys["pbc"]
+                        )[selection]
+                    except Exception:
+                        pass
             else:
                 # For large dataset it is usually quicker to first load everything
                 # and then perform indexing in memory
@@ -283,13 +289,19 @@ class MetaSet:
                         hdf5_group[mol_name], keys["weights"]
                     )[:][selection]
                 if "cell" in hdf_key_mapping:
-                    cell = MetaSet.retrieve_hdf(
-                        hdf5_group[mol_name], keys["cell"]
-                    )[:][selection]
+                    try:
+                        cell = MetaSet.retrieve_hdf(
+                            hdf5_group[mol_name], keys["cell"]
+                        )[:][selection]
+                    except Exception:
+                        pass
                 if "pbc" in hdf_key_mapping:
-                    pbc = MetaSet.retrieve_hdf(
-                        hdf5_group[mol_name], keys["pbc"]
-                    )[:][selection]
+                    try:   
+                        pbc = MetaSet.retrieve_hdf(
+                            hdf5_group[mol_name], keys["pbc"]
+                        )[:][selection]
+                    except Exception:
+                        pass
             output.insert_mol(
                 MolData(
                     mol_name,
