@@ -6,7 +6,8 @@ from .harmonic import (
     HarmonicBonds,
     GeneralAngles,
     GeneralBonds,
+    ShiftedHarmonicAnglesRaw,
 )
 from .repulsion import Repulsion, LennardJonesShifted
-from .fourier_series import FourierSeries, Dihedral
+from .fourier_series import FourierSeries, Dihedral,PeriodicAngles
 from .polynomial import Polynomial, QuarticAngles, QuarticRawAngles

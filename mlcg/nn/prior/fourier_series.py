@@ -484,7 +484,7 @@ class Dihedral(FourierSeries):
         )
 
 
-class PeriodicAngle(FourierSeries):
+class PeriodicAngles(FourierSeries):
     r"""
     Class to represent a angle potential using a fourier series
     """
