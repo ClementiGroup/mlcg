@@ -1,64 +1,44 @@
-seed_everything: 19384
-ckpt_path: last
-# define the training
+seed_everything: 16384
 trainer:
   # Work directory for the session
   default_root_dir: .
-  # set a limit to the training (#epochs and/or time limit)
-  max_epochs: 6
-  max_time: null
-  resume_from_checkpoint: null
-  profiler: null
-
-  # Training on one/multiple GPU
-  # accelerator: gpu
-  # strategy: ddp_find_unused_parameters_false
-  # devices: 4
-  # precision: 32
-
-  # Training on the CPU
-  accelerator: 'cpu'
-  devices: 1
+  max_epochs: 150
+  accelerator: cpu
+  num_nodes: 1
   precision: 32
-
-  benchmark: false
   logger:
     - class_path: pytorch_lightning.loggers.TensorBoardLogger
       init_args:
-        # save_dir will be set to default_root_dir
         save_dir: default_root_dir
         name: tensorboard
         version: ''
+  benchmark: false
   enable_checkpointing: true
   callbacks:
-    - class_path: pytorch_lightning.callbacks.EarlyStopping
+    - class_path: pytorch_lightning.callbacks.LearningRateMonitor
       init_args:
-        monitor: 'validation_loss'
-        patience: 10
-    # Save states of the model a regular interval
+        logging_interval: epoch
+        log_momentum: false
     - class_path: pytorch_lightning.callbacks.model_checkpoint.ModelCheckpoint
       init_args:
-        # checkpoints will be saved to default_root_dir/ckpt
         dirpath: default_root_dir
         monitor: validation_loss
         save_top_k: -1
-        every_n_epochs: 2
+        every_n_epochs: 1
         filename: '{epoch}-{validation_loss:.4f}'
         save_last: true
-    - class_path: pytorch_lightning.callbacks.TQDMProgressBar
-      init_args:
-        refresh_rate: 20
-  log_every_n_steps: 10
+  log_every_n_steps: 100
   gradient_clip_val: 0
   gradient_clip_algorithm: norm
-  track_grad_norm: inf
+  track_grad_norm: -1
   check_val_every_n_epoch: 1
   fast_dev_run: false
-  accumulate_grad_batches: 1
-  weights_summary: top
+  accumulate_grad_batches: 4 #
+  enable_model_summary: false
   deterministic: false
   auto_lr_find: false
-  detect_anomaly: true
+  detect_anomaly: false # setting this to true enables detection of NaN after every small-batch update, but will slow down the training by 30%~50%
+  enable_progress_bar: True # un
 # define the model and training objectives using mlcg.pl.PLModel
 model:
   loss:
