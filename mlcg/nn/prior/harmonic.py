@@ -86,7 +86,6 @@ class Harmonic(_Prior):
         params["V0"] = torch.zeros_like(params["x0"])
         return params
 
-
     def data2features(self, data):
         mapping = data.neighbor_list[self.name]["index_mapping"]
         pbc = getattr(data, "pbc", None)
@@ -347,14 +346,16 @@ class ShiftedHarmonicAnglesRaw(Harmonic):
     _order = 3
 
     def __init__(self, statistics, name) -> None:
-        super(HarmonicAnglesRaw, self).__init__(
-            statistics, HarmonicAnglesRaw.name
+        super(ShiftedHarmonicAnglesRaw, self).__init__(
+            statistics, 
+            name = ShiftedHarmonicAnglesRaw.name,
+            order = ShiftedHarmonicAnglesRaw._order
         )
         self.name = name
 
     @staticmethod
     def neighbor_list(topology: Topology) -> dict:
-        return Harmonic.neighbor_list(topology, HarmonicAnglesRaw.name)
+        return Harmonic.neighbor_list(topology, ShiftedHarmonicAnglesRaw.name)
 
     @staticmethod
     def compute_features(

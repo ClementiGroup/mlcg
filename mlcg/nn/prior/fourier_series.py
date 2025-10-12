@@ -498,14 +498,14 @@ class PeriodicAngles(FourierSeries):
         n_degs: int = 1,
         name: str = "angles",
     ) -> None:
-        super(Dihedral, self).__init__(
+        super(PeriodicAngles, self).__init__(
             statistics, name=name, n_degs=n_degs, order=self._order
         )
 
     @staticmethod
     def neighbor_list(topology) -> None:
-        nl = topology.neighbor_list(Dihedral.name)
-        return {Dihedral.name: nl}
+        nl = topology.neighbor_list(PeriodicAngles.name)
+        return {PeriodicAngles.name: nl}
 
     @staticmethod
     def compute_features(
