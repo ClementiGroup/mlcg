@@ -126,8 +126,15 @@ def compute_angles_raw(
     assert mapping.dim() == 2
     assert mapping.shape[0] == 3
 
-    dr1 = pos[mapping[0]] - pos[mapping[1]]
-    dr2 = pos[mapping[2]] - pos[mapping[1]]
+    if cell_shifts is None:
+        dr1 = pos[mapping[0]] - pos[mapping[1]]
+        dr2 = pos[mapping[2]] - pos[mapping[1]]
+    
+    else:
+        dr1 = pos[mapping[0]] - (pos[mapping[1]] + cell_shifts[:, :, 1])
+        dr2 = (pos[mapping[2]] + cell_shifts[:, :, 2]) - (
+            pos[mapping[1]] + cell_shifts[:, :, 1]
+        )
 
     n = torch.cross(dr1, dr2, dim=1)
     n = n.norm(p=2, dim=1)
