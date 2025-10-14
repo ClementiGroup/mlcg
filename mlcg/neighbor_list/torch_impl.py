@@ -317,8 +317,8 @@ def torch_neighbor_list_pbc(
     return idx_i, idx_j, cell_shifts, self_interaction_mask
 
 
-#def wrap_positions(data: AtomicData, device: str, eps: float = 1e-7) -> None:
-#    """Wrap positions to unit cell (Incorrect the shift in fractional and 
+# def wrap_positions(data: AtomicData, device: str, eps: float = 1e-7) -> None:
+#    """Wrap positions to unit cell (Incorrect the shift in fractional and
 #    leading to instabilities due to pos mismatch).
 #
 #    Returns positions changed by a multiple of the unit cell vectors to
@@ -364,8 +364,9 @@ def torch_neighbor_list_pbc(
 #    data.pos = torch.einsum("bi,bii->bi", fractional, cell[batch_ids])
 #    return data
 
+
 def wrap_positions(data: AtomicData, device: str, eps: float = 1e-7) -> None:
-    """ Correct vectorized version of position wrapping to unit cell.
+    """Correct vectorized version of position wrapping to unit cell.
     Returns positions changed by a multiple of the unit cell vectors to
     fit inside the space spanned by these vectors.
     Parameters
@@ -376,7 +377,7 @@ def wrap_positions(data: AtomicData, device: str, eps: float = 1e-7) -> None:
         Device to perform computations on
     eps: float
         Small number to prevent slightly negative coordinates from being wrapped
-    
+
     Returns
     -------
     AtomicData:
@@ -389,23 +390,17 @@ def wrap_positions(data: AtomicData, device: str, eps: float = 1e-7) -> None:
 
     cell_batch = cell[batch_ids]  # [n_atoms, 3, 3]
     fractional = torch.linalg.solve(cell_batch, pos.unsqueeze(-1)).squeeze(-1)
-    
+
     pbc_mask = pbc[batch_ids]  # [n_atoms, 3]
-    
-    fractional = torch.where(
-        pbc_mask,
-        fractional % 1.0,
-        fractional
-    )
-    
+
+    fractional = torch.where(pbc_mask, fractional % 1.0, fractional)
+
     if eps > 0:
         fractional = torch.where(
-            pbc_mask & (fractional < eps),
-            fractional + eps,
-            fractional
+            pbc_mask & (fractional < eps), fractional + eps, fractional
         )
-    
+
     # Convert back to cartesian coordinates
-    data.pos = torch.einsum('ni,nij->nj', fractional, cell_batch)
-    
+    data.pos = torch.einsum("ni,nij->nj", fractional, cell_batch)
+
     return data

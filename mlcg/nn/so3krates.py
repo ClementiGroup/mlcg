@@ -229,7 +229,6 @@ class So3kratesInteraction(nn.Module):
         sph_ij: torch.Tensor,  # (n_edges, m_tot)
         edge_weight: torch.Tensor,  # (n_edges,)
     ):
-
         C = self.cutoff(edge_weight)
 
         # Compute distance-based features for geometric filtering

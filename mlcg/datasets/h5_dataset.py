@@ -296,7 +296,7 @@ class MetaSet:
                     except Exception:
                         pass
                 if "pbc" in hdf_key_mapping:
-                    try:   
+                    try:
                         pbc = MetaSet.retrieve_hdf(
                             hdf5_group[mol_name], keys["pbc"]
                         )[:][selection]
