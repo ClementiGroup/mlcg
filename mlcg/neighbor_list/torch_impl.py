@@ -58,6 +58,7 @@ def torch_neighbor_list(
             idx_i,
             idx_j,
             cell_shifts_2d,
+            #cell_shifts,
             self_interaction_mask,
         ) = torch_neighbor_list_pbc(
             data,

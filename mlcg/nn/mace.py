@@ -135,7 +135,7 @@ class MACE(torch.nn.Module):
         vectors, lengths = get_edge_vectors_and_lengths(
             positions=data.pos,
             edge_index=edge_index,
-            shifts=neighbor_list["cell_shifts"],  # TODO check on that
+            shifts=neighbor_list["cell_shifts"][:, :, 1],  # TODO check on that
         )
         edge_attrs = self.spherical_harmonics(vectors)
         edge_feats = self.radial_embedding(
