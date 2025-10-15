@@ -337,7 +337,7 @@ def test_exchange_detection(tmp_path):
         simulation.initial_data["out"]["energy"] = torch.tensor(
             [low_energy, low_energy, high_energy, high_energy]
         )
-        for _ in range(1000):
+        for _ in range(4000):
             simulation._detect_exchange(simulation.initial_data)
         empirical_rate = (
             simulation._replica_exchange_approved

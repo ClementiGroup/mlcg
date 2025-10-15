@@ -124,7 +124,7 @@ class SumOut(torch.nn.Module):
 
 
 class EnergyOut(torch.nn.Module):
-    r"""Extractor for energy computed via SchNet
+    r"""Extractor for energy computed via an mlcg compatible model.
 
     Parameters
     ----------
@@ -207,7 +207,6 @@ class GradientsOut(torch.nn.Module):
 
         data.pos.requires_grad_(True)
         data = self.model(data)
-
         if FORCE_KEY in self.targets:
             if self.name == "SumOut":
                 y = data.out[ENERGY_KEY]

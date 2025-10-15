@@ -62,7 +62,7 @@ class MLP(torch.nn.Module):
 
 
 class TypesMLP(torch.nn.Module):
-    """
+    r"""
     The local energy model :math:`\epsilon` are multi-layer perceptron (MLP)
     that use as en input a representation of the atomic environment. There can
     be distinct models for each central atomic species.

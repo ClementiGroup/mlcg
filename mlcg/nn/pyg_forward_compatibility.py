@@ -85,7 +85,8 @@ def _search_for_schnet(top_level: torch.nn.Module):
     else:
         # e.g., a `SumOut` or `GradientsOut`
         for module in top_level.children():
-            yield from _search_for_schnet(module)
+            if hasattr(module, "__iter__"):
+                yield from _search_for_schnet(module)
 
 
 def refresh_module_with_schnet_(schnet_containing: torch.nn.Module, verbose=False):

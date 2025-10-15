@@ -6,11 +6,11 @@ pytorch_lightning == 2.2.1
 tqdm
 aggforce @ git+https://github.com/noegroup/aggforce.git
 ase
-e3nn<=0.5.1
+e3nn==0.5.3
 h5py
 ipython
 ipywidgets
-jsonargparse[signatures]==4.20.0
+jsonargparse[signatures]>=4.35.0
 matplotlib
 mdtraj
 mpmath
@@ -19,6 +19,7 @@ nglview
 numpy<2.0
 packaging
 pandas
+pytorch_lightning==2.2.1
 pyyaml>=6.0
 requests
 ruamel.yaml
@@ -34,4 +35,16 @@ coverage[toml]
 pytest
 # by mlcg_opt_radius
 ninja
+# extra dependencies for mace 
+opt_einsum
+torch-ema
+prettytable
+python-hostlist
+configargparse
+GitPython
+orjson
+lmdb
+# extra dependencies for allegro
+matscipy
+hydra-core
 
