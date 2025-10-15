@@ -180,8 +180,6 @@ class ForceMSE(_Loss):
         )
 
 
-# My stuff
-
 class RegL1(_Loss):
     def __init__(
         self,

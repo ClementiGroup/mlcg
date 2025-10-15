@@ -4,7 +4,7 @@ in use.
 """
 
 from contextlib import contextmanager
-from typing import Mapping
+from typing import Mapping, Union
 from collections.abc import Iterable
 import warnings
 
@@ -13,91 +13,68 @@ import mlcg.nn.schnet
 from mlcg.nn.schnet import CFConv, SchNet
 from interpret_gnn.models import EdgeAwareCFConv
 
-# def get_refreshed_cfconv_layer(old_cfconv: EdgeAwareCFConv):
-#     """Extract the weights and reinstantiate the `CFConv` object
-#     such as to make it compatible with the current pyg.
 
-#     Parameters
-#     ----------
-#     old_cfconv: the `EdgeAwareCFConv` from deserialized SchNet checkpoints
-#         possibly saved with a previous versions of pyg.
-#     """
-#     # Tensor was once imported as a standalone symbol in an older
-#     # version of mlcg (or pyg) but not anymore, thus we have
-#     # to monkey patch it here in order for some older checkpoints
-#     # to work
-#     mlcg.nn.schnet.Tensor = torch.Tensor
-#     # extract init args
-#     filter_network = old_cfconv.filter_network
-#     cutoff = old_cfconv.cutoff
-#     in_channels = old_cfconv.lin1.in_features
-#     out_channels = old_cfconv.lin2.out_features
-#     num_filters = old_cfconv.lin1.out_features
-#     aggr = old_cfconv.aggr
-#     # edge_params =
-#     # extract the state dict
-#     # clone is used here, since the state_dict of filter_network
-#     # will be overwritten by the __init__ of `new_cfconv`
-#     state_dict = {k: v.clone() for k, v in old_cfconv.state_dict().items()}
-#     device = next(iter(state_dict.values())).device
-#     # rebuild
-#     new_cfconv = EdgeAwareCFConv(
-#         filter_network=filter_network,
-#         cutoff=cutoff,
-#         in_channels=in_channels,
-#         out_channels=out_channels,
-#         num_filters=num_filters,
-#         # edge_params=edge_params,
-#         aggr=aggr,
-#     ).to(device)
-#     new_cfconv.load_state_dict(state_dict)
-#     return new_cfconv
-
-def get_refreshed_cfconv_layer(old_cfconv: CFConv):
-    """Extract the weights and reinstantiate the `CFConv` object
+def get_refreshed_cfconv_layer(old_cfconv: Union[CFConv, EdgeAwareCFConv]):
+    """
+    Extract the weights and reinstantiate the CFConv object
     such as to make it compatible with the current pyg.
 
     Parameters
     ----------
-    old_cfconv: the `CFConv` from deserialized SchNet checkpoints
-        possibly saved with a previous versions of pyg.
+    old_cfconv: the CFConv or EdgeAwareCFConv from deserialized SchNet checkpoints
+        possibly saved with a previous version of pyg.
     """
     # Tensor was once imported as a standalone symbol in an older
     # version of mlcg (or pyg) but not anymore, thus we have
     # to monkey patch it here in order for some older checkpoints
     # to work
     mlcg.nn.schnet.Tensor = torch.Tensor
-    # extract init args
+
+    # Extract init args
     filter_network = old_cfconv.filter_network
     cutoff = old_cfconv.cutoff
     in_channels = old_cfconv.lin1.in_features
     out_channels = old_cfconv.lin2.out_features
     num_filters = old_cfconv.lin1.out_features
     aggr = old_cfconv.aggr
-    # extract the state dict
+
+    # Extract the state dict
     # clone is used here, since the state_dict of filter_network
-    # will be overwritten by the __init__ of `new_cfconv`
+    # will be overwritten by the __init__ of new_cfconv
     state_dict = {k: v.clone() for k, v in old_cfconv.state_dict().items()}
     device = next(iter(state_dict.values())).device
-    # rebuild
-    new_cfconv = CFConv(
-        filter_network=filter_network,
-        cutoff=cutoff,
-        in_channels=in_channels,
-        out_channels=out_channels,
-        num_filters=num_filters,
-        aggr=aggr,
-    ).to(device)
+
+    # Rebuild the correct type of CFConv
+    if isinstance(old_cfconv, EdgeAwareCFConv):
+        new_cfconv = EdgeAwareCFConv(
+            filter_network=filter_network,
+            cutoff=cutoff,
+            in_channels=in_channels,
+            out_channels=out_channels,
+            num_filters=num_filters,
+            aggr=aggr,
+        ).to(device)
+    elif isinstance(old_cfconv, CFConv):
+        new_cfconv = CFConv(
+            filter_network=filter_network,
+            cutoff=cutoff,
+            in_channels=in_channels,
+            out_channels=out_channels,
+            num_filters=num_filters,
+            aggr=aggr,
+        ).to(device)
+    else:
+        raise TypeError(f"Unsupported CFConv type: {type(old_cfconv)}")
+
     new_cfconv.load_state_dict(state_dict)
     return new_cfconv
+
 
 def _search_for_schnet(top_level: torch.nn.Module):
     """Recursively search for SchNet in all submodules."""
     if isinstance(top_level, SchNet):
         yield top_level
-    elif isinstance(top_level, torch.nn.ModuleDict) or isinstance(
-        top_level, Mapping
-    ):
+    elif isinstance(top_level, torch.nn.ModuleDict) or isinstance(top_level, Mapping):
         # torch.nn.ModuleDict is not a Mapping...
         for module in top_level.values():
             yield from _search_for_schnet(module)
@@ -111,9 +88,7 @@ def _search_for_schnet(top_level: torch.nn.Module):
             yield from _search_for_schnet(module)
 
 
-def refresh_module_with_schnet_(
-    schnet_containing: torch.nn.Module, verbose=False
-):
+def refresh_module_with_schnet_(schnet_containing: torch.nn.Module, verbose=False):
     """In-place refresh all cfconv_layers in a torch.nn.Module that possibly
     contains a `mlcg.nn.SchNet` inside. See `get_refreshed_cfconv_layer` for
     what this refreshing is exactly doing.
@@ -199,5 +174,5 @@ def load_and_adapt_old_checkpoint(f, **kwargs):
     """
     # with fixed_pyg_inspector():
     module = torch.load(f, **kwargs)
-        # refresh_module_with_schnet_(module)
+    # refresh_module_with_schnet_(module)
     return module

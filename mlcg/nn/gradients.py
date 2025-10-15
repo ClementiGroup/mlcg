@@ -113,10 +113,7 @@ class SumOut(torch.nn.Module):
         for name in self.models.keys():
             data = self.models[name](data)
             for target in self.targets:
-                if target == 'forces' and name == 'SchNet' and rescaler is not None:
-                    data.out[target] += rescaler * data.out[name][target]
-                else:
-                    data.out[target] += data.out[name][target]
+                data.out[target] += data.out[name][target]
         return data
 
     def neighbor_list(self, **kwargs):

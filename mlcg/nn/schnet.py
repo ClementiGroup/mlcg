@@ -465,9 +465,7 @@ class StandardSchNet(SchNet):
             )
             block = InteractionBlock(cfconv, hidden_channels, activation)
             interaction_blocks.append(block)
-        output_layer_widths = (
-            [hidden_channels] + output_hidden_layer_widths + [1]
-        )
+        output_layer_widths = [hidden_channels] + output_hidden_layer_widths + [1]
         output_network = MLP(
             output_layer_widths, activation_func=activation, last_bias=False
         )
@@ -656,9 +654,7 @@ class AttentiveSchNet(SchNet):
             )
 
             interaction_blocks.append(block)
-        output_layer_widths = (
-            [hidden_channels] + output_hidden_layer_widths + [1]
-        )
+        output_layer_widths = [hidden_channels] + output_hidden_layer_widths + [1]
         output_network = MLP(
             output_layer_widths,
             activation_func=activation_func,
@@ -672,18 +668,15 @@ class AttentiveSchNet(SchNet):
             max_num_neighbors=max_num_neighbors,
         )
 
-### Lorenzo Addition
 
 class EdgeAwareInteractionBlock(InteractionBlock):
-    def __init__(self,
-                 cfconv_layer: torch.nn.Module,
-                 hidden_channels: int = 128,
-                 activation: torch.nn.Module = torch.nn.Tanh(),
-                 ):
-        super().__init__(cfconv_layer,
-                         hidden_channels,
-                         activation)
-
+    def __init__(
+        self,
+        cfconv_layer: torch.nn.Module,
+        hidden_channels: int = 128,
+        activation: torch.nn.Module = torch.nn.Tanh(),
+    ):
+        super().__init__(cfconv_layer, hidden_channels, activation)
 
     def forward(
         self,
@@ -691,7 +684,7 @@ class EdgeAwareInteractionBlock(InteractionBlock):
         edge_index: torch.Tensor,
         edge_weight: torch.Tensor,
         edge_attr: torch.Tensor,
-        edge_params: torch.Tensor
+        edge_params: torch.Tensor,
     ) -> torch.Tensor:
         x = self.conv(x, edge_index, edge_weight, edge_attr, edge_params)
         x = self.activation(x)
@@ -716,18 +709,15 @@ class EdgeAwareCFConv(CFConv):
         return x
 
     def message(
-        self,
-        x_j: torch.Tensor,
-        W: torch.Tensor,
-        edge_params: torch.Tensor
+        self, x_j: torch.Tensor, W: torch.Tensor, edge_params: torch.Tensor
     ) -> torch.Tensor:
-
         return x_j * (torch.abs(edge_params.view(-1, 1)) * W)
 
     def propagate(self, edge_index, size=None, **kwargs):
         # Manually control the flow of arguments
-        kwargs['edge_params'] = kwargs.get('edge_params')
+        kwargs["edge_params"] = kwargs.get("edge_params")
         return super().propagate(edge_index, size=size, **kwargs)
+
 
 def cantor_pairing(k1, k2):
     return (k1 + k2) * (k1 + k2 + 1) // 2 + k2
@@ -778,31 +768,29 @@ class RepulsionFilteredSchNet(SchNet):
     edge_reg: bool
        If True, the edge rescaling is applied. Every mesage is mutliplied by a scalar that is the regularized.
     total_nodes: int
-        If edge_reg is True, the total number of nodes in the system is needed to calculate the regularization factor as each 
+        If edge_reg is True, the total number of nodes in the system is needed to calculate the regularization factor as each
         interaction has its own value. (N^2 - N)/2 new parameters.
     """
+
     def __init__(
-            self,
-            rbf_layer: torch.nn.Module,
-            cutoff: torch.nn.Module,
-            output_hidden_layer_widths: List[int],
-            hidden_channels: int = 128,
-            embedding_size: int = 100,
-            num_filters: int = 128,
-            num_interactions: int = 3,
-            activation: torch.nn.Module = torch.nn.Tanh(),
-            max_num_neighbors: int = 1000,
-            aggr: str = "add",
-
-            # Parameters for RBF rescaling
-            max_bead_type: int = 10,
-            # define_ranges: Union[None, Dict] = None,
-
-            # Parameters for Edge rescaling
-            edge_reg: bool = False,
-            total_nodes: Optional[int] = None
+        self,
+        rbf_layer: torch.nn.Module,
+        cutoff: torch.nn.Module,
+        output_hidden_layer_widths: List[int],
+        hidden_channels: int = 128,
+        embedding_size: int = 100,
+        num_filters: int = 128,
+        num_interactions: int = 3,
+        activation: torch.nn.Module = torch.nn.Tanh(),
+        max_num_neighbors: int = 1000,
+        aggr: str = "add",
+        # Parameters for RBF rescaling
+        max_bead_type: int = 10,
+        # define_ranges: Union[None, Dict] = None,
+        # Parameters for Edge rescaling
+        edge_reg: bool = False,
+        total_nodes: Optional[int] = None,
     ):
-        
         if num_interactions < 1:
             raise ValueError("At least one interaction block must be specified")
 
@@ -838,7 +826,7 @@ class RepulsionFilteredSchNet(SchNet):
                     num_filters=num_filters,
                     in_channels=hidden_channels,
                     out_channels=hidden_channels,
-                    aggr=aggr
+                    aggr=aggr,
                 )
             else:
                 cfconv = CFConv(
@@ -857,14 +845,10 @@ class RepulsionFilteredSchNet(SchNet):
 
             interaction_blocks.append(block)
 
-        output_layer_widths = (
-                [hidden_channels] + output_hidden_layer_widths + [1]
-        )
-        
+        output_layer_widths = [hidden_channels] + output_hidden_layer_widths + [1]
+
         output_network = MLP(
-            output_layer_widths, 
-            activation_func=activation, 
-            last_bias=False
+            output_layer_widths, activation_func=activation, last_bias=False
         )
 
         super(RepulsionFilteredSchNet, self).__init__(
@@ -877,28 +861,39 @@ class RepulsionFilteredSchNet(SchNet):
 
         # Creating the tensors for RBF modulation
         i, j = torch.tril_indices(max_bead_type, max_bead_type, offset=-1)
-        filters = torch.ones(max_bead_type, max_bead_type, self.rbf_layer.num_rbf).float()
+        filters = torch.ones(
+            max_bead_type, max_bead_type, self.rbf_layer.num_rbf
+        ).float()
         filters[i, j] *= 0
 
-        self.register_parameter("radial_filters", torch.nn.Parameter(filters,
-                                                                         requires_grad=True))
+        self.register_parameter(
+            "radial_filters", torch.nn.Parameter(filters, requires_grad=True)
+        )
         if edge_reg:
-            assert total_nodes is not None, "total_nodes must be defined if edge_reg is True"
+            assert total_nodes is not None, (
+                "total_nodes must be defined if edge_reg is True"
+            )
             # Creating the tensors for edge regularization
-            edge_list = [(i, j) for i in range(total_nodes) for j in range(total_nodes) if i < j]
+            edge_list = [
+                (i, j) for i in range(total_nodes) for j in range(total_nodes) if i < j
+            ]
 
             # Convert the edge list to a tensor and transpose it to match the edge_index format
             edge_index_template = torch.tensor(edge_list, dtype=torch.long).t()
             self.register_buffer("edge_index_template", edge_index_template)
             # self.edge_regularization_factor = edge_regularization_factor
             # Raise a warning saying that the edge_index_template is fixed
-            warnings.warn("The edge_index_template is ONLY for a SINGLE MOLECULE training")
+            warnings.warn(
+                "The edge_index_template is ONLY for a SINGLE MOLECULE training"
+            )
             num_edges = edge_index_template.size(1)
 
             # Initialize trainable edge parameters
-            tmp = torch.ones(num_interactions,num_edges) 
-            self.register_parameter("edge_params_all", torch.nn.Parameter(tmp, requires_grad=edge_reg))
-        
+            tmp = torch.ones(num_interactions, num_edges)
+            self.register_parameter(
+                "edge_params_all", torch.nn.Parameter(tmp, requires_grad=edge_reg)
+            )
+
         self.edge_reg = edge_reg
 
     def forward(self, data: AtomicData) -> AtomicData:
@@ -941,17 +936,15 @@ class RepulsionFilteredSchNet(SchNet):
                     self.max_num_neighbors,
                 )[self.name]
 
-
         if use_custom_kernel:
             distances, edge_index = radius_distance(
                 data.pos,
                 self.rbf_layer.cutoff.cutoff_upper,
                 data.batch,
-                False,              # no loop edges due to compatibility & backward breaks with zero distance
+                False,  # no loop edges due to compatibility & backward breaks with zero distance
                 self.max_num_neighbors,
                 exclude_pair_indices=data.get("exc_pair_index"),
             )
-
 
         else:
             edge_index = neighbor_list["index_mapping"]
@@ -969,11 +962,13 @@ class RepulsionFilteredSchNet(SchNet):
         mask = senders > receivers
         senders[mask], receivers[mask] = receivers[mask], senders[mask]
 
-        rbf_filters = torch.clamp(self.radial_filters[senders, receivers], min=0.0, max=1.0)
+        rbf_filters = torch.clamp(
+            self.radial_filters[senders, receivers], min=0.0, max=1.0
+        )
 
         rbf_expansion = self.rbf_layer(distances) * rbf_filters
         # End of addition
-        
+
         num_batch = data.batch[-1] + 1
 
         if self.edge_reg:
@@ -981,21 +976,27 @@ class RepulsionFilteredSchNet(SchNet):
             num_nodes_per_graph = data.num_nodes // num_batch
             N = num_nodes_per_graph
             mock_matrix = torch.triu(torch.ones(N, N, device=x.device))
-            
+
             for i, block in enumerate(self.interaction_blocks):
-                mock_matrix[self.edge_index_template[0], self.edge_index_template[1]] = self.edge_params_all[i]
-                mock_matrix = mock_matrix + mock_matrix.T - torch.diag(mock_matrix.diag())
+                mock_matrix[
+                    self.edge_index_template[0], self.edge_index_template[1]
+                ] = self.edge_params_all[i]
+                mock_matrix = (
+                    mock_matrix + mock_matrix.T - torch.diag(mock_matrix.diag())
+                )
 
                 rescaled_edges_index = edge_index % N
 
-                expanded_edges = mock_matrix[rescaled_edges_index[0], rescaled_edges_index[1]]
+                expanded_edges = mock_matrix[
+                    rescaled_edges_index[0], rescaled_edges_index[1]
+                ]
 
                 edge_params_mapped = expanded_edges.flatten()
 
                 x = x + block(
                     x, edge_index, distances, rbf_expansion, edge_params_mapped
                 )
-            
+
         else:
             for block in self.interaction_blocks:
                 x = x + block(
@@ -1005,9 +1006,11 @@ class RepulsionFilteredSchNet(SchNet):
         energy = self.output_network(x, data)
         energy = scatter(energy, data.batch, dim=0, reduce="sum")
         energy = energy.flatten()
-        data.out[self.name] = {ENERGY_KEY: energy,
-                               'radial_filters': self.radial_filters}
+        data.out[self.name] = {
+            ENERGY_KEY: energy,
+            "radial_filters": self.radial_filters,
+        }
         if self.edge_reg:
-            data.out[self.name]['edge_params'] = self.edge_params_all
+            data.out[self.name]["edge_params"] = self.edge_params_all
 
         return data
