@@ -67,7 +67,9 @@ def torch_neighbor_list(
             num_workers=num_workers,
             max_num_neighbors=max_num_neighbors,
         )
-        # Convert cell_shift to match the shape: (n_edges, 3, 2)
+        # HOTFIX: To match cell_shift requested in compute_distances it must
+        # be expanded to 3D (n_edges, 3, 2) with zeros in the first column 
+        # and shifts with respect to reference node in the second column. 
         cell_shifts = torch.zeros(
             (idx_i.shape[0], 3, 2), dtype=data.pos.dtype, device=data.pos.device
         )
@@ -80,7 +82,6 @@ def torch_neighbor_list(
             num_workers=num_workers,
             max_num_neighbors=max_num_neighbors,
         )
-        # Cell shift must assume the shape of (n_edges, 3, 2) zeros
         cell_shifts = torch.zeros(
             (idx_i.shape[0], 3, 2), dtype=data.pos.dtype, device=data.pos.device
         )
