@@ -4,12 +4,6 @@ from time import ctime
 import os.path as osp
 import torch
 import sys
-import torch.profiler
-import torch._dynamo
-import logging
-
-torch._dynamo.config.suppress_errors = True
-torch._logging.set_logs(dynamo=logging.ERROR)
 
 SCRIPT_DIR = osp.abspath(osp.dirname(__file__))
 
@@ -38,6 +32,5 @@ if __name__ == "__main__":
     simulation.attach_model_and_configurations(
         model, initial_data_list, beta=betas
     )
-    simulation.model = torch.compile(simulation.model, dynamic=True,mode="default")
     simulation.simulate()
     print(f"Ending simulation at {ctime()}")
