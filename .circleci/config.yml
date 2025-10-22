@@ -25,7 +25,7 @@ jobs:
       - run:
           name: "Run examples tests"
           command: |
-            if [-n "$CIRCLE_PULL_REQUEST"]; then
+            if [ -n "$CIRCLE_PULL_REQUEST" ]; then
               set -e
               mkdir -p test-results
               pytest --verbose --junitxml=test-results/examples.xml examples  --runner_idx=${CIRCLE_NODE_INDEX} --num_containers=${CIRCLE_NODE_TOTAL}
