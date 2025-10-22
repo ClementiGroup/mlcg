@@ -66,8 +66,12 @@ def _search_for_schnet(top_level: torch.nn.Module):
         # e.g., a ModuleList
         for module in top_level:
             yield from _search_for_schnet(module)
+    elif isinstance(top_level, mlcg.nn.SumOut):
+        yield from _search_for_schnet(top_level.models)
+    elif isinstance(top_level, mlcg.nn.GradientsOut):
+        yield from _search_for_schnet(top_level.model)
     else:
-        # e.g., a `SumOut` or `GradientsOut`
+        # trying to handle another cases
         for module in top_level.children():
             if hasattr(module, "__iter__"):
                 yield from _search_for_schnet(module)
