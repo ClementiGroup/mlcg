@@ -555,11 +555,13 @@ class _Simulation(object):
         # checkpoint loading
         if self.read_checkpoint_file is not None:
             if isinstance(self.read_checkpoint_file, Path_fr):
-                checkpointed_data = torch.load(self.read_checkpoint_file())
+                checkpointed_data = torch.load(
+                    self.read_checkpoint_file(), weights_only=False
+                )
             elif self.read_checkpoint_file:
                 fn = "{}_checkpoint.pt".format(self.filename)
                 assert os.path.exists(fn), f"{fn} does not exist"
-                checkpointed_data = torch.load(fn)
+                checkpointed_data = torch.load(fn, weights_only=False)
             self.checkpointed_data = checkpointed_data
             self.current_timestep = self.checkpointed_data["current_timestep"]
             if "export_interval" in self.checkpointed_data.keys():

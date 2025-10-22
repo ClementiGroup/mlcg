@@ -31,8 +31,8 @@ def load_cgmatrix():
     """Load Clebsch-Gordan matrix from torch file."""
     # Get the directory of the current file
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    cgmatrix_path = os.path.join(current_dir,"assets", "cgmatrix.pt")
-    return torch.load(cgmatrix_path, map_location="cpu")
+    cgmatrix_path = os.path.join(current_dir, "assets", "cgmatrix.pt")
+    return torch.load(cgmatrix_path, map_location="cpu", weights_only=False)
 
 
 def init_clebsch_gordan_matrix(degrees, l_out_max=None):

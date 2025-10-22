@@ -160,6 +160,6 @@ def load_and_adapt_old_checkpoint(f, **kwargs):
     kwargs: see the docstring of `torch.load` for details.
     """
     with fixed_pyg_inspector():
-        module = torch.load(f, **kwargs)
+        module = torch.load(f, **kwargs, weights_only=False)
         refresh_module_with_schnet_(module)
     return module

@@ -81,7 +81,7 @@ class DataModule(pl.LightningDataModule):
 
     def load_dataset(self):
         if self.save_local_copy:
-            dataset = torch.load(self.dataset_root)
+            dataset = torch.load(self.dataset_root, weights_only=False)
         else:
             dataset = self.dataset_cls(**self.dataset_init_kwargs)
         indeces = torch.arange(0, len(dataset), self.loading_stride)
