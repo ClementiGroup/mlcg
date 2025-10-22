@@ -4,7 +4,6 @@ from time import ctime
 import os.path as osp
 import torch
 import sys
-import torch.profiler
 
 SCRIPT_DIR = osp.abspath(osp.dirname(__file__))
 

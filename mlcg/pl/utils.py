@@ -70,7 +70,7 @@ def merge_priors_and_checkpoint(
         merged_model[ml_model.name] = ml_model
 
     if isinstance(priors, str):
-        prior_model = torch.load(priors)
+        prior_model = torch.load(priors, weights_only=False)
     else:
         prior_model = priors
     # case where the prior that we are loading is already wrapped in a SumOut layer
