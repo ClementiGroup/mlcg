@@ -14,6 +14,7 @@ import os
 import time
 from copy import deepcopy
 from jsonargparse.typing import Path_fr
+import logging
 
 from ..utils import tqdm
 
@@ -116,6 +117,12 @@ class _Simulation(object):
         same interval as export_interval. The subroutine should take only the
         internal collated `AtomicData` and the current timestep // save_interval as
         arguments.
+    compile:
+        If set to True, model will be compiled using torch.compile.
+    compile_mode:
+        Specifies the compilation mode for torch.compile.
+        See https://docs.pytorch.org/docs/stable/generated/torch.compile.html
+        for more information.
     """
 
     def __init__(
@@ -139,7 +146,9 @@ class _Simulation(object):
         sim_subroutine: Optional[Callable] = None,
         sim_subroutine_interval: Optional[int] = None,
         save_subroutine: Optional[Callable] = None,
-        rescaler_path: Optional[str] = None
+        rescaler_path: Optional[str] = None,
+        compile: bool = False,
+        compile_mode: str = "default",
     ):
         self.model = None
         self.initial_data = None
@@ -189,6 +198,8 @@ class _Simulation(object):
             print("Rescaling the model 1 / rescaler.pt")
         self.random_seed = random_seed
         self._simulated = False
+        self.compile = compile
+        self.compile_mode = compile_mode
 
     def attach_model_and_configurations(
         self,
@@ -306,6 +317,7 @@ class _Simulation(object):
         self._set_up_simulation(overwrite)
         data = deepcopy(self.initial_data)
         data = data.to(self.device)
+        self.compile_model()
         _, forces = self.calculate_potential_and_forces(data)
         if self.export_interval is not None:
             t_init = self.current_timestep * self.export_interval
@@ -373,6 +385,18 @@ class _Simulation(object):
         self._simulated = True
 
         return
+
+    def compile_model(self):
+        """Compiles the model for faster execution"""
+        if self.compile:
+            # if compilation fails in some parts of the model,
+            # errors are suppressed and problematic parts are runned in eager mode
+            torch._dynamo.config.suppress_errors = True
+            torch._logging.set_logs(dynamo=logging.ERROR)
+
+            self.model = torch.compile(
+                self.model, dynamic=True, mode=self.compile_mode
+            )
 
     def log(self, iter_: int):
         """Utility to print log statement or write it to an text file"""
@@ -542,11 +566,13 @@ class _Simulation(object):
         # checkpoint loading
         if self.read_checkpoint_file is not None:
             if isinstance(self.read_checkpoint_file, Path_fr):
-                checkpointed_data = torch.load(self.read_checkpoint_file())
+                checkpointed_data = torch.load(
+                    self.read_checkpoint_file(), weights_only=False
+                )
             elif self.read_checkpoint_file:
                 fn = "{}_checkpoint.pt".format(self.filename)
                 assert os.path.exists(fn), f"{fn} does not exist"
-                checkpointed_data = torch.load(fn)
+                checkpointed_data = torch.load(fn, weights_only=False)
             self.checkpointed_data = checkpointed_data
             self.current_timestep = self.checkpointed_data["current_timestep"]
             if "export_interval" in self.checkpointed_data.keys():
