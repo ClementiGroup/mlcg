@@ -320,8 +320,8 @@ class PaiNN(nn.Module):
             self.interaction_blocks = torch.nn.ModuleList(interaction_blocks)
         else:
             raise RuntimeError(
-                "interaction_blocks must be a single InteractionBlock or "
-                "a list of InteractionBlocks."
+                "interaction_blocks must be a single PaiNNInteractionBlock or "
+                "a list of PaiNNInteractionBlocks."
             )
         if isinstance(mixing_blocks, List) or isinstance(
             mixing_blocks, PaiNNMixing

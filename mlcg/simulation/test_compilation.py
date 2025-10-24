@@ -371,7 +371,7 @@ def test_simulation_run(
 
         return sim.calculate_potential_and_forces(data)
 
-    energy_compiled, forces_compiled = run_simulation(compile_flag=False)
+    energy_compiled, forces_compiled = run_simulation(compile_flag=True)
     energy_eager, forces_eager = run_simulation(compile_flag=False)
 
     torch.testing.assert_close(
