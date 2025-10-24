@@ -85,6 +85,30 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">..data.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">AtomicData</span>
 
 
+<div class="viewcode-block" id="safe_radius">
+<a class="viewcode-back" href="../../../autodoc.html#mlcg.neighbor_list.torch_impl.safe_radius">[docs]</a>
+<span class="nd">@torch</span><span class="o">.</span><span class="n">compiler</span><span class="o">.</span><span class="n">disable</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">safe_radius</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A wrapper around torch_cluster.radius that disables torch.compile</span>
+<span class="sd">    when calling it, since currently torch.compile has issues with</span>
+<span class="sd">    certain parts of torch_cluster.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">radius</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="safe_radius_graph">
+<a class="viewcode-back" href="../../../autodoc.html#mlcg.neighbor_list.torch_impl.safe_radius_graph">[docs]</a>
+<span class="nd">@torch</span><span class="o">.</span><span class="n">compiler</span><span class="o">.</span><span class="n">disable</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">safe_radius_graph</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A wrapper around torch_cluster.radius that disables torch.compile</span>
+<span class="sd">    when calling it, since currently torch.compile has issues with</span>
+<span class="sd">    certain parts of torch_cluster.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">radius_graph</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+
 <div class="viewcode-block" id="torch_neighbor_list">
 <a class="viewcode-back" href="../../../neighbor_list.html#mlcg.neighbor_list.torch_impl.torch_neighbor_list">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">torch_neighbor_list</span><span class="p">(</span>
@@ -286,7 +310,7 @@
         <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">batch</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">batch</span>
-    <span class="n">edge_index</span> <span class="o">=</span> <span class="n">radius_graph</span><span class="p">(</span>
+    <span class="n">edge_index</span> <span class="o">=</span> <span class="n">safe_radius_graph</span><span class="p">(</span>
         <span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span>
         <span class="n">rcut</span><span class="p">,</span>
         <span class="n">batch</span><span class="o">=</span><span class="n">batch</span><span class="p">,</span>
@@ -374,7 +398,7 @@
     <span class="n">images</span><span class="p">,</span> <span class="n">batch_images</span><span class="p">,</span> <span class="n">shifts_expanded</span><span class="p">,</span> <span class="n">shifts_idx</span> <span class="o">=</span> <span class="n">compute_images</span><span class="p">(</span>
         <span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">cell</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">pbc</span><span class="p">,</span> <span class="n">rcut</span><span class="p">,</span> <span class="n">batch_y</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">n_atoms</span>
     <span class="p">)</span>
-    <span class="n">edge_index</span> <span class="o">=</span> <span class="n">radius</span><span class="p">(</span>
+    <span class="n">edge_index</span> <span class="o">=</span> <span class="n">safe_radius</span><span class="p">(</span>
         <span class="n">x</span><span class="o">=</span><span class="n">images</span><span class="p">,</span>
         <span class="n">y</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span>
         <span class="n">r</span><span class="o">=</span><span class="n">rcut</span><span class="p">,</span>

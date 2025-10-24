@@ -1630,6 +1630,22 @@ the actual position of the neighboring atoms)</p></li>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="mlcg.neighbor_list.torch_impl.safe_radius">
+<span class="sig-prename descclassname"><span class="pre">mlcg.neighbor_list.torch_impl.</span></span><span class="sig-name descname"><span class="pre">safe_radius</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/neighbor_list/torch_impl.html#safe_radius"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.neighbor_list.torch_impl.safe_radius" title="Link to this definition"></a></dt>
+<dd><p>A wrapper around torch_cluster.radius that disables torch.compile
+when calling it, since currently torch.compile has issues with
+certain parts of torch_cluster.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mlcg.neighbor_list.torch_impl.safe_radius_graph">
+<span class="sig-prename descclassname"><span class="pre">mlcg.neighbor_list.torch_impl.</span></span><span class="sig-name descname"><span class="pre">safe_radius_graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/neighbor_list/torch_impl.html#safe_radius_graph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.neighbor_list.torch_impl.safe_radius_graph" title="Link to this definition"></a></dt>
+<dd><p>A wrapper around torch_cluster.radius that disables torch.compile
+when calling it, since currently torch.compile has issues with
+certain parts of torch_cluster.</p>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="mlcg.neighbor_list.torch_impl.strides_of">
 <span class="sig-prename descclassname"><span class="pre">mlcg.neighbor_list.torch_impl.</span></span><span class="sig-name descname"><span class="pre">strides_of</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/neighbor_list/torch_impl.html#strides_of"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.neighbor_list.torch_impl.strides_of" title="Link to this definition"></a></dt>
 <dd><p>TODO: add docs</p>

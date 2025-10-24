@@ -429,8 +429,8 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">interaction_blocks</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">(</span><span class="n">interaction_blocks</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-                <span class="s2">&quot;interaction_blocks must be a single InteractionBlock or &quot;</span>
-                <span class="s2">&quot;a list of InteractionBlocks.&quot;</span>
+                <span class="s2">&quot;interaction_blocks must be a single PaiNNInteractionBlock or &quot;</span>
+                <span class="s2">&quot;a list of PaiNNInteractionBlocks.&quot;</span>
             <span class="p">)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mixing_blocks</span><span class="p">,</span> <span class="n">List</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span>
             <span class="n">mixing_blocks</span><span class="p">,</span> <span class="n">PaiNNMixing</span>
