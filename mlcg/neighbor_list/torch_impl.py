@@ -5,6 +5,24 @@ from torch_cluster import radius, radius_graph
 from ..data.atomic_data import AtomicData
 
 
+@torch.compiler.disable
+def safe_radius(*args, **kwargs):
+    """A wrapper around torch_cluster.radius that disables torch.compile
+    when calling it, since currently torch.compile has issues with
+    certain parts of torch_cluster.
+    """
+    return radius(*args, **kwargs)
+
+
+@torch.compiler.disable
+def safe_radius_graph(*args, **kwargs):
+    """A wrapper around torch_cluster.radius that disables torch.compile
+    when calling it, since currently torch.compile has issues with
+    certain parts of torch_cluster.
+    """
+    return radius_graph(*args, **kwargs)
+
+
 def torch_neighbor_list(
     data: Data,
     rcut: float,
@@ -195,7 +213,7 @@ def torch_neighbor_list_no_pbc(
         )
     else:
         batch = data.batch
-    edge_index = radius_graph(
+    edge_index = safe_radius_graph(
         data.pos,
         rcut,
         batch=batch,
@@ -277,7 +295,7 @@ def torch_neighbor_list_pbc(
     images, batch_images, shifts_expanded, shifts_idx = compute_images(
         data.pos, data.cell, data.pbc, rcut, batch_y, data.n_atoms
     )
-    edge_index = radius(
+    edge_index = safe_radius(
         x=images,
         y=data.pos,
         r=rcut,
