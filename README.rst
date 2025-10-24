@@ -115,7 +115,7 @@ following commands can do a similar job.
 
 .. code:: bash
 
-    pip install --extra-index-url=https://download.pytorch.org/whl/cu124 torch==2.5.0 torchvision==0.20.0 torchaudio==2.5.0
+    pip install --extra-index-url=https://download.pytorch.org/whl/cu124 torch==2.6.0
     pip install torch_geometric
-    pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.5.0+cu124.html
+    pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.6.0+cu124.html
     pip install lightning tensorboard torchtnt
