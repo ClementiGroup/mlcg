@@ -101,11 +101,7 @@ class RegularizedPLModel(PLModel):
         model: torch.nn.Module,
         loss: Loss,
         optimizer: OptimizerCallable = torch.optim.AdamW,
-<<<<<<< HEAD
         lr_scheduler: LRSchedulerCallable = None,
-=======
-        lr_scheduler: LRSchedulerCallable = CustomStepLR,
->>>>>>> main
         optimizer_groups: List[dict] = [],
     ) -> None:
         """ """

@@ -6,7 +6,7 @@ from .losses import ForceMSE, ForceRMSE, Loss, EnergyMSE
 from .prior import (
     Harmonic,
     HarmonicAngles,
-    HarmonicAnglesRaw,
+    # HarmonicAnglesRaw,
     HarmonicBonds,
     Repulsion,
     Dihedral,
