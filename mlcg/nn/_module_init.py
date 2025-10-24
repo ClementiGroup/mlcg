@@ -4,7 +4,7 @@ import torch
 def init_xavier_uniform(
     module: torch.nn.Module, zero_bias: bool = True
 ) -> None:
-    """initialize (in place) weights of the input module using xavier uniform.
+    r"""initialize (in place) weights of the input module using xavier uniform.
     Works only on `torch.nn.Linear` at the moment and the bias are set to 0
     by default.
 

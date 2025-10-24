@@ -34,7 +34,10 @@ Neural network models for coarse grain property predictions
 .. automodule:: mlcg.nn.schnet
    :members:
 
-.. automodule:: mlcg.nn.mace_interface
+.. automodule:: mlcg.nn.painn
+   :members:
+
+.. automodule:: mlcg.nn.mace
    :members:
 
 Radial basis functions

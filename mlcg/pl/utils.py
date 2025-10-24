@@ -1,14 +1,11 @@
 import torch
-from pytorch_lightning.plugins.environments import (
-    ClusterEnvironment,
-)
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
 
-from typing import List, Optional, Union, Any, Dict
+from typing import Optional, Union
 
 from .model import PLModel
-from ..nn import SumOut, refresh_module_with_schnet_, fixed_pyg_inspector
+from ..nn import SumOut, SchNet, PaiNN, refresh_module_, fixed_pyg_inspector
 
 
 def extract_model_from_checkpoint(checkpoint_path, hparams_file):
@@ -17,7 +14,8 @@ def extract_model_from_checkpoint(checkpoint_path, hparams_file):
             checkpoint_path=checkpoint_path, hparams_file=hparams_file
         )
         model = plmodel.get_model()
-        refresh_module_with_schnet_(model)
+        refresh_module_(model, SchNet)
+        refresh_module_(model, PaiNN)
     return model
 
 
@@ -69,7 +67,8 @@ def merge_priors_and_checkpoint(
         merged_model[ml_model.name] = ml_model
 
     if isinstance(priors, str):
-        prior_model = torch.load(priors)
+        with fixed_pyg_inspector():
+            prior_model = torch.load(priors, weights_only=False)
     else:
         prior_model = priors
     # case where the prior that we are loading is already wrapped in a SumOut layer
@@ -86,8 +85,14 @@ def merge_priors_and_checkpoint(
 class LossScheduler(pl.Callback):
     def __init__(self, epoch_to_update, new_weights):
         """
-        epoch_to_update: int, the epoch number to update the weights
-        new_weights: list or tensor, the new weights to be used after the epoch
+        A callback to update the weights of a loss function at a specified epoch.
+
+        Parameters
+        ----------
+        epoch_to_update:
+            int, the epoch number to update the weights
+        new_weights:
+            list or tensor, the new weights to be used after the epoch_to_update
         """
         self.epoch_to_update = epoch_to_update
         self.new_weights = torch.tensor(new_weights)
@@ -115,3 +120,63 @@ class OffsetCheckpoint(ModelCheckpoint):
         if trainer.current_epoch >= self.start_epoch:
             # Call the parent class's save logic
             super().on_train_epoch_end(trainer, pl_module)
+
+
+class GradNormLogger(pl.Callback):
+    """
+    PyTorch Lightning callback to log gradient norms during training.
+
+    This callback computes and logs the p-norm of gradients for each parameter,
+    as well as the total gradient norm across all parameters, at a specified interval.
+    The logs are compatible with popular logging frameworks such as TensorBoard.
+
+    Args:
+        norm_type (float, optional):
+            The type of p-norm to compute for gradients (e.g., 1 for L1, 2 for L2, float('inf') for max norm). Default is 2.0.
+        log_total (bool, optional):
+            Whether to log the total gradient norm across all parameters. Default is True.
+        log_every_n_steps (int, optional):
+            Log gradient norms every N training steps. Default is 100.
+
+    Example:
+        >>> grad_logger = GradNormLogger(norm_type=2.0, log_total=True, log_every_n_steps=50)
+        >>> trainer = pl.Trainer(callbacks=[grad_logger])
+
+    """
+
+    def __init__(
+        self,
+        norm_type: float = 2.0,
+        log_total: bool = True,
+        log_every_n_steps: int = 100,
+    ):
+        self.norm_type = norm_type
+        self.log_total = log_total
+        self.log_every_n_steps = log_every_n_steps
+
+    def on_after_backward(self, trainer, pl_module):
+
+        if trainer.global_step % self.log_every_n_steps != 0:
+            return
+
+        norms = {}
+        total_norm = 0.0
+
+        for name, p in pl_module.named_parameters():
+            if p.grad is not None:
+                # compute this parameter's gradient norm
+                param_norm = p.grad.data.norm(self.norm_type)
+                norms[f"grad_norm/{name}"] = param_norm.item()
+
+                # accumulate into total if requested
+                if self.log_total:
+                    total_norm += param_norm.pow(self.norm_type).item()
+
+        # add total grad norm if enabled
+        if self.log_total and total_norm > 0:
+            norms[f"grad_norm/total_{self.norm_type}"] = total_norm ** (
+                1.0 / self.norm_type
+            )
+
+        # log all at once — works with TensorBoard, WandB, MLflow, etc.
+        trainer.logger.log_metrics(norms, step=trainer.global_step)

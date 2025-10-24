@@ -31,6 +31,8 @@ setup(
     author="Fe"
     + "\u0301"
     + "lix Musil, Nick Charron, Yaoyi Chen, Atharva Kelkar, Clark Templeton, Klara Bonneau, Aldo S. Pasos-Trejo, Andrea Guljas, Jacopo Venturin",
+    package_data={NAME: ["nn/cgmatrix.pt"]},
+    include_package_data=True,
     install_requires=install_requires,
     scripts=[
         "scripts/mlcg-train.py",

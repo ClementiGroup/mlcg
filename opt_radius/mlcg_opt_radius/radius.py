@@ -184,6 +184,7 @@ class RadiusDistanceAGB(torch.autograd.Function):
     #    return grad_x, grad_distance, grad_grad_d, None
 
 
+@torch.compiler.disable
 def radius_distance(
     x: torch.Tensor,
     r: float,

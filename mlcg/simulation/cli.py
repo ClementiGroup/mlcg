@@ -110,7 +110,8 @@ def parse_simulation_config(
 
     structures_fn = config.pop("structure_file")
     initial_data_list = torch.load(
-        (structures_fn if isinstance(structures_fn, str) else structures_fn())
+        (structures_fn if isinstance(structures_fn, str) else structures_fn()),
+        weights_only=False,
     )
 
     config_init = parser.instantiate_classes(config)

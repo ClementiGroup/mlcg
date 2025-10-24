@@ -2,7 +2,7 @@ from .gradients import GradientsOut, SumOut, EnergyOut
 from .schnet import SchNet, StandardSchNet
 from .radial_basis import GaussianBasis, ExpNormalBasis
 from .cutoff import CosineCutoff, IdentityCutoff
-from .losses import ForceMSE, ForceRMSE, Loss, VarianceRegularizedMSE, DistributionMatchingMSE
+from .losses import ForceMSE, ForceRMSE, Loss, EnergyMSE, VarianceRegularizedMSE, DistributionMatchingMSE
 from .prior import (
     Harmonic,
     HarmonicAngles,
@@ -18,19 +18,17 @@ from .mlp import MLP, TypesMLP
 from .attention import ExactAttention, FavorAttention, Nonlocalinteractionblock
 from .pyg_forward_compatibility import (
     get_refreshed_cfconv_layer,
-    refresh_module_with_schnet_,
+    get_refreshed_painninteracition_layer,
+    refresh_module_,
     load_and_adapt_old_checkpoint,
     fixed_pyg_inspector,
 )
 from .painn import PaiNN, StandardPaiNN
+from .mace import MACE, StandardMACE
+from .so3krates import So3krates, StandardSo3krates
 from .lr_scheduler import CustomStepLR
 from .utils import sparsify_prior_module, desparsify_prior_module
-
-try:
-    from .mace_interface import MACEInterface
-except Exception as e:
-    print(e)
-    print("MACE installation not found ...")
+from .allegro import StandardAllegro
 
 __all__ = [
     "GradientsOut",
@@ -45,6 +43,7 @@ __all__ = [
     "ForceMSE",
     "ForceRMSE",
     "Loss",
+    "EnergyMSE",
     "Harmonic",
     "HarmonicAngles",
     "HarmonicBonds",
@@ -60,10 +59,18 @@ __all__ = [
     "FavorAttention",
     "Nonlocalinteractionblock",
     "get_refreshed_cfconv_layer",
-    "refresh_module_with_schnet_",
+    "get_refreshed_painninteracition_layer",
+    "refresh_module_",
     "load_and_adapt_old_checkpoint",
     "fixed_pyg_inspector",
     "PaiNN",
     "StandardPaiNN",
+    "MACE",
+    "StandardMACE",
+    "ScaleShiftMACE",
+    "StandardScaleShiftMACE",
+    "So3krates",
+    "StandardSo3krates",
     "CustomStepLR",
+    "StandardAllegro",
 ]
