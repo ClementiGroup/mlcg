@@ -117,8 +117,10 @@ def _search_for_model(
     else:
         # trying to handle another cases
         for module in top_level.children():
-            if hasattr(module, "__iter__"):
+            try:
                 yield from _search_for_model(module, model_type)
+            except:
+                pass
 
 
 def refresh_module_(
