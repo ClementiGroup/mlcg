@@ -36,13 +36,7 @@ class LightningCLI(plc.LightningCLI):
         if config["seed_everything"] in (None, False):
             devices = int(config["trainer"]["devices"])
             num_nodes = int(config["trainer"]["num_nodes"])
-            if (
-                config["trainer"]["gpus"] is not None
-            ):  # account for composite/redundant lightning trainer opts
-                gpus = config["trainer"]["gpus"]
-                if isinstance(gpus, list):
-                    gpus = len(gpus)
-            if (num_nodes > 1) or (devices > 1) or (gpus > 1):
+            if (num_nodes > 1) or (devices > 1):
                 warnings.warn(
                     " \n \n ###################################################### \n"
                     "           WARNING: Possible data leakage  \n "
