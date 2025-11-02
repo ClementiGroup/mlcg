@@ -248,6 +248,10 @@ class _Simulation(object):
         self.initial_data[POSITIONS_KEY] = self.initial_data[POSITIONS_KEY].to(
             self.dtype
         )
+        if hasattr(self.initial_data,"cell"):   
+            self.initial_data["cell"] = self.initial_data["cell"].to(
+                self.dtype
+            )
         self.n_sims = len(configurations)
         self.n_atoms = len(configurations[0].atom_types)
         self.n_dims = configurations[0].pos.shape[1]
