@@ -17,7 +17,8 @@ from .mlp import MLP, TypesMLP
 from .attention import ExactAttention, FavorAttention, Nonlocalinteractionblock
 from .pyg_forward_compatibility import (
     get_refreshed_cfconv_layer,
-    refresh_module_with_schnet_,
+    get_refreshed_painninteracition_layer,
+    refresh_module_,
     load_and_adapt_old_checkpoint,
     fixed_pyg_inspector,
 )
@@ -57,7 +58,8 @@ __all__ = [
     "FavorAttention",
     "Nonlocalinteractionblock",
     "get_refreshed_cfconv_layer",
-    "refresh_module_with_schnet_",
+    "get_refreshed_painninteracition_layer",
+    "refresh_module_",
     "load_and_adapt_old_checkpoint",
     "fixed_pyg_inspector",
     "PaiNN",

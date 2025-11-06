@@ -389,11 +389,13 @@ class _Simulation(object):
     def compile_model(self):
         """Compiles the model for faster execution"""
         if self.compile:
-            # if compilation fails in some parts of the model,
+            # if compilation fails in some parts of the model,by enabling
+            # torch._dynamo.config.suppress_errors = True
             # errors are suppressed and problematic parts are runned in eager mode
-            torch._dynamo.config.suppress_errors = True
+            # !! it is reccomended to do so only for debugging purposes,
+            # best practice is to manually add @torch.compiler.disable decorator
+            # to problematic parts of the code !!
             torch._logging.set_logs(dynamo=logging.ERROR)
-
             self.model = torch.compile(
                 self.model, dynamic=True, mode=self.compile_mode
             )

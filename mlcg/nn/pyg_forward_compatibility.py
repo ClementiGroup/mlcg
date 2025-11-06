@@ -4,7 +4,7 @@ in use.
 """
 
 from contextlib import contextmanager
-from typing import Mapping, Union
+from typing import Mapping, Type, Union
 from collections.abc import Iterable
 import warnings
 
@@ -12,6 +12,48 @@ import torch
 import mlcg.nn.schnet
 from mlcg.nn.schnet import CFConv, SchNet
 from interpret_gnn.models import EdgeAwareCFConv
+from mlcg.nn.painn import PaiNNInteraction, PaiNN
+
+
+def get_refreshed_painninteracition_layer(
+    old_painn_interaction: PaiNNInteraction,
+):
+    """Extract the weights and reinstantiate the `PaiNNInteraction` object
+    such as to make it compatible with the current pyg.
+
+    Parameters
+    ----------
+    old_painn_interaction: the `PaiNNInteraction` from deserialized PaiNN checkpoints
+        possibly saved with a previous versions of pyg.
+    """
+    # Tensor was once imported as a standalone symbol in an older
+    # version of mlcg (or pyg) but not anymore, thus we have
+    # to monkey patch it here in order for some older checkpoints
+    # to work
+    mlcg.nn.schnet.Tensor = torch.Tensor
+    # extract init args
+    hidden_channels = old_painn_interaction.hidden_channels
+    edge_attr_dim = old_painn_interaction.filter_network.in_features
+    cutoff = old_painn_interaction.cutoff
+    activation = old_painn_interaction.interatomic_context_net[1]
+    aggr = old_painn_interaction.aggr
+    # extract the state dict
+    # clone is used here, since the state_dict of filter_network
+    # will be overwritten by the __init__ of `new_painn_interaction`
+    state_dict = {
+        k: v.clone() for k, v in old_painn_interaction.state_dict().items()
+    }
+    device = next(iter(state_dict.values())).device
+    # rebuild
+    new_painn_interaction = PaiNNInteraction(
+        hidden_channels=hidden_channels,
+        edge_attr_dim=edge_attr_dim,
+        cutoff=cutoff,
+        activation=activation,
+        aggr=aggr,
+    ).to(device)
+    new_painn_interaction.load_state_dict(state_dict)
+    return new_painn_interaction
 
 
 def get_refreshed_cfconv_layer(old_cfconv: Union[CFConv, EdgeAwareCFConv]):
@@ -70,56 +112,78 @@ def get_refreshed_cfconv_layer(old_cfconv: Union[CFConv, EdgeAwareCFConv]):
     return new_cfconv
 
 
-def _search_for_schnet(top_level: torch.nn.Module):
-    """Recursively search for SchNet in all submodules."""
-    if isinstance(top_level, SchNet):
+def _search_for_model(
+    top_level: torch.nn.Module, model_type: Type[torch.nn.Module]
+):
+    """Recursively search for model_type in all submodules."""
+    if isinstance(top_level, model_type):
         yield top_level
     elif isinstance(top_level, torch.nn.ModuleDict) or isinstance(top_level, Mapping):
         # torch.nn.ModuleDict is not a Mapping...
         for module in top_level.values():
-            yield from _search_for_schnet(module)
+            yield from _search_for_model(module, model_type)
     elif isinstance(top_level, Iterable):
         # e.g., a ModuleList
         for module in top_level:
-            yield from _search_for_schnet(module)
+            yield from _search_for_model(module, model_type)
     elif isinstance(top_level, mlcg.nn.SumOut):
-        yield from _search_for_schnet(top_level.models)
+        yield from _search_for_model(top_level.models, model_type)
     elif isinstance(top_level, mlcg.nn.GradientsOut):
-        yield from _search_for_schnet(top_level.model)
+        yield from _search_for_model(top_level.model, model_type)
     else:
         # trying to handle another cases
         for module in top_level.children():
-            if hasattr(module, "__iter__"):
-                yield from _search_for_schnet(module)
+            try:
+                yield from _search_for_model(module, model_type)
+            except:
+                pass
 
 
-def refresh_module_with_schnet_(schnet_containing: torch.nn.Module, verbose=False):
-    """In-place refresh all cfconv_layers in a torch.nn.Module that possibly
-    contains a `mlcg.nn.SchNet` inside. See `get_refreshed_cfconv_layer` for
+def refresh_module_(
+    model_containing: torch.nn.Module,
+    model_type: Type[torch.nn.Module],
+    verbose: bool = False,
+):
+    """In-place refresh all cfconv_layers or PainnInteraction
+    in a torch.nn.Module that possibly contains a `mlcg.nn.SchNet` or `mlcg.nn.PaiNN` inside.
+    See `get_refreshed_cfconv_layer` and `get_refreshed_painninteracition_layer`  for
     what this refreshing is exactly doing.
 
     Parameters
     ----------
-    schnet_containing (torch.nn.Module): a module that is expected to have
-    a SchNet as submodule.
+    model_containing (torch.nn.Module):
+        a module that is expected to have model_type as submodule.
+    model_type (Union[SchNet, PaiNN]):
+        the model type to be refreshed, Schnet and PaiNN are supported.
+    verbose (bool):
+        whether to print warnings when no or multiple models are found.
     """
-    all_schnets = list(_search_for_schnet(schnet_containing))
+    all_models = list(_search_for_model(model_containing, model_type))
     if verbose:
-        if len(all_schnets) == 0:
+        if len(all_models) == 0:
             warnings.warn(
-                f"No SchNet has been found as a submodule of the input "
-                f"{schnet_containing}"
+                f"\nNo {model_type.__name__} has been found as a submodule of the input "
+                f"{model_containing}"
             )
-        if len(all_schnets) > 1:
+        if len(all_models) >= 1:
             warnings.warn(
-                f"{len(all_schnets)} SchNet has been found as a submodule "
-                f"of the input {schnet_containing}, please ensure whether "
+                f"\n{len(all_models)} {model_type.__name__} has been found as a submodule "
+                f"of the input {model_containing}, please ensure whether "
                 f"this is expected."
             )
-    for schnet in all_schnets:
-        for ib in schnet.interaction_blocks:
-            ib.conv = get_refreshed_cfconv_layer(ib.conv)
-    return schnet_containing
+    for model in all_models:
+        if model_type == SchNet:
+            for ib in model.interaction_blocks:
+                ib.conv = get_refreshed_cfconv_layer(ib.conv)
+        elif model_type == PaiNN:
+            for ib in model.interaction_blocks:
+                ib = get_refreshed_painninteracition_layer(ib)
+        else:
+            raise NotImplementedError(
+                f"refresh_module only supports SchNet and PaiNN, "
+                f"but got {model_type}"
+            )
+    return model_containing
 
 
 @contextmanager
@@ -169,7 +233,7 @@ def load_and_adapt_old_checkpoint(f, **kwargs):
     """Load and adapt an older checkpoint from training with a previous
     version of pyg. Using this function instead of `torch.load` can bypass
     the import error caused by an newer version of pyg, and automatically
-    adapts the SchNet to make it usable.
+    adapts SchNet or PaiNN models to make them usable.
 
     Parameters
     ----------

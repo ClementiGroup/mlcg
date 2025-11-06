@@ -1,15 +1,11 @@
 import torch
-from torch.nn.utils import clip_grad_norm_
-from pytorch_lightning.plugins.environments import (
-    ClusterEnvironment,
-)
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
 
-from typing import List, Optional, Union, Any, Dict
+from typing import Optional, Union
 
 from .model import PLModel
-from ..nn import SumOut, refresh_module_with_schnet_, fixed_pyg_inspector
+from ..nn import SumOut, SchNet, PaiNN, refresh_module_, fixed_pyg_inspector
 
 
 def extract_model_from_checkpoint(checkpoint_path, hparams_file):
@@ -20,15 +16,6 @@ def extract_model_from_checkpoint(checkpoint_path, hparams_file):
     model = plmodel.get_model()
     # refresh_module_with_schnet_(model)
     return model
-
-# def old_extract_model_from_checkpoint(checkpoint_path, hparams_file):
-#     with fixed_pyg_inspector():
-#         plmodel = PLModel.load_from_checkpoint(
-#             checkpoint_path=checkpoint_path, hparams_file=hparams_file
-#         )
-#         model = plmodel.get_model()
-#     refresh_module_with_schnet_(model)
-#     return model
 
 
 def merge_priors_and_checkpoint(
@@ -79,7 +66,8 @@ def merge_priors_and_checkpoint(
         merged_model[ml_model.name] = ml_model
 
     if isinstance(priors, str):
-        prior_model = torch.load(priors, weights_only=False)
+        with fixed_pyg_inspector():
+            prior_model = torch.load(priors, weights_only=False)
     else:
         prior_model = priors
     # case where the prior that we are loading is already wrapped in a SumOut layer
