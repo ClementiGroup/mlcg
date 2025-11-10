@@ -92,10 +92,30 @@ def compute_distances(
     """
     assert mapping.dim() == 2
     assert mapping.shape[0] == 2
-
     if cell_shifts is None:
         dr = pos[mapping[1]] - pos[mapping[0]]
     else:
+#        nonzero_mask = (cell_shifts.abs().sum(dim=-1) != 0)  # e.g. shape: (batch, num_pairs)
+#        idxs = torch.nonzero(nonzero_mask)  # returns Nx2 or Nx1 tensor depending on shape
+#
+#        if idxs.numel() > 0:  # Only print if any nonzero shifts exist
+#            print("=== Non-zero cell shift debug info ===")
+#            print(f"indices:\n{idxs}")
+#
+#            # Handle both 2D (batch, num_pairs, 3) and 2D (num_pairs, 3) cell_shifts
+#            if cell_shifts.dim() == 3:
+#                b, n = idxs[:, 0], idxs[:, 1]
+#                print(f"pos[mapping[0]]:\n{pos[mapping[0]][b, n] if pos[mapping[0]].dim() > 2 else pos[mapping[0]][n]}")
+#                print(f"pos[mapping[1]]:\n{pos[mapping[1]][b, n] if pos[mapping[1]].dim() > 2 else pos[mapping[1]][n]}")
+#                print(f"cell_shifts:\n{cell_shifts[b, n]}")
+#            else:
+#                n = idxs[:, 0]
+#                print(f"pos[mapping[0]]:\n{pos[mapping[0]][n]}")
+#                print(f"pos[mapping[1]]:\n{pos[mapping[1]][n]}")
+#                print(f"cell_shifts:\n{cell_shifts[n]}")
+#
+#            print("======================================")
+#        print(f"cell_shifts sample dist: {cell_shifts[0]}")
         dr = (pos[mapping[1]] + cell_shifts[:, :, 1]) - pos[mapping[0]]
 
     return dr.norm(p=2, dim=1)
@@ -128,7 +148,7 @@ def compute_angles_raw(
     if cell_shifts is None:
         dr1 = pos[mapping[0]] - pos[mapping[1]]
         dr2 = pos[mapping[2]] - pos[mapping[1]]
-    
+
     else:
         dr1 = pos[mapping[0]] - (pos[mapping[1]] + cell_shifts[:, :, 1])
         dr2 = (pos[mapping[2]] + cell_shifts[:, :, 2]) - (
@@ -171,7 +191,7 @@ def compute_angles_cos(
     if cell_shifts is None:
         dr1 = pos[mapping[0]] - pos[mapping[1]]
         dr2 = pos[mapping[2]] - pos[mapping[1]]
-    
+
     else:
         dr1 = pos[mapping[0]] - (pos[mapping[1]] + cell_shifts[:, :, 1])
         dr2 = (pos[mapping[2]] + cell_shifts[:, :, 2]) - (
@@ -232,7 +252,7 @@ def compute_torsions(
         dr1 = pos[mapping[1]] - pos[mapping[0]]
         dr2 = pos[mapping[2]] - pos[mapping[1]]
         dr3 = pos[mapping[3]] - pos[mapping[2]]
-    
+
     else:
         dr1 = (pos[mapping[1]] + cell_shifts[:, :, 1]) - pos[mapping[0]]
         dr2 = (pos[mapping[2]] + cell_shifts[:, :, 2]) - (

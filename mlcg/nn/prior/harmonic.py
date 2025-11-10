@@ -309,6 +309,18 @@ class HarmonicAnglesRaw(Harmonic):
         )
         self.name = name
 
+    def data2features(self, data: AtomicData) -> torch.Tensor:
+        mapping = data.neighbor_list[self.name]["index_mapping"]
+        pbc = getattr(data, "pbc", None)
+        cell = getattr(data, "cell", None)
+        return HarmonicAnglesRaw.compute_features(
+            pos=data.pos,
+            mapping=mapping,
+            pbc=pbc,
+            cell=cell,
+            batch=data.batch,
+        )
+
     @staticmethod
     def neighbor_list(topology: Topology) -> dict:
         return Harmonic.neighbor_list(topology, HarmonicAnglesRaw.name)
@@ -485,8 +497,10 @@ class ShiftedPeriodicHarmonicImpropers(Harmonic):
 
     def data2features(self, data: AtomicData) -> torch.Tensor:
         mapping = data.neighbor_list[self.name]["index_mapping"]
+        pbc = getattr(data, "pbc", None)
+        cell = getattr(data, "cell", None)
         return ShiftedPeriodicHarmonicImpropers.compute_features(
-            data.pos, mapping
+            pos=data.pos, mapping=mapping, pbc=pbc, cell=cell, batch=data.batch
         )
 
     def forward(self, data: AtomicData) -> AtomicData:

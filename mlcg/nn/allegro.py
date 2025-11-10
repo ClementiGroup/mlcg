@@ -398,7 +398,6 @@ class StandardAllegro(Allegro):
         # weight initialization and normalization
         forward_normalize: bool = True,
     ):
-
         ## haking jit for module
         _original_script = torch.jit.script
         torch.jit.script = lambda fn: fn  # No-op

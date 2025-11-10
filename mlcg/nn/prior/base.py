@@ -13,7 +13,7 @@ def compute_cell_shifts(
     """
     Compute the minimum vector using index 0 as reference
         Scale vectors based on box size and shift if greater than half the box size
-        Initial implementation written by Clark Templeton 
+        Initial implementation written by Clark Templeton
         Adopted from ase.geometry naive_find_mic
             https://gitlab.com/ase/ase/
     Inputs:
@@ -42,7 +42,7 @@ def compute_cell_shifts(
             atom_groups, 3, mapping_order, dtype=pos.dtype
         ).to(pos.device)
         if batch == None:
-            batch = torch.zeros(pos.shape[0], dtype=int,device=pos.device)
+            batch = torch.zeros(pos.shape[0], dtype=int)
         batch_ids = batch[mapping[0]]
         cell_inv = torch.linalg.inv(cell[batch_ids])
         for ii in range(1, cell_shifts.shape[-1]):
@@ -52,10 +52,10 @@ def compute_cell_shifts(
                 "bij,bj->bi",
                 cell_inv.to(drs.dtype),
                 drs,
-                )
+            )
             # compute unit number of unit cell shifts
             cell_shifts[:, :, ii] = torch.floor(frac_dr + 0.5)
-            # convert back to cartesian displacement 
+            # convert back to cartesian displacement
             cell_shifts[:, :, ii] = pbc[batch_ids] * torch.einsum(
                 "bij,bj->bi",
                 cell[batch_ids].to(drs.dtype),
@@ -120,16 +120,22 @@ class _Prior(torch.nn.Module):
         given by the `data2features` object.
         """
         raise NotImplementedError
-    
+
     @staticmethod
     def _get_cell_shifts(
         pos: torch.Tensor,
         mapping: torch.Tensor,
-        pbc: Optional[torch.Tensor] = None,
-        cell: Optional[torch.Tensor] = None,
-        batch: Optional[torch.Tensor] = None,
+        pbc: torch.Tensor,
+        cell: torch.Tensor,
+        batch: torch.Tensor,
     ) -> torch.Tensor:
-        if all([feat is not None for feat in [pbc, cell]]):
+        r"""
+        Wrapper method to compute cell shifts using periodic boundary conditions.
+
+        This is a convenience wrapper around the compute_cell_shifts function.
+
+        """
+        if all([feat != None for feat in [pbc, cell]]):
             cell_shifts = compute_cell_shifts(pos, mapping, pbc, cell, batch)
         else:
             cell_shifts = None
