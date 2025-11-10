@@ -158,17 +158,10 @@ class SchNet(torch.nn.Module):
             )
         else:
             edge_index = neighbor_list["index_mapping"]
-            cell_shifts = compute_cell_shifts(
-                data.pos,
-                edge_index,
-                data.pbc,
-                data.cell,
-                data.batch,
-            )
             distances = compute_distances(
                 data.pos,
                 edge_index,
-                cell_shifts,
+                neighbor_list["cell_shifts"],
             )
 
         rbf_expansion = self.rbf_layer(distances)
