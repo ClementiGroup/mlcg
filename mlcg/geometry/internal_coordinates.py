@@ -97,7 +97,6 @@ def compute_distances(
         dr = pos[mapping[1]] - pos[mapping[0]]
     else:
         dr = (pos[mapping[1]] + cell_shifts[:, :, 1]) - pos[mapping[0]]
-        #print("cell taken into account for bonds")
 
     return dr.norm(p=2, dim=1)
 
