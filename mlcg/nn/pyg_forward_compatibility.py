@@ -100,14 +100,15 @@ def _search_for_model(
     """Recursively search for model_type in all submodules."""
     if isinstance(top_level, model_type):
         yield top_level
+    elif isinstance(top_level, (int,str,float,torch.Tensor,list)):
+        pass
     elif isinstance(top_level, torch.nn.ModuleDict) or isinstance(
         top_level, Mapping
     ):
         # torch.nn.ModuleDict is not a Mapping...
         for module in top_level.values():
             yield from _search_for_model(module, model_type)
-    elif isinstance(top_level, Iterable):
-        # e.g., a ModuleList
+    elif isinstance(top_level, torch.nn.ModuleList):
         for module in top_level:
             yield from _search_for_model(module, model_type)
     elif isinstance(top_level, mlcg.nn.SumOut):
