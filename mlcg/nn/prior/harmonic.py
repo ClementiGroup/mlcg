@@ -2,7 +2,7 @@ from math import pi
 from scipy.integrate import trapezoid
 from scipy.optimize import curve_fit
 import torch
-from torch_scatter import scatter
+from torch_geometric.utils import scatter
 from typing import Final, Dict
 
 

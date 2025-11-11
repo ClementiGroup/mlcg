@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 from typing import Final, Optional, Dict
-from torch_scatter import scatter
+from torch_geometric.utils import scatter
 
 from .base import _Prior
 from ...data.atomic_data import AtomicData
