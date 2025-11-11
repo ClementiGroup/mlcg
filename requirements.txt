@@ -23,7 +23,7 @@ sympy
 seaborn
 torch
 torch_geometric
-torch_cluster
+torch-cluster
 torch_optimizer<=1.5.1
 tqdm
 # developer tools
