@@ -367,8 +367,7 @@ def test_simulation_run(
         )
         sim._set_up_simulation(overwrite=False)
         data = deepcopy(sim.initial_data).to(sim.device)
-        sim.compile_model()
-
+        _ = sim.compile_model_and_get_initial_forces(data)
         return sim.calculate_potential_and_forces(data)
 
     energy_compiled, forces_compiled = run_simulation(compile_flag=True)

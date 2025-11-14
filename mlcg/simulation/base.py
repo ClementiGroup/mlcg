@@ -24,6 +24,7 @@ from ..data._keys import (
     POSITIONS_KEY,
 )
 from .specialize_prior import condense_all_priors_for_simulation
+from .torch_compile_warning import torch_compile_waring
 
 
 # Physical Constants
@@ -309,8 +310,7 @@ class _Simulation(object):
         self._set_up_simulation(overwrite)
         data = deepcopy(self.initial_data)
         data = data.to(self.device)
-        self.compile_model()
-        _, forces = self.calculate_potential_and_forces(data)
+        forces = self.compile_model_and_get_initial_forces(data)
         if self.export_interval is not None:
             t_init = self.current_timestep * self.export_interval
         else:
@@ -378,19 +378,39 @@ class _Simulation(object):
 
         return
 
-    def compile_model(self):
+    def compile_model_and_get_initial_forces(self, data):
         """Compiles the model for faster execution"""
         if self.compile:
-            # if compilation fails in some parts of the model,by enabling
-            # torch._dynamo.config.suppress_errors = True
-            # errors are suppressed and problematic parts are runned in eager mode
-            # !! it is reccomended to do so only for debugging purposes,
-            # best practice is to manually add @torch.compiler.disable decorator
-            # to problematic parts of the code !!
             torch._logging.set_logs(dynamo=logging.ERROR)
-            self.model = torch.compile(
-                self.model, dynamic=True, mode=self.compile_mode
-            )
+            try:
+                self.model = torch.compile(
+                    self.model, dynamic=True, mode=self.compile_mode
+                )
+                _, forces = self.calculate_potential_and_forces(data)
+                return forces
+            except Exception as e:
+                # if compilation fails in some parts of the model,by enabling
+                # torch._dynamo.config.suppress_errors = True
+                # errors are suppressed and problematic parts are runned in eager mode
+                # !! it is reccomended to do so only for debugging purposes,
+                # best practice is to manually add @torch.compiler.disable decorator
+                # to problematic parts of the code !!
+
+                warnings.warn(torch_compile_waring(e))
+                # Also emit a Python warning for testing/logging integration
+                warnings.warn(
+                    "torch.compile fallback active! See printed message above.",
+                    stacklevel=2,
+                )
+
+                # import torch._dynamo
+                torch._dynamo.config.suppress_errors = True
+                self.model = torch.compile(
+                    self.model, dynamic=True, mode=self.compile_mode
+                )
+
+        _, forces = self.calculate_potential_and_forces(data)
+        return forces
 
     def log(self, iter_: int):
         """Utility to print log statement or write it to an text file"""
