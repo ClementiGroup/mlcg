@@ -29,3 +29,11 @@ Please check the following:
 
 {RED}{BOLD}============================================================{RESET}
 """
+
+
+def force_torch_compile_warning():
+    return f"""
+{RED}
+Forcing compilation with only one structure in the batch:{RESET}
+{YELLOW}this may expose known issues with scatter operations and may produce invalid outputs or NaN gradients.{RESET}
+"""

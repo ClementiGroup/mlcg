@@ -24,7 +24,10 @@ from ..data._keys import (
     POSITIONS_KEY,
 )
 from .specialize_prior import condense_all_priors_for_simulation
-from .torch_compile_warning import torch_compile_waring
+from .torch_compile_warning import (
+    torch_compile_waring,
+    force_torch_compile_warning,
+)
 
 
 # Physical Constants
@@ -121,6 +124,11 @@ class _Simulation(object):
         Specifies the compilation mode for torch.compile.
         See https://docs.pytorch.org/docs/stable/generated/torch.compile.html
         for more information.
+    force_compile:
+        If set to True, compilation will be forced even for single structure
+        simulations. This should be used with extreme caution since it may
+        expose known issues with scatter operations and may produce invalid
+        outputs or NaN gradients.
     """
 
     def __init__(
@@ -146,6 +154,7 @@ class _Simulation(object):
         save_subroutine: Optional[Callable] = None,
         compile: bool = False,
         compile_mode: str = "default",
+        force_compile: bool = False,
     ):
         self.model = None
         self.initial_data = None
@@ -193,6 +202,7 @@ class _Simulation(object):
         self._simulated = False
         self.compile = compile
         self.compile_mode = compile_mode
+        self.force_compile = force_compile
 
     def attach_model_and_configurations(
         self,
@@ -381,13 +391,17 @@ class _Simulation(object):
     def compile_model_and_get_initial_forces(self, data):
         """Compiles the model for faster execution"""
         if self.compile:
-            if data.batch.max() == 0:
+            if (data.batch.max() == 0) and not self.force_compile:
                 warnings.warn(
-                    "Compilation is allowed only when more than one structure is provided "
-                    "to avoid issues with scatter operations. The simulation will run in "
-                    "non-compiled mode."
+                    "Compilation is allowed only when more than one structure is provided to avoid "
+                    "issues with scatter operations. The simulation will run in non-compiled mode. "
+                    "A `force_compilation=True` flag exists, but it should be used with extreme "
+                    "caution. Forcing compilation can expose known issues with scatter operations "
+                    "and may produce invalid outputs or NaN gradients. "
                 )
             else:
+                if data.batch.max() == 0:
+                    warnings.warn(force_torch_compile_warning())
                 torch._logging.set_logs(dynamo=logging.ERROR)
                 try:
                     self.model = torch.compile(
