@@ -320,7 +320,8 @@ class _Simulation(object):
         self._set_up_simulation(overwrite)
         data = deepcopy(self.initial_data)
         data = data.to(self.device)
-        forces = self.compile_model_and_get_initial_forces(data)
+        self.compile_model(data)
+        _, forces = self.calculate_potential_and_forces(data)
         if self.export_interval is not None:
             t_init = self.current_timestep * self.export_interval
         else:
@@ -388,14 +389,27 @@ class _Simulation(object):
 
         return
 
-    def compile_model_and_get_initial_forces(self, data):
+    def _run_and_check(self, data):
+        """
+        Runs the model, computes potential and forces, and validates numerical correctness.
+        """
+        potential, forces = self.calculate_potential_and_forces(data)
+
+        if torch.isnan(forces).any() or torch.isinf(forces).any():
+            raise RuntimeError("Invalid values detected in computed forces.")
+        if torch.isnan(potential).any() or torch.isinf(potential).any():
+            raise RuntimeError("Invalid values detected in computed potential.")
+
+        return
+
+    def compile_model(self, data):
         """Compiles the model for faster execution"""
         if self.compile:
             if (data.batch.max() == 0) and not self.force_compile:
                 warnings.warn(
                     "Compilation is allowed only when more than one structure is provided to avoid "
                     "issues with scatter operations. The simulation will run in non-compiled mode. "
-                    "A `force_compilation=True` flag exists, but it should be used with extreme "
+                    "A `force_compile=True` flag exists, but it should be used with extreme "
                     "caution. Forcing compilation can expose known issues with scatter operations "
                     "and may produce invalid outputs or NaN gradients. "
                 )
@@ -407,8 +421,8 @@ class _Simulation(object):
                     self.model = torch.compile(
                         self.model, dynamic=True, mode=self.compile_mode
                     )
-                    _, forces = self.calculate_potential_and_forces(data)
-                    return forces
+                    self._run_and_check(data)
+                    return
                 except Exception as e:
                     # if compilation fails in some parts of the model,by enabling
                     # torch._dynamo.config.suppress_errors = True
@@ -429,9 +443,9 @@ class _Simulation(object):
                     self.model = torch.compile(
                         self.model, dynamic=True, mode=self.compile_mode
                     )
+        self._run_and_check(data)
 
-        _, forces = self.calculate_potential_and_forces(data)
-        return forces
+        return
 
     def log(self, iter_: int):
         """Utility to print log statement or write it to an text file"""
