@@ -9,7 +9,7 @@ from mlcg.data.atomic_data import AtomicData
 from mlcg.nn.gradients import GradientsOut, SumOut
 
 
-class Repulsion(torch.nn.Module, _Prior):
+class Repulsion(_Prior):
     r"""1-D power law repulsion prior for feature :math:`x` of the form:
 
     .. math::

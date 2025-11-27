@@ -8,6 +8,8 @@ import sys
 SCRIPT_DIR = osp.abspath(osp.dirname(__file__))
 
 sys.path.insert(0, osp.join(SCRIPT_DIR, "../"))
+# Andrea's prior
+sys.path.append(osp.join(SCRIPT_DIR, "../mlcg/nn/prior/"))
 
 from mlcg.nn.gradients import SumOut
 from mlcg.pl.utils import (

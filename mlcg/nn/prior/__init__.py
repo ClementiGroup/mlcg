@@ -10,4 +10,4 @@ from .harmonic import (
 # from .repulsion import Repulsion
 from .fourier_series import FourierSeries, Dihedral
 from .polynomial import Polynomial, QuarticAngles
-from Andrea_repulsion_fitted import Repulsion
+from .repulsion_fitted import Repulsion

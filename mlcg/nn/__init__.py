@@ -6,7 +6,6 @@ from .losses import ForceMSE, ForceRMSE, Loss, EnergyMSE
 from .prior import (
     Harmonic,
     HarmonicAngles,
-    # HarmonicAnglesRaw,
     HarmonicBonds,
     Repulsion,
     Dihedral,
@@ -47,7 +46,7 @@ __all__ = [
     "HarmonicAngles",
     "HarmonicAnglesRaw",
     "HarmonicBonds",
-    "Repulsion",
+    # "Repulsion",
     "MLP",
     "TypesMLP",
     "Attention",
