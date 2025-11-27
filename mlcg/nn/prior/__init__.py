@@ -7,6 +7,7 @@ from .harmonic import (
     GeneralAngles,
     GeneralBonds,
 )
-from .repulsion import Repulsion
+# from .repulsion import Repulsion
 from .fourier_series import FourierSeries, Dihedral
 from .polynomial import Polynomial, QuarticAngles
+from Andrea_repulsion_fitted import Repulsion
