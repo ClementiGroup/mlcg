@@ -10,8 +10,7 @@ import warnings
 
 import torch
 import mlcg.nn.schnet
-from mlcg.nn.schnet import CFConv, SchNet
-from interpret_gnn.models import EdgeAwareCFConv
+from mlcg.nn.schnet import CFConv, SchNet, EdgeAwareCFConv
 from mlcg.nn.painn import PaiNNInteraction, PaiNN
 
 
