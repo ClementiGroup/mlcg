@@ -18,7 +18,6 @@ from mlcg.pl.utils import (
 )
 import argparse
 
-from repulsion_fitted import Repulsion
 
 def parse_cli():
     parser = argparse.ArgumentParser(
