@@ -79,7 +79,7 @@ class RepulsionFilteredLinear(torch.nn.Module):
     def __init__(
         self,
         rbf_layer: torch.nn.Module,
-        rbf_filters: RBFFilter | None,
+        rbf_filters: RBFFilter | None = None,
         # Parameters for RBF rescaling
         max_bead_type: int = 25,
         max_num_neighbors = 1000,
