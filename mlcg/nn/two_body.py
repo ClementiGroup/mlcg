@@ -79,7 +79,7 @@ class RepulsionFilteredLinear(torch.nn.Module):
     def __init__(
         self,
         rbf_layer: torch.nn.Module,
-        rbf_filters: RBFFilter,
+        rbf_filters: RBFFilter | None,
         # Parameters for RBF rescaling
         max_bead_type: int = 25,
         max_num_neighbors = 1000,
@@ -90,8 +90,10 @@ class RepulsionFilteredLinear(torch.nn.Module):
         self.max_num_neighbors = max_num_neighbors
         self.max_bead_type = max_bead_type
         self.rbf_layer = rbf_layer
+        self.filter_rbfs = filter_rbfs
         # Register  rbf_filters as a buffer 
-        self.register_buffer("radial_filters", torch.nn.Buffer(data=rbf_filters.filter, persistent=True))
+        if filter_rbfs:
+            self.register_buffer("radial_filters", torch.nn.Buffer(data=rbf_filters.filter, persistent=True))
 
         # Creating the tensors for the coefficients 
         i, j = torch.tril_indices(max_bead_type, max_bead_type, offset=-1)
@@ -142,6 +144,7 @@ class RepulsionFilteredLinear(torch.nn.Module):
             edge_index,
             neighbor_list["cell_shifts"],
         )
+
         # Addition for filtering
         senders = data.atom_types[edge_index[0]]
         receivers = data.atom_types[edge_index[1]]
@@ -149,10 +152,12 @@ class RepulsionFilteredLinear(torch.nn.Module):
         mask = senders > receivers
         senders[mask], receivers[mask] = receivers[mask], senders[mask]
 
-        rbf_filters = self.radial_filters[senders, receivers]
-        rbf_params = self.rbf_params[senders, receivers]
+        rbf_params = self.rbf_params[senders, receivers] 
 
-        rbf_expansion = self.rbf_layer(distances) * rbf_filters
+        rbf_expansion = self.rbf_layer(distances)
+        if self.filter_rbf:
+            rbf_filters = self.radial_filters[senders, receivers]
+            rbf_expansion  *= rbf_filters
         weighted_expansion = rbf_expansion * rbf_params 
         # Energy per edge 
         energy_per_edge = torch.sum(weighted_expansion, dim=1) 
