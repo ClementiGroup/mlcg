@@ -29,18 +29,70 @@ from torch_geometric.data.collate import collate
 
 class RBFFilter():
     """
-    Class to define rbf filter
+    Class to define rbf filter.
+
+    Parameters:
+    -----------
+    rbf_filter: torch.Tensor
+        A filter array of size NxNxM where N is number
+        of atom types and M is number of basis functions
+    use_boolean_filter: bool, default False
+        If true, a boolean filter will be generated
+        based on condition rbf_filter > boolean_filter_cutoff
     """
 
-    def __init__(self, rbf_filter: torch.Tensor):
-        self.filter = rbf_filter
+    def __init__(self,
+                 rbf_filter: torch.Tensor,
+                 use_boolean_filter: bool =False,
+                 boolean_filter_cutoff: float  = 0.0):
+        if use_boolean_filter:
+            masked_filters = rbf_filters > mask_cutoff
+            self.filter = masked_filters
+        else:
+            self.filter = rbf_filter
 
     @classmethod
-    def from_file(cls, path: str) -> "RBFFilter":
+    def from_file(cls, path: str, **kwargs) -> "RBFFilter":
         filter_tensor = torch.load(path)
-        return cls(filter_tensor)
-    
+        return cls(filter_tensor, **kwargs)
 
+
+class BinaryRBFFilter(RBFFilter):
+    """
+    Generate an RBF filter according to the following
+    rules:
+
+    1) for a given pair of atom types, set first N < M 
+        filter values to 0, the rest set to 1
+
+    2) N is determined as the index of the fist value above 
+        the cutoff
+
+    3) padd the filtering mask to the specified last dimention
+    K > M with 1
+    """
+    def __init__(self,
+                 rbf_filter: torch.Tensor
+                 n_rbfs: int, 
+                 cutoff: float):
+        self.filter = self._get_mask(rbf_filter, n_rbfs, cutoff)
+
+
+    def _get_mask(self, rbf_filter, n_rbfs, cutoff):
+
+        n_atom_types_0 = rbf_filter.size()[0]
+        n_atom_types_1 = rbf_filter.size()[1]
+        # get a standard boolean mask 
+        cutoff_mask = rbf_filter > cutoff
+
+        # find  an index of first occurence of a useful rbf
+        target_index = cutoff_mask.int().argmax(dim=-1, keepdim=True)
+        
+        index_tensor = torch.arange(n_rbfs)
+        index_tensor = index_tensor[torch.newaxis, torch.newaxis, :]
+        tiled_tensor = index_tensor.tile(dims=(n_atom_types_0, n_atom_types_1, 1))
+        mask = tiled_tensor >= target_index
+        return mask 
 
 
 class RepulsionFilteredLinear(torch.nn.Module):
@@ -155,7 +207,7 @@ class RepulsionFilteredLinear(torch.nn.Module):
         rbf_params = self.rbf_params[senders, receivers] 
 
         rbf_expansion = self.rbf_layer(distances)
-        if self.filter_rbf:
+        if self.filter_rbfs:
             rbf_filters = self.radial_filters[senders, receivers]
             rbf_expansion  *= rbf_filters
         weighted_expansion = rbf_expansion * rbf_params 
