@@ -145,7 +145,8 @@ class RepulsionFilteredLinear(torch.nn.Module):
         self.filter_rbfs = filter_rbfs
         # Register  rbf_filters as a buffer 
         if filter_rbfs:
-            self.register_buffer("radial_filters", torch.nn.Buffer(data=rbf_filters.filter, persistent=True))
+            filter_values = torch.clamp(rbf_filters.filter, min=0.0, max=1.0)
+            self.register_buffer("radial_filters", torch.nn.Buffer(data=filter_values, persistent=True))
 
         # Creating the tensors for the coefficients 
         i, j = torch.tril_indices(max_bead_type, max_bead_type, offset=-1)
