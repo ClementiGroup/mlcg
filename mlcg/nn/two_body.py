@@ -72,7 +72,7 @@ class BinaryRBFFilter(RBFFilter):
     K > M with 1
     """
     def __init__(self,
-                 rbf_filter: torch.Tensor
+                 rbf_filter: torch.Tensor,
                  n_rbfs: int, 
                  cutoff: float):
         self.filter = self._get_mask(rbf_filter, n_rbfs, cutoff)
@@ -93,6 +93,15 @@ class BinaryRBFFilter(RBFFilter):
         tiled_tensor = index_tensor.tile(dims=(n_atom_types_0, n_atom_types_1, 1))
         mask = tiled_tensor >= target_index
         return mask 
+
+    @classmethod
+    def from_file(cls, path: str,  n_rbfs: int, cutoff: float) -> "BinaryRBFFilter":
+        """
+        Need to reimplement it to pass proper kargs via 
+        Pytorch lightning
+        """
+        filter_tensor = torch.load(path)
+        return cls(filter_tensor, n_rbfs=n_rbfs, cutoff=cutoff)
 
 
 class RepulsionFilteredLinear(torch.nn.Module):
@@ -131,7 +140,7 @@ class RepulsionFilteredLinear(torch.nn.Module):
     def __init__(
         self,
         rbf_layer: torch.nn.Module,
-        rbf_filters: RBFFilter | None = None,
+        rbf_filters: RBFFilter | BinaryRBFFilter | None = None,
         # Parameters for RBF rescaling
         max_bead_type: int = 25,
         max_num_neighbors = 1000,
