@@ -27,6 +27,10 @@ from ..data._keys import (
     POSITIONS_KEY,
 )
 from .specialize_prior import condense_all_priors_for_simulation
+from .torch_compile_warning import (
+    torch_compile_waring,
+    force_torch_compile_warning,
+)
 
 
 # Physical Constants
@@ -123,6 +127,11 @@ class _Simulation(object):
         Specifies the compilation mode for torch.compile.
         See https://docs.pytorch.org/docs/stable/generated/torch.compile.html
         for more information.
+    force_compile:
+        If set to True, compilation will be forced even for single structure
+        simulations. This should be used with extreme caution since it may
+        expose known issues with scatter operations and may produce invalid
+        outputs or NaN gradients.
     """
 
     def __init__(
@@ -149,6 +158,7 @@ class _Simulation(object):
         rescaler_path: Optional[str] = None,
         compile: bool = False,
         compile_mode: str = "default",
+        force_compile: bool = False,
     ):
         self.model = None
         self.initial_data = None
@@ -200,6 +210,7 @@ class _Simulation(object):
         self._simulated = False
         self.compile = compile
         self.compile_mode = compile_mode
+        self.force_compile = force_compile
 
     def attach_model_and_configurations(
         self,
@@ -317,7 +328,7 @@ class _Simulation(object):
         self._set_up_simulation(overwrite)
         data = deepcopy(self.initial_data)
         data = data.to(self.device)
-        self.compile_model()
+        self.compile_model(data)
         _, forces = self.calculate_potential_and_forces(data)
         if self.export_interval is not None:
             t_init = self.current_timestep * self.export_interval
@@ -386,19 +397,63 @@ class _Simulation(object):
 
         return
 
-    def compile_model(self):
+    def _run_and_check(self, data):
+        """
+        Runs the model, computes potential and forces, and validates numerical correctness.
+        """
+        potential, forces = self.calculate_potential_and_forces(data)
+
+        if torch.isnan(forces).any() or torch.isinf(forces).any():
+            raise RuntimeError("Invalid values detected in computed forces.")
+        if torch.isnan(potential).any() or torch.isinf(potential).any():
+            raise RuntimeError("Invalid values detected in computed potential.")
+
+        return
+
+    def compile_model(self, data):
         """Compiles the model for faster execution"""
         if self.compile:
-            # if compilation fails in some parts of the model,by enabling
-            # torch._dynamo.config.suppress_errors = True
-            # errors are suppressed and problematic parts are runned in eager mode
-            # !! it is reccomended to do so only for debugging purposes,
-            # best practice is to manually add @torch.compiler.disable decorator
-            # to problematic parts of the code !!
-            torch._logging.set_logs(dynamo=logging.ERROR)
-            self.model = torch.compile(
-                self.model, dynamic=True, mode=self.compile_mode
-            )
+            if (data.batch.max() == 0) and not self.force_compile:
+                warnings.warn(
+                    "Compilation is allowed only when more than one structure is provided to avoid "
+                    "issues with scatter operations. The simulation will run in non-compiled mode. "
+                    "A `force_compile=True` flag exists, but it should be used with extreme "
+                    "caution. Forcing compilation can expose known issues with scatter operations "
+                    "and may produce invalid outputs or NaN gradients. "
+                )
+            else:
+                if data.batch.max() == 0:
+                    warnings.warn(force_torch_compile_warning())
+                torch._logging.set_logs(dynamo=logging.ERROR)
+                try:
+                    self.model = torch.compile(
+                        self.model, dynamic=True, mode=self.compile_mode
+                    )
+                    self._run_and_check(data)
+                    return
+                except Exception as e:
+                    # if compilation fails in some parts of the model,by enabling
+                    # torch._dynamo.config.suppress_errors = True
+                    # errors are suppressed and problematic parts are runned in eager mode
+                    # !! it is reccomended to do so only for debugging purposes,
+                    # best practice is to manually add @torch.compiler.disable decorator
+                    # to problematic parts of the code !!
+
+                    warnings.warn(torch_compile_waring(e))
+                    # Also emit a Python warning for testing/logging integration
+                    warnings.warn(
+                        "torch.compile fallback active! See printed message above.",
+                        stacklevel=2,
+                    )
+
+                    # import torch._dynamo
+                    torch._dynamo.config.suppress_errors = True
+                    self.model = torch.compile(
+                        self.model, dynamic=True, mode=self.compile_mode
+                    )
+        self._run_and_check(data)
+
+        return
 
     def log(self, iter_: int):
         """Utility to print log statement or write it to an text file"""
@@ -764,9 +819,11 @@ class _Simulation(object):
         x_new = data.pos.view(-1, self.n_atoms, self.n_dims)
         forces = forces.view(-1, self.n_atoms, self.n_dims)
 
-        pos_spread = x_new.std(dim=(1, 2)).detach().max().cpu()
+        pos_spread = x_new.std(dim=(1, 2)).detach()
 
-        if torch.any(pos_spread > 1e3 * self.initial_pos_spread):
+        if torch.any(
+            pos_spread.max().cpu() > 1e3 * self.initial_pos_spread
+        ) or torch.any(torch.isnan(pos_spread)):
             raise RuntimeError(
                 f"Simulation of trajectory blew up at #timestep={t}"
             )

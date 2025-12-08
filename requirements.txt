@@ -27,6 +27,9 @@ scipy
 scikit-learn
 sympy
 seaborn
+torch
+torch_geometric
+torch-cluster
 torch_optimizer<=1.5.1
 tqdm
 # developer tools
