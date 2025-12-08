@@ -9,7 +9,7 @@ SCRIPT_DIR = osp.abspath(osp.dirname(__file__))
 
 sys.path.insert(0, osp.join(SCRIPT_DIR, "../"))
 # Custom prior
-sys.path.insert(0, "/local_scratch001/giambagli/projects/packages/mlcg/mlcg/nn/prior")
+sys.path.append(osp.join(SCRIPT_DIR, "../mlcg/nn/prior/"))
 
 from mlcg.simulation import (
     parse_simulation_config,
