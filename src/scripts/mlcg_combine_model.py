@@ -38,6 +38,7 @@ def parse_cli():
 
     return parser
 
+
 def main():
     parser = parse_cli()
     args = parser.parse_args()

@@ -9,6 +9,8 @@ from mlcg.simulation import (
     parse_simulation_config,
     LangevinSimulation,
 )
+
+
 def main():
     torch.jit.set_fusion_strategy([("DYNAMIC", 3)])
     # to levarage the tensor core if available

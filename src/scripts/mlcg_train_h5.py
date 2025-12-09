@@ -8,6 +8,7 @@ import torch
 
 from mlcg.pl import PLModel, H5DataModule, LightningCLI
 
+
 def main():
     torch.jit.set_fusion_strategy([("DYNAMIC", 3)])
     # to levarage the tensor core if available

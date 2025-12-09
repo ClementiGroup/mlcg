@@ -12,6 +12,7 @@ from mlcg.simulation import (
     PTSimulation,
 )
 
+
 def main():
     print(f"Starting simulation at {ctime()} with {PTSimulation}")
     (
@@ -27,7 +28,6 @@ def main():
     )
     simulation.simulate()
     print(f"Ending simulation at {ctime()}")
-
 
 
 if __name__ == "__main__":
