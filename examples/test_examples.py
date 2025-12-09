@@ -120,8 +120,13 @@ def test_architecture(runner_idx, num_containers, test_dir):
         for idx, arg in enumerate(arg_list):
             if "train" in arg and ".yaml" in arg:
                 arg_list[idx] = str(test_dir / "pytest_training.yaml")
-            elif "mlcg-" in arg: #and ".py" in arg:
-                arg_list[idx] = str(_here.parent / "src" / "scripts" / f"{arg.replace("-","_")}.py")
+            elif "mlcg-" in arg:  # and ".py" in arg:
+                arg_list[idx] = str(
+                    _here.parent
+                    / "src"
+                    / "scripts"
+                    / f"{arg.replace("-","_")}.py"
+                )
         arg_list.insert(0, "python")
         print(f"Running {' '.join(arg_list)} in {os.getcwd()}")
         result = subprocess.run(
