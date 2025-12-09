@@ -80,6 +80,10 @@ classifiers = [
 
 [tool.setuptools]
 package-dir = {"mlcg" = "src"}
+
+[tool.setuptools.package-data]
+"mlcg.nn" = ["assets/*.pt"]
+
 [project.urls]
 Homepage = "https://github.com/ClementiGroup/mlcg"
 Issues = "https://github.com/ClementiGroup/mlcg/issues"
