@@ -6,17 +6,13 @@ import torch
 import sys
 from typing import Any, Dict
 
-SCRIPT_DIR = osp.abspath(osp.dirname(__file__))
-
-sys.path.insert(0, osp.join(SCRIPT_DIR, "../"))
 
 from mlcg.simulation import (
     parse_simulation_config,
     PTSimulation,
 )
 
-
-if __name__ == "__main__":
+def main():
     print(f"Starting simulation at {ctime()} with {PTSimulation}")
     (
         model,
@@ -31,3 +27,8 @@ if __name__ == "__main__":
     )
     simulation.simulate()
     print(f"Ending simulation at {ctime()}")
+
+
+
+if __name__ == "__main__":
+    main()

@@ -6,14 +6,10 @@ from time import ctime
 import subprocess
 import torch
 
-SCRIPT_DIR = osp.abspath(osp.dirname(__file__))
-
-sys.path.insert(0, osp.join(SCRIPT_DIR, "../"))
 
 from mlcg.pl import RegularizedPLModel, DataModule, LightningCLI
 
-
-if __name__ == "__main__":
+def main():
     torch.jit.set_fusion_strategy([("DYNAMIC", 3)])
     # to levarage the tensor core if available
     torch.set_float32_matmul_precision("high")
@@ -32,3 +28,6 @@ if __name__ == "__main__":
     )
 
     print("Finish: {}".format(ctime()))
+
+if __name__ == "__main__":
+    main()

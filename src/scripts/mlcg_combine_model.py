@@ -5,9 +5,6 @@ import os.path as osp
 import torch
 import sys
 
-SCRIPT_DIR = osp.abspath(osp.dirname(__file__))
-
-sys.path.insert(0, osp.join(SCRIPT_DIR, "../"))
 
 from mlcg.nn.gradients import SumOut
 from mlcg.pl.utils import (
@@ -41,8 +38,7 @@ def parse_cli():
 
     return parser
 
-
-if __name__ == "__main__":
+def main():
     parser = parse_cli()
     args = parser.parse_args()
 
@@ -51,3 +47,7 @@ if __name__ == "__main__":
     )
     full_model.to("cpu")
     torch.save(full_model, args.out)
+
+
+if __name__ == "__main__":
+    main()

@@ -115,6 +115,9 @@ def _search_for_model(
         yield from _search_for_model(top_level.models, model_type)
     elif isinstance(top_level, mlcg.nn.GradientsOut):
         yield from _search_for_model(top_level.model, model_type)
+    elif isinstance(top_level, tuple):
+        for module in top_level:
+            yield from _search_for_model(module, model_type)
     else:
         # trying to handle another cases
         for module in top_level.children():

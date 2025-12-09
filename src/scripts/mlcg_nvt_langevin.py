@@ -5,17 +5,11 @@ import os.path as osp
 import torch
 import sys
 
-SCRIPT_DIR = osp.abspath(osp.dirname(__file__))
-
-sys.path.insert(0, osp.join(SCRIPT_DIR, "../"))
-
 from mlcg.simulation import (
     parse_simulation_config,
     LangevinSimulation,
 )
-
-
-if __name__ == "__main__":
+def main():
     torch.jit.set_fusion_strategy([("DYNAMIC", 3)])
     # to levarage the tensor core if available
     torch.set_float32_matmul_precision("high")
@@ -34,3 +28,7 @@ if __name__ == "__main__":
     )
     simulation.simulate()
     print(f"Ending simulation at {ctime()}")
+
+
+if __name__ == "__main__":
+    main()
