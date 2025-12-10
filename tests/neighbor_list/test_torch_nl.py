@@ -4,9 +4,9 @@ from ase.build import bulk, molecule
 from torch_geometric.loader import DataLoader
 import numpy as np
 
-from .ase_impl import ase_neighbor_list
-from .torch_impl import torch_neighbor_list
-from .utils import ase2data
+from mlcg.neighbor_list.ase_impl import ase_neighbor_list
+from mlcg.neighbor_list.torch_impl import torch_neighbor_list
+from mlcg.neighbor_list.utils import ase2data
 
 
 def bulk_metal():

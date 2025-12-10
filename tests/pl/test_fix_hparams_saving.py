@@ -4,7 +4,7 @@ import typing
 import inspect
 import torch
 
-from ._fix_hparams_saving import yaml
+from mlcg.pl._fix_hparams_saving import yaml
 
 
 def my_inspect_Parameter():

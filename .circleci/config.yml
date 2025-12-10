@@ -18,7 +18,7 @@ jobs:
           name: "Run code tests"
           command: |
             set -e
-            TEST_FILES=$(circleci tests glob "src/**/test_*.py" | circleci tests split --split-by=timings)
+            TEST_FILES=$(circleci tests glob "tests/**/test_*.py" | circleci tests split --split-by=timings)
             mkdir -p test-results
             pytest --verbose --junitxml=test-results/junit.xml $TEST_FILES
           no_output_timeout: 5m

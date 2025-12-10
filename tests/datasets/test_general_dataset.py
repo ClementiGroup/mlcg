@@ -9,7 +9,7 @@ from os.path import join
 from mdtraj.core.trajectory import Trajectory
 from mlcg.geometry.topology import Topology
 from mlcg.data import AtomicData
-from .general_datasets import GeneralCarbonAlphaDataset
+from mlcg.datasets.general_datasets import GeneralCarbonAlphaDataset
 import os
 
 
