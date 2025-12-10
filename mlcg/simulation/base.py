@@ -163,7 +163,13 @@ class _Simulation(object):
         self.save_forces = save_forces
         self.save_energies = save_energies
         self.save_energy_components = save_energy_components
-        self.energy_components = {key: None for key in energy_components} if energy_components is not None else None
+
+        if energy_components is None:
+            self.energy_components = None 
+        elif isinstance(energy_components, str):
+            self.energy_components = {energy_components: None}
+        else:
+            self.energy_components = {key: None for key in energy_components} 
         
 
         self.n_timesteps = n_timesteps
