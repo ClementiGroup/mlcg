@@ -19,7 +19,7 @@ jobs:
           target_branch: gh-pages
           github_token: ${{ github.token }}
       - name: Set up Python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v4
         with:
           python-version: 3.12.0
       - name: Install mlcg requirements
