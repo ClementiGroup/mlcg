@@ -13,69 +13,20 @@ from mlcg.simulation.langevin import (
     OverdampedSimulation,
 )
 from mlcg.simulation.parallel_tempering import PTSimulation
-from mlcg.nn.test_outs import ASE_prior_model
 from mlcg.data.atomic_data import AtomicData
 from mlcg.data._keys import MASS_KEY, POSITIONS_KEY, ATOM_TYPE_KEY
+from mlcg.mol_utils import _get_initial_data, _ASE_prior_model
 
 torch_pi = torch.tensor(np.pi)
 
 
 @pytest.fixture
 def get_initial_data():
-    def data_list_builder(
-        mol: Atoms,
-        nls: Dict,
-        corruptor: Callable = None,
-        add_masses=True,
-    ) -> List[AtomicData]:
-        """Helper function to generate broken data lists
+    return _get_initial_data()
 
-        Parameters
-        ----------
-        mol:
-            ASE molecule
-        nls:
-            Neighbor list dictionary
-        corruptor:
-            Anonynous (lambda) function that takes the current
-            frame of the data list and conditionally returns
-            different values. If corruptor is None, the returned
-            data list will be assembled correctly.
-        add_masses:
-            If True, masses are specified in each AtomicData instance
-            according to the ASE molecule
-
-        Returns
-        -------
-        initial_data_list:
-            List of AtomicData instances that has been corrupted
-            at the frame and with the damage specified by the
-            the corruptor. If there is no corruptor, then the data
-            list will be properly constructed.
-        """
-
-        input_masses = lambda x: torch.tensor(mol.get_masses()) if x else None
-
-        initial_data_list = []
-        for frame in range(5):
-            data_point = AtomicData(
-                pos=torch.tensor(mol.get_positions()),
-                atom_types=torch.tensor(mol.get_atomic_numbers()),
-                masses=input_masses(add_masses),
-                cell=None,
-                velocities=None,
-                neighbor_list=nls,
-            )
-            initial_data_list.append(data_point)
-
-        if corruptor != None:
-            # corrupt a frame
-            for frame in range(5):
-                corrupted_data, corrupted_key = corruptor(frame, mol)
-                initial_data_list[frame][corrupted_key] = corrupted_data
-        return initial_data_list
-
-    return data_list_builder
+@pytest.fixture
+def ASE_prior_model():
+    return _ASE_prior_model
 
 
 ### corruptors - lambdas that introduce a problem in the data list ###

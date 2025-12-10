@@ -1,4 +1,7 @@
-from typing import Tuple, Optional, List
+from ase.build import molecule
+from ase.atoms import Atoms
+from typing import Tuple, Optional, List, Callable, Dict
+from torch_geometric.data.collate import collate
 import numpy as np
 import torch
 import torch.nn as nn
@@ -9,6 +12,9 @@ from torch_geometric.data.makedirs import makedirs
 import sys
 from ruamel.yaml import YAML
 import logging
+
+
+
 
 yaml = YAML(pure="true", typ="safe")
 yaml.default_flow_style = False
@@ -290,3 +296,5 @@ def detect_nan_parameters(model: nn.Module) -> None:
                 f"Detected nan and/or inf values in `{name}`."
                 " Check your forward pass for numerically unstable operations."
             )
+
+

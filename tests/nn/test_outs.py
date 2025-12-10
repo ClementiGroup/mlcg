@@ -17,6 +17,14 @@ from mlcg.nn.cutoff import CosineCutoff
 from mlcg.nn.radial_basis import GaussianBasis
 from mlcg.data._keys import ENERGY_KEY, FORCE_KEY
 from mlcg.data.atomic_data import AtomicData
+from mlcg.mol_utils import _ASE_prior_model
+
+@pytest.fixture
+def ASE_prior_model():
+    return _ASE_prior_model
+
+
+
 
 test_mol = molecule("CH3CH2NH2")
 test_topo = Topology.from_ase(test_mol)
@@ -80,125 +88,6 @@ schnet = StandardSchNet(
 schnet_force_model = GradientsOut(schnet, targets=[FORCE_KEY]).double()
 
 
-@pytest.fixture
-def ASE_prior_model():
-    def _model_builder(
-        mol: str = "CH3CH2NH2", sum_out: bool = True
-    ) -> Union[torch.nn.Module, torch.nn.ModuleDict]:
-        """Fixture that returns a simple prior-only model of
-        an ASE molecule with HarmonicBonds and HarmonicAngles
-        priors whose parameters are estimated from coordinates
-        artifically perturbed by some small Gaussian noise.
-
-        Parameters
-        ----------
-        mol:
-            Molecule specifying string found in ase.build.molecule
-            associated with the g2 organic molecule database
-        sum_out:
-            If True, the model constituents are wrapped within
-            a SumOut instance
-
-        Returns
-        -------
-        model_with_data:
-            Dictionary that contains the fitted prior-only model
-            under the key "model" and the noisey data, as a collated
-            AtomicData instance, used for fitting under the key
-            "collated_prior_data"
-        """
-
-        # Seeding
-        rng = np.random.default_rng(94834)
-
-        # Physical units
-        temperature = 350  # K
-        #:Boltzmann constan in kcal/mol/K
-        kB = 0.0019872041
-        beta = 1 / (temperature * kB)
-
-        # Here we make a simple prior-only model of aluminum-fluoride
-        # mol = molecule("AlF3")
-        # Implement molecule with dihedrals
-        mol = molecule(mol)
-        test_topo = Topology.from_ase(mol)
-
-        # Add in molecule with dihedral and compute edges
-        conn_mat = get_connectivity_matrix(test_topo)
-        dihedral_paths = get_n_paths(conn_mat, n=4)
-        test_topo.dihedrals_from_edge_index(dihedral_paths)
-
-        n_atoms = len(test_topo.types)
-        initial_coords = np.array(mol.get_positions())
-
-        prior_data_frames = []
-        for i in range(1000):
-            perturbed_coords = initial_coords + 0.2 * rng.standard_normal(
-                initial_coords.shape
-            )
-            prior_data_frames.append(torch.tensor(perturbed_coords))
-        prior_data_frames = torch.stack(prior_data_frames, dim=0)
-
-        # Set up some data with bond/angle neighborlists:
-        bond_edges = test_topo.bonds2torch()
-        angle_edges = test_topo.angles2torch()
-        dihedral_edges = test_topo.dihedrals2torch()
-
-        # Generete some noisy data for the priors
-        nls_tags = ["bonds", "angles", "dihedrals"]
-        nls_orders = [2, 3, 4]
-        nls_edges = [bond_edges, angle_edges, dihedral_edges]
-
-        neighbor_lists = {
-            tag: make_neighbor_list(tag, order, edge_list)
-            for (tag, order, edge_list) in zip(nls_tags, nls_orders, nls_edges)
-        }
-
-        prior_data_list = []
-        for frame in range(prior_data_frames.shape[0]):
-            data_point = AtomicData(
-                pos=prior_data_frames[frame].float(),
-                atom_types=torch.tensor(test_topo.types),
-                masses=torch.tensor(mol.get_masses()).float(),
-                cell=None,
-                neighbor_list=neighbor_lists,
-            )
-            prior_data_list.append(data_point)
-
-        collated_prior_data, _, _ = collate(
-            prior_data_list[0].__class__,
-            data_list=prior_data_list,
-            increment=True,
-            add_batch=True,
-        )
-        # Fit the priors
-        prior_cls = [HarmonicBonds, HarmonicAngles, Dihedral]
-        priors, stats = fit_baseline_models(
-            collated_prior_data, beta, prior_cls
-        )
-
-        # Construct the model
-        priors = {
-            name: GradientsOut(priors[name], targets=[FORCE_KEY])
-            for name in priors.keys()
-        }
-
-        if sum_out:
-            full_model = SumOut(priors)
-        else:
-            full_model = priors
-
-        model_with_data = {
-            "model": full_model,
-            "collated_prior_data": collated_prior_data,
-            "molecule": mol,
-            "num_examples": len(prior_data_list),
-            "neighbor_lists": neighbor_lists,
-        }
-        return model_with_data
-
-    return _model_builder
-
 
 @pytest.mark.parametrize(
     "ASE_prior_model, out_targets",
@@ -210,6 +99,7 @@ def ASE_prior_model():
     ],
     indirect=["ASE_prior_model"],
 )
+
 def test_outs(ASE_prior_model, out_targets):
     """Test to make sure that the output dictionary is properly populated
     and that the correspdonding shapes of the outputs are correct given the

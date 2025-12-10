@@ -1,18 +1,78 @@
-from typing import Dict
+from typing import List, Callable, Dict
+import tempfile
+from ase.build import molecule
 import torch
-import pytest
 import numpy as np
+import pytest
+from ase.atoms import Atoms
 from torch_geometric.data.collate import collate
 
-from ase.build import molecule
+
+from mlcg.data._keys import ENERGY_KEY, FORCE_KEY
+from mlcg.data.atomic_data import AtomicData
 from mlcg.geometry import Topology
 from mlcg.geometry.topology import get_connectivity_matrix, get_n_paths
 from mlcg.geometry.statistics import fit_baseline_models
 from mlcg.neighbor_list.neighbor_list import make_neighbor_list
 from mlcg.nn.prior import HarmonicBonds, HarmonicAngles, Dihedral
 from mlcg.nn.gradients import SumOut, GradientsOut
-from mlcg.data._keys import ENERGY_KEY, FORCE_KEY
-from mlcg.data.atomic_data import AtomicData
+
+@pytest.fixture
+def get_initial_data():
+    def data_list_builder(
+        mol: Atoms,
+        nls: Dict,
+        corruptor: Callable = None,
+        add_masses=True,
+    ) -> List[AtomicData]:
+        """Helper function to generate broken data lists
+
+        Parameters
+        ----------
+        mol:
+            ASE molecule
+        nls:
+            Neighbor list dictionary
+        corruptor:
+            Anonynous (lambda) function that takes the current
+            frame of the data list and conditionally returns
+            different values. If corruptor is None, the returned
+            data list will be assembled correctly.
+        add_masses:
+            If True, masses are specified in each AtomicData instance
+            according to the ASE molecule
+
+        Returns
+        -------
+        initial_data_list:
+            List of AtomicData instances that has been corrupted
+            at the frame and with the damage specified by the
+            the corruptor. If there is no corruptor, then the data
+            list will be properly constructed.
+        """
+
+        input_masses = lambda x: torch.tensor(mol.get_masses()) if x else None
+
+        initial_data_list = []
+        for frame in range(5):
+            data_point = AtomicData(
+                pos=torch.tensor(mol.get_positions()),
+                atom_types=torch.tensor(mol.get_atomic_numbers()),
+                masses=input_masses(add_masses),
+                cell=None,
+                velocities=None,
+                neighbor_list=nls,
+            )
+            initial_data_list.append(data_point)
+
+        if corruptor != None:
+            # corrupt a frame
+            for frame in range(5):
+                corrupted_data, corrupted_key = corruptor(frame, mol)
+                initial_data_list[frame][corrupted_key] = corrupted_data
+        return initial_data_list
+
+    return data_list_builder
 
 
 @pytest.fixture
