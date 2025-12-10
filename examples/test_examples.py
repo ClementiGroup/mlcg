@@ -41,6 +41,7 @@ from shutil import rmtree
 
 
 _here = Path(__file__).parent
+_script_dir = _here.parent / "src" / "mlcg" / "scripts"
 
 training_yaml_list = sorted((_here / "input_yamls").glob("train*.yaml"))
 training_yaml_list = [
@@ -121,13 +122,7 @@ def test_architecture(runner_idx, num_containers, test_dir):
             if "train" in arg and ".yaml" in arg:
                 arg_list[idx] = str(test_dir / "pytest_training.yaml")
             elif "mlcg-" in arg:  # and ".py" in arg:
-                arg_list[idx] = str(
-                    _here.parent
-                    / "src"
-                    / "mlcg"
-                    / "scripts"
-                    / f"{arg.replace("-","_")}.py"
-                )
+                arg_list[idx] = str(_script_dir / f"{arg.replace("-","_")}.py")
         arg_list.insert(0, "python")
         print(f"Running {' '.join(arg_list)} in {os.getcwd()}")
         result = subprocess.run(
@@ -143,9 +138,9 @@ def test_architecture(runner_idx, num_containers, test_dir):
         result = subprocess.run(
             [
                 "python",
-                str(_here.parent / "src/scripts/mlcg_combine_model.py"),
+                str(_script_dir / "mlcg_combine_model.py"),
                 "--ckpt",
-                str(test_dir / "ckpt/last.ckpt"),
+                str(test_dir / "ckpt" / "last.ckpt"),
                 "--prior",
                 priors,
                 "--out",
@@ -177,7 +172,7 @@ def test_architecture(runner_idx, num_containers, test_dir):
         result = subprocess.run(
             [
                 "python",
-                str(_here.parent / "src/scripts/mlcg_nvt_langevin.py"),
+                str(_script_dir / "mlcg_nvt_langevin.py"),
                 "--config",
                 str(test_dir / "pytest_simulation.yaml"),
             ],
