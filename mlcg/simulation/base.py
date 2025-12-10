@@ -820,8 +820,7 @@ class _Simulation(object):
 
         if self.save_energy_components:
             for key, tensor in self.energy_components.items(): #type: ignore , check for None in input validation
-                # TODO: Check that data dimensions are correct
-                tensor[save_ind] = data.out[key]
+                tensor[save_ind] = deepcopy(data.out[key][ENERGY_KEY].detach())
 
 
         if self.create_checkpoints:
