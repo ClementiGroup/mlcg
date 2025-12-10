@@ -124,6 +124,7 @@ def test_architecture(runner_idx, num_containers, test_dir):
                 arg_list[idx] = str(
                     _here.parent
                     / "src"
+                    / "mlcg"
                     / "scripts"
                     / f"{arg.replace("-","_")}.py"
                 )
