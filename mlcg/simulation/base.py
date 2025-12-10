@@ -136,7 +136,7 @@ class _Simulation(object):
         save_forces: bool = False,
         save_energies: bool = False,
         save_energy_components: bool = False,
-        energy_components: list[str] | None = None, 
+        energy_components: list[str] | str | None = None, 
         n_timesteps: int = 100,
         save_interval: int = 10,
         create_checkpoints: bool = False,
