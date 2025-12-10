@@ -161,7 +161,7 @@ class Repulsion(_Prior):
         dG_nz: torch.Tensor,
         percentile: Optional[float] = None,
     ) -> Dict:
-        """Method for fitting interaction parameters from data
+        r"""Method for fitting interaction parameters from data
 
         Parameters
         ----------

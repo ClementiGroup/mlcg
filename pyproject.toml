@@ -79,7 +79,7 @@ classifiers = [
 ]
 
 [tool.setuptools]
-package-dir = {"mlcg" = "src"}
+package-dir = {"mlcg" = "src/mlcg"}
 
 [tool.setuptools.package-data]
 "mlcg.nn" = ["assets/*.pt"]

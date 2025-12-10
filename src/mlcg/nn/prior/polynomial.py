@@ -134,7 +134,7 @@ class Polynomial(_Prior):
     def compute(
         x: torch.Tensor, ks: torch.Tensor, V0: torch.Tensor
     ) -> torch.Tensor:
-        """Harmonic interaction in the form of a series. The shape of the tensors
+        r"""Harmonic interaction in the form of a series. The shape of the tensors
             should match between each other.
 
         .. math:
@@ -150,7 +150,7 @@ class Polynomial(_Prior):
 
 
 class QuarticAngles(Polynomial):
-    """Wrapper class for angle priors
+    r"""Wrapper class for angle priors
     (order 3 Polynomial priors of degree 4)
     """
 

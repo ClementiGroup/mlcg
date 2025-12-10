@@ -414,7 +414,7 @@ class PTSimulation(LangevinSimulation):
     def _perform_exchange(
         self, data: AtomicData, pairs_for_exchange: Dict
     ) -> AtomicData:
-        """Exchanges the coordinates and velcities for those pairs marked for exchange.
+        r"""Exchanges the coordinates and velcities for those pairs marked for exchange.
         Exchanged velocities are rescaled based on ratios of beta values from the two configurations.
         For a pair of configurations :math:`A` and :math:`B`, characterized by the respective
         potential energies :math:`U_A` and :math:`U_B` the the inverse thermodynamic temperatures
