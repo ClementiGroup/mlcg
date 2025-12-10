@@ -21,15 +21,13 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v1
         with:
-          python-version: 3.9
-      - name: Install torch 
-        run: pip install torch==2.1.1
-      - name: Install torch_geometric
-        run: pip install torch_geometric==2.4.0
-      - name: Install torch_geometric dependencies
-        run: pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.1.0+cpu.html
+          python-version: 3.12.0
       - name: Install mlcg requirements
-        run: pip install -r  ${{ github.workspace }}/requirements.txt
+        run: pip install -r  ${{ github.workspace }}/env_cpu_with_hashes.in
+      - name: Install mace
+        run: pip install --no-deps git+https://github.com/ACEsuit/mace.git@v0.3.13
+      - name: Install allegro
+        run: pip install --no-deps nequip==0.12.1 nequip-allegro==0.7.0
       - name: Install sphinx dependencies
         run: pip install sphinx sphinx_rtd_theme sphinx-autodoc-typehints
       - name: Build Documentation
