@@ -229,10 +229,15 @@ class RepulsionFilteredLinear(torch.nn.Module):
         energy = scatter(energy_per_edge, batch_map, dim=0, reduce="sum")
         energy = energy.flatten()
         print(energy.size())
-        data.out[self.name] = {
-            ENERGY_KEY: energy,
-            "radial_params": self.radial_filters,
-        }
+        if self.filter_rbfs:
+            data.out[self.name] = {
+                ENERGY_KEY: energy,
+                "radial_params": self.radial_filters,
+            }
+        else:
+            data.out[self.name] = {
+                ENERGY_KEY: energy
+            }
         return data
     
     def is_nl_compatible(self, nl):
