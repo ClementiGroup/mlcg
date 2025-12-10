@@ -14,9 +14,8 @@
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="_static/documentation_options.js?v=a58bc63e"></script>
-      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
-      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -51,46 +50,14 @@
 <li class="toctree-l1"><a class="reference internal" href="datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="priors.html">Priors</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Models</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#schnet-utilities">SchNet Utilities</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#mlcg.nn.schnet.SchNet"><code class="docutils literal notranslate"><span class="pre">SchNet</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#mlcg.nn.schnet.InteractionBlock"><code class="docutils literal notranslate"><span class="pre">InteractionBlock</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#mlcg.nn.schnet.CFConv"><code class="docutils literal notranslate"><span class="pre">CFConv</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#painn-utilities">PaiNN Utilities</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#mlcg.nn.painn.PaiNN"><code class="docutils literal notranslate"><span class="pre">PaiNN</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#mace-utilities">MACE Utilities</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#mlcg.nn.mace.MACE"><code class="docutils literal notranslate"><span class="pre">MACE</span></code></a></li>
-</ul>
-</li>
+<li class="toctree-l2"><a class="reference internal" href="#schnet-utilities">SchNet Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#painn-utilities">PaiNN Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mace-utilities">MACE Utilities</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#allegro-utilities">Allegro Utilities</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#radial-basis-functions">Radial Basis Functions</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#mlcg.nn.radial_basis.GaussianBasis"><code class="docutils literal notranslate"><span class="pre">GaussianBasis</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#mlcg.nn.radial_basis.ExpNormalBasis"><code class="docutils literal notranslate"><span class="pre">ExpNormalBasis</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#mlcg.nn.radial_basis.RIGTOBasis"><code class="docutils literal notranslate"><span class="pre">RIGTOBasis</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#mlcg.nn.radial_basis.SpacedExpBasis"><code class="docutils literal notranslate"><span class="pre">SpacedExpBasis</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#mlcg.nn.angular_basis.SphericalHarmonics"><code class="docutils literal notranslate"><span class="pre">SphericalHarmonics</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#cutoff-functions">Cutoff Functions</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#mlcg.nn.cutoff.IdentityCutoff"><code class="docutils literal notranslate"><span class="pre">IdentityCutoff</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#mlcg.nn.cutoff.CosineCutoff"><code class="docutils literal notranslate"><span class="pre">CosineCutoff</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#mlcg.nn.cutoff.ShiftedCosineCutoff"><code class="docutils literal notranslate"><span class="pre">ShiftedCosineCutoff</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#model-building-utilities">Model Building Utilities</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#mlcg.nn.gradients.GradientsOut"><code class="docutils literal notranslate"><span class="pre">GradientsOut</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#mlcg.nn.gradients.SumOut"><code class="docutils literal notranslate"><span class="pre">SumOut</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#loss-functions">Loss Functions</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#mlcg.nn.losses.Loss"><code class="docutils literal notranslate"><span class="pre">Loss</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#mlcg.nn.losses.ForceRMSE"><code class="docutils literal notranslate"><span class="pre">ForceRMSE</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#mlcg.nn.losses.ForceMSE"><code class="docutils literal notranslate"><span class="pre">ForceMSE</span></code></a></li>
-</ul>
-</li>
+<li class="toctree-l2"><a class="reference internal" href="#radial-basis-functions">Radial Basis Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cutoff-functions">Cutoff Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#model-building-utilities">Model Building Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#loss-functions">Loss Functions</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="training.html">Training</a></li>
@@ -130,143 +97,16 @@
 <h2>SchNet Utilities<a class="headerlink" href="#schnet-utilities" title="Link to this heading"></a></h2>
 <p>These classes are used to define a SchNet graph neural network. For “typical” SchNet models, users
 may find the class <cite>StandardSchNet</cite> to be helpful in getting started quickly.</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="mlcg.nn.schnet.SchNet">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcg.nn.schnet.</span></span><span class="sig-name descname"><span class="pre">SchNet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">embedding_layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interaction_blocks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rbf_layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_network</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">self_interaction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_neighbors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/schnet.html#SchNet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.schnet.SchNet" title="Link to this definition"></a></dt>
-<dd><p>PyTorch Geometric implementation of SchNet
-Code adapted from <a class="reference internal" href="bibliography.html#pt-geom-schnet" id="id1"><span>[PT_geom_schnet]</span></a>  which is based on the architecture
-described in <a class="reference internal" href="bibliography.html#schnet" id="id2"><span>[Schnet]</span></a> .</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>embedding_layer</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Initial embedding layer that transforms atoms/coarse grain bead
-types into embedded features</p></li>
-<li><p><strong>interaction_blocks</strong> (<em>list</em><em> of </em><em>torch.nn.Module</em><em> or </em><em>torch.nn.Sequential</em>) – Sequential interaction blocks of the model, where each interaction
-block applies</p></li>
-<li><p><strong>rbf_layer</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – The set of radial basis functions that expands pairwise distances
-between atoms/CG beads.</p></li>
-<li><p><strong>output_network</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Output neural network that predicts scalar energies from SchNet
-features. This network should transform (num_examples * num_atoms,
-hidden_channels) to (num_examples * num atoms, 1).</p></li>
-<li><p><strong>upper_distance_cutoff</strong> – Upper distance cutoff used for making neighbor lists.</p></li>
-<li><p><strong>self_interaction</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – If True, self interactions/distancess are calculated. But it never
-had a function due to a bug in the implementation (see static method
-<cite>neighbor_list</cite>). Should be kept False. This option shall not be
-deleted for compatibility.</p></li>
-<li><p><strong>max_num_neighbors</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Maximum number of neighbors to return for a
-given node/atom when constructing the molecular graph during forward
-passes. This attribute is passed to the torch_cluster radius_graph
-routine keyword max_num_neighbors, which normally defaults to 32.
-Users should set this to higher values if they are using higher upper
-distance cutoffs and expect more than 32 neighbors per node/atom.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="mlcg.nn.schnet.InteractionBlock">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcg.nn.schnet.</span></span><span class="sig-name descname"><span class="pre">InteractionBlock</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cfconv_layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hidden_channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Tanh()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/schnet.html#InteractionBlock"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.schnet.InteractionBlock" title="Link to this definition"></a></dt>
-<dd><p>Interaction blocks for SchNet. Consists of atomwise
-transformations of embedded features that are continuously
-convolved with filters generated from radial basis function-expanded
-pairwise distances.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>cfconv_layer</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Continuous filter convolution layer for convolutions of radial basis
-function-expanded distances with embedded features</p></li>
-<li><p><strong>hidden_channels</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Hidden dimension of embedded features</p></li>
-<li><p><strong>activation</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Activation function applied to linear layer outputs</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="mlcg.nn.schnet.CFConv">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcg.nn.schnet.</span></span><span class="sig-name descname"><span class="pre">CFConv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filter_network</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">in_channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_filters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aggr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'add'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/schnet.html#CFConv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.schnet.CFConv" title="Link to this definition"></a></dt>
-<dd><p>Continuous filter convolutions for <cite>SchNet</cite>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>filter_net</strong> – Neural network for generating filters from expanded pairwise distances</p></li>
-<li><p><strong>cutoff</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Cutoff envelope to apply to the output of the filter generating network.</p></li>
-<li><p><strong>in_channels</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Hidden input dimensions</p></li>
-<li><p><strong>out_channels</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Hidden output dimensions</p></li>
-<li><p><strong>num_filters</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Number of filters</p></li>
-<li><p><strong>aggr</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Aggregation scheme for continuous filter output. For all options,
-see <cite>here &lt;https://pytorch-geometric.readthedocs.io/en/latest/notes/create_gnn.html?highlight=MessagePassing#the-messagepassing-base-class&gt;</cite>.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
 </section>
 <section id="painn-utilities">
 <h2>PaiNN Utilities<a class="headerlink" href="#painn-utilities" title="Link to this heading"></a></h2>
 <p>These classes are used to define a PaiNN graph neural network. For “typical” PaiNN models, users
 may find the class <cite>StandardPaiNN</cite> to be helpful in getting started quickly.</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="mlcg.nn.painn.PaiNN">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcg.nn.painn.</span></span><span class="sig-name descname"><span class="pre">PaiNN</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">embedding_layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interaction_blocks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mixing_blocks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rbf_layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_network</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_neighbors</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/painn.html#PaiNN"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.painn.PaiNN" title="Link to this definition"></a></dt>
-<dd><p>Implementation of PaiNN - polarizable interaction neural network
-Code adapted from <a class="reference external" href="https://schnetpack.readthedocs.io/en/latest/api/generated/representation.PaiNN.html">https://schnetpack.readthedocs.io/en/latest/api/generated/representation.PaiNN.html</a>
-which is based on the architecture described in <a class="reference external" href="http://proceedings.mlr.press/v139/schutt21a.html">http://proceedings.mlr.press/v139/schutt21a.html</a></p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>embedding_layer</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Initial embedding layer that transforms atoms/coarse grain bead
-types into embedded features</p></li>
-<li><p><strong>interaction_blocks</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<a class="reference internal" href="autodoc.html#mlcg.nn.painn.PaiNNInteraction" title="mlcg.nn.painn.PaiNNInteraction"><code class="xref py py-class docutils literal notranslate"><span class="pre">PaiNNInteraction</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<a class="reference internal" href="autodoc.html#mlcg.nn.painn.PaiNNInteraction" title="mlcg.nn.painn.PaiNNInteraction"><code class="xref py py-class docutils literal notranslate"><span class="pre">PaiNNInteraction</span></code></a>]]</span>) – list of PaiNNInteraction or single PaiNNInteraction block.
-Sequential interaction blocks of the model, where each interaction
-block applies.</p></li>
-<li><p><strong>mixing_blocks</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<a class="reference internal" href="autodoc.html#mlcg.nn.painn.PaiNNMixing" title="mlcg.nn.painn.PaiNNMixing"><code class="xref py py-class docutils literal notranslate"><span class="pre">PaiNNMixing</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<a class="reference internal" href="autodoc.html#mlcg.nn.painn.PaiNNMixing" title="mlcg.nn.painn.PaiNNMixing"><code class="xref py py-class docutils literal notranslate"><span class="pre">PaiNNMixing</span></code></a>]]</span>) – List of PaiNNMixing or single PaiNNMixing block.
-Sequential mixing blocks of the model, where each mixing
-applies after each interaction block.</p></li>
-<li><p><strong>rbf_layer</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – The set of radial basis functions that expands pairwise distances
-between atoms/CG beads.</p></li>
-<li><p><strong>output_network</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Output neural network that predicts scalar energies from scalar PaiNN
-features. This network should transform (num_examples * num_atoms,
-hidden_channels) to (num_examples * num atoms, 1).</p></li>
-<li><p><strong>max_num_neighbors</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Maximum number of neighbors to return for a
-given node/atom when constructing the molecular graph during forward
-passes. This attribute is passed to the torch_cluster radius_graph
-routine keyword max_num_neighbors, which normally defaults to 32.
-Users should set this to higher values if they are using higher upper
-distance cutoffs and expect more than 32 neighbors per node/atom.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
 </section>
 <section id="mace-utilities">
 <h2>MACE Utilities<a class="headerlink" href="#mace-utilities" title="Link to this heading"></a></h2>
 <p>These classes are used to define a MACE graph neural network, for which the base implementation is required and available <a class="reference external" href="https://github.com/ACEsuit/mace.git">here</a>. For “typical” MACE models, users
 may find the class <cite>StandardMACE</cite> to be helpful in getting started quickly.</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="mlcg.nn.mace.MACE">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcg.nn.mace.</span></span><span class="sig-name descname"><span class="pre">MACE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">atomic_numbers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_embedding</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radial_embedding</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spherical_harmonics</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interactions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">products</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readouts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_neighbors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pair_repulsion_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/mace.html#MACE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.mace.MACE" title="Link to this definition"></a></dt>
-<dd><p>Implementation of MACE neural network model from <a class="reference external" href="https://github.com/ACEsuit/mace">https://github.com/ACEsuit/mace</a></p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>atomic_numbers</strong> (<em>torch.Tensor</em>) – Tensor of atomic numbers present in the system.</p></li>
-<li><p><strong>node_embedding</strong> (<em>torch.nn.Module</em>) – Module for embedding node (atom) attributes.</p></li>
-<li><p><strong>radial_embedding</strong> (<em>torch.nn.Module</em>) – Module for embedding radial (distance) features.</p></li>
-<li><p><strong>spherical_harmonics</strong> (<em>torch.nn.Module</em>) – Module for computing spherical harmonics of edge vectors.</p></li>
-<li><p><strong>interactions</strong> (<em>List</em><em>[</em><em>torch.nn.Module</em><em>]</em>) – List of interaction blocks.</p></li>
-<li><p><strong>products</strong> (<em>List</em><em>[</em><em>torch.nn.Module</em><em>]</em>) – List of product basis blocks.</p></li>
-<li><p><strong>readouts</strong> (<em>List</em><em>[</em><em>torch.nn.Module</em><em>]</em>) – List of readout blocks.</p></li>
-<li><p><strong>r_max</strong> (<em>float</em>) – Cutoff radius for neighbor list.</p></li>
-<li><p><strong>max_num_neighbors</strong> (<em>int</em>) – Maximum number of neighbors per atom.</p></li>
-<li><p><strong>pair_repulsion_fn</strong> (<em>torch.nn.Module</em><em>, </em><em>optional</em>) – Optional pairwise repulsion energy function.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
 </section>
 <section id="allegro-utilities">
 <h2>Allegro Utilities<a class="headerlink" href="#allegro-utilities" title="Link to this heading"></a></h2>
@@ -276,363 +116,18 @@ may find the class <cite>StandardMACE</cite> to be helpful in getting started qu
 <section id="radial-basis-functions">
 <h2>Radial Basis Functions<a class="headerlink" href="#radial-basis-functions" title="Link to this heading"></a></h2>
 <p>Sets of radial basis functions are used to expand the distances (or other molecular features) between atoms on a fixed-sized vector. For instance, this is the main transformation of the distances in the <cite>SchNet</cite> model.</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="mlcg.nn.radial_basis.GaussianBasis">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcg.nn.radial_basis.</span></span><span class="sig-name descname"><span class="pre">GaussianBasis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_rbf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/radial_basis/gaussian.html#GaussianBasis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.radial_basis.GaussianBasis" title="Link to this definition"></a></dt>
-<dd><p>Class that generates a set of equidistant 1-D gaussian basis functions
-scattered between a specified lower and upper cutoff:</p>
-<div class="math notranslate nohighlight">
-\[f_n = \exp{ \left( -\gamma(r-c_n)^2 \right) }\]</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>cutoff</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">_Cutoff</span></code>]</span>) – Defines the smooth cutoff function. If a float is provided, it will be interpreted as
-an upper cutoff and an IdentityCutoff will be used between 0 and the provided float. Otherwise,
-a chosen _Cutoff instance can be supplied.</p></li>
-<li><p><strong>num_rbf</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – The number of gaussian functions in the basis set.</p></li>
-<li><p><strong>trainable</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – If True, the parameters of the gaussian basis (the centers and widths of
-each function) are registered as optimizable parameters that will be
-updated during backpropagation. If False, these parameters will be
-instead fixed in an unoptimizable buffer.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="mlcg.nn.radial_basis.ExpNormalBasis">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcg.nn.radial_basis.</span></span><span class="sig-name descname"><span class="pre">ExpNormalBasis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_rbf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/radial_basis/exp_normal.html#ExpNormalBasis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.radial_basis.ExpNormalBasis" title="Link to this definition"></a></dt>
-<dd><p>Class for generating a set of exponential normal radial basis functions,
-as described in <a class="reference internal" href="bibliography.html#physnet" id="id4"><span>[Physnet]</span></a> . The functions have the following form:</p>
-<div class="math notranslate nohighlight">
-\[f_n(r_{ij};\alpha, r_{low},r_{high}) = f_{cut}(r_{ij},r_{low},r_{high})
-\times \exp\left[-\beta_n \left(e^{\alpha (r_{ij} -r_{high}) }
-- \mu_n \right)^2\right]\]</div>
-<p>where</p>
-<div class="math notranslate nohighlight">
-\[\alpha = 5.0/(r_{high} - r_{low})\]</div>
-<p>is a distance rescaling factor, and, by default</p>
-<div class="math notranslate nohighlight">
-\[f_{cut} ( r_{ij},r_{low},r_{high} ) =  \cos{\left( r_{ij} \times \pi / r_{high}\right)} + 1.0\]</div>
-<p>represents a cosine cutoff function (though users can specify their own cutoff function
-if they desire).
-:type cutoff: <span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">_Cutoff</span></code>]</span>
-:param cutoff: Defines the smooth cutoff function. If a float is provided, it will be interpreted as</p>
-<blockquote>
-<div><p>an upper cutoff and a CosineCutoff will be used between 0 and the provided float. Otherwise,
-a chosen <cite>_Cutoff</cite> instance can be supplied.</p>
-</div></blockquote>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>num_rbf</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – The number of functions in the basis set.</p></li>
-<li><p><strong>trainable</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – If True, the parameters of the basis (the centers and widths of each
-function) are registered as optimizable parameters that will be updated
-during backpropagation. If False, these parameters will be instead fixed
-in an unoptimizable buffer.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="mlcg.nn.radial_basis.RIGTOBasis">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcg.nn.radial_basis.</span></span><span class="sig-name descname"><span class="pre">RIGTOBasis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">300</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/radial_basis/radial_integral_gto.html#RIGTOBasis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.radial_basis.RIGTOBasis" title="Link to this definition"></a></dt>
-<dd><p>This radial basis is the effective basis when expanding an atomic
-density smeared by Gaussains of width <span class="math notranslate nohighlight">\(\sigma\)</span> on a set of
-<span class="math notranslate nohighlight">\(n_{max}\)</span> orthonormal Gaussian Type Orbitals (GTOs) and
-<span class="math notranslate nohighlight">\(l_{max}+1\)</span> Spherical Harmonics (SPHs) namely.
-This radial basis set is interpolated using natural cubic splines for
-efficiency and the cutoff is included into the splined functions.</p>
-<p>The basis is defined as</p>
-<div class="math notranslate nohighlight">
-\[R_{nl}(r) = f_c(r) \mathcal{N}_n \frac{\Gamma(\frac{n+l+3}{2})}{\Gamma(l+\frac{3}{2})}
-c^l r^l(c+b_n)^{-\frac{(n+l+3)}{2}}
-{}_1F_1\left(\frac{n+l+3}{2},l+\frac{3}{2};\frac{c^2 r^2}{c+b_n}\right),\]</div>
-<p>where <span class="math notranslate nohighlight">\({}_1F_1\)</span> is the confluent hypergeometric function,
-<span class="math notranslate nohighlight">\(\Gamma\)</span> is the gamma function, <span class="math notranslate nohighlight">\(f_c\)</span> is a cutoff function,
-<span class="math notranslate nohighlight">\(b_n=\frac{1}{2\sigma_n^2}\)</span>, <span class="math notranslate nohighlight">\(c= 1 / (2\sigma^2\)</span>,
-<span class="math notranslate nohighlight">\(\sigma_n = r_\text{cut} \max(\sqrt{n},1)/n_{max}\)</span> and
-<span class="math notranslate nohighlight">\(\mathcal{N}_n^2 = \frac{2}{\sigma_n^{2n + 3}\Gamma(n + 3/2)}\)</span>.</p>
-<p>For more details on the derivation, refer to <a class="reference external" href="https://doi.org/10.5075/epfl-thesis-7997">appendix A</a>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>nmax</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – number of radial basis</p></li>
-<li><p><strong>lmax</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – maximum spherical order (lmax included so there are lmax+1 orders)</p></li>
-<li><p><strong>sigma</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – smearing of the atomic density</p></li>
-<li><p><strong>cutoff</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">_Cutoff</span></code>]</span>) – Defines the smooth cutoff function. If a float is provided, it will be
-interpreted as an upper cutoff and a CosineCutoff will be used between
-0 and the provided float. Otherwise, a chosen _Cutoff instance can be
-supplied.</p></li>
-<li><p><strong>mesh_size</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – number of points used to interpolate with splines the radial basis spanning uniformly the range difined by the cutoff <span class="math notranslate nohighlight">\([0, r_c]\)</span>.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="mlcg.nn.radial_basis.SpacedExpBasis">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcg.nn.radial_basis.</span></span><span class="sig-name descname"><span class="pre">SpacedExpBasis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_spacing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/radial_basis/exp_spaced.html#SpacedExpBasis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.radial_basis.SpacedExpBasis" title="Link to this definition"></a></dt>
-<dd><p>Class for generating a set of exponential normal radial basis functions,
-with means and standard deviations designed to capture the physics around 2-* A.
-The functions have an exponential form with the following means and std:</p>
-<div class="math notranslate nohighlight">
-\[ \begin{align}\begin{aligned}\sigma_0 = \sigma_f/s
-\sigma_1 = \sigma_${min}
-\sigma_2 = \sigma_f*\sigma_1
-...
-\sigma_n = \sigma_f*\sigma_${n-1}\\\mu_0 = 0
-\mu_1 = \sigma_f
-\mu_2 = \mu_1 + s*\sigma_1
-...
-\mu_n = \mu_${n-1} + s*\sigma_${n-1}\end{aligned}\end{align} \]</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>cutoff</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">_Cutoff</span></code>]</span>) – Defines the smooth cutoff function. If a float is provided, it will be interpreted as
-an IdentityCutoff ranging over [0, cutoff]. Otherwise,
-a chosen <cite>_Cutoff</cite> instance can be supplied.</p></li>
-<li><p><strong>sigma_min</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – Width of first non-zero-centered basis function</p></li>
-<li><p><strong>sigma_factor</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – Location of first non-zero-centered basis function and multiplicative factor to spread std of each new peak by</p></li>
-<li><p><strong>mean_spacing</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – this time previous sigma indicates how much to distance the mean of subsequent gaussian by</p></li>
-<li><p><strong>trainable</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – If True, the parameters of the basis (the centers and widths of each
-function) are registered as optimizable parameters that will be updated
-during backpropagation. If False, these parameters will be instead fixed
-in an unoptimizable buffer.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="mlcg.nn.angular_basis.SphericalHarmonics">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcg.nn.angular_basis.</span></span><span class="sig-name descname"><span class="pre">SphericalHarmonics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lmax</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalization</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'integral'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">irreps_in</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/angular_basis/spherical_harmonics.html#SphericalHarmonics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.angular_basis.SphericalHarmonics" title="Link to this definition"></a></dt>
-<dd><p>JITable module version of real Spherical harmonics</p>
-<img alt="https://user-images.githubusercontent.com/333780/79220728-dbe82c00-7e54-11ea-82c7-b3acbd9b2246.gif" src="https://user-images.githubusercontent.com/333780/79220728-dbe82c00-7e54-11ea-82c7-b3acbd9b2246.gif" />
-<div class="line-block">
-<div class="line">Polynomials defined on the 3d space <span class="math notranslate nohighlight">\(Y^l: \mathbb{R}^3 \longrightarrow \mathbb{R}^{2l+1}\)</span></div>
-<div class="line">Usually restricted on the sphere (with <code class="docutils literal notranslate"><span class="pre">normalize=True</span></code>) <span class="math notranslate nohighlight">\(Y^l: S^2 \longrightarrow \mathbb{R}^{2l+1}\)</span></div>
-<div class="line">who satisfies the following properties:</div>
-</div>
-<ul class="simple">
-<li><p>are polynomials of the cartesian coordinates <code class="docutils literal notranslate"><span class="pre">x,</span> <span class="pre">y,</span> <span class="pre">z</span></code></p></li>
-<li><p>is equivariant <span class="math notranslate nohighlight">\(Y^l(R x) = D^l(R) Y^l(x)\)</span></p></li>
-<li><p>are orthogonal <span class="math notranslate nohighlight">\(\int_{S^2} Y^l_m(x) Y^j_n(x) dx = \text{cste} \; \delta_{lj} \delta_{mn}\)</span></p></li>
-</ul>
-<p>The value of the constant depends on the choice of normalization.</p>
-<p>It obeys the following property:</p>
-<div class="math notranslate nohighlight">
-\[ \begin{align}\begin{aligned}Y^{l+1}_i(x) &amp;= \text{cste}(l) \; &amp; C_{ijk} Y^l_j(x) x_k\\\partial_k Y^{l+1}_i(x) &amp;= \text{cste}(l) \; (l+1) &amp; C_{ijk} Y^l_j(x)\end{aligned}\end{align} \]</div>
-<p>Where <span class="math notranslate nohighlight">\(C\)</span> are the <cite>wigner_3j</cite>.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>This function matches with the following table of standard real spherical harmonics from <a class="reference external" href="https://en.wikipedia.org/wiki/Table_of_spherical_harmonics#Real_spherical_harmonics">Wikipedia</a>
-when <code class="docutils literal notranslate"><span class="pre">normalize=True</span></code>, <code class="docutils literal notranslate"><span class="pre">normalization='integral'</span></code> and is called with the argument in the order <code class="docutils literal notranslate"><span class="pre">y,z,x</span></code> (instead of <code class="docutils literal notranslate"><span class="pre">x,y,z</span></code>).</p>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>l</strong> (<em>int</em><em> or </em><em>list</em><em> of </em><em>int</em>) – degree of the spherical harmonics.</p></li>
-<li><p><strong>x</strong> (<cite>torch.Tensor</cite>) – tensor <span class="math notranslate nohighlight">\(x\)</span> of shape <code class="docutils literal notranslate"><span class="pre">(...,</span> <span class="pre">3)</span></code>.</p></li>
-<li><p><strong>normalize</strong> (<em>bool</em>) – whether to normalize the <code class="docutils literal notranslate"><span class="pre">x</span></code> to vectors that lie on the unit sphere before projecting onto the spherical harmonics</p></li>
-<li><p><strong>normalization</strong> (<em>{'integral'</em><em>, </em><em>'component'</em><em>, </em><em>'norm'}</em>) – normalization of the output tensors — note that this option is independent of <code class="docutils literal notranslate"><span class="pre">normalize</span></code>, which controls the processing of the <em>input</em>, rather than the output.
-Valid options:
-* <em>component</em>: <span class="math notranslate nohighlight">\(\|Y^l(x)\|^2 = 2l+1, x \in S^2\)</span>
-* <em>norm</em>: <span class="math notranslate nohighlight">\(\|Y^l(x)\| = 1, x \in S^2\)</span>, <code class="docutils literal notranslate"><span class="pre">component</span> <span class="pre">/</span> <span class="pre">sqrt(2l+1)</span></code>
-* <em>integral</em>: <span class="math notranslate nohighlight">\(\int_{S^2} Y^l_m(x)^2 dx = 1\)</span>, <code class="docutils literal notranslate"><span class="pre">component</span> <span class="pre">/</span> <span class="pre">sqrt(4pi)</span></code></p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><p>a list of tensors of shapes <code class="docutils literal notranslate"><span class="pre">[lmax][n_neighbor,</span> <span class="pre">m]</span></code> where <span class="math notranslate nohighlight">\(m&lt;=l\)</span></p>
-<div class="math notranslate nohighlight">
-\[Y^l(x)\]</div>
-</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>List[torch.Tensor]</p>
-</dd>
-</dl>
-</dd></dl>
-
 </section>
 <section id="cutoff-functions">
 <h2>Cutoff Functions<a class="headerlink" href="#cutoff-functions" title="Link to this heading"></a></h2>
 <p>Cutoff functions are used to enforce the smoothness of the models w.r.t. neighbor insertion/removal from an atomic environment. Some are also used to damp the signal from a neighbor’s displacement that is “far” from the central atom, e.g. <cite>CosineCutoff</cite>. Cutoff functions are also used in the construction of radial basis functions.</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="mlcg.nn.cutoff.IdentityCutoff">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcg.nn.cutoff.</span></span><span class="sig-name descname"><span class="pre">IdentityCutoff</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cutoff_lower</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_upper</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">inf</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/cutoff.html#IdentityCutoff"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.cutoff.IdentityCutoff" title="Link to this definition"></a></dt>
-<dd><p>Cutoff function that is one everywhere, but retains
-cutoff_lower and cutoff_upper attributes</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>cutoff_lower</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – left bound for the radial cutoff distance</p></li>
-<li><p><strong>cutoff_upper</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – right bound for the radial cutoff distance</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="mlcg.nn.cutoff.CosineCutoff">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcg.nn.cutoff.</span></span><span class="sig-name descname"><span class="pre">CosineCutoff</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cutoff_lower</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_upper</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/cutoff.html#CosineCutoff"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.cutoff.CosineCutoff" title="Link to this definition"></a></dt>
-<dd><p>Class implementing a cutoff envelope based a cosine signal in the
-interval <cite>[lower_cutoff, upper_cutoff]</cite>:</p>
-<div class="math notranslate nohighlight">
-\[\cos{\left( r_{ij} \times \pi / r_{high}\right)} + 1.0\]</div>
-<p>NOTE: The behavior of the cutoff is qualitatively different for lower
-cutoff values greater than zero when compared to the zero lower cutoff
-default. We recommend visualizing your basis to see if it makes physical
-sense.</p>
-<div class="math notranslate nohighlight">
-\[0.5 \cos{ \left[ \pi \left(2 \frac{r_{ij} - r_{low}}{r_{high}
- - r_{low}} + 1.0 \right)\right]} + 0.5\]</div>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="mlcg.nn.cutoff.ShiftedCosineCutoff">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcg.nn.cutoff.</span></span><span class="sig-name descname"><span class="pre">ShiftedCosineCutoff</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smooth_width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/cutoff.html#ShiftedCosineCutoff"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.cutoff.ShiftedCosineCutoff" title="Link to this definition"></a></dt>
-<dd><p>Class of Behler cosine cutoff with an additional smoothing parameter.</p>
-<div class="math notranslate nohighlight">
-\[0.5 + 0.5  \cos{ \left[ \pi \left( \frac{r_{ij} - r_{high} +
-\sigma}{\sigma}\right)\right]}\]</div>
-<p>where <span class="math notranslate nohighlight">\(\sigma\)</span> is the smoothing width.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>cutoff</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]</span>) – cutoff radius</p></li>
-<li><p><strong>smooth_width</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]</span>) – parameter that controls the extent of smoothing in the cutoff envelope.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
 </section>
 <section id="model-building-utilities">
 <h2>Model Building Utilities<a class="headerlink" href="#model-building-utilities" title="Link to this heading"></a></h2>
 <p>These classes are used to build more complicated models.</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="mlcg.nn.gradients.GradientsOut">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcg.nn.gradients.</span></span><span class="sig-name descname"><span class="pre">GradientsOut</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'forces'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/gradients.html#GradientsOut"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.gradients.GradientsOut" title="Link to this definition"></a></dt>
-<dd><p>Gradient wrapper for models.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>targets</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – The gradient targets to produce from a model output. These can be any
-of the gradient properties referenced in <cite>mlcg.data._keys</cite>.
-At the moment only forces are implemented.</p>
-</dd>
-</dl>
-<p class="rubric">Example</p>
-<p>To predict forces from an energy model, one would supply a model that
-predicts a scalar atom property (an energy) and specify the <cite>FORCE_KEY</cite>
-in the targets.</p>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="mlcg.nn.gradients.SumOut">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcg.nn.gradients.</span></span><span class="sig-name descname"><span class="pre">SumOut</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">models</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/gradients.html#SumOut"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.gradients.SumOut" title="Link to this definition"></a></dt>
-<dd><p>Property pooling wrapper for models</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>models</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">ModuleDict</span></code></span>) – Dictionary of predictors models keyed by their name attribute</p></li>
-<li><p><strong>targets</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]]</span>) – List of prediction targets that will be pooled</p></li>
-</ul>
-</dd>
-</dl>
-<p class="rubric">Example</p>
-<p>To combine SchNet force predictions with prior interactions:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">mlcg.nn</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">StandardSchNet</span><span class="p">,</span> <span class="n">HarmonicBonds</span><span class="p">,</span> <span class="n">HarmonicAngles</span><span class="p">,</span>
-                     <span class="n">GradientsOut</span><span class="p">,</span> <span class="n">SumOut</span><span class="p">,</span> <span class="n">CosineCutoff</span><span class="p">,</span>
-                     <span class="n">GaussianBasis</span><span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">mlcg.data._keys</span><span class="w"> </span><span class="kn">import</span> <span class="n">FORCE_KEY</span><span class="p">,</span> <span class="n">ENERGY_KEY</span>
-
-<span class="n">bond_terms</span> <span class="o">=</span> <span class="n">GradientsOut</span><span class="p">(</span><span class="n">HarmonicBonds</span><span class="p">(</span><span class="n">bond_stats</span><span class="p">),</span> <span class="n">FORCE_KEY</span><span class="p">)</span>
-<span class="n">angle_terms</span> <span class="o">=</span> <span class="n">GradientsOut</span><span class="p">(</span><span class="n">HarmonicAngles</span><span class="p">(</span><span class="n">angle_stats</span><span class="p">),</span> <span class="n">FORCE_KEY</span><span class="p">)</span>
-<span class="n">cutoff</span> <span class="o">=</span> <span class="n">CosineCutoff</span><span class="p">()</span>
-<span class="n">rbf</span> <span class="o">=</span> <span class="n">GaussianBasis</span><span class="p">(</span><span class="n">cutoff</span><span class="p">)</span>
-<span class="n">energy_network</span> <span class="o">=</span> <span class="n">StandardSchNet</span><span class="p">(</span><span class="n">cutoff</span><span class="p">,</span> <span class="n">rbf</span><span class="p">,</span> <span class="p">[</span><span class="mi">128</span><span class="p">])</span>
-<span class="n">force_network</span> <span class="o">=</span> <span class="n">GradientsOut</span><span class="p">(</span><span class="n">energy_model</span><span class="p">,</span> <span class="n">FORCE_KEY</span><span class="p">)</span>
-
-<span class="n">models</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleDict</span><span class="p">{</span>
-             <span class="s2">&quot;bonds&quot;</span><span class="p">:</span> <span class="n">bond_terms</span><span class="p">,</span>
-             <span class="s2">&quot;angles&quot;</span><span class="p">:</span> <span class="n">angle_terms</span><span class="p">,</span>
-             <span class="s2">&quot;SchNet&quot;</span><span class="p">:</span> <span class="n">force_network</span>
-         <span class="p">}</span>
-<span class="n">full_model</span> <span class="o">=</span> <span class="n">SumOut</span><span class="p">(</span><span class="n">models</span><span class="p">,</span> <span class="n">targets</span><span class="o">=</span><span class="p">[</span><span class="n">ENERGY_KEY</span><span class="p">,</span> <span class="n">FORCE_KEY</span><span class="p">])</span>
-</pre></div>
-</div>
-</dd></dl>
-
 </section>
 <section id="loss-functions">
 <h2>Loss Functions<a class="headerlink" href="#loss-functions" title="Link to this heading"></a></h2>
 <p>These classes define loss functions for model optimization, as well as generalized losses that combine several losses of different types.</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="mlcg.nn.losses.Loss">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcg.nn.losses.</span></span><span class="sig-name descname"><span class="pre">Loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">losses</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/losses.html#Loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.losses.Loss" title="Link to this definition"></a></dt>
-<dd><p>Generalized loss function class that can be
-used to combine more than one loss function</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>losses</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">_Loss</span></code>]</span>) – List of torch loss modules</p></li>
-<li><p><strong>weights</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]]</span>) – List of corresponding weights for each loss in
-the losses list. By default, each loss is weighted
-equally by 1.0.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="mlcg.nn.losses.ForceRMSE">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcg.nn.losses.</span></span><span class="sig-name descname"><span class="pre">ForceRMSE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">force_kwd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'forces'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size_average</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reduce</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reduction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mean'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/losses.html#ForceRMSE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.losses.ForceRMSE" title="Link to this definition"></a></dt>
-<dd><p>Force root-mean-square error loss, as defined by:</p>
-<div class="math notranslate nohighlight">
-\[L\left(f,\hat{f}\right) = \sqrt{ \frac{1}{Nd}\sum_{i}^{N} \left\Vert f_i - \hat{f}_i \right\Vert ^2 }\]</div>
-<p>where <span class="math notranslate nohighlight">\(f\)</span> are predicted forces, <span class="math notranslate nohighlight">\(\hat{f}\)</span> are reference forces, <span class="math notranslate nohighlight">\(N\)</span> is
-the number of examples/structures, and <span class="math notranslate nohighlight">\(d\)</span> is the real space dimensionality
-(eg, <span class="math notranslate nohighlight">\(d=3\)</span> for proteins)</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>force_kwd</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – string to specify the force key in an AtomicData instance</p></li>
-<li><p><strong>size_average</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>]</span>) – If True, the loss is normalized by the batch size</p></li>
-<li><p><strong>reduce</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>]</span>) – If True, the loss is reduced to a scalar</p></li>
-<li><p><strong>reduction</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – <p>Specifies the method of reduction. See <a class="reference external" href="https://github.com/pytorch/pytorch/blob/acb035f5130fabe258ff27049c73a15ba3a52dbd/torch/nn/modules/loss.py#L69">here</a>
-for more options.</p>
-</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="mlcg.nn.losses.ForceMSE">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcg.nn.losses.</span></span><span class="sig-name descname"><span class="pre">ForceMSE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">force_kwd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'forces'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size_average</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reduce</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reduction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mean'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/losses.html#ForceMSE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.losses.ForceMSE" title="Link to this definition"></a></dt>
-<dd><p>Force mean square error loss, as defined by:</p>
-<div class="math notranslate nohighlight">
-\[L\left(f,\hat{f}\right) = \frac{1}{Nd}\sum_{i}^{N} \left\Vert f_i - \hat{f}_i \right\Vert ^2\]</div>
-<p>where <span class="math notranslate nohighlight">\(f\)</span> are predicted forces, <span class="math notranslate nohighlight">\(\hat{f}\)</span> are reference forces, <span class="math notranslate nohighlight">\(N\)</span> is
-the number of examples/structures, and <span class="math notranslate nohighlight">\(d\)</span> is the real space dimensionality
-(eg, <span class="math notranslate nohighlight">\(d=3\)</span> for proteins)</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>force_kwd</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – string to specify the force key in an AtomicData instance</p></li>
-<li><p><strong>size_average</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>]</span>) – If True, the loss is normalized by the batch size</p></li>
-<li><p><strong>reduce</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>]</span>) – If True, the loss is reduced to a scalar</p></li>
-<li><p><strong>reduction</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – <p>Specifies the method of reduction. See <a class="reference external" href="https://github.com/pytorch/pytorch/blob/acb035f5130fabe258ff27049c73a15ba3a52dbd/torch/nn/modules/loss.py#L6L9">here</a>
-for more options.</p>
-</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
 </section>
 </section>
 

@@ -14,7 +14,7 @@
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="_static/documentation_options.js?v=a58bc63e"></script>
-      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -46,22 +46,9 @@
 <li class="toctree-l1"><a class="reference internal" href="data.html">Data Representation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="geometry.html">Geometry</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Neighbor Lists</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#neighbor-list-utilities">Neighbor List Utilities</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#mlcg.neighbor_list.neighbor_list.make_neighbor_list"><code class="docutils literal notranslate"><span class="pre">make_neighbor_list()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#mlcg.neighbor_list.neighbor_list.validate_neighborlist"><code class="docutils literal notranslate"><span class="pre">validate_neighborlist()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#torch-implementation">Torch Implementation</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#mlcg.neighbor_list.torch_impl.torch_neighbor_list"><code class="docutils literal notranslate"><span class="pre">torch_neighbor_list()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#mlcg.neighbor_list.torch_impl.torch_neighbor_list_no_pbc"><code class="docutils literal notranslate"><span class="pre">torch_neighbor_list_no_pbc()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#mlcg.neighbor_list.torch_impl.compute_images"><code class="docutils literal notranslate"><span class="pre">compute_images()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#mlcg.neighbor_list.torch_impl.wrap_positions"><code class="docutils literal notranslate"><span class="pre">wrap_positions()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#ase-implementation">ASE Implementation</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#mlcg.neighbor_list.ase_impl.ase_neighbor_list"><code class="docutils literal notranslate"><span class="pre">ase_neighbor_list()</span></code></a></li>
-</ul>
-</li>
+<li class="toctree-l2"><a class="reference internal" href="#neighbor-list-utilities">Neighbor List Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#torch-implementation">Torch Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#ase-implementation">ASE Implementation</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="coarse_graining.html">Coarse Graining</a></li>
@@ -105,185 +92,12 @@ The neighbor lists are dictionaries containing meta-data (user defined <cite>tag
 <section id="neighbor-list-utilities">
 <h2>Neighbor List Utilities<a class="headerlink" href="#neighbor-list-utilities" title="Link to this heading"></a></h2>
 <p>These utilities are meant to format and validate neighbor list dictionaries.</p>
-<dl class="py function">
-<dt class="sig sig-object py" id="mlcg.neighbor_list.neighbor_list.make_neighbor_list">
-<span class="sig-prename descclassname"><span class="pre">mlcg.neighbor_list.neighbor_list.</span></span><span class="sig-name descname"><span class="pre">make_neighbor_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index_mapping</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mapping_batch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cell_shifts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rcut</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">self_interaction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/neighbor_list/neighbor_list.html#make_neighbor_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.neighbor_list.neighbor_list.make_neighbor_list" title="Link to this definition"></a></dt>
-<dd><p>Build a neighbor_list dictionary.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>tag</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – quick identifier for compatibility checking</p></li>
-<li><p><strong>order</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – an int providing the order of the neighborlist, e.g. order == 2 means that
-central atoms <cite>i</cite> have 1 neighbor <cite>j</cite> so distances can be computed,
-order == 3 means that central atoms <cite>i</cite> have 2 neighbors <cite>j</cite> and <cite>k</cite> so
-angles can be computed</p></li>
-<li><p><strong>index_mapping</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span>) – The [order, n_edge] index tensor giving center -&gt; neighbor relations. 1st column
-refers to the central atom index and the 2nd column to the neighbor atom
-index in the list of atoms (so it has to be shifted by a cell_shift to get
-the actual position of the neighboring atoms)</p></li>
-<li><p><strong>mapping_batch</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</span>) – [n_edge] map for the neighbor -&gt; structure index relation</p></li>
-<li><p><strong>cell_shifts</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</span>) – A [n_edge, 3] tensor giving the periodic cell shift</p></li>
-<li><p><strong>rcut</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]</span>) – cutoff radius used to compute the connectivity</p></li>
-<li><p><strong>self_interaction</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>]</span>) – whether the mapping includes self referring mappings, e.g. mappings where <cite>i</cite> == <cite>j</cite>.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Neighborlist dictionary</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Dict</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="mlcg.neighbor_list.neighbor_list.validate_neighborlist">
-<span class="sig-prename descclassname"><span class="pre">mlcg.neighbor_list.neighbor_list.</span></span><span class="sig-name descname"><span class="pre">validate_neighborlist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inp</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/neighbor_list/neighbor_list.html#validate_neighborlist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.neighbor_list.neighbor_list.validate_neighborlist" title="Link to this definition"></a></dt>
-<dd><p>Tool to validate that the neighborlist dictionary has the required fields</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>inp</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></span>) – Input neighborlist to be validated</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>True if the supplied neighborlist is valid, false otherwise</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>bool</p>
-</dd>
-</dl>
-</dd></dl>
-
 </section>
 <section id="torch-implementation">
 <h2>Torch Implementation<a class="headerlink" href="#torch-implementation" title="Link to this heading"></a></h2>
-<dl class="py function">
-<dt class="sig sig-object py" id="mlcg.neighbor_list.torch_impl.torch_neighbor_list">
-<span class="sig-prename descclassname"><span class="pre">mlcg.neighbor_list.torch_impl.</span></span><span class="sig-name descname"><span class="pre">torch_neighbor_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rcut</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">self_interaction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_workers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_neighbors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/neighbor_list/torch_impl.html#torch_neighbor_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.neighbor_list.torch_impl.torch_neighbor_list" title="Link to this definition"></a></dt>
-<dd><p>Function for computing neighbor lists from pytorch geometric data
-instances that may or may not use periodic boundary conditions</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Data</span></code></span>) – Pytorch geometric data instance</p></li>
-<li><p><strong>rcut</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – upper distance cutoff, in which neighbors with distances larger
-than this cutoff will be excluded.</p></li>
-<li><p><strong>self_interaction</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – If True, each atom will be considered it’s own neighbor. This can
-be convenient for certain bases and representations</p></li>
-<li><p><strong>num_workers</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Number of threads to spawn and use for computing the neighbor list</p></li>
-<li><p><strong>max_number_neighbors</strong> – kwarg for radius_graph function from torch_cluster package,
-specifying the maximum number of neighbors for each atom</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</span></p>
-</dd>
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><ul class="simple">
-<li><p><em>torch.Tensor</em> – The atom indices of the first atoms in each neighbor pair</p></li>
-<li><p><em>torch.Tensor</em> – The atom indices of the second atoms in each neighbor pair</p></li>
-<li><p><em>torch.Tensor</em> – The cell shifts associated with minimum image distances
-in the presence of periodic boundary conditions</p></li>
-<li><p><em>torch.Tensor</em> – Mask for excluding self interactions</p></li>
-</ul>
-</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="mlcg.neighbor_list.torch_impl.torch_neighbor_list_no_pbc">
-<span class="sig-prename descclassname"><span class="pre">mlcg.neighbor_list.torch_impl.</span></span><span class="sig-name descname"><span class="pre">torch_neighbor_list_no_pbc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rcut</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">self_interaction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_workers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_neighbors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/neighbor_list/torch_impl.html#torch_neighbor_list_no_pbc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.neighbor_list.torch_impl.torch_neighbor_list_no_pbc" title="Link to this definition"></a></dt>
-<dd><p>Function for producing torch neighborlists without periodic boundary
-conditions</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="data.html#mlcg.data.atomic_data.AtomicData" title="mlcg.data.atomic_data.AtomicData"><code class="xref py py-class docutils literal notranslate"><span class="pre">AtomicData</span></code></a></span>) – AtomicData instance</p></li>
-<li><p><strong>rcut</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – Upper distance cutoff for determining neighbor edges</p></li>
-<li><p><strong>self_interaction</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>]</span>) – If True, self edges will added for each atom</p></li>
-<li><p><strong>num_workers</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]</span>) – Number of threads to use for neighbor enumeration</p></li>
-<li><p><strong>max_num_neighbors</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]</span>) – The maximum number of neighbors to return for each atom. For larger
-systems, it is important to make sure that this number is sufficiently
-large.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</span></p>
-</dd>
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><ul class="simple">
-<li><p><em>torch.Tensor</em> – The first atoms in each edge</p></li>
-<li><p><em>torch.Tensor</em> – The second atoms in each edge</p></li>
-<li><p><em>torch.Tensor</em> – Boolean tensor identifying self_interacting edges</p></li>
-</ul>
-</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="mlcg.neighbor_list.torch_impl.compute_images">
-<span class="sig-prename descclassname"><span class="pre">mlcg.neighbor_list.torch_impl.</span></span><span class="sig-name descname"><span class="pre">compute_images</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">positions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cell</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pbc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_atoms</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/neighbor_list/torch_impl.html#compute_images"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.neighbor_list.torch_impl.compute_images" title="Link to this definition"></a></dt>
-<dd><p>TODO: add doc</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</span></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="mlcg.neighbor_list.torch_impl.wrap_positions">
-<span class="sig-prename descclassname"><span class="pre">mlcg.neighbor_list.torch_impl.</span></span><span class="sig-name descname"><span class="pre">wrap_positions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-07</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/neighbor_list/torch_impl.html#wrap_positions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.neighbor_list.torch_impl.wrap_positions" title="Link to this definition"></a></dt>
-<dd><p>Wrap positions to unit cell.</p>
-<p>Returns positions changed by a multiple of the unit cell vectors to
-fit inside the space spanned by these vectors.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Data</span></code></span>) – torch_geometric.Data instance</p></li>
-<li><p><strong>eps</strong> (<em>float</em>) – Small number to prevent slightly negative coordinates from being
-wrapped.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
-</dd>
-</dl>
-</dd></dl>
-
 </section>
 <section id="ase-implementation">
 <h2>ASE Implementation<a class="headerlink" href="#ase-implementation" title="Link to this heading"></a></h2>
-<dl class="py function">
-<dt class="sig sig-object py" id="mlcg.neighbor_list.ase_impl.ase_neighbor_list">
-<span class="sig-prename descclassname"><span class="pre">mlcg.neighbor_list.ase_impl.</span></span><span class="sig-name descname"><span class="pre">ase_neighbor_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rcut</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">self_interaction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/neighbor_list/ase_impl.html#ase_neighbor_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.neighbor_list.ase_impl.ase_neighbor_list" title="Link to this definition"></a></dt>
-<dd><p>Function for converting a list of neighbor edges from
-an input AtomicData instance, to an ASE neighborlist as
-output by ase.neighborlist.neighbor_list. Return documenation
-taken from <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/_modules/ase/neighborlist.html#neighbor_list">https://wiki.fysik.dtu.dk/ase/_modules/ase/neighborlist.html#neighbor_list</a>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="data.html#mlcg.data.atomic_data.AtomicData" title="mlcg.data.atomic_data.AtomicData"><code class="xref py py-class docutils literal notranslate"><span class="pre">AtomicData</span></code></a></span>) – Input AtomicData instance. Must contain only one structure.</p></li>
-<li><p><strong>rcut</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – Upper distance cover for determining neighbors</p></li>
-<li><p><strong>self_interaction</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – If True, self edges will be added.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</span></p>
-</dd>
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><ul class="simple">
-<li><p><em>torch.Tensor</em> – first atom indices, of shape (n_atoms)</p></li>
-<li><p><em>torch.Tensor</em> – second atom index, of shape (n_atoms)</p></li>
-<li><p><em>torch.Tensor</em> – Dot product of the periodic shift vectors with the system unit cell vectors</p></li>
-</ul>
-</p>
-</dd>
-</dl>
-</dd></dl>
-
 </section>
 </section>
 

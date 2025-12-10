@@ -14,7 +14,7 @@
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="_static/documentation_options.js?v=a58bc63e"></script>
-      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -46,11 +46,7 @@
 <li class="toctree-l1"><a class="reference internal" href="data.html">Data Representation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="geometry.html">Geometry</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neighbor_list.html">Neighbor Lists</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Coarse Graining</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#mlcg.cg.projection.build_cg_topology"><code class="docutils literal notranslate"><span class="pre">build_cg_topology()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="#mlcg.cg.projection.build_cg_matrix"><code class="docutils literal notranslate"><span class="pre">build_cg_matrix()</span></code></a></li>
-</ul>
-</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Coarse Graining</a></li>
 <li class="toctree-l1"><a class="reference internal" href="datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="priors.html">Priors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="models.html">Models</a></li>
@@ -87,81 +83,6 @@
   <section id="coarse-graining">
 <h1>Coarse Graining<a class="headerlink" href="#coarse-graining" title="Link to this heading"></a></h1>
 <p><cite>mlcg.cg</cite> contains useful tools for projecting all-atom systems to a coarser resolution.</p>
-<dl class="py function">
-<dt class="sig sig-object py" id="mlcg.cg.projection.build_cg_topology">
-<span class="sig-prename descclassname"><span class="pre">mlcg.cg.projection.</span></span><span class="sig-name descname"><span class="pre">build_cg_topology</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cg_mapping=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">special_terminal=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bonds=&lt;function</span> <span class="pre">add_chain_bonds&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angles=&lt;function</span> <span class="pre">add_chain_angles&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dihedrals=&lt;function</span> <span class="pre">add_chain_dihedrals&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/cg/projection.html#build_cg_topology"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.cg.projection.build_cg_topology" title="Link to this definition"></a></dt>
-<dd><p>Takes an <cite>mlcg.geometry.topology.Topology</cite> instance and returns another
-<cite>mlcg.geometry.topology.Topology</cite> instance conditioned on the supplied
-CG mapping</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>topology</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="geometry.html#mlcg.geometry.topology.Topology" title="mlcg.geometry.topology.Topology"><code class="xref py py-class docutils literal notranslate"><span class="pre">Topology</span></code></a></span>) – Original MLCG topology before coarse graining</p></li>
-<li><p><strong>cg_mapping</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>], <code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]]]</span>) – A suitable CG mapping. See mclg.cg._mapping.py for examples.</p></li>
-<li><p><strong>special_termini</strong> – If True, the first and last CG atoms recieve their own special
-types</p></li>
-<li><p><strong>bonds</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>]</span>) – Function to enumerate and define bonds in the final CG topology</p></li>
-<li><p><strong>angles</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>]</span>) – Function to enumerate and define angles in the final CG topology</p></li>
-<li><p><strong>dihedrals</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>]</span>) – Function to enumerate and define dihedrals in the final CG topology</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>CG topoology</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="geometry.html#mlcg.geometry.topology.Topology" title="mlcg.geometry.topology.Topology">Topology</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="mlcg.cg.projection.build_cg_matrix">
-<span class="sig-prename descclassname"><span class="pre">mlcg.cg.projection.</span></span><span class="sig-name descname"><span class="pre">build_cg_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cg_mapping</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">special_terminal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/cg/projection.html#build_cg_matrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.cg.projection.build_cg_matrix" title="Link to this definition"></a></dt>
-<dd><p>Function for producing coarse grain types, masses, and
-mapping matrices using a slicing strategy and a predetermined
-set of atoms to retain at the coarse grain resolution.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>topology</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="geometry.html#mlcg.geometry.topology.Topology" title="mlcg.geometry.topology.Topology"><code class="xref py py-class docutils literal notranslate"><span class="pre">Topology</span></code></a></span>) – System topology instance</p></li>
-<li><p><strong>cg_mapping</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>], <code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]]]</span>) – <p>Mapping dictionary with the following structure:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-    <span class="p">(</span><span class="n">residue</span> <span class="n">name</span><span class="p">,</span> <span class="n">atom</span> <span class="n">name</span><span class="p">)</span> <span class="p">:</span> <span class="p">(</span><span class="n">compound</span> <span class="n">name</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">mass</span><span class="p">)</span>
-    <span class="o">...</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-<p>Eg, a row for an alanine carbon alpha atom would be:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-    <span class="p">(</span><span class="s2">&quot;ALA&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">)</span> <span class="p">:</span> <span class="p">(</span><span class="s2">&quot;CA_A&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">12</span><span class="p">)</span>
-    <span class="o">...</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>special_termini</strong> – If True, special types will be reserved for the first and
-last CG atoms</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">OrderedDict</span></code>]</span></p>
-</dd>
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><ul class="simple">
-<li><p><em>np.ndarray</em> – Array of CG atom types</p></li>
-<li><p><em>np.ndarray</em> – Array of CG masses</p></li>
-<li><p><em>np.ndarray</em> – One-hot transformation matrix of shape (n_high_res_atoms, n_cg_atoms)
-that maps atoms for the high resolution repesentation to the coarse
-grain representation</p></li>
-<li><p><em>OrderedDict</em> – Ordered dictionary mapping each CG atom index (with respect to the
-CG topology) to a list containing the CG atom name, CG atom type
-and the CG atom mass</p></li>
-</ul>
-</p>
-</dd>
-</dl>
-</dd></dl>
-
 </section>
 
 
