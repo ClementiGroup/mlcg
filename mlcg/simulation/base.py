@@ -548,10 +548,7 @@ class _Simulation(object):
             data_list[0].__class__,
             data_list=data_list,
             increment=True,
-          if self.save_energy_components:
-            for key, tensor in self.energy_components.items():
-                # TODO: Check that data dimensions are correct
-                tensor[save_ind] = data.out[key]  add_batch=True,
+            add_batch=True,
         )
         return collated_data
 
