@@ -3,7 +3,7 @@ from ase.atoms import Atoms
 import numpy as np
 from torch_geometric.data.collate import collate
 import torch
-from typing import  List, Callable, Dict
+from typing import List, Callable, Dict
 
 from .data._keys import ENERGY_KEY, FORCE_KEY
 from .data.atomic_data import AtomicData
@@ -13,7 +13,6 @@ from .geometry.statistics import fit_baseline_models
 from .neighbor_list.neighbor_list import make_neighbor_list
 from .nn.prior import HarmonicBonds, HarmonicAngles, Dihedral
 from .nn.gradients import SumOut, GradientsOut
-
 
 
 def _get_initial_data():

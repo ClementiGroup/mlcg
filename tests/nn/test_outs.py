@@ -19,11 +19,10 @@ from mlcg.data._keys import ENERGY_KEY, FORCE_KEY
 from mlcg.data.atomic_data import AtomicData
 from mlcg.mol_utils import _ASE_prior_model
 
+
 @pytest.fixture
 def ASE_prior_model():
     return _ASE_prior_model
-
-
 
 
 test_mol = molecule("CH3CH2NH2")
@@ -88,7 +87,6 @@ schnet = StandardSchNet(
 schnet_force_model = GradientsOut(schnet, targets=[FORCE_KEY]).double()
 
 
-
 @pytest.mark.parametrize(
     "ASE_prior_model, out_targets",
     [
@@ -99,7 +97,6 @@ schnet_force_model = GradientsOut(schnet, targets=[FORCE_KEY]).double()
     ],
     indirect=["ASE_prior_model"],
 )
-
 def test_outs(ASE_prior_model, out_targets):
     """Test to make sure that the output dictionary is properly populated
     and that the correspdonding shapes of the outputs are correct given the

@@ -14,8 +14,6 @@ from ruamel.yaml import YAML
 import logging
 
 
-
-
 yaml = YAML(pure="true", typ="safe")
 yaml.default_flow_style = False
 
@@ -296,5 +294,3 @@ def detect_nan_parameters(model: nn.Module) -> None:
                 f"Detected nan and/or inf values in `{name}`."
                 " Check your forward pass for numerically unstable operations."
             )
-
-

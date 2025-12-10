@@ -31,12 +31,15 @@ from mlcg.geometry.statistics import fit_baseline_models
 
 from mlcg.mol_utils import _get_initial_data, _ASE_prior_model
 
+
 @pytest.fixture
 def get_initial_data():
     return _get_initial_data()
 
+
 def ASE_prior_model(**kwargs):
     return _ASE_prior_model(**kwargs)
+
 
 def ASE_SchNet_model(
     mol: str = "CH3CH2NH2", sum_out: bool = True, device="cpu"

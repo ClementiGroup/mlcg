@@ -17,6 +17,7 @@ from mlcg.neighbor_list.neighbor_list import make_neighbor_list
 from mlcg.nn.prior import HarmonicBonds, HarmonicAngles, Dihedral
 from mlcg.nn.gradients import SumOut, GradientsOut
 
+
 @pytest.fixture
 def get_initial_data():
     def data_list_builder(

@@ -24,6 +24,7 @@ torch_pi = torch.tensor(np.pi)
 def get_initial_data():
     return _get_initial_data()
 
+
 @pytest.fixture
 def ASE_prior_model():
     return _ASE_prior_model
