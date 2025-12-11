@@ -177,25 +177,21 @@ class _Simulation(object):
         self.save_energies = save_energies
         self.save_force_components = save_force_components
         self.save_energy_components = save_energy_components
-        
-        
+
         if force_components is None:
             self.force_components = None
         elif isinstance(force_components, str):
             self.force_components = {force_components: None}
         else:
             self.force_components = {key: None for key in force_components}
-        
+
         if energy_components is None:
             self.energy_components = None
         elif isinstance(energy_components, str):
             self.energy_components = {energy_components: None}
         else:
-            self.energy_components = {key: None for key in energy_components} 
-        
-        
-        
-        
+            self.energy_components = {key: None for key in energy_components}
+
         self.n_timesteps = n_timesteps
         self.save_interval = save_interval
         self.dt = dt
@@ -746,7 +742,6 @@ class _Simulation(object):
             raise ValueError(
                 "subroutine interval specified, but subroutine is ambiguous."
             )
-        
 
         # Saving extra force components
         if self.save_force_components and (self.force_components is None):
@@ -816,12 +811,20 @@ class _Simulation(object):
             self.simulated_potential = None
 
         if self.save_force_components:
-            self.force_components = { key: torch.zeros(self._save_size, self.n_sims, self.n_atoms, self.n_dims)  for key in self.force_components}
+            self.force_components = {
+                key: torch.zeros(
+                    self._save_size, self.n_sims, self.n_atoms, self.n_dims
+                )
+                for key in self.force_components
+            }
         else:
             self.force_components = None
 
         if self.save_energy_components:
-            self.energy_components = { key: torch.zeros(self._save_size, self.n_sims)  for key in self.energy_components}
+            self.energy_components = {
+                key: torch.zeros(self._save_size, self.n_sims)
+                for key in self.energy_components
+            }
         else:
             self.energy_components = None
 
@@ -893,12 +896,13 @@ class _Simulation(object):
             self.simulated_potential[save_ind] = potential
 
         if self.save_force_components:
-            for key, tensor in self.force_components.items(): #type: ignore , check for None in input validation
-                tensor[save_ind, :, :] = deepcopy(data.out[key][FORCE_KEY].detach())
-
+            for key, tensor in self.force_components.items():  # type: ignore , check for None in input validation
+                tensor[save_ind, :, :] = deepcopy(
+                    data.out[key][FORCE_KEY].detach()
+                )
 
         if self.save_energy_components:
-            for key, tensor in self.energy_components.items(): #type: ignore , check for None in input validation
+            for key, tensor in self.energy_components.items():  # type: ignore , check for None in input validation
                 tensor[save_ind] = deepcopy(data.out[key][ENERGY_KEY].detach())
 
         if self.create_checkpoints:
@@ -934,14 +938,20 @@ class _Simulation(object):
             )
 
         if self.save_force_components:
-            components_to_export = {name: self._swap_and_export(i) for name, i in self.force_components.items()}
+            components_to_export = {
+                name: self._swap_and_export(i)
+                for name, i in self.force_components.items()
+            }
             np.savez(
                 "{}_force_components_{}.npz".format(self.filename, key),
                 **components_to_export,
             )
 
         if self.save_energy_components:
-            components_to_export = {name: self._swap_and_export(i) for name, i in self.energy_components.items()}
+            components_to_export = {
+                name: self._swap_and_export(i)
+                for name, i in self.energy_components.items()
+            }
             np.savez(
                 "{}_energy_components_{}.npz".format(self.filename, key),
                 **components_to_export,
@@ -973,16 +983,23 @@ class _Simulation(object):
         else:
             self.simulated_potential = None
 
-        if self.save_force_components: 
-            self.force_components = {key: torch.zeros(self._save_size, self.n_sims, self.n_atoms, self.n_dims) for key in self.force_components}
+        if self.save_force_components:
+            self.force_components = {
+                key: torch.zeros(
+                    self._save_size, self.n_sims, self.n_atoms, self.n_dims
+                )
+                for key in self.force_components
+            }
         else:
             self.force_components = None
 
-        if self.save_energy_components: 
-            self.energy_components = {key: torch.zeros(self._save_size, self.n_sims) for key in self.energy_components}
+        if self.save_energy_components:
+            self.energy_components = {
+                key: torch.zeros(self._save_size, self.n_sims)
+                for key in self.energy_components
+            }
         else:
             self.energy_components = None
-
 
         self._npy_file_index += 1
 
@@ -997,14 +1014,18 @@ class _Simulation(object):
             self.simulated_potential = self._swap_and_export(
                 self.simulated_potential
             )
-        
-        if self.save_force_components:
-            self.force_components = {key: self._swap_and_export(tensor) for key, tensor in self.force_components.items()}
-        
-        if self.save_energy_components:
-            self.energy_components = {key: self._swap_and_export(tensor) for key, tensor in self.energy_components.items()}
-        
 
+        if self.save_force_components:
+            self.force_components = {
+                key: self._swap_and_export(tensor)
+                for key, tensor in self.force_components.items()
+            }
+
+        if self.save_energy_components:
+            self.energy_components = {
+                key: self._swap_and_export(tensor)
+                for key, tensor in self.energy_components.items()
+            }
 
     def attach_model(self, model: torch.nn.Module):
         warnings.warn(
