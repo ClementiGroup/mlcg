@@ -897,6 +897,7 @@ class _Simulation(object):
 
         if self.save_force_components:
             for key, tensor in self.force_components.items():  # type: ignore , check for None in input validation
+                tensor = tensor.view(-1, self.n_atoms, self.n_dims)
                 tensor[save_ind, :, :] = deepcopy(
                     data.out[key][FORCE_KEY].detach()
                 )
