@@ -170,7 +170,9 @@ def compute_angles_cos(
 
 
 @torch.jit.script
-def compute_torsions(pos: torch.Tensor, mapping: torch.Tensor, eps: float = 1e-6):
+def compute_torsions(
+    pos: torch.Tensor, mapping: torch.Tensor, eps: float = 1e-6
+):
     r"""
     Compute the angle between two planes from positions in :obj:'pos' following the
     :obj:`mapping`::
@@ -221,7 +223,8 @@ def compute_torsions(pos: torch.Tensor, mapping: torch.Tensor, eps: float = 1e-6
     y = (torch.cross(n1, dr2, dim=1) * n2).sum(dim=-1)
     theta = torch.atan2(y + eps, x + eps)
     # soft eps makes atan2 behave smoothly even when n2→0
-    return -1*theta
+    return -1 * theta
+
 
 #    dr1 = pos[mapping[1]] - pos[mapping[0]]
 #    dr1 = dr1 / dr1.norm(p=2, dim=1)[:, None]

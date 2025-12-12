@@ -18,7 +18,7 @@ class RestrictedQuartic(_Prior):
 
         V(\theta) = a\cos^4(\theta) + b\cos^3(\theta) + c\cos^2(\theta) + d\cos(\theta) + \frac{k}{\sin^2(\theta)} + V_0
 
-    This potential combines a fourth grade polynomial expansion in cosine terms 
+    This potential combines a fourth grade polynomial expansion in cosine terms
     with a repulsive term that prevents angles from approaching 0 or pi.
 
     Parameters
@@ -43,7 +43,7 @@ class RestrictedQuartic(_Prior):
             }
 
         The keys must be tuples of 3 atoms.
-    
+
     """
 
     def __init__(
@@ -52,7 +52,7 @@ class RestrictedQuartic(_Prior):
         name: str = "angles",
     ) -> None:
         super(RestrictedQuartic, self).__init__()
-        
+
         keys = torch.tensor(list(statistics.keys()), dtype=torch.long)
         self.allowed_interaction_keys = list(statistics.keys())
         self.name = name
@@ -60,10 +60,10 @@ class RestrictedQuartic(_Prior):
 
         unique_types = torch.unique(keys.flatten())
         assert unique_types.min() >= 0
-        
+
         max_type = unique_types.max()
         sizes = tuple([max_type + 1 for _ in range(self.order)])
-        
+
         # Initialize parameter tensors
         a = torch.zeros(sizes)
         b = torch.zeros(sizes)
@@ -71,7 +71,7 @@ class RestrictedQuartic(_Prior):
         d = torch.zeros(sizes)
         k = torch.zeros(sizes)
         v_0 = torch.zeros(sizes)
-        
+
         # Populate parameters from statistics
         for key in statistics.keys():
             a[key] = statistics[key]["a"]
@@ -123,7 +123,7 @@ class RestrictedQuartic(_Prior):
         interaction_types = tuple(
             data.atom_types[mapping[ii]] for ii in range(self.order)
         )
-        
+
         params = {
             "a": self.a[interaction_types].flatten(),
             "b": self.b[interaction_types].flatten(),
@@ -157,15 +157,17 @@ class RestrictedQuartic(_Prior):
         mapping_batch = data.neighbor_list[self.name]["mapping_batch"]
         features = self.data2features(data).flatten()
         params = self.data2parameters(data)
-        
+
         y = self.compute(features, **params)
         y = scatter(y, mapping_batch, dim=0, reduce="sum")
-        
+
         data.out[self.name] = {"energy": y}
         return data
 
     @staticmethod
-    def compute_features(pos: torch.Tensor, mapping: torch.Tensor) -> torch.Tensor:
+    def compute_features(
+        pos: torch.Tensor, mapping: torch.Tensor
+    ) -> torch.Tensor:
         """Computes angles from atomic positions.
 
         Parameters
@@ -196,7 +198,7 @@ class RestrictedQuartic(_Prior):
 
         .. math::
 
-            V(\theta) = a\cos^4(\theta) + b\cos^3(\theta) + c\cos^2(\theta) + 
+            V(\theta) = a\cos^4(\theta) + b\cos^3(\theta) + c\cos^2(\theta) +
                         d\cos(\theta) + \frac{k}{\sin^2(\theta)} + V_0
 
         Parameters
@@ -219,8 +221,13 @@ class RestrictedQuartic(_Prior):
         cos = torch.cos(x)
         sin = torch.sin(x)
 
-        quart = a * torch.pow(cos,4) + b * torch.pow(cos,3) + c * torch.pow(cos,2) + d * cos
+        quart = (
+            a * torch.pow(cos, 4)
+            + b * torch.pow(cos, 3)
+            + c * torch.pow(cos, 2)
+            + d * cos
+        )
         rep = k / (sin**2)
-        V = quart + rep + v_0 
-        
+        V = quart + rep + v_0
+
         return V

@@ -655,10 +655,10 @@ class _Simulation(object):
 
         # saving numpys
         if self.export_interval is not None:
-            #if self.n_timesteps // self.export_interval >= 10000:
-            #    raise ValueError(
-            #        "Simulation saving is not implemented if more than 10000 files will be generated"
-            #    )
+            if self.n_timesteps // self.export_interval >= 10000:
+                raise ValueError(
+                    "Simulation saving is not implemented if more than 10000 files will be generated"
+                )
 
             if os.path.isfile(
                 "{}_coords_{}.npy".format(self.filename, self.current_timestep)
@@ -714,7 +714,6 @@ class _Simulation(object):
 
     def _get_numpy_count(self):
         """Returns a string 0000-9999 for appending to numpy file outputs"""
-        digits = max(4, len(str(self._npy_file_index)))
         return f"{self._npy_file_index:04d}"
 
     def _swap_and_export(
@@ -844,23 +843,6 @@ class _Simulation(object):
             self.checkpoint[VELOCITY_KEY] = deepcopy(
                 data[VELOCITY_KEY].detach()
             )
-
-    def _cleanup_old_files(self, keep_last_n: int = 10000):
-        """Remove old numpy files to save disk space
-
-        Parameters
-        ----------
-        keep_last_n : int
-            Keep only the last N files, delete older ones
-        """
-        if self._npy_file_index >= keep_last_n:
-            file_to_delete = self._npy_file_index - keep_last_n
-            digits = max(4, len(str(file_to_delete)))
-            key = f"{file_to_delete:0{digits}d}"
-            # Delete coordinate file
-            coord_file = f"{self.filename}_coords_{key}.npy"
-            if os.path.isfile(coord_file):
-                os.remove(coord_file)
 
     def write(self):
         """Utility to write numpy arrays to disk"""
