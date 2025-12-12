@@ -2,6 +2,100 @@
 requires = ["setuptools", "wheel", "ninja"]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "mlcg"
+version = "0.1.2"
+description = "A collection of tools for processing raw simulation data for use in training machine-learned, coarse-grained (CG) force fields using the MLCG library"
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.12"
+authors = [
+    {name = "Félix Musil"},
+    {name = "Nick Charron"},
+    {name = "Yaoyi Chen"},
+    {name = "Atharva Kelkar"},
+    {name = "Clark Templeton"},
+    {name = "Klara Bonneau"},
+    {name = "Aldo S. Pasos-Trejo"},
+    {name = "Andrea Guljas"},
+    {name = "Jacopo Venturin"},
+]
+license = "MIT"
+license-files = ["LICENSE"]
+dependencies = [
+    "aggforce @ git+https://github.com/noegroup/aggforce.git",
+    "ase",
+    "e3nn==0.5.3",
+    "h5py",
+    "ipython",
+    "ipywidgets",
+    "h5py>=3.15.1",
+    "jsonargparse[signatures]>=4.42.0",
+    "matplotlib>=3.10.7",
+    "mdtraj>=1.11.0",
+    "mpmath",
+    "networkx",
+    "nglview",
+    "natsort>=8.4.0",
+    "networkx>=3.3",
+    "numpy>=1.26.4",
+    "packaging",
+    "pandas>=2.3.3",
+    "pytorch_lightning==2.2.1",
+    "pyyaml>=6.0.3",
+    "requests",
+    "ruamel.yaml",
+    "scikit-learn>=1.7.2",
+    "scipy>=1.16.2",
+    "sympy",
+    "seaborn",
+    "torch>=2.6.0",
+    "torch-geometric>=2.6.1",
+    "torch-cluster",
+    "torchist>=1.0.1",
+    "torch_optimizer<=1.5.1",
+    "tqdm>=4.67.1",
+    # developer tools
+    "black[jupyter]",
+    "coverage[toml]",
+    "pytest",
+    # by mlcg_opt_radius
+    "ninja",
+    # extra dependencies for mace 
+    "opt_einsum",
+    "torch-ema",
+    "prettytable",
+    "python-hostlist",
+    "configargparse",
+    "GitPython",
+    "orjson",
+    "lmdb",
+    # extra dependencies for allegro
+    "matscipy",
+    "hydra-core",
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python :: 3.12",
+]
+
+[tool.setuptools]
+package-dir = {"mlcg" = "src/mlcg"}
+
+[tool.setuptools.package-data]
+"mlcg.nn" = ["assets/*.pt"]
+
+[project.urls]
+Homepage = "https://github.com/ClementiGroup/mlcg"
+Issues = "https://github.com/ClementiGroup/mlcg/issues"
+
+[project.scripts]
+mlcg-combine_model = "mlcg.scripts.mlcg_combine_model:main"
+mlcg-train_h5 = "mlcg.scripts.mlcg_train_h5:main"
+mlcg-train_h5_multischeduler = "mlcg.scripts.mlcg_train_h5_multischeduler:main"
+mlcg-train = "mlcg.scripts.mlcg_train:main"
+mlcg-nvt_langevin = "mlcg.scripts.mlcg_nvt_langevin:main"
+mlcg-nvt_pt_langevin = "mlcg.scripts.mlcg_pt_nvt_langevin:main"
+
 [tool.black]
 line-length = 80
 target-version = ['py38', 'py39']
@@ -14,9 +108,13 @@ extend-exclude = '''
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "-ra -q"
+addopts = "-ra"
 testpaths = [
-    "mlcg",
+    "tests",
+    "examples",
+]
+markers = [
+    "heavy: test that should be skipped in --light mode"
 ]
 filterwarnings = [
     "ignore::DeprecationWarning"
