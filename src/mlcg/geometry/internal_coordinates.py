@@ -171,8 +171,7 @@ def compute_angles_cos(
 
 @torch.jit.script
 def compute_torsions(
-    pos: torch.Tensor, mapping: torch.Tensor, eps: float = 1e-6
-):
+    pos: torch.Tensor, mapping: torch.Tensor):
     r"""
     Compute the angle between two planes from positions in :obj:'pos' following the
     :obj:`mapping`::

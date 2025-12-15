@@ -1,4 +1,4 @@
-from typing import Dict, Final, Optional
+from typing import Dict
 import torch
 from torch_scatter import scatter
 
