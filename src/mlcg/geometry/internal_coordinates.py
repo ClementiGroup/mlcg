@@ -210,34 +210,17 @@ def compute_torsions(
     assert mapping.dim() == 2
     assert mapping.shape[0] == 4
     dr1 = pos[mapping[1]] - pos[mapping[0]]
+    dr1 = dr1 / dr1.norm(p=2, dim=1)[:, None]
     dr2 = pos[mapping[2]] - pos[mapping[1]]
+    dr2 = dr2 / dr2.norm(p=2, dim=1)[:, None]
     dr3 = pos[mapping[3]] - pos[mapping[2]]
+    dr3 = dr3 / dr3.norm(p=2, dim=1)[:, None]
 
-    # raw normals (not normalized!)
     n1 = torch.cross(dr1, dr2, dim=1)
     n2 = torch.cross(dr2, dr3, dim=1)
+    m1 = torch.cross(n1, dr2, dim=1)
+    y = torch.sum(m1 * n2, dim=-1)
+    x = torch.sum(n1 * n2, dim=-1)
+    theta = torch.atan2(-y, x)  # -y to match MDTraj convention
 
-    # compute torsion using unnormalized formula
-    # this matches the continuous formulation used in molecular dynamics
-    x = (n1 * n2).sum(dim=-1)
-    y = (torch.cross(n1, dr2, dim=1) * n2).sum(dim=-1)
-    theta = torch.atan2(y + eps, x + eps)
-    # soft eps makes atan2 behave smoothly even when n2→0
-    return -1 * theta
-
-
-#    dr1 = pos[mapping[1]] - pos[mapping[0]]
-#    dr1 = dr1 / dr1.norm(p=2, dim=1)[:, None]
-#    dr2 = pos[mapping[2]] - pos[mapping[1]]
-#    dr2 = dr2 / dr2.norm(p=2, dim=1)[:, None]
-#    dr3 = pos[mapping[3]] - pos[mapping[2]]
-#    dr3 = dr3 / dr3.norm(p=2, dim=1)[:, None]
-#
-#    n1 = torch.cross(dr1, dr2, dim=1)
-#    n2 = torch.cross(dr2, dr3, dim=1)
-#    m1 = torch.cross(n1, dr2, dim=1)
-#    y = torch.sum(m1 * n2, dim=-1)
-#    x = torch.sum(n1 * n2, dim=-1)
-#    theta = torch.atan2(-y, x)  # -y to match MDTraj convention
-#
-#    return theta
+    return theta
