@@ -846,7 +846,6 @@ class _Simulation(object):
 
     def write(self):
         """Utility to write numpy arrays to disk"""
-        self._cleanup_old_files(keep_last_n=5000)
         key = self._get_numpy_count()
 
         coords_to_export = self.simulated_coords
