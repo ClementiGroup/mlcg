@@ -20,6 +20,9 @@ class RestrictedQuartic(_Prior):
 
     This potential combines a fourth grade polynomial expansion in cosine terms
     with a repulsive term that prevents angles from approaching 0 or pi.
+    More information on this potential can be found in the following reference:
+    Journal of Chemical Theory and Computation 2013 9 (8), 3282-3292
+    DOI: 10.1021/ct400219n
 
     Parameters
     ----------
