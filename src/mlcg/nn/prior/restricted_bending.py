@@ -1,6 +1,6 @@
 from typing import Dict
 import torch
-from torch_scatter import scatter
+from torch_geometric.utils import scatter
 
 
 from .base import _Prior
