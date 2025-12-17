@@ -14,7 +14,6 @@ from  mlcg.nn.prior import repulsion_fitted
 from mlcg.nn.schnet import CFConv, SchNet, EdgeAwareCFConv
 from mlcg.nn.painn import PaiNNInteraction, PaiNN
 
-
 def get_refreshed_painninteracition_layer(
     old_painn_interaction: PaiNNInteraction,
 ):
@@ -85,9 +84,8 @@ def get_refreshed_cfconv_layer(old_cfconv: Union[CFConv, EdgeAwareCFConv]):
     # will be overwritten by the __init__ of new_cfconv
     state_dict = {k: v.clone() for k, v in old_cfconv.state_dict().items()}
     device = next(iter(state_dict.values())).device
-
     # Rebuild the correct type of CFConv
-    if isinstance(old_cfconv, EdgeAwareCFConv):
+    if "EdgeAwareCFConv" in old_cfconv.__class__.__name__:
         new_cfconv = EdgeAwareCFConv(
             filter_network=filter_network,
             cutoff=cutoff,
