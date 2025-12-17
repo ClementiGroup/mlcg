@@ -10,6 +10,7 @@ import warnings
 
 import torch
 import mlcg.nn.schnet
+from  mlcg.nn.prior import repulsion_fitted
 from mlcg.nn.schnet import CFConv, SchNet, EdgeAwareCFConv
 from mlcg.nn.painn import PaiNNInteraction, PaiNN
 
@@ -206,6 +207,7 @@ def fixed_pyg_inspector():
 
     monkey_patched = False
     try:
+        sys.modules["repulsion_fitted"]=repulsion_fitted
         if version.parse(torch_geometric.__version__) >= version.parse("2.5"):
             # monkey patch for the inspector.py, which has been moved to
             # another place in recent pygs
@@ -248,7 +250,8 @@ def load_and_adapt_old_checkpoint(f, **kwargs):
         of a checkpoint from a possibly older version of pyg.
     kwargs: see the docstring of `torch.load` for details.
     """
-    # with fixed_pyg_inspector():
-    module = torch.load(f, **kwargs)
-    # refresh_module_with_schnet_(module)
+    with fixed_pyg_inspector():
+        module = torch.load(f, **kwargs, weights_only=False) 
+        refresh_module_(module, SchNet)
+        refresh_module_(module, PaiNN)
     return module
