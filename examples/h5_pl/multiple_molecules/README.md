@@ -11,7 +11,7 @@ To go ahead to the trainng, the file `train_demo_cuda.yaml` is a Pytorch Lightni
 To train, we can run from a terminal:
 
 ```bash
-mlcg-train_h5.py fit --config ./train_demo_cuda.yaml
+mlcg-train_h5 fit --config ./train_demo_cuda.yaml
 ```
 
 During training, the ouput will be saved into two directories: 
@@ -21,11 +21,11 @@ During training, the ouput will be saved into two directories:
 ## Step 2: Joining a certain epoch with a prior object to simulate
 
 After the model has been trained for several epochs, we can merge it with a prior object in order to be able to simulate it.
-For this, we need to use the `mlcg-combine_model.py` script and pass as arguments the desired checkpoint, the prior object and 
+For this, we need to use the `mlcg-combine_model` script and pass as arguments the desired checkpoint, the prior object and 
 a path for saving the merged object:
 
 ```bash
-mlcg-combine_model.py --ckpt ./ckpt/last.ckpt --prior ./prior.pt --out model_with_prior.pt
+mlcg-combine_model --ckpt ./ckpt/last.ckpt --prior ./prior.pt --out model_with_prior.pt
 ```
 
 This command might throw some warnings related to a rank problem but these are safe to ignore. 
@@ -38,7 +38,7 @@ With our model merged with the prior, it is now possible to run a simulation of 
 mkdir sims
 ```
 
-After this, we can use the script `mlcg-nvt_langevin.py` to run a simulation from the terminal. 
+After this, we can use the script `mlcg-nvt_langevin` to run a simulation from the terminal. 
 The simulation parameters and configuration are specified in `cln_sim_demo.yaml`. The field `model_file` points to our merged model with a prior, and the `structure_file` points 
 to `cln_configurations_demo.pt` file which stores the initial configurations of the 10 
 CLN structures that we will simulate.
@@ -46,7 +46,7 @@ CLN structures that we will simulate.
 To run the simulation we can just use:
 
 ```bash
-mlcg-nvt_langevin.py --config ./cln_sim_demo.yaml
+mlcg-nvt_langevin --config ./cln_sim_demo.yaml
 ```
 
 A progress bar will appear detailing the status of our simulation.

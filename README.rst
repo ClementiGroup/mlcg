@@ -98,14 +98,22 @@ documentation is synchronized with the main version of the repository.
 Test Coverage
 -------------
 
-The test coverage of this library is monitored with `coverage` for each pull requests using `github` actions.
-To produce a report locally run:
+The test coverage of this library is monitored with `coverage` for each pull request using `GitHub` actions.  
+To produce a report locally, run:
 
-.. code:: bash
+.. code-block:: bash
 
     coverage run -m pytest
     coverage report
 
+This will run the full set of tests in `mlcg` and the larger test under `examples/test_examples.py`, 
+including training and simulation of all models described in `examples/input_yamls/README.md`.  
+
+For quick local development testing, it is also possible to exclude the large test by running:
+
+.. code-block:: bash
+
+    coverage run -m pytest --light
 
 Troubleshooting
 ---------------
@@ -115,7 +123,7 @@ following commands can do a similar job.
 
 .. code:: bash
 
-    pip install --extra-index-url=https://download.pytorch.org/whl/cu124 torch==2.5.0 torchvision==0.20.0 torchaudio==2.5.0
+    pip install --extra-index-url=https://download.pytorch.org/whl/cu124 torch==2.6.0
     pip install torch_geometric
-    pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.5.0+cu124.html
+    pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.6.0+cu124.html
     pip install lightning tensorboard torchtnt
