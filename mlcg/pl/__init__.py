@@ -1,3 +1,4 @@
+from .callbacks import DataSavingCallback
 from .data import DataModule
 from .model import PLModel
 from .model_regularized import RegularizedPLModel
@@ -22,4 +23,5 @@ __all__ = [
     "OffsetCheckpoint",
     "LightningCLI",
     "GradNormLogger",
+    "DataSavingCallback"
 ]
