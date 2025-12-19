@@ -134,6 +134,10 @@ class Topology(object):
         mapping = mapping[:, mapping[0] != mapping[1]]
         return mapping
 
+    def full2torch(self, device: str = "cpu") -> torch.Tensor:
+        ids = torch.arange(self.n_atoms)
+        return ids
+
     def neighbor_list(self, type: str, device: str = "cpu") -> Dict:
         """Build Neighborlist from a :ref:`mlcg.neighbor_list.neighbor_list.Topology`.
 
@@ -156,6 +160,7 @@ class Topology(object):
             "dihedrals",
             "impropers",
             "fully connected",
+            "full",
         ]
         assert type in allowed_types, f"type should be any of {allowed_types}"
         if type == "bonds":
@@ -168,6 +173,8 @@ class Topology(object):
             mapping = self.impropers2torch(device)
         elif type == "fully connected":
             mapping = self.fully_connected2torch(device)
+        elif type == "full":
+            mapping = self.full2torch(device)
 
         nl = make_neighbor_list(
             tag=type,
