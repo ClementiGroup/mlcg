@@ -16,6 +16,7 @@ import logging
 from ..utils import tqdm
 
 from ..data.atomic_data import AtomicData
+from ..neighbor_list.torch_impl import wrap_positions
 from ..data._keys import (
     ENERGY_KEY,
     FORCE_KEY,
@@ -24,7 +25,6 @@ from ..data._keys import (
     POSITIONS_KEY,
 )
 from .specialize_prior import condense_all_priors_for_simulation
-from ..neighbor_list.torch_impl import wrap_positions
 from .torch_compile_warning import (
     torch_compile_waring,
     force_torch_compile_warning,

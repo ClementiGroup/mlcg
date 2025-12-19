@@ -337,56 +337,8 @@ def torch_neighbor_list_pbc(
     return idx_i, idx_j, cell_shifts, self_interaction_mask
 
 
-# def wrap_positions(data: AtomicData, device: str, eps: float = 1e-7) -> None:
-#    """Wrap positions to unit cell (Incorrect the shift in fractional and
-#    leading to instabilities due to pos mismatch).
-#
-#    Returns positions changed by a multiple of the unit cell vectors to
-#    fit inside the space spanned by these vectors.
-#
-#    Parameters
-#    ----------
-#    data:
-#        torch_geometric.Data instance
-#    eps: float
-#        Small number to prevent slightly negative coordinates from being
-#        wrapped.
-#    """
-#    pos = data.pos
-#    cell = data.cell.to(pos.dtype)
-#    pbc = data.pbc
-#    batch_ids = data.batch
-#
-#    unique_batches = torch.unique(batch_ids)
-#    n_batches = len(unique_batches)
-#
-#    center = (
-#        torch.tensor((0.5, 0.5, 0.5))
-#        .view(1, 3)
-#        .repeat(n_batches, 1)
-#        .to(pos.dtype)
-#        .to(device)
-#    )
-#    pbc = data.pbc.view(-1, 3)
-#    shift = center - 0.5 - eps
-#
-#    # Don't change coordinates when pbc is False
-#    shift[torch.logical_not(pbc)] = 0.0
-#
-#    fractional = (
-#        torch.linalg.solve(cell[batch_ids], pos[batch_ids]) - shift[batch_ids]
-#    )
-#
-#    for i, periodic in enumerate(pbc.detach()[batch_ids].T):
-#        if torch.any(periodic):
-#            fractional[periodic, i] %= 1.0
-#            fractional[periodic, i] += shift[batch_ids][:, i]
-#    data.pos = torch.einsum("bi,bii->bi", fractional, cell[batch_ids])
-#    return data
-
-
 def wrap_positions(data: AtomicData, device: str, eps: float = 1e-7) -> None:
-    """Correct vectorized version of position wrapping to unit cell.
+    """Vectorized version of position wrapping to unit cell.
     Returns positions changed by a multiple of the unit cell vectors to
     fit inside the space spanned by these vectors.
     Parameters
