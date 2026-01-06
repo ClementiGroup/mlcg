@@ -1,0 +1,22 @@
+train:
+  batch_sizes:
+    1L2Y: 64
+  metasets:
+    1L2Y:
+      detailed_indices:
+        1L2Y:
+          seed: null
+          test_ratio: 0.0
+          val_ratio: 0.19999999999999996
+        filename: ./splits
+      molecules:
+      - 1L2Y
+      stride: 1
+val:
+  batch_sizes:
+    1L2Y: 64
+  metasets:
+    1L2Y:
+      molecules:
+      - 1L2Y
+      stride: 1

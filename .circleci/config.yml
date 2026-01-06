@@ -1,20 +1,42 @@
-version: 2.0
-
+version: 2.1
 jobs:
   test:
     docker:
-      - image: nec4/pytorch_geometric_cpu:v1.5
+      - image: jacopoventurin/mlcg_python_312:v0.1
+    parallelism: 6   # run tests across 6 parallel containers
     steps:
       - checkout
       - run:
-          name: "Install dependencies and repo"
+          name: "Install enviroment and repo"
           command: |
-            pip3 --version
-            pip3 install -r requirements.txt
-            pip3 install .
+            pip --version
+            pip install --extra-index-url https://download.pytorch.org/whl/cpu -r env_cpu_with_hashes.in
+            pip install --no-deps git+https://github.com/ACEsuit/mace.git@v0.3.13
+            pip install --no-deps nequip==0.12.1 nequip-allegro==0.7.0
+            pip install .
       - run:
-          name: "Run tests"
-          command: "pytest ."
+          name: "Run code tests"
+          command: |
+            set -e
+            TEST_FILES=$(circleci tests glob "tests/**/test_*.py" | circleci tests split --split-by=timings)
+            mkdir -p test-results
+            pytest --verbose --junitxml=test-results/junit.xml $TEST_FILES
+          no_output_timeout: 5m
+      - run:
+          name: "Run examples tests"
+          command: |
+            if [ -n "$CIRCLE_PULL_REQUEST" ]; then
+              set -e
+              mkdir -p test-results
+              pytest --verbose --junitxml=test-results/examples.xml examples  --runner_idx=${CIRCLE_NODE_INDEX} --num_containers=${CIRCLE_NODE_TOTAL}
+            else
+              echo "Skipping examples test: not a PR"
+            fi
+          no_output_timeout: 80m
+      - store_test_results:
+          path: test-results
+      - store_artifacts:
+          path: test-results
 
 workflows:
   version: 2
