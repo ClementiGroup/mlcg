@@ -21,9 +21,8 @@ simulation:
   compile: true
   save_force_components: true
   force_components:
-    - "SchNet"
-    - "angles"
+    - "non_bonded"
   save_energy_components: true
   energy_components:
-    - "SchNet"
+    - "non_bonded"
 
