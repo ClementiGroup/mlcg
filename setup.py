@@ -39,16 +39,5 @@ setup(
     + "\u0301"
     + "lix Musil, Nick Charron, Yoayi Chen, Atharva Kelkar, Clark Templeton",
     #install_requires=install_requires,
-    ext_modules=cython_ext,
+    ext_modules=cython_ext
 )
-
-"""
-    scripts=[
-        "scripts/mlcg-train.py",
-        "scripts/mlcg-nvt_langevin.py",
-        "scripts/mlcg-nvt_pt_langevin.py",
-        "scripts/mlcg-combine_model.py",
-        "scripts/mlcg-train_h5.py",
-        "scripts/mlcg-train_h5_ng.py",
-    ],
-"""
