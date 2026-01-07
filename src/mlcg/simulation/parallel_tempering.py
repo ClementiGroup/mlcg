@@ -206,7 +206,6 @@ class PTSimulation(LangevinSimulation):
             raise ValueError(
                 "All betas must be positive, but {} contains an illegal value.".format(
                     betas
-                    betas
                 )
             )
         assert all([np.isfinite(b) for b in betas])

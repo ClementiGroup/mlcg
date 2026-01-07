@@ -137,7 +137,7 @@ class MetaSet:
         self._n_mol_samples = []
         self._cumulate_indices = [0]
         self._transform = transform
-        self._exclude_bonded_pairs = False
+        self._exclude_listed_pairs = False
 
     @staticmethod
     def retrieve_hdf(hdf_grp, hdf_key):
@@ -183,7 +183,7 @@ class MetaSet:
         transform: Optional[Callable] = None,
         mol_neighbor_lists: Optional[dict] = None,
         overriding_offset: Optional[int] = None,
-        exclude_bonded_pairs=False,
+        exclude_listed_pairs=False,
     ):
         r"""initiate a Metaset by loading data from given HDF-group.
         mol_list, detailed_indices, hdf_key_mapping, stride and parallel can control which subset is loaded to the Metaset (details see the description of "H5Dataset")
@@ -440,7 +440,7 @@ class MetaSet:
             # AtomicData.from_points uses "neighborlist" in args
             point_tensors["neighborlist"] = mol_data.neighbor_list
         atd = AtomicData.from_points(**point_tensors)
-        if self._exclude_bonded_pairs:
+        if self._exclude_listed_pairs:
             atd.exc_pair_index = torch.tensor(
                 self._mol_dataset[dataset_id].exclusion_pairs
             )
@@ -605,7 +605,7 @@ class H5Dataset:
         loading_options: Dict,
         subsample_using_weights: bool = False,
         transform: Optional[Callable] = None,
-        exclude_bonded_pairs: bool = False,
+        exclude_listed_pairs: bool = False,
     ):
         self._h5_path = h5_file_path
         self._h5_root = h5py.File(h5_file_path, "r")
@@ -618,7 +618,7 @@ class H5Dataset:
         self._transform = transform
         if self._transform is not None:
             print("Using transform:", self._transform)
-        self._exclude_bonded_pairs = exclude_bonded_pairs
+        self._exclude_listed_pairs = exclude_listed_pairs
 
         # processing the hdf5 file
         for metaset_name in self._h5_root:
@@ -734,7 +734,7 @@ class H5Dataset:
                         transform=self._transform,
                         mol_neighbor_lists=mol_neighbor_lists,
                         overriding_offset=overriding_offset,
-                        exclude_bonded_pairs=self._exclude_bonded_pairs,
+                        exclude_listed_pairs=self._exclude_listed_pairs,
                     ),
                 )
             ## trim the metasets to fit the need of sampling
@@ -893,7 +893,7 @@ class H5SimpleDataset(H5Dataset):
         parallel={"rank": 0, "world_size": 1},
         subsample_using_weights: Optional[bool] = False,
         transform: Optional[Callable] = None,
-        exclude_bonded_pairs: bool = False,
+        exclude_listed_pairs: bool = False,
     ):
         # input checking
         if not isinstance(stride, int) and stride > 0:
@@ -941,7 +941,7 @@ class H5SimpleDataset(H5Dataset):
             parallel=parallel,
             subsample_using_weights=subsample_using_weights,
             transform=self._transform,
-            exclude_bonded_pairs=exclude_bonded_pairs,
+            exclude_listed_pairs=exclude_listed_pairs,
         )
 
     def get_dataloader(

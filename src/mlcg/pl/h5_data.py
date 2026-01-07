@@ -54,7 +54,7 @@ class H5DataModule(pl.LightningDataModule):
         transform: Optional[BaseTransform] = None,
         collater_fn: Optional[Callable] = None,
         batch_transform: Optional[BaseTransform] = None,
-        exclude_bonded_pairs: bool = False,
+        exclude_listed_pairs: bool = False,
     ):
         super(H5DataModule, self).__init__()
         self.save_hyperparameters()
@@ -115,7 +115,7 @@ class H5DataModule(pl.LightningDataModule):
             self._process_load_options,
             self._subsample_using_weights,
             transform=self._transform,
-            exclude_bonded_pairs=self._exclude_bonded_pairs,
+            exclude_listed_pairs=self._exclude_listed_pairs,
         )
         if use_ddp:
             sample_info = [None] * num_replicas

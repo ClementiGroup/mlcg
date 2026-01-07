@@ -60,7 +60,7 @@ class CythonCollater:
         baseline_models: Union[str, Dict[str, torch.Module], None] = None,
         remove_neighbor_list: bool = True,
         decoy_options: Union[List[Dict[str, float]], None] = None,
-        exclude_bonded_pairs: bool = False,
+        exclude_listed_pairs: bool = False,
         device: str = "cuda",
     ):
         self.transform = transform
@@ -83,7 +83,7 @@ class CythonCollater:
         else:
             self._decoy_opts = None
         self._moved_to_device = False
-        self._exclude_bonded_pairs = exclude_bonded_pairs
+        self._exclude_listed_pairs = exclude_listed_pairs
 
     def __call__(self, np_data_batch: Iterable[AtomicData]) -> MockBatch:
         if not self._moved_to_device:
@@ -93,7 +93,7 @@ class CythonCollater:
                 self.baseline_models.to(self.device)
             self._moved_to_device = True
         # collation happens here
-        if self._exclude_bonded_pairs:
+        if self._exclude_listed_pairs:
             collated_data_np = batch_collate_w_nls_w_exc_pair(np_data_batch, transform=self.transform)
         else:
             collated_data_np = batch_collate_w_nls(np_data_batch, transform=self.transform)
