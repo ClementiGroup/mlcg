@@ -1,5 +1,12 @@
 [build-system]
-requires = ["setuptools", "wheel", "ninja"]
+requires = [
+    "setuptools",
+    "wheel", 
+    "ninja",    
+    # noise dependencies
+    "Cython>=0.22",
+    "numpy>=1.26.4",
+]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -72,6 +79,7 @@ dependencies = [
     # extra dependencies for allegro
     "matscipy",
     "hydra-core",
+
 ]
 classifiers = [
   "Development Status :: 4 - Beta",
@@ -90,8 +98,9 @@ Issues = "https://github.com/ClementiGroup/mlcg/issues"
 
 [project.scripts]
 mlcg-combine_model = "mlcg.scripts.mlcg_combine_model:main"
-mlcg-train_h5 = "mlcg.scripts.mlcg_train_h5:main"
 mlcg-train = "mlcg.scripts.mlcg_train:main"
+mlcg-train_h5 = "mlcg.scripts.mlcg_train_h5:main"
+mlcg-mlcg-train_h5_ng = "mlcg.scripts.mlcg_train_h5_ng:main"
 mlcg-nvt_langevin = "mlcg.scripts.mlcg_nvt_langevin:main"
 mlcg-nvt_pt_langevin = "mlcg.scripts.mlcg_pt_nvt_langevin:main"
 
