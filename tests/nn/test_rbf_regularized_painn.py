@@ -4,7 +4,7 @@ import pytest
 from typing import List
 import warnings
 
-from mlcg.nn import RBFRegularizedSchNet
+from mlcg.nn import RBFRegularizedPaiNN
 from mlcg.nn.radial_basis import GaussianBasis
 from mlcg.nn.gradients import GradientsOut
 from mlcg.nn.cutoff import IdentityCutoff, CosineCutoff
@@ -94,7 +94,7 @@ database = MolDatabase()
 )
 def test_cutoff_warning(basis, cutoff, expected_warning):
     with pytest.warns(expected_warning):
-        RBFRegularizedSchNet(basis, cutoff, [128, 128])
+        RBFRegularizedPaiNN(basis, cutoff, [128, 128])
 
 
 @pytest.mark.parametrize(
@@ -105,12 +105,12 @@ def test_cutoff_warning(basis, cutoff, expected_warning):
 )
 def test_cutoff_warning_None(basis, cutoff, expected_warning):
     with warnings.catch_warnings(record=True):
-        RBFRegularizedSchNet(basis, cutoff, [128, 128])
+        RBFRegularizedPaiNN(basis, cutoff, [128, 128])
 
 
 def test_minimum_interaction_block():
     with pytest.raises(ValueError):
-        RBFRegularizedSchNet(
+        RBFRegularizedPaiNN(
             standard_basis, standard_cutoff, [128, 128], num_interactions=-1
         )
 
@@ -130,13 +130,13 @@ def test_prediction(collated_data, out_keys, expected_shapes):
     and that the correspdonding shapes of the outputs are correct given the
     requested gradient targets.
     """
-    test_schnet = RBFRegularizedSchNet(
+    test_painn = RBFRegularizedPaiNN(
         standard_basis, standard_cutoff, [128, 128]
     )
-    model = GradientsOut(test_schnet, targets=FORCE_KEY).double()
+    model = GradientsOut(test_painn, targets=FORCE_KEY).double()
     collated_data = model(collated_data)
     assert len(collated_data.out) != 0
-    assert "SchNet" in collated_data.out.keys()
+    assert "PaiNN" in collated_data.out.keys()
     for key, shape in zip(out_keys, expected_shapes):
         assert key in collated_data.out[model.name].keys()
         assert collated_data.out[model.name][key].shape == shape
@@ -154,16 +154,16 @@ def test_regularization(collated_data, independent_regularizations):
     and that the correspdonding shapes of the outputs are correct given the
     requested gradient targets.
     """
-    test_schnet = RBFRegularizedSchNet(
+    test_painn = RBFRegularizedPaiNN(
         standard_basis,
         standard_cutoff,
         [128, 128],
         independent_regularizations=independent_regularizations,
     )
-    model = GradientsOut(test_schnet, targets=FORCE_KEY).double()
+    model = GradientsOut(test_painn, targets=FORCE_KEY).double()
     collated_data = model(collated_data)
     assert len(collated_data.out) != 0
-    assert "SchNet" in collated_data.out.keys()
+    assert "PaiNN" in collated_data.out.keys()
     assert "radial_filters" in collated_data.out[model.name].keys()
     reg_params = collated_data.out[model.name]["radial_filters"]
     n_types = model.model.embedding_layer.num_embeddings

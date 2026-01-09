@@ -18,6 +18,8 @@ from mlcg.neighbor_list.neighbor_list import (
     validate_neighborlist,
 )
 
+from .radial_basis import RegularizedBasis
+
 
 class PaiNNInteraction(MessagePassing):
     r"""PyTorch Geometric implementation of PaiNN block for modeling equivariant interactions.
@@ -528,3 +530,140 @@ class StandardPaiNN(PaiNN):
             output_network,
             max_num_neighbors,
         )
+
+
+class RBFRegularizedPaiNN(StandardPaiNN):
+    """
+    This is a StandardSchNet model where the RBF components are weighted via Hadamard product with couple-specific
+    vectors. Each tuple of bead types has its own vector.
+    The models also adds the key radial_filters to the output dictionary, containing the regularization parameters.
+
+    Parameters
+    ----------
+    rbf_layer:
+        Radial basis function used to project the distances :math:`r_{ij}`.
+    cutoff:
+        Smooth cutoff function to supply to the PaiNNInteraction.
+    output_hidden_layer_widths:
+        List giving the number of hidden nodes of each hidden layer of the MLP
+        used to predict the target property from the learned scalar representation.
+    hidden_channels:
+        Dimension of the learned representation, i.e. dimension of the embedding projection, convolution layers, and interaction block.
+    embedding_size:
+        Dimension of the input embeddings (should be larger than :obj:`AtomicData.atom_types.max()+1`).
+    num_interactions:
+        Number of interaction blocks.
+    activation:
+        Activation function.
+    max_num_neighbors:
+        The maximum number of neighbors to return for each atom in :obj:`data`.
+        If the number of actual neighbors is greater than
+        :obj:`max_num_neighbors`, returned neighbors are picked randomly.
+    aggr:
+        Aggregation scheme for continuous filter output. For all options,
+        see `here <https://pytorch-geometric.readthedocs.io/en/latest/notes/create_gnn.html?highlight=MessagePassing#the-messagepassing-base-class>`_
+        for more options.
+    epsilon:
+        Stability constant added in norm to prevent numerical instabilities.
+
+    CLASS SPECIFIC PARAMETERS -------------------------------------------------------------
+
+    independent_regularizations: bool
+        If True each interaction block has its own set of regularization parameters,
+        otherwise the regularization parameters are shared across all interaction blocks.
+
+    """
+    def __init__(
+        self,
+        rbf_layer: torch.nn.Module,
+        cutoff: torch.nn.Module,
+        output_hidden_layer_widths: List[int],
+        hidden_channels: int = 128,
+        embedding_size: int = 100,
+        num_interactions: int = 3,
+        activation: torch.nn.Module = torch.nn.Tanh(),
+        max_num_neighbors: int = 1000,
+        aggr: str = "add",
+        epsilon: float = 1e-8,
+        independent_regularizations: bool = False,
+    ):
+        rbf_layer = RegularizedBasis(
+            basis_function=rbf_layer,
+            types=embedding_size,
+            n_basis_set=num_interactions,
+            independent_regularizations=independent_regularizations,
+        )
+        super().__init__(
+            rbf_layer=rbf_layer,
+            cutoff=cutoff,
+            output_hidden_layer_widths=output_hidden_layer_widths,
+            hidden_channels=hidden_channels,
+            embedding_size=embedding_size,
+            num_interactions=num_interactions,
+            activation=activation,
+            max_num_neighbors=max_num_neighbors,
+            aggr=aggr,
+            epsilon=epsilon,
+        )
+
+    def forward(self, data: AtomicData):
+        r"""Forward pass through the PaiNN architecture.
+
+        Parameters
+        ----------
+        data:
+            Input data object containing batch atom/bead positions
+            and atom/bead types.
+
+        Returns
+        -------
+        data:
+           Data dictionary, updated with predicted energy of shape
+           (num_examples * num_atoms, 1), as well as neighbor list
+           information.
+        """
+        neighbor_list = data.neighbor_list.get(self.name)
+
+        if not self.is_nl_compatible(neighbor_list):
+            neighbor_list = self.neighbor_list(
+                data, self.rbf_layer.cutoff.cutoff_upper, self.max_num_neighbors
+            )[self.name]
+
+        edge_index = neighbor_list["index_mapping"]
+
+        distances, normdir = compute_distance_vectors(
+            data.pos,
+            edge_index,
+            neighbor_list["cell_shifts"],
+        )
+
+        rbf_expansion = self.rbf_layer(
+            distances.squeeze(-1),
+            data.atom_types[edge_index[0]],
+            data.atom_types[edge_index[1]],
+        ).unsqueeze(-2)
+
+        q = self.embedding_layer(data.atom_types)  # (n_atoms, n_features)
+        q = q.unsqueeze(1)  # (n_atoms, 1, n_features)
+        mu = torch.zeros(
+            (q.shape[0], 3, q.shape[2]), device=q.device
+        )  # (n_atoms, 3, n_features)
+
+        for i, (interaction, mixing) in enumerate(
+            zip(self.interaction_blocks, self.mixing_blocks)
+        ):
+            q, mu = interaction(
+                q, mu, normdir, edge_index, distances, rbf_expansion[i]
+            )
+            q, mu = mixing(q, mu)
+        q = q.squeeze(1)
+
+        energy = self.output_network(q, data)
+        energy = scatter(energy, data.batch, dim=0, reduce="sum")
+        energy = energy.flatten()
+        data.out[self.name] = {
+            ENERGY_KEY: energy,
+            "radial_filters": self.rbf_layer.get_regularization_parameters(),
+            }
+
+        return data

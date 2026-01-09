@@ -677,7 +677,8 @@ class AttentiveSchNet(SchNet):
 class RBFRegularizedSchNet(StandardSchNet):
     """
     This is a StandardSchNet model where the RBF components are weighted via Hadamard product with couple-specific
-    vectors. Each tuple of bead types has its own vector. The models also adds the key radial_filters to the
+    vectors. Each tuple of bead types has its own vector. 
+    The models also adds the key radial_filters to the output dictionary, containing the regularization parameters.
 
     Parameters
     ----------
@@ -712,10 +713,7 @@ class RBFRegularizedSchNet(StandardSchNet):
     independent_regularizations: bool
         If True each interaction block has its own set of regularization parameters,
         otherwise the regularization parameters are shared across all interaction blocks.
-    define_ranges: Dict
-        A dictionary containing the ranges of the type couples to be tracked. The keys are the bead-type couples
-        given as strings, and the values are the lower bounds of the ranges to be considered.
-        Example: {'(i,j)': min_value, '(k,l)': min_value, ...}
+
     """
 
     def __init__(

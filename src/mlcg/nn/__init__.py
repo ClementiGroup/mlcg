@@ -1,5 +1,5 @@
 from .gradients import GradientsOut, SumOut, EnergyOut
-from .schnet import SchNet, StandardSchNet
+from .schnet import SchNet, StandardSchNet, RBFRegularizedSchNet
 from .radial_basis import GaussianBasis, ExpNormalBasis
 from .cutoff import CosineCutoff, IdentityCutoff
 from .losses import ForceMSE, ForceRMSE, Loss, EnergyMSE
@@ -21,7 +21,7 @@ from .pyg_forward_compatibility import (
     load_and_adapt_old_checkpoint,
     fixed_pyg_inspector,
 )
-from .painn import PaiNN, StandardPaiNN
+from .painn import PaiNN, StandardPaiNN, RBFRegularizedPaiNN
 from .mace import MACE, StandardMACE
 from .so3krates import So3krates, StandardSo3krates
 from .lr_scheduler import CustomStepLR
@@ -34,6 +34,7 @@ __all__ = [
     "EnergyOut",
     "SchNet",
     "StandardSchNet",
+    "RBFRegularizedSchNet",
     "GaussianBasis",
     "ExpNormalBasis",
     "CosineCutoff",
@@ -62,6 +63,7 @@ __all__ = [
     "fixed_pyg_inspector",
     "PaiNN",
     "StandardPaiNN",
+    "RBFRegularizedPaiNN",
     "MACE",
     "StandardMACE",
     "ScaleShiftMACE",
