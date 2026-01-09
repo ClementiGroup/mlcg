@@ -82,7 +82,11 @@ class RegularizedBasis(torch.nn.Module):
         self.cutoff = basis_function.cutoff
 
         if self.independent_regularizations:
-            init_val = init_val if isinstance(init_val, list) else [init_val] * n_basis_set
+            init_val = (
+                init_val
+                if isinstance(init_val, list)
+                else [init_val] * n_basis_set
+            )
             self.regularization = torch.nn.ModuleList(
                 [
                     SymmetricTensor(
@@ -201,6 +205,6 @@ class RegularizedBasis(torch.nn.Module):
         """
 
         return self.regularization.w
-    
+
     def reset_parameters(self):
         pass  # Added for compatibility: reset is done in the initialization

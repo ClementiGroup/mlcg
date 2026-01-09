@@ -677,7 +677,7 @@ class AttentiveSchNet(SchNet):
 class RBFRegularizedSchNet(StandardSchNet):
     """
     This is a StandardSchNet model where the RBF components are weighted via Hadamard product with couple-specific
-    vectors. Each tuple of bead types has its own vector. 
+    vectors. Each tuple of bead types has its own vector.
     The models also adds the key radial_filters to the output dictionary, containing the regularization parameters.
 
     Parameters

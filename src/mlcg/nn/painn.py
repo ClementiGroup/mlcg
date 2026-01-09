@@ -573,6 +573,7 @@ class RBFRegularizedPaiNN(StandardPaiNN):
         otherwise the regularization parameters are shared across all interaction blocks.
 
     """
+
     def __init__(
         self,
         rbf_layer: torch.nn.Module,
@@ -664,6 +665,6 @@ class RBFRegularizedPaiNN(StandardPaiNN):
         data.out[self.name] = {
             ENERGY_KEY: energy,
             "radial_filters": self.rbf_layer.get_regularization_parameters(),
-            }
+        }
 
         return data
