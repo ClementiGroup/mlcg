@@ -91,7 +91,9 @@ Issues = "https://github.com/ClementiGroup/mlcg/issues"
 [project.scripts]
 mlcg-combine_model = "mlcg.scripts.mlcg_combine_model:main"
 mlcg-train_h5 = "mlcg.scripts.mlcg_train_h5:main"
+mlcg-train_h5_multischeduler = "mlcg.scripts.mlcg_train_h5_multischeduler:main"
 mlcg-train = "mlcg.scripts.mlcg_train:main"
+mlcg-train_multischeduler = "mlcg.scripts.mlcg_train_multischeduler:main"
 mlcg-nvt_langevin = "mlcg.scripts.mlcg_nvt_langevin:main"
 mlcg-nvt_pt_langevin = "mlcg.scripts.mlcg_pt_nvt_langevin:main"
 
