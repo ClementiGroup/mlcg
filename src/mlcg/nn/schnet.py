@@ -18,6 +18,8 @@ from .attention import (
     Nonlocalinteractionblock,
 )
 
+from .prior import compute_cell_shifts
+
 try:
     from mlcg_opt_radius.radius import radius_distance
 except ImportError:
@@ -361,6 +363,12 @@ class CFConv(MessagePassing):
             Updated embedded features of shape (num_examples * num_atoms,
             hidden_channels)
         """
+        # Ensure consistent dtype
+        dtype = self.lin1.weight.dtype
+        x = x.to(dtype)
+        edge_weight = edge_weight.to(dtype)
+        edge_attr = edge_attr.to(dtype)
+
         C = self.cutoff(edge_weight)
         W = self.filter_network(edge_attr) * C.view(-1, 1)
 

@@ -3,9 +3,7 @@ from scipy.integrate import trapezoid
 from scipy.optimize import curve_fit
 import torch
 from torch_geometric.utils import scatter
-from typing import Final, Dict
-
-
+from typing import Final, Dict, Optional
 from .base import _Prior
 from ...data.atomic_data import AtomicData
 from ...geometry.topology import Topology
@@ -87,6 +85,19 @@ class Harmonic(_Prior):
         }
         params["V0"] = torch.zeros_like(params["x0"])
         return params
+
+    def data2features(self, data):
+        mapping = data.neighbor_list[self.name]["index_mapping"]
+        pbc = getattr(data, "pbc", None)
+        cell = getattr(data, "cell", None)
+        return self.compute_features(
+            pos=data.pos,
+            mapping=mapping,
+            pbc=pbc,
+            cell=cell,
+            batch=data.batch
+        )
+    
 
     def forward(self, data: AtomicData) -> AtomicData:
         """Forward pass through the harmonic interaction.
@@ -171,6 +182,8 @@ class Harmonic(_Prior):
                 "x_0": torch.tensor(float("nan")),
             }
         return stat
+    
+
 
     @staticmethod
     def neighbor_list(topology: Topology, type: str) -> Dict:
@@ -210,19 +223,24 @@ class HarmonicBonds(Harmonic):
             statistics, HarmonicBonds.name, order=2
         )
 
-    def data2features(self, data: AtomicData) -> torch.Tensor:
-        mapping = data.neighbor_list[self.name]["index_mapping"]
-        return self.compute_features(data.pos, mapping)
-
     @staticmethod
     def neighbor_list(topology: Topology) -> dict:
         return Harmonic.neighbor_list(topology, HarmonicBonds.name)
 
     @staticmethod
     def compute_features(
-        pos: torch.Tensor, mapping: torch.Tensor
+        pos: torch.Tensor,
+        mapping: torch.Tensor,
+        pbc: Optional[torch.Tensor] = None,
+        cell: Optional[torch.Tensor] = None,
+        batch: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
-        return compute_distances(pos, mapping)
+        cell_shifts = _Prior._get_cell_shifts(pos, mapping, pbc, cell, batch)
+        return compute_distances(
+            pos=pos,
+            mapping=mapping,
+            cell_shifts=cell_shifts
+        )
 
 
 class HarmonicAngles(Harmonic):
@@ -247,19 +265,26 @@ class HarmonicAngles(Harmonic):
             statistics, HarmonicAngles.name, order=3
         )
 
-    def data2features(self, data: torch.Tensor) -> torch.Tensor:
-        mapping = data.neighbor_list[self.name]["index_mapping"]
-        return self.compute_features(data.pos, mapping)
-
     @staticmethod
     def neighbor_list(topology: Topology) -> dict:
         return Harmonic.neighbor_list(topology, HarmonicAngles.name)
 
+
     @staticmethod
     def compute_features(
-        pos: torch.Tensor, mapping: torch.Tensor
+        pos: torch.Tensor,
+        mapping: torch.Tensor,
+        pbc: Optional[torch.Tensor] = None,
+        cell: Optional[torch.Tensor] = None,
+        batch: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
-        return compute_angles_cos(pos, mapping)
+
+        cell_shifts = _Prior._get_cell_shifts(pos, mapping, pbc, cell, batch)
+        return compute_angles_raw(
+            pos=pos,
+            mapping=mapping,
+            cell_shifts=cell_shifts
+        )
 
 
 class HarmonicAnglesRaw(Harmonic):
@@ -284,17 +309,89 @@ class HarmonicAnglesRaw(Harmonic):
         )
         self.name = name
 
+    def data2features(self, data: AtomicData) -> torch.Tensor:
+        mapping = data.neighbor_list[self.name]["index_mapping"]
+        pbc = getattr(data, "pbc", None)
+        cell = getattr(data, "cell", None)
+        return HarmonicAnglesRaw.compute_features(
+            pos=data.pos,
+            mapping=mapping,
+            pbc=pbc,
+            cell=cell,
+            batch=data.batch,
+        )
+
     @staticmethod
     def neighbor_list(topology: Topology) -> dict:
         return Harmonic.neighbor_list(topology, HarmonicAnglesRaw.name)
 
-    def data2features(self, data):
-        mapping = data.neighbor_list[self.name]["index_mapping"]
-        return HarmonicAnglesRaw.compute_features(data.pos, mapping)
+    @staticmethod
+    def compute_features(
+        pos: torch.Tensor,
+        mapping: torch.Tensor,
+        pbc: Optional[torch.Tensor] = None,
+        cell: Optional[torch.Tensor] = None,
+        batch: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+
+        cell_shifts = _Prior._get_cell_shifts(pos, mapping, pbc, cell, batch)
+        return compute_angles_raw(
+            pos=pos,
+            mapping=mapping,
+            cell_shifts=cell_shifts
+        )
+
+class ShiftedHarmonicAnglesRaw(Harmonic):
+    r"""Wrapper class for quickly computing angle priors
+    (order 3 Harmonic priors)
+
+    .. math::
+
+        \theta_{ijk} = &\text{atan2}(\Vert \hat{\mathbf{n}} \vert, \mathbf{r}_{ij} \cdot \mathbf{r}_{kj} ) \\
+        \mathbf{r}_{ij} &= \mathbf{r}_i - \mathbf{r}_j \\
+        \mathbf{r}_{kj} &= \mathbf{r}_k - \mathbf{r}_j \\
+        \mathbf{\hat{n}} &= \frac{\mathbf{r}_{ij} \times \mathbf{r}_{kj}}{\Vert \mathbf{r}_{ij} \times \mathbf{r}_{kj} \Vert} 
+
+    """
+
+    name: Final[str] = "angles"
+    _order = 3
+
+    def __init__(self, statistics, name) -> None:
+        super(ShiftedHarmonicAnglesRaw, self).__init__(
+            statistics, 
+            name = ShiftedHarmonicAnglesRaw.name,
+            order = ShiftedHarmonicAnglesRaw._order
+        )
+        self.name = name
 
     @staticmethod
-    def compute_features(pos, mapping):
-        return compute_angles_raw(pos, mapping)
+    def neighbor_list(topology: Topology) -> dict:
+        return Harmonic.neighbor_list(topology, ShiftedHarmonicAnglesRaw.name)
+
+    @staticmethod
+    def compute_features(
+        pos: torch.Tensor,
+        mapping: torch.Tensor,
+        pbc: Optional[torch.Tensor] = None,
+        cell: Optional[torch.Tensor] = None,
+        batch: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+
+        cell_shifts = _Prior._get_cell_shifts(pos, mapping, pbc, cell, batch)
+        features = compute_angles_raw(
+            pos=pos,
+            mapping=mapping,
+            cell_shifts=cell_shifts
+        )
+        # features should be between -pi and pi after data2features()
+        # Here, we conditionally shift angles in (-pi, 0) to (pi, 2pi)
+        # Then subtract pi in order to center the distribution at 0
+        features = (
+            torch.where(features < 0, features + 2 * torch_pi, features)
+            - torch_pi
+        )
+        return features
 
 
 class HarmonicImpropers(Harmonic):
@@ -307,20 +404,25 @@ class HarmonicImpropers(Harmonic):
         )
 
     @staticmethod
-    def data2features(self, data: torch.Tensor) -> torch.Tensor:
-        mapping = data.neighbor_list[self.name]["index_mapping"]
-        return self.compute_features(data.pos, mapping)
-
-    @staticmethod
     def neighbor_list(topology: Topology) -> dict:
         return Harmonic.neighbor_list(topology, HarmonicImpropers.name)
 
+
     @staticmethod
     def compute_features(
-        pos: torch.Tensor, mapping: torch.Tensor
+        pos: torch.Tensor,
+        mapping: torch.Tensor,
+        pbc: Optional[torch.Tensor] = None,
+        cell: Optional[torch.Tensor] = None,
+        batch: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
-        return compute_torsions(pos, mapping)
 
+        cell_shifts = _Prior._get_cell_shifts(pos, mapping, pbc, cell, batch)
+        return compute_torsions(
+            pos=pos,
+            mapping=mapping,
+            cell_shifts=cell_shifts
+        )
 
 class ShiftedPeriodicHarmonicImpropers(Harmonic):
     """HarmonicImproper that can handle discontinuities around the
@@ -371,12 +473,22 @@ class ShiftedPeriodicHarmonicImpropers(Harmonic):
 
     @staticmethod
     def compute_features(
-        pos: torch.Tensor, mapping: torch.Tensor
+        pos: torch.Tensor,
+        mapping: torch.Tensor,
+        pbc: Optional[torch.Tensor] = None,
+        cell: Optional[torch.Tensor] = None,
+        batch: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
+
+        cell_shifts = _Prior._get_cell_shifts(pos, mapping, pbc, cell, batch)
+        features = compute_torsions(
+            pos=pos,
+            mapping=mapping,
+            cell_shifts=cell_shifts
+        )
         # features should be between -pi and pi after data2features()
         # Here, we conditionally shift angles in (-pi, 0) to (pi, 2pi)
         # Then subtract pi in order to center the distribution at 0
-        features = compute_torsions(pos, mapping)
         features = (
             torch.where(features < 0, features + 2 * torch_pi, features)
             - torch_pi
@@ -385,8 +497,10 @@ class ShiftedPeriodicHarmonicImpropers(Harmonic):
 
     def data2features(self, data: AtomicData) -> torch.Tensor:
         mapping = data.neighbor_list[self.name]["index_mapping"]
+        pbc = getattr(data, "pbc", None)
+        cell = getattr(data, "cell", None)
         return ShiftedPeriodicHarmonicImpropers.compute_features(
-            data.pos, mapping
+            pos=data.pos, mapping=mapping, pbc=pbc, cell=cell, batch=data.batch
         )
 
     def forward(self, data: AtomicData) -> AtomicData:
@@ -412,16 +526,20 @@ class GeneralBonds(Harmonic):
         )
         self.name = name
 
-    def data2features(self, data: AtomicData) -> torch.Tensor:
-        mapping = data.neighbor_list[self.name]["index_mapping"]
-        return compute_distances(data.pos, mapping)
-
     @staticmethod
     def compute_features(
-        pos: torch.Tensor, mapping: torch.Tensor
+        pos: torch.Tensor,
+        mapping: torch.Tensor,
+        pbc: Optional[torch.Tensor] = None,
+        cell: Optional[torch.Tensor] = None,
+        batch: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
-        return compute_distances(pos, mapping)
-
+        cell_shifts = _Prior._get_cell_shifts(pos, mapping, pbc, cell, batch)
+        return compute_distances(
+            pos=pos,
+            mapping=mapping,
+            cell_shifts=cell_shifts
+        )
 
 class GeneralAngles(Harmonic):
     """Generalized Angles"""
@@ -435,12 +553,18 @@ class GeneralAngles(Harmonic):
         )
         self.name = name
 
-    def data2features(self, data: torch.Tensor) -> torch.Tensor:
-        mapping = data.neighbor_list[self.name]["index_mapping"]
-        return compute_angles_cos(data.pos, mapping)
-
     @staticmethod
     def compute_features(
-        pos: torch.Tensor, mapping: torch.Tensor
+        pos: torch.Tensor,
+        mapping: torch.Tensor,
+        pbc: Optional[torch.Tensor] = None,
+        cell: Optional[torch.Tensor] = None,
+        batch: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
-        return compute_angles_cos(pos, mapping)
+
+        cell_shifts = _Prior._get_cell_shifts(pos, mapping, pbc, cell, batch)
+        return compute_angles_raw(
+            pos=pos,
+            mapping=mapping,
+            cell_shifts=cell_shifts
+        )

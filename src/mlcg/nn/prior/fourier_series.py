@@ -10,6 +10,7 @@ from ...data.atomic_data import AtomicData
 from ...geometry.topology import Topology
 from ...geometry.internal_coordinates import (
     compute_torsions,
+    compute_angles_raw
 )
 
 
@@ -92,7 +93,15 @@ class FourierSeries(_Prior):
             Tensor of computed features
         """
         mapping = data.neighbor_list[self.name]["index_mapping"]
-        return self.compute_features(data.pos, mapping)
+        pbc = getattr(data, "pbc", None)
+        cell = getattr(data, "cell", None)
+        return self.compute_features(
+            pos=data.pos,
+            mapping=mapping,
+            pbc=pbc,
+            cell=cell,
+            batch=data.batch,
+        )
 
     def data2parameters(self, data: AtomicData) -> Dict:
         mapping = data.neighbor_list[self.name]["index_mapping"]
@@ -460,6 +469,56 @@ class Dihedral(FourierSeries):
 
     @staticmethod
     def compute_features(
-        pos: torch.Tensor, mapping: torch.Tensor
+        pos: torch.Tensor,
+        mapping: torch.Tensor,
+        pbc: Optional[torch.Tensor] = None,
+        cell: Optional[torch.Tensor] = None,
+        batch: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
-        return compute_torsions(pos, mapping)
+
+        cell_shifts = _Prior._get_cell_shifts(pos, mapping, pbc, cell, batch)
+        return compute_torsions(
+            pos=pos,
+            mapping=mapping,
+            cell_shifts=cell_shifts
+        )
+
+
+class PeriodicAngles(FourierSeries):
+    r"""
+    Class to represent a angle potential using a fourier series
+    """
+
+    name: Final[str] = "angles"
+    _order: Final[int] = 3
+
+    def __init__(
+        self,
+        statistics: Dict,
+        n_degs: int = 1,
+        name: str = "angles",
+    ) -> None:
+        super(PeriodicAngles, self).__init__(
+            statistics, name=name, n_degs=n_degs, order=self._order
+        )
+
+    @staticmethod
+    def neighbor_list(topology) -> None:
+        nl = topology.neighbor_list(PeriodicAngles.name)
+        return {PeriodicAngles.name: nl}
+
+    @staticmethod
+    def compute_features(
+        pos: torch.Tensor,
+        mapping: torch.Tensor,
+        pbc: Optional[torch.Tensor] = None,
+        cell: Optional[torch.Tensor] = None,
+        batch: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+
+        cell_shifts = _Prior._get_cell_shifts(pos, mapping, pbc, cell, batch)
+        return compute_angles_raw(
+            pos=pos,
+            mapping=mapping,
+            cell_shifts=cell_shifts
+        )

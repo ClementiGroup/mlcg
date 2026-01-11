@@ -248,3 +248,144 @@ class EnergyMSE(_Loss):
             )
             / data.n_atoms
         ).mean()
+
+
+class VarianceRegularizedMSE(_Loss):
+    r"""MSE loss with a variance regularization term to avoid narrow distributions:
+
+    .. math::
+
+        L(f,\hat{f}) = \text{MSE}(f,\hat{f}) + \lambda \max(0, \sigma_{min}^2 - \text{Var}(f))
+
+    where :math:`f` are predicted values, :math:`\hat{f}` are reference values,
+    :math:`\lambda` is the regularization strength, and :math:`\sigma_{min}^2` is
+    the minimum desired variance.
+
+    Parameters
+    ----------
+    target_key:
+        string to specify the target key in an AtomicData instance
+    min_variance:
+        minimum desired variance of the predictions
+    lambda_reg:
+        strength of the variance regularization term
+    size_average:
+        If True, the loss is normalized by the batch size
+    reduce:
+        If True, the loss is reduced to a scalar
+    reduction:
+        Specifies the method of reduction
+    """
+
+    def __init__(
+        self,
+        target_key: str,
+        min_variance: float = 1e-3,
+        lambda_reg: float = 0.1,
+        size_average: Optional[bool] = None,
+        reduce: Optional[bool] = None,
+        reduction: str = "mean",
+    ) -> None:
+        super(VarianceRegularizedMSE, self).__init__(
+            size_average=size_average, reduce=reduce, reduction=reduction
+        )
+        self.target_key = target_key
+        self.min_variance = min_variance
+        self.lambda_reg = lambda_reg
+
+    def forward(self, data: AtomicData) -> torch.Tensor:
+        """Forward pass through the regularized MSE loss
+
+        Parameters
+        ----------
+        data:
+            AtomicData instance containing the target keyword in the 'out' field
+            and as a base attribute
+
+        Returns
+        -------
+        loss:
+            Regularized MSE loss that penalizes narrow distributions
+        """
+        if self.target_key not in data.out:
+            raise RuntimeError(
+                f"target property {self.target_key} has not been computed in data.out {list(data.out.keys())}"
+            )
+        if self.target_key not in data:
+            raise RuntimeError(
+                f"target property {self.target_key} has no reference in data {list(data.keys())}"
+            )
+
+        # Calculate standard MSE loss
+        mse_loss = F.mse_loss(
+            data.out[self.target_key],
+            data[self.target_key],
+            reduction=self.reduction,
+        )
+
+        # Calculate variance of predictions
+        pred_variance = torch.var(data.out[self.target_key])
+
+        # Add penalty if variance is too small
+        variance_penalty = self.lambda_reg * torch.nn.functional.relu(
+            self.min_variance - pred_variance
+        )
+
+        return mse_loss + variance_penalty
+
+
+class DistributionMatchingMSE(_Loss):
+    r"""MSE loss that automatically matches the target distribution's variance:
+
+    .. math::
+
+        L(f,\hat{f}) = \text{MSE}(f,\hat{f}) + \lambda(\sigma_f - \sigma_{\hat{f}})^2
+
+    where :math:`f` are predicted values, :math:`\hat{f}` are reference values,
+    and :math:`\sigma` represents the standard deviation.
+
+    Parameters
+    ----------
+    target_key:
+        string to specify the target key in an AtomicData instance
+    lambda_match:
+        weight for the variance matching term
+    reduction:
+        Specifies the method of reduction
+    """
+
+    def __init__(
+        self,
+        target_key: str,
+        lambda_match: float = 1.0,
+        reduction: str = "mean",
+    ) -> None:
+        super(DistributionMatchingMSE, self).__init__(reduction=reduction)
+        self.target_key = target_key
+        self.lambda_match = lambda_match
+
+    def forward(self, data: AtomicData) -> torch.Tensor:
+        if self.target_key not in data.out:
+            raise RuntimeError(
+                f"target property {self.target_key} has not been computed in data.out {list(data.out.keys())}"
+            )
+        if self.target_key not in data:
+            raise RuntimeError(
+                f"target property {self.target_key} has no reference in data {list(data.keys())}"
+            )
+
+        # Calculate standard MSE loss
+        mse_loss = F.mse_loss(
+            data.out[self.target_key],
+            data[self.target_key],
+            reduction=self.reduction,
+        )
+
+        # Calculate standard deviations
+        pred_std = torch.std(data.out[self.target_key])
+        target_std = torch.std(data[self.target_key])
+
+        # Add penalty for std mismatch
+        std_penalty = self.lambda_match * (pred_std - target_std)**2
+
+        return mse_loss + std_penalty

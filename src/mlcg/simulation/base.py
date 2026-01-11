@@ -28,7 +28,7 @@ from .torch_compile_warning import (
     torch_compile_waring,
     force_torch_compile_warning,
 )
-
+from ..neighbor_list.torch_impl import wrap_positions
 
 # Physical Constants
 KBOLTZMANN = 1.38064852e-23  # Boltzmann's constant in Joules/Kelvin
@@ -291,6 +291,10 @@ class _Simulation(object):
         self.initial_data[POSITIONS_KEY] = self.initial_data[POSITIONS_KEY].to(
             self.dtype
         )
+        if hasattr(self.initial_data,"cell"):   
+            self.initial_data["cell"] = self.initial_data["cell"].to(
+                self.dtype
+            )
         self.n_sims = len(configurations)
         self.n_atoms = len(configurations[0].atom_types)
         self.n_dims = configurations[0].pos.shape[1]
@@ -371,7 +375,12 @@ class _Simulation(object):
         ):
             # step forward in time
             data, potential, forces = self.timestep(data, forces)
-            self.sim_t = t
+
+            pbc = getattr(data, "pbc", None)
+            cell = getattr(data, "cell", None)
+            if all([feat != None for feat in [pbc, cell]]):
+                data = wrap_positions(data, self.device)
+                        self.sim_t = t
             # save to arrays if relevant
             if (t + 1) % self.save_interval == 0:
                 # save arrays

@@ -2,7 +2,7 @@ from .gradients import GradientsOut, SumOut, EnergyOut
 from .schnet import SchNet, StandardSchNet, NoiseEmbedSchNet
 from .radial_basis import GaussianBasis, ExpNormalBasis, SkewedMuGaussianBasis
 from .cutoff import CosineCutoff, IdentityCutoff
-from .losses import ForceMSE, ForceRMSE, Loss, EnergyMSE
+from .losses import ForceMSE, ForceRMSE, Loss, EnergyMSE, VarianceRegularizedMSE, DistributionMatchingMSE
 from .prior import (
     Harmonic,
     HarmonicAngles,
@@ -11,6 +11,8 @@ from .prior import (
     Dihedral,
     Polynomial,
     QuarticAngles,
+    LennardJonesShifted,
+    QuarticRawAngles,
 )
 from .mlp import MLP, TypesMLP
 from .attention import ExactAttention, FavorAttention, Nonlocalinteractionblock
@@ -48,6 +50,7 @@ __all__ = [
     "HarmonicAngles",
     "HarmonicBonds",
     "Repulsion",
+    "LennardJonesShifted",
     "MLP",
     "TypesMLP",
     "Attention",

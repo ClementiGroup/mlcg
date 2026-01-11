@@ -25,6 +25,8 @@ def make_hdf5(tdir, detailed_idx=True):
         forces = np.random.randn(n_frames, n_atoms, 3)
         noise_levels = np.random.randn(n_frames, n_atoms, 3)
         types = np.random.randn(n_atoms)
+        pbcs = np.full((n_frames, 3), False)
+        cells = np.random.randn(n_frames, 3, 3)
 
         grp = f.create_group(name)
         grp.create_dataset("cg_coords", data=coords)
@@ -32,6 +34,8 @@ def make_hdf5(tdir, detailed_idx=True):
         grp.create_dataset("noise_levels", data=noise_levels)
         grp.attrs["cg_embeds"] = types
         grp.attrs["N_frames"] = n_frames
+        grp.create_dataset("pbc", data=pbcs)
+        grp.create_dataset("cell", data=cells)
 
     if detailed_idx:
         detailed_idx = {
