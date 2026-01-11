@@ -13,12 +13,12 @@ jobs:
             pip install --extra-index-url https://download.pytorch.org/whl/cpu -r env_cpu_with_hashes.in
             pip install --no-deps git+https://github.com/ACEsuit/mace.git@v0.3.13
             pip install --no-deps nequip==0.12.1 nequip-allegro==0.7.0
-            pip install -e .
+            pip install .
       - run:
           name: "Run code tests"
           command: |
             set -e
-            TEST_FILES=$(circleci tests glob "mlcg/**/test_*.py" | circleci tests split --split-by=timings)
+            TEST_FILES=$(circleci tests glob "tests/**/test_*.py" | circleci tests split --split-by=timings)
             mkdir -p test-results
             pytest --verbose --junitxml=test-results/junit.xml $TEST_FILES
           no_output_timeout: 5m

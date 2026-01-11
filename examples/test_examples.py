@@ -41,6 +41,7 @@ from shutil import rmtree
 
 
 _here = Path(__file__).parent
+_script_dir = _here.parent / "src" / "mlcg" / "scripts"
 
 training_yaml_list = sorted((_here / "input_yamls").glob("train*.yaml"))
 training_yaml_list = [
@@ -79,6 +80,7 @@ def test_dir(runner_idx):
         rmtree(dir_path)
 
 
+@pytest.mark.heavy
 def test_architecture(runner_idx, num_containers, test_dir):
     archs_per_runner = training_yaml_list[runner_idx::num_containers]
     reference_data_yaml = global_data_yaml
@@ -120,14 +122,15 @@ def test_architecture(runner_idx, num_containers, test_dir):
         for idx, arg in enumerate(arg_list):
             if "train" in arg and ".yaml" in arg:
                 arg_list[idx] = str(test_dir / "pytest_training.yaml")
-            elif "mlcg-" and ".py" in arg:
-                arg_list[idx] = str(_here.parent / "scripts" / arg)
-        arg_list.insert(0, "python")
+            # elif "mlcg-" in arg:  # and ".py" in arg:
+            #     arg_list[idx] = str(_script_dir / f"{arg.replace("-","_")}.py")
+        # arg_list.insert(0, "python")
         print(f"Running {' '.join(arg_list)} in {os.getcwd()}")
         result = subprocess.run(
             arg_list,
             capture_output=True,
             text=True,
+            encoding="utf-8",
         )
         print("STDOUT:\n", result.stdout)
         print("STDERR:\n", result.stderr)
@@ -136,10 +139,9 @@ def test_architecture(runner_idx, num_containers, test_dir):
         # Extract model from ckpt
         result = subprocess.run(
             [
-                "python",
-                str(_here.parent / "scripts/mlcg-combine_model.py"),
+                "mlcg-combine_model",
                 "--ckpt",
-                str(test_dir / "ckpt/last.ckpt"),
+                str(test_dir / "ckpt" / "last.ckpt"),
                 "--prior",
                 priors,
                 "--out",
@@ -147,6 +149,7 @@ def test_architecture(runner_idx, num_containers, test_dir):
             ],
             capture_output=True,
             text=True,
+            encoding="utf-8",
         )
         print("STDOUT:\n", result.stdout)
         print("STDERR:\n", result.stderr)
@@ -170,13 +173,13 @@ def test_architecture(runner_idx, num_containers, test_dir):
         # Run the simulation command
         result = subprocess.run(
             [
-                "python",
-                str(_here.parent / "scripts/mlcg-nvt_langevin.py"),
+                "mlcg-nvt_langevin",
                 "--config",
                 str(test_dir / "pytest_simulation.yaml"),
             ],
             capture_output=True,
             text=True,
+            encoding="utf-8",
         )
         print("STDOUT:\n", result.stdout)
         print("STDERR:\n", result.stderr)

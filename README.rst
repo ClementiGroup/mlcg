@@ -98,14 +98,22 @@ documentation is synchronized with the main version of the repository.
 Test Coverage
 -------------
 
-The test coverage of this library is monitored with `coverage` for each pull requests using `github` actions.
-To produce a report locally run:
+The test coverage of this library is monitored with `coverage` for each pull request using `GitHub` actions.  
+To produce a report locally, run:
 
-.. code:: bash
+.. code-block:: bash
 
     coverage run -m pytest
     coverage report
 
+This will run the full set of tests in `mlcg` and the larger test under `examples/test_examples.py`, 
+including training and simulation of all models described in `examples/input_yamls/README.md`.  
+
+For quick local development testing, it is also possible to exclude the large test by running:
+
+.. code-block:: bash
+
+    coverage run -m pytest --light
 
 Troubleshooting
 ---------------
