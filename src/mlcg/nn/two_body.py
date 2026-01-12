@@ -228,7 +228,6 @@ class RepulsionFilteredLinear(torch.nn.Module):
         batch_map = data.batch[edge_index[0]] 
         energy = scatter(energy_per_edge, batch_map, dim=0, reduce="sum")
         energy = energy.flatten()
-        print(energy.size())
         if self.filter_rbfs:
             data.out[self.name] = {
                 ENERGY_KEY: energy,
