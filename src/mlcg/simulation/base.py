@@ -1,6 +1,6 @@
 # This code is adapted from https://github.com/coarse-graining/cgnet
 # Authors: Brooke Husic, Nick Charron, Jiang Wang
-# Contributors: Dominik Lemm, Andreas Kraemer, Clark Templeton
+# Contributors: Dominik Lemm, Andreas Kraemer, Clark Templeton, Iryna Zaporozhets
 
 import warnings
 from typing import List, Optional, Tuple, Union, Callable
@@ -64,6 +64,16 @@ class _Simulation(object):
     save_energies : bool, default=False
         Whether to save potential at the same saved interval as the simulation
         coordinates
+    save_force_components: bool, default=False
+            Whether to save model energy components at the same saved interval as the simulation
+        coordinates.
+    save_energy_components: bool, default=False
+        Whether to save model energy components at the same saved interval as the simulation
+        coordinates.
+    force_components: list[str] | None, default= None - list of keys to be saved. Only used when
+        save_force_components is True.
+    energy_components: list[str] | None, default= None - list of keys to be saved. Only used when
+        save_energy_components is True.
     create_checkpoints: bool, default=False
         Save the atomic data object so it can be reloaded in. Overwrites previous object.
     read_checkpoint_file: [str,bool], default=None
@@ -139,6 +149,10 @@ class _Simulation(object):
         dt: float = 5e-4,
         save_forces: bool = False,
         save_energies: bool = False,
+        save_force_components: bool = False,
+        save_energy_components: bool = False,
+        force_components: list[str] | str | None = None,
+        energy_components: list[str] | str | None = None,
         n_timesteps: int = 100,
         save_interval: int = 10,
         create_checkpoints: bool = False,
@@ -165,6 +179,23 @@ class _Simulation(object):
         self.specialize_priors = specialize_priors
         self.save_forces = save_forces
         self.save_energies = save_energies
+        self.save_force_components = save_force_components
+        self.save_energy_components = save_energy_components
+
+        if force_components is None:
+            self.force_components = None
+        elif isinstance(force_components, str):
+            self.force_components = {force_components: None}
+        else:
+            self.force_components = {key: None for key in force_components}
+
+        if energy_components is None:
+            self.energy_components = None
+        elif isinstance(energy_components, str):
+            self.energy_components = {energy_components: None}
+        else:
+            self.energy_components = {key: None for key in energy_components}
+
         self.n_timesteps = n_timesteps
         self.save_interval = save_interval
         self.dt = dt
@@ -724,6 +755,17 @@ class _Simulation(object):
                 "subroutine interval specified, but subroutine is ambiguous."
             )
 
+        # Saving extra force components
+        if self.save_force_components and (self.force_components is None):
+            raise ValueError(
+                f"save_energy_components is requested,but no energy_components provided"
+            )
+        # Saving extra energy components
+        if self.save_energy_components and (self.energy_components is None):
+            raise ValueError(
+                f"save_energy_components is requested,but no energy_components provided"
+            )
+
     def _get_numpy_count(self):
         """Returns a string 0000-9999 for appending to numpy file outputs"""
         return f"{self._npy_file_index:04d}"
@@ -779,6 +821,24 @@ class _Simulation(object):
             self.simulated_potential = torch.zeros(self._save_size, self.n_sims)
         else:
             self.simulated_potential = None
+
+        if self.save_force_components:
+            self.force_components = {
+                key: torch.zeros(
+                    self._save_size, self.n_sims, self.n_atoms, self.n_dims
+                )
+                for key in self.force_components
+            }
+        else:
+            self.force_components = None
+
+        if self.save_energy_components:
+            self.energy_components = {
+                key: torch.zeros(self._save_size, self.n_sims)
+                for key in self.energy_components
+            }
+        else:
+            self.energy_components = None
 
         if self.log_interval is not None:
             printstring = "Generating {} simulations of n_timesteps {} saved at {}-step intervals ({})".format(
@@ -847,6 +907,16 @@ class _Simulation(object):
 
             self.simulated_potential[save_ind] = potential
 
+        if self.save_force_components:
+            for key, tensor in self.force_components.items():  # type: ignore , check for None in input validation
+                tensor[save_ind, :, :] = deepcopy(
+                    data.out[key][FORCE_KEY].detach()
+                ).view(-1, self.n_atoms, self.n_dims)
+
+        if self.save_energy_components:
+            for key, tensor in self.energy_components.items():  # type: ignore , check for None in input validation
+                tensor[save_ind] = deepcopy(data.out[key][ENERGY_KEY].detach())
+
         if self.create_checkpoints:
             self.checkpoint = {}
             self.checkpoint[POSITIONS_KEY] = deepcopy(
@@ -879,6 +949,26 @@ class _Simulation(object):
                 potentials_to_export,
             )
 
+        if self.save_force_components:
+            components_to_export = {
+                name: self._swap_and_export(i)
+                for name, i in self.force_components.items()
+            }
+            np.savez(
+                "{}_force_components_{}.npz".format(self.filename, key),
+                **components_to_export,
+            )
+
+        if self.save_energy_components:
+            components_to_export = {
+                name: self._swap_and_export(i)
+                for name, i in self.energy_components.items()
+            }
+            np.savez(
+                "{}_energy_components_{}.npz".format(self.filename, key),
+                **components_to_export,
+            )
+
         if self.create_checkpoints:
             self.checkpoint["current_timestep"] = self._npy_file_index + 1
             self.checkpoint["export_interval"] = self.export_interval
@@ -905,6 +995,24 @@ class _Simulation(object):
         else:
             self.simulated_potential = None
 
+        if self.save_force_components:
+            self.force_components = {
+                key: torch.zeros(
+                    self._save_size, self.n_sims, self.n_atoms, self.n_dims
+                )
+                for key in self.force_components
+            }
+        else:
+            self.force_components = None
+
+        if self.save_energy_components:
+            self.energy_components = {
+                key: torch.zeros(self._save_size, self.n_sims)
+                for key in self.energy_components
+            }
+        else:
+            self.energy_components = None
+
         self._npy_file_index += 1
 
     def reshape_output(self):
@@ -918,6 +1026,18 @@ class _Simulation(object):
             self.simulated_potential = self._swap_and_export(
                 self.simulated_potential
             )
+
+        if self.save_force_components:
+            self.force_components = {
+                key: self._swap_and_export(tensor)
+                for key, tensor in self.force_components.items()
+            }
+
+        if self.save_energy_components:
+            self.energy_components = {
+                key: self._swap_and_export(tensor)
+                for key, tensor in self.energy_components.items()
+            }
 
     def attach_model(self, model: torch.nn.Module):
         warnings.warn(

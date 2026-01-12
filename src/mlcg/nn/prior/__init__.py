@@ -11,3 +11,4 @@ from .harmonic import (
 from .fourier_series import FourierSeries, Dihedral
 from .polynomial import Polynomial, QuarticAngles
 from .repulsion_fitted import Repulsion
+from .restricted_bending import RestrictedQuartic
