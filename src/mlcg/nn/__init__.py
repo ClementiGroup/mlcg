@@ -27,6 +27,7 @@ from .so3krates import So3krates, StandardSo3krates
 from .lr_scheduler import CustomStepLR
 from .utils import sparsify_prior_module, desparsify_prior_module
 from .allegro import StandardAllegro
+from .two_body import RepulsionFilteredLinear, RBFFilter, BinaryRBFFilter
 
 __all__ = [
     "GradientsOut",
@@ -71,4 +72,7 @@ __all__ = [
     "StandardSo3krates",
     "CustomStepLR",
     "StandardAllegro",
+    "RepulsionFilteredLinear",
+    "RBFFilter"
+    "BinaryRBFFilter"
 ]

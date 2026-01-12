@@ -754,6 +754,12 @@ class _Simulation(object):
             raise ValueError(
                 "subroutine interval specified, but subroutine is ambiguous."
             )
+        
+        # Saving extra energy components
+        if self.save_energy_components and (self.energy_components is None):
+            raise ValueError(
+                f"save_energy_components is requested,but no energy_components provided"
+            )
 
         # Saving extra force components
         if self.save_force_components and (self.force_components is None):
@@ -979,7 +985,7 @@ class _Simulation(object):
                 "{}_checkpoint.pt".format(self.filename),
             )
 
-        # Reset simulated coords, forces and potential
+        # Reset simulated coords, forces, potential and energy components
         self.simulated_coords = torch.zeros(
             (self._save_size, self.n_sims, self.n_atoms, self.n_dims)
         )
