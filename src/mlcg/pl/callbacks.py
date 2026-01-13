@@ -42,7 +42,7 @@ class BatchData:
         """
         Create a BatchData instance from a batch_data object. 
         """
-        embeddings = deepcopy(batch_data.out[ATOM_TYPE_KEY].detach())
+        embeddings = deepcopy(batch_data[ATOM_TYPE_KEY].detach())
         coordinates = deepcopy(batch_data.pos.detach())
         energies = deepcopy(batch_data.out[ENERGY_KEY].detach()) if save_energy else None
         forces = deepcopy(batch_data.out[FORCE_KEY].detach()) if save_forces else None

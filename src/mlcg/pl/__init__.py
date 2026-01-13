@@ -10,6 +10,7 @@ from .utils import (
 )
 from .cli import LightningCLI
 from .h5_data import H5DataModule
+from .callbacks import DataSavingCallback
 
 __all__ = [
     "DataModule",
@@ -22,4 +23,5 @@ __all__ = [
     "OffsetCheckpoint",
     "LightningCLI",
     "GradNormLogger",
+    "DataSavingCallback"
 ]
