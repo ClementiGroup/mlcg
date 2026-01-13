@@ -176,11 +176,15 @@ class MolData:
         noise_levels: np.ndarray = None,
         neighbor_list: dict = None,
         exclusion_pairs: np.ndarray = None,
+        cell: np.ndarray = None,
+        pbc: np.ndarray = None,
     ):
         self._name = name
         self._embeds = embeds
         self._coords = coords
         self._forces = forces
+        self._cell = cell
+        self._pbc = pbc
 
         assert (
             len(self._embeds) == self._coords.shape[1] == self._forces.shape[1]
@@ -267,6 +271,14 @@ class MolData:
     @property
     def n_beads(self):
         return self.coords.shape[1]
+    
+    @property
+    def cell(self):
+        return self._cell
+
+    @property
+    def pbc(self):
+        return self._pbc
 
     def __repr__(self):
         return f"""MolData(name={self.name}", N_beads={self.n_beads}, N_frames={self.n_frames})"""
@@ -339,6 +351,8 @@ class MetaSet:
             "forces": "cg_delta_forces",
             "weights": "subsampling_weights",
             "noise_levels": "noise_levels",
+            "cell": "cell",
+            "pbc": "pbc",
         },
         parallel={
             "rank": 0,
@@ -425,6 +439,8 @@ class MetaSet:
                 )
                 split_per_index = False
             selection = select_for_rank(par_range)
+            cell = None  # cell is none by default
+            pbc = None  # pbc is none by default
             if not split_per_index:
                 coords = MetaSet.retrieve_hdf(
                     hdf5_group[mol_name], keys["coords"]
@@ -443,6 +459,20 @@ class MetaSet:
                     weights = MetaSet.retrieve_hdf(
                         hdf5_group[mol_name], keys["weights"]
                     )[selection]
+                if "cell" in hdf_key_mapping:
+                    try:
+                        cell = MetaSet.retrieve_hdf(
+                            hdf5_group[mol_name], keys["cell"]
+                        )[selection]
+                    except Exception:
+                        pass
+                if "pbc" in hdf_key_mapping:
+                    try:
+                        pbc = MetaSet.retrieve_hdf(
+                            hdf5_group[mol_name], keys["pbc"]
+                        )[selection]
+                    except Exception:
+                        pass
             else:
                 # For large dataset it is usually quicker to first load everything
                 # and then perform indexing in memory
@@ -463,6 +493,20 @@ class MetaSet:
                     weights = MetaSet.retrieve_hdf(
                         hdf5_group[mol_name], keys["weights"]
                     )[:][selection]
+                if "cell" in hdf_key_mapping:
+                    try:
+                        cell = MetaSet.retrieve_hdf(
+                            hdf5_group[mol_name], keys["cell"]
+                        )[selection]
+                    except Exception:
+                        pass
+                if "pbc" in hdf_key_mapping:
+                    try:
+                        pbc = MetaSet.retrieve_hdf(
+                            hdf5_group[mol_name], keys["pbc"]
+                        )[selection]
+                    except Exception:
+                        pass
             neighbor_list = None
             if mol_neighbor_lists is not None:
                 if mol_name in mol_neighbor_lists:
@@ -479,6 +523,8 @@ class MetaSet:
                     noise_levels=noise_levels,
                     neighbor_list=neighbor_list,
                     exclusion_pairs=exclusion_pairs,
+                    cell=cell,
+                    pbc=pbc,
                 )
             )
         output._exclude_listed_pairs = exclude_listed_pairs
@@ -600,6 +646,19 @@ class MetaSet:
                     [len(self._mol_dataset[dataset_id].coords[data_id])],
                 )
             )
+
+        if mol_data.cell[data_id] is not None:
+            # AtomicData.from_points uses "neighborlist" in args
+            point_tensors["cell"] = mol_data.cell[data_id]
+        else:
+            point_tensors["cell"] = None
+
+        if mol_data.pbc[data_id] is not None:
+            # AtomicData.from_points uses "neighborlist" in args
+            point_tensors["pbc"] = mol_data.pbc[data_id]
+        else:
+            point_tensors["pbc"] = None
+        
         if mol_data.neighbor_list is not None:
             point_tensors["neighbor_list"] = mol_data.neighbor_list
         if self._exclude_listed_pairs:
