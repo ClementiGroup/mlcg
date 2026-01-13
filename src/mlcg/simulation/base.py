@@ -380,7 +380,7 @@ class _Simulation(object):
             cell = getattr(data, "cell", None)
             if all([feat != None for feat in [pbc, cell]]):
                 data = wrap_positions(data, self.device)
-                        self.sim_t = t
+            self.sim_t = t
             # save to arrays if relevant
             if (t + 1) % self.save_interval == 0:
                 # save arrays
