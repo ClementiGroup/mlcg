@@ -487,13 +487,13 @@ class MetaSet:
                 )
             )
         
-        if mol_data.cell[data_id] is not None:
+        if mol_data.cell is not None:
             # AtomicData.from_points uses "neighborlist" in args
             point_tensors["cell"] = mol_data.cell[data_id]
         else:
             point_tensors["cell"] = None
 
-        if mol_data.pbc[data_id] is not None:
+        if mol_data.pbc is not None:
             # AtomicData.from_points uses "neighborlist" in args
             point_tensors["pbc"] = mol_data.pbc[data_id]
         else:
