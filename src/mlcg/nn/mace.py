@@ -26,6 +26,22 @@ except ImportError as e:
         ""
     )
 
+try:
+    import cuequivariance as cue
+    import cuequivariance_torch as cuet
+
+    CUET_AVAILABLE = True
+except ImportError:
+    CUET_AVAILABLE = False
+    print(
+        "cuEquivariance is not installed. cuEquivariance features will be disabled. It is recommended to install cuEquivariance for better performance. "
+        + "To install cuEquivariance run pip install cuequivariance cuequivariance-torch cuequivariance-ops-torch-cu12 " 
+        + "Replace \"cu12\" with \"cu11\" if you are using CUDA 11."
+    )
+
+if CUET_AVAILABLE:
+    from mace.modules.wrapper_ops import CuEquivarianceConfig
+
 # from ..pl.model import get_class_from_str
 from ..data.atomic_data import AtomicData, ENERGY_KEY
 from ..neighbor_list.neighbor_list import (
@@ -268,7 +284,9 @@ class StandardMACE(MACE):
         radial_type (Optional[str], optional):
             Radial basis type.
         cueq_config (Optional[Dict[str, Any]], optional):
-            Configuration for charge equilibration.
+            cuEquivariance configuration.
+        use_cueq (Optional[bool], optional):
+            Whether to use cuEquivariance acceleration.
     """
 
     def __init__(
@@ -291,7 +309,8 @@ class StandardMACE(MACE):
         distance_transform: str = "None",
         radial_MLP: Optional[List[int]] = None,
         radial_type: Optional[str] = "bessel",
-        cueq_config: Optional[Dict[str, Any]] = None,
+        cueq_config: Optional[Any] = None,
+        use_cueq: Optional[bool] = False, #defaults to False for backwards compatibility
     ):
         from mlcg.pl.model import get_class_from_str
 
@@ -301,7 +320,27 @@ class StandardMACE(MACE):
 
         hidden_irreps = o3.Irreps(hidden_irreps)
         MLP_irreps = o3.Irreps(MLP_irreps)
-
+        # Default to create CuEquivariance config if installed
+        if CUET_AVAILABLE and use_cueq:
+            print("="*60)
+            print("INITIALIZING CUEQUIVARIANCE")
+            print("="*60)
+            print("✓ CuEquivariance is available and enabled")
+            print("✓ Layout: ir_mul (irreps first, then multiplicity)")
+            print("✓ Group: O3")
+            print("✓ Optimization: ALL operations")
+            print("Note: CuEquivariance kernels will be compiled on first use.")
+            print("This may take a few minutes but only happens once per configuration.")
+            print("="*60)
+            cueq_config = CuEquivarianceConfig(
+                enabled=True,
+                layout="ir_mul", # irreps, multiplicity
+                group="O3",
+                optimize_all=True,
+            )
+        else:
+            print("Using e3nn. cuEquivariance acceleration is disabled.")
+            cueq_config = None
         if isinstance(correlation, int):
             correlation = [correlation] * num_interactions
         # Embedding
