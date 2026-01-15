@@ -41,6 +41,22 @@ from mlcg.neighbor_list.neighbor_list import (
 
 from nequip.nn.mlp import ScalarLinearLayer
 
+try:
+    import cuequivariance as cue
+    import cuequivariance_torch as cuet
+
+    CUET_AVAILABLE = True
+except ImportError:
+    CUET_AVAILABLE = False
+    print(
+        "cuEquivariance is not installed. cuEquivariance features will be disabled. It is recommended to install cuEquivariance for better performance. "
+        + "To install cuEquivariance run pip install cuequivariance cuequivariance-torch cuequivariance-ops-torch-cu12 " 
+        + "Replace \"cu12\" with \"cu11\" if you are using CUDA 11."
+    )
+
+if CUET_AVAILABLE:
+    from allegro.nn._strided._contract import Contracter
+
 
 def init_xavier_uniform(
     module: torch.nn.Module, zero_bias: bool = True
@@ -397,6 +413,8 @@ class StandardAllegro(Allegro):
         pair_potential: Optional[Dict] = None,
         # weight initialization and normalization
         forward_normalize: bool = True,
+        # cuequivariance acceleration
+        use_cueq: bool = False,
     ):
 
         ## haking jit for module
@@ -532,6 +550,7 @@ class StandardAllegro(Allegro):
             irreps_in=edge_eng_sum.irreps_out,
         )
 
+        # Build the base model first
         super().__init__(
             edge_norm=edge_norm,
             radial_chemical_embed=radial_chemical_embed_module,
@@ -543,6 +562,18 @@ class StandardAllegro(Allegro):
             per_type_energy_scale_shift=per_type_energy_scale_shift,
             pair_potential=pair_potential,
         )
+        
+        # Apply CuEquivariance modifier if requested
+        if use_cueq:
+            if not CUET_AVAILABLE:
+                raise RuntimeError(
+                    "use_cueq=True but cuEquivariance is not installed. "
+                    "Install with: pip install cuequivariance cuequivariance-torch cuequivariance-ops-torch-cu12"
+                )
+            
+            # Use Allegro's built-in CuEquivariance modifier
+            Contracter.enable_CuEquivarianceContracter(self)
+        
         ## Restoring jit
         torch.jit.script = _original_script
 
