@@ -6,7 +6,7 @@ from typing import Optional, Dict
 from .base import _Prior
 from ...data.atomic_data import AtomicData
 from ...geometry.internal_coordinates import (
-    compute_angles_cos,
+    compute_angles_cos, compute_angles_raw
 )
 
 
@@ -178,4 +178,4 @@ class QuarticAngles(Polynomial):
     def compute_features(
         pos: AtomicData, mapping: torch.Tensor
     ) -> torch.Tensor:
-        return compute_angles_cos(pos, mapping)
+        return compute_angles_raw(pos, mapping)
