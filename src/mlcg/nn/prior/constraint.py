@@ -18,7 +18,8 @@ class Constraint(_Prior):
 
         U_{ \textnormal{Constrain}}(x) = ReLU(x-x_0)*(x-x_0)
 
-    where :math:`x_0` is the center of mass of the protein.
+    where :math:`x_0` is the center of mass of the protein and 
+    :math: `k_s` is a scaling factor.
 
     Parameters
     ----------
@@ -27,10 +28,11 @@ class Constraint(_Prior):
     name: Final[str] = "constraint"
     _neighbor_list_name: "full"
 
-    def __init__(self, constraint_atom_types: List[int], r_s: float) -> None:
+    def __init__(self, constraint_atom_types: List[int], r_s: float, k_s: float) -> None:
         super(Constraint, self).__init__()
         self.register_buffer("constraint_atom_types", torch.tensor(constraint_atom_types, dtype=torch.int))
         self.register_buffer("r_s", torch.tensor(r_s))
+        self.register_buffer("k_s", torch.tensor(k_s))
 
     def data2features(
             self, 
@@ -67,7 +69,7 @@ class Constraint(_Prior):
     
     def data2parameters(self, data:AtomicData) -> torch.Tensor:
         n_elts = torch.isin(data.atom_types, self.constraint_atom_types).sum()
-        r_s = self.r_s * torch.ones(n_elts)
+        r_s = self.r_s * torch.ones(n_elts, device=self.r_s.device, dtype=self.r_s.dtype)
         return r_s
 
     def forward(self, data: AtomicData) -> AtomicData:
@@ -103,17 +105,16 @@ class Constraint(_Prior):
                                       protein_mapping, 
                                       constraint_mapping_batch, 
                                       protein_mapping_batch)
-        y = Constraint.compute(features, r_s)
+        y = Constraint.compute(features, r_s, self.k_s)
         y = scatter(y, constraint_mapping_batch, dim=0, reduce="sum") # h
         data.out[self.name] = {"energy": y}
         return data
 
     @staticmethod
-    def compute(r, r_s):
+    def compute(r, r_s, k_s):
         """Method defining the Constraint interaction"""
         rr = (r - r_s)
-        return torch.relu(rr) * rr
-
+        return torch.relu(rr) * rr * k_s
 
     @staticmethod
     def neighbor_list(topology: Topology) -> Dict:
