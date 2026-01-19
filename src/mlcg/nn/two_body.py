@@ -88,20 +88,20 @@ class BinaryRBFFilter(RBFFilter):
         # find  an index of first occurence of a useful rbf
         target_index = cutoff_mask.int().argmax(dim=-1, keepdim=True)
         
-        index_tensor = torch.arange(n_rbfs)
+        index_tensor = torch.arange(n_rbfs, device=rbf_filter.device)
         index_tensor = index_tensor[torch.newaxis, torch.newaxis, :]
         tiled_tensor = index_tensor.tile(dims=(n_atom_types_0, n_atom_types_1, 1))
         mask = tiled_tensor >= target_index
         return mask 
 
     @classmethod
-    def from_file(cls, path: str,  n_rbfs: int, cutoff: float) -> "BinaryRBFFilter":
+    def from_file(cls, path: str,  n_rbfs: int, cutoff: float, **kwargs) -> "BinaryRBFFilter":
         """
         Need to reimplement it to pass proper kargs via 
         Pytorch lightning
         """
         filter_tensor = torch.load(path)
-        return cls(filter_tensor, n_rbfs=n_rbfs, cutoff=cutoff)
+        return cls(filter_tensor, n_rbfs=n_rbfs, cutoff=cutoff, **kwargs)
 
 
 class RepulsionFilteredLinear(torch.nn.Module):
