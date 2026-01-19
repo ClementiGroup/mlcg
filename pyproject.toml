@@ -53,6 +53,9 @@ dependencies = [
     "torch-cluster",
     "torchist>=1.0.1",
     "torch_optimizer<=1.5.1",
+    "cuequivariance",
+    "cuequivariance-torch",
+    "cuequivariance-ops-torch-cu12",
     "tqdm>=4.67.1",
     # developer tools
     "black[jupyter]",
