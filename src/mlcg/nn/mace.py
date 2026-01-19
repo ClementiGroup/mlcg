@@ -35,8 +35,8 @@ except ImportError:
     CUET_AVAILABLE = False
     print(
         "cuEquivariance is not installed. cuEquivariance features will be disabled. It is recommended to install cuEquivariance for better performance. "
-        + "To install cuEquivariance run pip install cuequivariance cuequivariance-torch cuequivariance-ops-torch-cu12 " 
-        + "Replace \"cu12\" with \"cu11\" if you are using CUDA 11."
+        + "To install cuEquivariance run pip install cuequivariance cuequivariance-torch cuequivariance-ops-torch-cu12 "
+        + 'Replace "cu12" with "cu11" if you are using CUDA 11.'
     )
 
 if CUET_AVAILABLE:
@@ -310,7 +310,9 @@ class StandardMACE(MACE):
         radial_MLP: Optional[List[int]] = None,
         radial_type: Optional[str] = "bessel",
         cueq_config: Optional[Any] = None,
-        use_cueq: Optional[bool] = False, #defaults to False for backwards compatibility
+        use_cueq: Optional[
+            bool
+        ] = False,  # defaults to False for backwards compatibility
     ):
         from mlcg.pl.model import get_class_from_str
 
@@ -322,15 +324,17 @@ class StandardMACE(MACE):
         MLP_irreps = o3.Irreps(MLP_irreps)
         # Default to create CuEquivariance config if installed
         if CUET_AVAILABLE and use_cueq:
-            print("="*60)
+            print("=" * 60)
             print("INITIALIZING CUEQUIVARIANCE")
-            print("="*60)
+            print("=" * 60)
             print("Note: CuEquivariance kernels will be compiled on first use.")
-            print("This may take a few minutes but only happens once per configuration.")
-            print("="*60)
+            print(
+                "This may take a few minutes but only happens once per configuration."
+            )
+            print("=" * 60)
             cueq_config = CuEquivarianceConfig(
                 enabled=True,
-                layout="ir_mul", # irreps, multiplicity
+                layout="ir_mul",  # irreps, multiplicity
                 group="O3",
                 optimize_all=True,
             )

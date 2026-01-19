@@ -50,8 +50,8 @@ except ImportError:
     CUET_AVAILABLE = False
     print(
         "cuEquivariance is not installed. cuEquivariance features will be disabled. It is recommended to install cuEquivariance for better performance. "
-        + "To install cuEquivariance run pip install cuequivariance cuequivariance-torch cuequivariance-ops-torch-cu12 " 
-        + "Replace \"cu12\" with \"cu11\" if you are using CUDA 11."
+        + "To install cuEquivariance run pip install cuequivariance cuequivariance-torch cuequivariance-ops-torch-cu12 "
+        + 'Replace "cu12" with "cu11" if you are using CUDA 11.'
     )
 
 if CUET_AVAILABLE:
@@ -562,7 +562,7 @@ class StandardAllegro(Allegro):
             per_type_energy_scale_shift=per_type_energy_scale_shift,
             pair_potential=pair_potential,
         )
-        
+
         # Apply CuEquivariance modifier if requested
         if use_cueq:
             if not CUET_AVAILABLE:
@@ -570,10 +570,10 @@ class StandardAllegro(Allegro):
                     "use_cueq=True but cuEquivariance is not installed. "
                     "Install with: pip install cuequivariance cuequivariance-torch cuequivariance-ops-torch-cu12"
                 )
-            
+
             # Use Allegro's built-in CuEquivariance modifier
             Contracter.enable_CuEquivarianceContracter(self)
-        
+
         ## Restoring jit
         torch.jit.script = _original_script
 
