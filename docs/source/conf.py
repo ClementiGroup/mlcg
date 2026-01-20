@@ -16,7 +16,7 @@
 
 import sys, os
 
-sys.path.insert(0, os.path.abspath("../../src/mlcg"))
+sys.path.insert(0, os.path.abspath("../../src/"))
 
 # disable torch jitting when building the documentation
 os.environ["PYTORCH_JIT"] = "0"
@@ -24,7 +24,7 @@ os.environ["PYTORCH_JIT"] = "0"
 # -- Project information -----------------------------------------------------
 
 project = "mlcg"
-copyright = "2021, Felix Musil & Nick Charron"
+copyright = "2026, Felix Musil & Nick Charron"
 author = "Felix Musil & Nick Charron"
 
 # The full version, including alpha/beta/rc tags
