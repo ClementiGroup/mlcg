@@ -16,7 +16,7 @@
 
 import sys, os
 
-sys.path.insert(0, os.path.abspath("../../"))
+sys.path.insert(0, os.path.abspath("../../src/mlcg"))
 
 # disable torch jitting when building the documentation
 os.environ["PYTORCH_JIT"] = "0"
@@ -28,7 +28,7 @@ copyright = "2021, Felix Musil & Nick Charron"
 author = "Felix Musil & Nick Charron"
 
 # The full version, including alpha/beta/rc tags
-release = "0.1.1"
+release = "0.1.2"
 
 
 # -- General configuration ---------------------------------------------------
