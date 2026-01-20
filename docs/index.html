@@ -114,7 +114,10 @@ pip<span class="w"> </span>install<span class="w"> </span>--no-deps<span class="
 <h2>Contents<a class="headerlink" href="#contents" title="Link to this heading"></a></h2>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="data.html">Data Representation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data.html">Data Representation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="data.html#mlcg.data.atomic_data.AtomicData"><code class="docutils literal notranslate"><span class="pre">AtomicData</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="geometry.html">Geometry</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="geometry.html#internal-coordinate-functions">Internal Coordinate Functions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="geometry.html#topology-utilities">Topology Utilities</a></li>
@@ -127,14 +130,25 @@ pip<span class="w"> </span>install<span class="w"> </span>--no-deps<span class="
 <li class="toctree-l2"><a class="reference internal" href="neighbor_list.html#ase-implementation">ASE Implementation</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="coarse_graining.html">Coarse Graining</a></li>
+<li class="toctree-l1"><a class="reference internal" href="coarse_graining.html">Coarse Graining</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="coarse_graining.html#mlcg.cg.projection.build_cg_topology"><code class="docutils literal notranslate"><span class="pre">build_cg_topology()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="coarse_graining.html#mlcg.cg.projection.build_cg_matrix"><code class="docutils literal notranslate"><span class="pre">build_cg_matrix()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="datasets.html">Datasets</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="datasets.html#chignolin-dataset">Chignolin Dataset</a></li>
 <li class="toctree-l2"><a class="reference internal" href="datasets.html#alanine-dipeptide-dataset">Alanine Dipeptide Dataset</a></li>
 <li class="toctree-l2"><a class="reference internal" href="datasets.html#custom-h5-dataset">Custom H5 Dataset</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="priors.html">Priors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="priors.html">Priors</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="priors.html#mlcg.nn.prior.Harmonic"><code class="docutils literal notranslate"><span class="pre">Harmonic</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="priors.html#mlcg.nn.prior.HarmonicBonds"><code class="docutils literal notranslate"><span class="pre">HarmonicBonds</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="priors.html#mlcg.nn.prior.HarmonicAngles"><code class="docutils literal notranslate"><span class="pre">HarmonicAngles</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="priors.html#mlcg.nn.prior.Dihedral"><code class="docutils literal notranslate"><span class="pre">Dihedral</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="priors.html#mlcg.nn.prior.Repulsion"><code class="docutils literal notranslate"><span class="pre">Repulsion</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="models.html">Models</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="models.html#schnet-utilities">SchNet Utilities</a></li>
 <li class="toctree-l2"><a class="reference internal" href="models.html#painn-utilities">PaiNN Utilities</a></li>
@@ -153,7 +167,7 @@ pip<span class="w"> </span>install<span class="w"> </span>--no-deps<span class="
 </li>
 <li class="toctree-l1"><a class="reference internal" href="simulation.html">Simulations</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="simulation.html#nvt-ensemble">NVT ensemble</a></li>
-<li class="toctree-l2"><a class="reference internal" href="simulation.html#utilities">Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="simulation.html#module-mlcg.simulation.specialize_prior">Utilities</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="dev/dev.html">Developer Documentation</a><ul>
@@ -190,7 +204,7 @@ pip<span class="w"> </span>install<span class="w"> </span>--no-deps<span class="
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2021, Felix Musil &amp; Nick Charron.</p>
+    <p>&#169; Copyright 2026, Felix Musil &amp; Nick Charron.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

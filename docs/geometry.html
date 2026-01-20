@@ -16,6 +16,7 @@
       <script src="_static/documentation_options.js?v=92734c54"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -45,9 +46,62 @@
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="data.html">Data Representation</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Geometry</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#internal-coordinate-functions">Internal Coordinate Functions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#topology-utilities">Topology Utilities</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#statistics">Statistics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#internal-coordinate-functions">Internal Coordinate Functions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#mlcg.geometry.internal_coordinates.compute_distances"><code class="docutils literal notranslate"><span class="pre">compute_distances()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mlcg.geometry.internal_coordinates.compute_distance_vectors"><code class="docutils literal notranslate"><span class="pre">compute_distance_vectors()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mlcg.geometry.internal_coordinates.compute_angles_cos"><code class="docutils literal notranslate"><span class="pre">compute_angles_cos()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mlcg.geometry.internal_coordinates.compute_angles_raw"><code class="docutils literal notranslate"><span class="pre">compute_angles_raw()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mlcg.geometry.internal_coordinates.compute_torsions"><code class="docutils literal notranslate"><span class="pre">compute_torsions()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#topology-utilities">Topology Utilities</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#mlcg.geometry.topology.Atom"><code class="docutils literal notranslate"><span class="pre">Atom</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#mlcg.geometry.topology.Atom.type"><code class="docutils literal notranslate"><span class="pre">Atom.type</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mlcg.geometry.topology.Atom.name"><code class="docutils literal notranslate"><span class="pre">Atom.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mlcg.geometry.topology.Atom.resname"><code class="docutils literal notranslate"><span class="pre">Atom.resname</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mlcg.geometry.topology.Atom.resid"><code class="docutils literal notranslate"><span class="pre">Atom.resid</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#mlcg.geometry.topology.Topology"><code class="docutils literal notranslate"><span class="pre">Topology</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#mlcg.geometry.topology.Topology.add_angle"><code class="docutils literal notranslate"><span class="pre">Topology.add_angle()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mlcg.geometry.topology.Topology.add_bond"><code class="docutils literal notranslate"><span class="pre">Topology.add_bond()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mlcg.geometry.topology.Topology.add_dihedral"><code class="docutils literal notranslate"><span class="pre">Topology.add_dihedral()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mlcg.geometry.topology.Topology.angles"><code class="docutils literal notranslate"><span class="pre">Topology.angles</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mlcg.geometry.topology.Topology.angles_from_edge_index"><code class="docutils literal notranslate"><span class="pre">Topology.angles_from_edge_index()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mlcg.geometry.topology.Topology.bonds"><code class="docutils literal notranslate"><span class="pre">Topology.bonds</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mlcg.geometry.topology.Topology.bonds_from_edge_index"><code class="docutils literal notranslate"><span class="pre">Topology.bonds_from_edge_index()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mlcg.geometry.topology.Topology.charges"><code class="docutils literal notranslate"><span class="pre">Topology.charges</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mlcg.geometry.topology.Topology.dihedrals"><code class="docutils literal notranslate"><span class="pre">Topology.dihedrals</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mlcg.geometry.topology.Topology.dihedrals_from_edge_index"><code class="docutils literal notranslate"><span class="pre">Topology.dihedrals_from_edge_index()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mlcg.geometry.topology.Topology.draw"><code class="docutils literal notranslate"><span class="pre">Topology.draw()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mlcg.geometry.topology.Topology.from_ase"><code class="docutils literal notranslate"><span class="pre">Topology.from_ase()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mlcg.geometry.topology.Topology.from_file"><code class="docutils literal notranslate"><span class="pre">Topology.from_file()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mlcg.geometry.topology.Topology.from_mdtraj"><code class="docutils literal notranslate"><span class="pre">Topology.from_mdtraj()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mlcg.geometry.topology.Topology.impropers"><code class="docutils literal notranslate"><span class="pre">Topology.impropers</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mlcg.geometry.topology.Topology.impropers_from_edge_index"><code class="docutils literal notranslate"><span class="pre">Topology.impropers_from_edge_index()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mlcg.geometry.topology.Topology.n_atoms"><code class="docutils literal notranslate"><span class="pre">Topology.n_atoms</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mlcg.geometry.topology.Topology.names"><code class="docutils literal notranslate"><span class="pre">Topology.names</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mlcg.geometry.topology.Topology.neighbor_list"><code class="docutils literal notranslate"><span class="pre">Topology.neighbor_list()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mlcg.geometry.topology.Topology.remove_angle"><code class="docutils literal notranslate"><span class="pre">Topology.remove_angle()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mlcg.geometry.topology.Topology.remove_bond"><code class="docutils literal notranslate"><span class="pre">Topology.remove_bond()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mlcg.geometry.topology.Topology.resids"><code class="docutils literal notranslate"><span class="pre">Topology.resids</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mlcg.geometry.topology.Topology.resnames"><code class="docutils literal notranslate"><span class="pre">Topology.resnames</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mlcg.geometry.topology.Topology.to_mdtraj"><code class="docutils literal notranslate"><span class="pre">Topology.to_mdtraj()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mlcg.geometry.topology.Topology.types"><code class="docutils literal notranslate"><span class="pre">Topology.types</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#mlcg.geometry.topology.add_chain_bonds"><code class="docutils literal notranslate"><span class="pre">add_chain_bonds()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mlcg.geometry.topology.add_chain_angles"><code class="docutils literal notranslate"><span class="pre">add_chain_angles()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mlcg.geometry.topology.get_connectivity_matrix"><code class="docutils literal notranslate"><span class="pre">get_connectivity_matrix()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mlcg.geometry.topology.get_n_pairs"><code class="docutils literal notranslate"><span class="pre">get_n_pairs()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mlcg.geometry.topology.get_n_paths"><code class="docutils literal notranslate"><span class="pre">get_n_paths()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#statistics">Statistics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#mlcg.geometry.statistics.compute_statistics"><code class="docutils literal notranslate"><span class="pre">compute_statistics()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mlcg.geometry.statistics.fit_baseline_models"><code class="docutils literal notranslate"><span class="pre">fit_baseline_models()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="neighbor_list.html">Neighbor Lists</a></li>
@@ -90,14 +144,763 @@
 <p><cite>mlcg.geometry</cite> implements geometry and topology tools for CG systems.</p>
 <section id="internal-coordinate-functions">
 <h2>Internal Coordinate Functions<a class="headerlink" href="#internal-coordinate-functions" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="mlcg.geometry.internal_coordinates.compute_distances">
+<span class="sig-prename descclassname"><span class="pre">mlcg.geometry.internal_coordinates.</span></span><span class="sig-name descname"><span class="pre">compute_distances</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mapping</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cell_shifts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/geometry/internal_coordinates.html#compute_distances"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.geometry.internal_coordinates.compute_distances" title="Link to this definition"></a></dt>
+<dd><p>Compute the distance between the positions in <code class="xref py py-obj docutils literal notranslate"><span class="pre">pos</span></code> following the
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">mapping</span></code> assuming that mapping indices follow:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">i</span><span class="o">--</span><span class="n">j</span>
+</pre></div>
+</div>
+<p>such that:</p>
+<div class="math notranslate nohighlight">
+\[r_{ij} = ||\mathbf{r}_j - \mathbf{r}_i||_{2}\]</div>
+<p>In the case of periodic boundary conditions, <code class="xref py py-obj docutils literal notranslate"><span class="pre">cell_shifts</span></code> must be
+provided so that <span class="math notranslate nohighlight">\(\mathbf{r}_j\)</span> can be outside of the original unit
+cell.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mlcg.geometry.internal_coordinates.compute_distance_vectors">
+<span class="sig-prename descclassname"><span class="pre">mlcg.geometry.internal_coordinates.</span></span><span class="sig-name descname"><span class="pre">compute_distance_vectors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mapping</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cell_shifts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/geometry/internal_coordinates.html#compute_distance_vectors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.geometry.internal_coordinates.compute_distance_vectors" title="Link to this definition"></a></dt>
+<dd><p>Compute the distance (or displacement) vectors between the positions in
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">pos</span></code> following the <code class="xref py py-obj docutils literal notranslate"><span class="pre">mapping</span></code> assuming that that mapping indices follow:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">i</span><span class="o">--</span><span class="n">j</span>
+</pre></div>
+</div>
+<p>such that:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}r_{ij} &amp;= ||\mathbf{r}_j - \mathbf{r}_i||_{2} \\
+\hat{\mathbf{r}}_{ij} &amp;= \frac{\mathbf{r}_{ij}}{r_{ij}}\end{split}\]</div>
+<p>In the case of periodic boundary conditions, <code class="xref py py-obj docutils literal notranslate"><span class="pre">cell_shifts</span></code> must be
+provided so that <span class="math notranslate nohighlight">\(\mathbf{r}_j\)</span> can be outside of the original unit
+cell.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mlcg.geometry.internal_coordinates.compute_angles_cos">
+<span class="sig-prename descclassname"><span class="pre">mlcg.geometry.internal_coordinates.</span></span><span class="sig-name descname"><span class="pre">compute_angles_cos</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mapping</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cell_shifts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/geometry/internal_coordinates.html#compute_angles_cos"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.geometry.internal_coordinates.compute_angles_cos" title="Link to this definition"></a></dt>
+<dd><p>Compute the cosine of the angle between the positions in <code class="xref py py-obj docutils literal notranslate"><span class="pre">pos</span></code> following the <code class="xref py py-obj docutils literal notranslate"><span class="pre">mapping</span></code> assuming that the mapping indices follow:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>  <span class="n">j</span><span class="o">--</span><span class="n">k</span>
+ <span class="o">/</span>
+<span class="n">i</span>
+</pre></div>
+</div>
+<div class="math notranslate nohighlight">
+\[\begin{split}\cos{\theta_{ijk}} &amp;= \frac{\mathbf{r}_{ij} \cdot \mathbf{r}_{jk}}{ \Vert \mathbf{r}_{ji}  \Vert \Vert \mathbf{r}_{kj} \Vert}  \\
+\mathbf{r}_{ij} &amp;= \mathbf{r}_i - \mathbf{r}_j \\
+\mathbf{r}_{kj} &amp;= \mathbf{r}_k - \mathbf{r}_j\end{split}\]</div>
+<p>In the case of periodic boundary conditions, <code class="xref py py-obj docutils literal notranslate"><span class="pre">cell_shifts</span></code> must be
+provided so that <span class="math notranslate nohighlight">\(\mathbf{r}_j\)</span> can be outside of the original unit
+cell.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mlcg.geometry.internal_coordinates.compute_angles_raw">
+<span class="sig-prename descclassname"><span class="pre">mlcg.geometry.internal_coordinates.</span></span><span class="sig-name descname"><span class="pre">compute_angles_raw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mapping</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cell_shifts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/geometry/internal_coordinates.html#compute_angles_raw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.geometry.internal_coordinates.compute_angles_raw" title="Link to this definition"></a></dt>
+<dd><p>Compute the raw angle (in radians) between the positions in <code class="xref py py-obj docutils literal notranslate"><span class="pre">pos</span></code> following the <code class="xref py py-obj docutils literal notranslate"><span class="pre">mapping</span></code> assuming that the mapping indices follow:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>  <span class="n">j</span><span class="o">--</span><span class="n">k</span>
+ <span class="o">/</span>
+<span class="n">i</span>
+</pre></div>
+</div>
+<div class="math notranslate nohighlight">
+\[\begin{split}\theta_{ijk} = &amp;\text{atan2}(\Vert \hat{\mathbf{n}} \vert, \mathbf{r}_{ij} \cdot \mathbf{r}_{kj} ) \\
+\mathbf{r}_{ij} &amp;= \mathbf{r}_i - \mathbf{r}_j \\
+\mathbf{r}_{kj} &amp;= \mathbf{r}_k - \mathbf{r}_j \\
+\mathbf{\hat{n}} &amp;= \frac{\mathbf{r}_{ij} \times \mathbf{r}_{kj}}{\Vert \mathbf{r}_{ij} \times \mathbf{r}_{kj} \Vert}\end{split}\]</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mlcg.geometry.internal_coordinates.compute_torsions">
+<span class="sig-prename descclassname"><span class="pre">mlcg.geometry.internal_coordinates.</span></span><span class="sig-name descname"><span class="pre">compute_torsions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mapping</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/geometry/internal_coordinates.html#compute_torsions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.geometry.internal_coordinates.compute_torsions" title="Link to this definition"></a></dt>
+<dd><p>Compute the angle between two planes from positions in :obj:’pos’ following the
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">mapping</span></code>:</p>
+<p>For dihedrals: the angle w.r.t. position of i&amp;l is positive if l i rotated clockwise
+when staring down bond jk:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>  <span class="n">j</span><span class="o">--</span><span class="n">k</span><span class="o">--</span><span class="n">l</span>
+ <span class="o">/</span>
+<span class="n">i</span>
+</pre></div>
+</div>
+<p>For impropers: the angle is positive if when looking in plane ikj, l is rotated clockwise:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">k</span>
+ \\
+  <span class="n">l</span><span class="o">--</span><span class="n">j</span>
+ <span class="o">/</span>
+<span class="n">i</span>
+</pre></div>
+</div>
+<p>The angle is computed using the formula:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\phi_{ijkl} &amp;= \text{atan2}(-\mathbf{m} \cdot \mathbf{n}_2, \mathbf{n}_2 \cdot \mathbf{n}_1) \\
+\mathbf{n}_1 &amp;= \mathbf{\hat{r}}_{ji} \times \mathbf{\hat{r}}_{kj} \\
+\mathbf{n}_2 &amp;= \mathbf{\hat{r}}_{kj} \times \mathbf{\hat{r}}_{jl} \\
+\mathbf{m} &amp;= \mathbf{n}_{1} \times \mathbf{\hat{r}}_{kj}\end{split}\]</div>
+<p>Where the <span class="math notranslate nohighlight">\(\hat{u}\)</span> indicates a normalized vector in direction of <span class="math notranslate nohighlight">\(u\)</span>.
+The order and signs in the atan2 arguments are needed to obtain values consistent
+with mdtraj. In the case of periodic boundary conditions, <code class="xref py py-obj docutils literal notranslate"><span class="pre">cell_shifts</span></code> must be
+provided so that <span class="math notranslate nohighlight">\(\mathbf{r}_j\)</span> can be outside of the original unit
+cell.</p>
+</dd></dl>
+
 </section>
 <section id="topology-utilities">
 <h2>Topology Utilities<a class="headerlink" href="#topology-utilities" title="Link to this heading"></a></h2>
 <p>These classes and functions may be used to define, manipulate, and analyze CG topologies through graph representations.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcg.geometry.topology.Atom">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.geometry.topology.</span></span><span class="sig-name descname"><span class="pre">Atom</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resname</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">charge</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/geometry/topology.html#Atom"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.geometry.topology.Atom" title="Link to this definition"></a></dt>
+<dd><p>Define an atom</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mlcg.geometry.topology.Atom.type">
+<span class="sig-name descname"><span class="pre">type</span></span><a class="headerlink" href="#mlcg.geometry.topology.Atom.type" title="Link to this definition"></a></dt>
+<dd><p>Atom type/integer label</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mlcg.geometry.topology.Atom.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#mlcg.geometry.topology.Atom.name" title="Link to this definition"></a></dt>
+<dd><p>Atom name</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional[str] = None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mlcg.geometry.topology.Atom.resname">
+<span class="sig-name descname"><span class="pre">resname</span></span><a class="headerlink" href="#mlcg.geometry.topology.Atom.resname" title="Link to this definition"></a></dt>
+<dd><p>Name of the residue containing the atom</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional[str] = None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mlcg.geometry.topology.Atom.resid">
+<span class="sig-name descname"><span class="pre">resid</span></span><a class="headerlink" href="#mlcg.geometry.topology.Atom.resid" title="Link to this definition"></a></dt>
+<dd><p>Index of the desired residue</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional[int] = None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcg.geometry.topology.Topology">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.geometry.topology.</span></span><span class="sig-name descname"><span class="pre">Topology</span></span><a class="reference internal" href="_modules/mlcg/geometry/topology.html#Topology"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.geometry.topology.Topology" title="Link to this definition"></a></dt>
+<dd><p>Topology of an isolated protein.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcg.geometry.topology.Topology.add_angle">
+<span class="sig-name descname"><span class="pre">add_angle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx3</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/geometry/topology.html#Topology.add_angle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.geometry.topology.Topology.add_angle" title="Link to this definition"></a></dt>
+<dd><p>Define an angle between three atoms. <cite>idx2</cite> represents the
+apex/central angles:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>  <span class="mi">2</span><span class="o">---</span><span class="mi">3</span>
+ <span class="o">/</span>
+<span class="mi">1</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>idx1</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – The index of the first atom defining the angle</p></li>
+<li><p><strong>idx2</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – The index of the central atom defining the angle</p></li>
+<li><p><strong>idx3</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – The index of the last atom defining the angle</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcg.geometry.topology.Topology.add_bond">
+<span class="sig-name descname"><span class="pre">add_bond</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/geometry/topology.html#Topology.add_bond"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.geometry.topology.Topology.add_bond" title="Link to this definition"></a></dt>
+<dd><p>Define a bond between two atoms.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>idx1</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – The index of the first atom in the bond</p></li>
+<li><p><strong>idx2</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – The index of the second atom in the bond</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcg.geometry.topology.Topology.add_dihedral">
+<span class="sig-name descname"><span class="pre">add_dihedral</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx4</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/geometry/topology.html#Topology.add_dihedral"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.geometry.topology.Topology.add_dihedral" title="Link to this definition"></a></dt>
+<dd><p>The dihedral angle formed by a quadruplet of indices (1,2,3,4) is
+difined around the axis connecting index 2 and 3 (i.e., the angle
+between the planes spanned by indices (1,2,3) and (2,3,4)):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>        <span class="mi">4</span>
+        <span class="o">|</span>
+  <span class="mi">2</span><span class="o">-----</span><span class="mi">3</span>
+ <span class="o">/</span>
+<span class="mi">1</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>idx1</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – The index of the first atom defining the dihedral</p></li>
+<li><p><strong>idx2</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – The index of the second atom defining the dihedral</p></li>
+<li><p><strong>idx3</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – The index of the third atom defining the dihedral</p></li>
+<li><p><strong>idx3</strong> – The index of the last atom defining the dihedral</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mlcg.geometry.topology.Topology.angles">
+<span class="sig-name descname"><span class="pre">angles</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#mlcg.geometry.topology.Topology.angles" title="Link to this definition"></a></dt>
+<dd><p>list of angles formed by triplets of atoms</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcg.geometry.topology.Topology.angles_from_edge_index">
+<span class="sig-name descname"><span class="pre">angles_from_edge_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edge_index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/geometry/topology.html#Topology.angles_from_edge_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.geometry.topology.Topology.angles_from_edge_index" title="Link to this definition"></a></dt>
+<dd><p>Overwrites the internal angle list with the angles
+defined in the supplied angle edge_index</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>edge_index</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span>) – Edge index tensor of shape (3, n_angles)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mlcg.geometry.topology.Topology.bonds">
+<span class="sig-name descname"><span class="pre">bonds</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#mlcg.geometry.topology.Topology.bonds" title="Link to this definition"></a></dt>
+<dd><p>list of bonds between the atoms. Defines the bonded topology.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcg.geometry.topology.Topology.bonds_from_edge_index">
+<span class="sig-name descname"><span class="pre">bonds_from_edge_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edge_index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/geometry/topology.html#Topology.bonds_from_edge_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.geometry.topology.Topology.bonds_from_edge_index" title="Link to this definition"></a></dt>
+<dd><p>Overwrites the internal bond list with the bonds
+defined in the supplied bond edge_index</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>edge_index</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span>) – Edge index tensor of shape (2, n_bonds)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mlcg.geometry.topology.Topology.charges">
+<span class="sig-name descname"><span class="pre">charges</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#mlcg.geometry.topology.Topology.charges" title="Link to this definition"></a></dt>
+<dd><p>charge of the atoms</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mlcg.geometry.topology.Topology.dihedrals">
+<span class="sig-name descname"><span class="pre">dihedrals</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#mlcg.geometry.topology.Topology.dihedrals" title="Link to this definition"></a></dt>
+<dd><p>list of dihedrals formed by quadruplets of atoms</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcg.geometry.topology.Topology.dihedrals_from_edge_index">
+<span class="sig-name descname"><span class="pre">dihedrals_from_edge_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edge_index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/geometry/topology.html#Topology.dihedrals_from_edge_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.geometry.topology.Topology.dihedrals_from_edge_index" title="Link to this definition"></a></dt>
+<dd><p>Overwrites the internal dihedral list with the dihedral
+defined in the supplied dihedral edge_index</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>edge_index</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span>) – Edge index tensor of shape (4, n_dihedrals)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcg.geometry.topology.Topology.draw">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">spring_layout&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layout_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drawing_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/geometry/topology.html#Topology.draw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.geometry.topology.Topology.draw" title="Link to this definition"></a></dt>
+<dd><p>Use NetworkX to draw the current molecular topology.
+by default, node labels correspond to atom types.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>layout</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code></span>) – NetworkX layout drawing function (from networkx.drawing.layout) that
+determines the positions of the nodes</p></li>
+<li><p><strong>layout_kwargs</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></span>) – keyword arguments for the node layout drawing function</p></li>
+<li><p><strong>drawing_kwargs</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></span>) – keyword arguments for nx.draw</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcg.geometry.topology.Topology.from_ase">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_ase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mol</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unique</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/geometry/topology.html#Topology.from_ase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.geometry.topology.Topology.from_ase" title="Link to this definition"></a></dt>
+<dd><p>Build topology from an ASE Atoms instance</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The minimum image convention is applied to build the topology.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mol</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Atoms</span></code></span>) – ASE atoms instance</p></li>
+<li><p><strong>unique</strong> – If True, only the unique bonds and angles will be added to the
+resulting Topology object. If False, all redundant (backwards)
+bonds and angles will be added as well.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Topology instance based on the ASE input</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#mlcg.geometry.topology.Topology" title="mlcg.geometry.topology.Topology">Topology</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcg.geometry.topology.Topology.from_file">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/geometry/topology.html#Topology.from_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.geometry.topology.Topology.from_file" title="Link to this definition"></a></dt>
+<dd><p>Uses mdtraj reader to read the input topology.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#mlcg.geometry.topology.Topology" title="mlcg.geometry.topology.Topology"><code class="xref py py-class docutils literal notranslate"><span class="pre">Topology</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcg.geometry.topology.Topology.from_mdtraj">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_mdtraj</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/geometry/topology.html#Topology.from_mdtraj"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.geometry.topology.Topology.from_mdtraj" title="Link to this definition"></a></dt>
+<dd><p>Build topology from an existing mdtraj topology.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>topology</strong> – Input MDTraj topology</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Topology instance created from the input MDTraj topology</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#mlcg.geometry.topology.Topology" title="mlcg.geometry.topology.Topology">Topology</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mlcg.geometry.topology.Topology.impropers">
+<span class="sig-name descname"><span class="pre">impropers</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#mlcg.geometry.topology.Topology.impropers" title="Link to this definition"></a></dt>
+<dd><p>list of impropers formed by quadruplets of atoms</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcg.geometry.topology.Topology.impropers_from_edge_index">
+<span class="sig-name descname"><span class="pre">impropers_from_edge_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edge_index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/geometry/topology.html#Topology.impropers_from_edge_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.geometry.topology.Topology.impropers_from_edge_index" title="Link to this definition"></a></dt>
+<dd><p>Overwrites the internal improper list with the improper
+defined in the supplied improper edge_index</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>edge_index</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span>) – Edge index tensor of shape (4, n_impropers)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mlcg.geometry.topology.Topology.n_atoms">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">n_atoms</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#mlcg.geometry.topology.Topology.n_atoms" title="Link to this definition"></a></dt>
+<dd><p>Number of atoms in the topology.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mlcg.geometry.topology.Topology.names">
+<span class="sig-name descname"><span class="pre">names</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#mlcg.geometry.topology.Topology.names" title="Link to this definition"></a></dt>
+<dd><p>name of the atoms</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcg.geometry.topology.Topology.neighbor_list">
+<span class="sig-name descname"><span class="pre">neighbor_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cpu'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/geometry/topology.html#Topology.neighbor_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.geometry.topology.Topology.neighbor_list" title="Link to this definition"></a></dt>
+<dd><p>Build Neighborlist from a <span class="xref std std-ref">mlcg.neighbor_list.neighbor_list.Topology</span>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>type</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – kind of information to extract (should be in [“bonds”, “angles”,
+“dihedrals”, “fully connected”]).</p></li>
+<li><p><strong>device</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – device upon which the neighborlist is returned</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Neighborlist dictionary</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcg.geometry.topology.Topology.remove_angle">
+<span class="sig-name descname"><span class="pre">remove_angle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">angle_removal_list</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/geometry/topology.html#Topology.remove_angle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.geometry.topology.Topology.remove_angle" title="Link to this definition"></a></dt>
+<dd><p>Method to remove angles given list of angles to be removed. The changes
+are made in place to the Topology.angles attribute.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The order of the removal list matters, e.g., [1,2,3] and [3,2,1] are treated differently</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>angle_removal_list</strong> (<em>list</em>) – <p>List of angles, of shape (3, n_angles), to be removed from current angle list.
+Format: [[index1, index2, index3], …, [index1, index2, index3]]</p>
+<blockquote>
+<div><p>where index1, index2, index3 are the indices of the first, second, and third
+atom involved in angle formation, respectively.</p>
+</div></blockquote>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcg.geometry.topology.Topology.remove_bond">
+<span class="sig-name descname"><span class="pre">remove_bond</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bond_removal_list</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/geometry/topology.html#Topology.remove_bond"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.geometry.topology.Topology.remove_bond" title="Link to this definition"></a></dt>
+<dd><p>Method to remove bonds given list of bonds to be removed.
+The changes are made in place to the Topology.bonds attribute.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The order of the removal list matters, e.g., [1,2] and [2,1] are treated differently.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>bond_removal_list</strong> (<em>list</em>) – <p>List of bonds, of shape (2, n_bonds), to be removed from current bond list.
+Format: [[index1, index2], …, [index1, index2]]</p>
+<blockquote>
+<div><p>where index1 and index are the indices of the first and second atom involved in bonding,
+respectively.</p>
+</div></blockquote>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mlcg.geometry.topology.Topology.resids">
+<span class="sig-name descname"><span class="pre">resids</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#mlcg.geometry.topology.Topology.resids" title="Link to this definition"></a></dt>
+<dd><p>number of the resid containing the atoms</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mlcg.geometry.topology.Topology.resnames">
+<span class="sig-name descname"><span class="pre">resnames</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#mlcg.geometry.topology.Topology.resnames" title="Link to this definition"></a></dt>
+<dd><p>name of the residue containing the atoms</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcg.geometry.topology.Topology.to_mdtraj">
+<span class="sig-name descname"><span class="pre">to_mdtraj</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/geometry/topology.html#Topology.to_mdtraj"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.geometry.topology.Topology.to_mdtraj" title="Link to this definition"></a></dt>
+<dd><p>Convert to mdtraj format. If the topology does not have a resids
+attribute, the resids will be written incrementally for each atom.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>MDTraj topology instance from mlcg Topology</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>mdtraj.Topology</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mlcg.geometry.topology.Topology.types">
+<span class="sig-name descname"><span class="pre">types</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#mlcg.geometry.topology.Topology.types" title="Link to this definition"></a></dt>
+<dd><p>types of the atoms</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mlcg.geometry.topology.add_chain_bonds">
+<span class="sig-prename descclassname"><span class="pre">mlcg.geometry.topology.</span></span><span class="sig-name descname"><span class="pre">add_chain_bonds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/geometry/topology.html#add_chain_bonds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.geometry.topology.add_chain_bonds" title="Link to this definition"></a></dt>
+<dd><p>Add bonds to the topology assuming a chain-like pattern, i.e. atoms are
+linked together following their insertion order.
+A four atoms chain will are linked like: <cite>1-2-3-4</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>topology</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#mlcg.geometry.topology.Topology" title="mlcg.geometry.topology.Topology"><code class="xref py py-class docutils literal notranslate"><span class="pre">Topology</span></code></a></span>) – Topology instance to which the bonds should be added</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mlcg.geometry.topology.add_chain_angles">
+<span class="sig-prename descclassname"><span class="pre">mlcg.geometry.topology.</span></span><span class="sig-name descname"><span class="pre">add_chain_angles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/geometry/topology.html#add_chain_angles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.geometry.topology.add_chain_angles" title="Link to this definition"></a></dt>
+<dd><p>Add angles to the topology assuming a chain-like pattern, i.e. angles are
+defined following the insertion order of the atoms in the topology.
+A four atoms chain <cite>1-2-3-4</cite> will fine the angles: <cite>1-2-3, 2-3-4</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>topology</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#mlcg.geometry.topology.Topology" title="mlcg.geometry.topology.Topology"><code class="xref py py-class docutils literal notranslate"><span class="pre">Topology</span></code></a></span>) – Topology instance to which the angles should be added</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mlcg.geometry.topology.get_connectivity_matrix">
+<span class="sig-prename descclassname"><span class="pre">mlcg.geometry.topology.</span></span><span class="sig-name descname"><span class="pre">get_connectivity_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/geometry/topology.html#get_connectivity_matrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.geometry.topology.get_connectivity_matrix" title="Link to this definition"></a></dt>
+<dd><p>Produces a full connectivity matrix from the graph structure
+implied by Topology.bonds</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>topology</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#mlcg.geometry.topology.Topology" title="mlcg.geometry.topology.Topology"><code class="xref py py-class docutils literal notranslate"><span class="pre">Topology</span></code></a></span>) – Topology for which a connectivity matrix will be constructed</p></li>
+<li><p><strong>directed</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – If True, an asymmetric connectivity matrix will be returned
+correspending to a directed graph. If false, the connectivity
+matrix will be symmetric and the corresponding graph will be
+undirected.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Torch tensor of shape (n_atoms, n_atoms) representing the
+connectivity/adjacency matrix from the bonded graph.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mlcg.geometry.topology.get_n_pairs">
+<span class="sig-prename descclassname"><span class="pre">mlcg.geometry.topology.</span></span><span class="sig-name descname"><span class="pre">get_n_pairs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">connectivity_matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unique</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/geometry/topology.html#get_n_pairs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.geometry.topology.get_n_pairs" title="Link to this definition"></a></dt>
+<dd><p>This function uses networkx to identify those pairs
+that are exactly n atoms away. Paths are found using Dijkstra’s algorithm.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>connectivity_matrix</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Graph</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">array</span></code>]</span>) – Connectivity/adjacency matrix of the molecular graph of shape
+(n_atoms, n_atoms)
+or a networkx graph object</p></li>
+<li><p><strong>n</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Number of atoms to count away from the starting atom, with the starting
+atom counting as n=1</p></li>
+<li><p><strong>unique</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – If True, the returned pairs will be unique and symmetrised.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Edge index tensor of shape (2, n_pairs)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mlcg.geometry.topology.get_n_paths">
+<span class="sig-prename descclassname"><span class="pre">mlcg.geometry.topology.</span></span><span class="sig-name descname"><span class="pre">get_n_paths</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">connectivity_matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unique</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/geometry/topology.html#get_n_paths"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.geometry.topology.get_n_paths" title="Link to this definition"></a></dt>
+<dd><p>This function use networkx to grab all connected paths defined
+by n connecting edges. Paths are found using Dijkstra’s algorithm.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>connectivity_matrix</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Graph</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">array</span></code>]</span>) – Connectivity/adjacency matrix of the molecular graph of shape (n_atoms, n_atoms)
+or a networkx graph object</p></li>
+<li><p><strong>n</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Number of atoms to count away from the starting atom, with the starting atom counting as n=1</p></li>
+<li><p><strong>unique</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – If True, the returned pairs will be unique and symmetrised such that the lower bead index precedes
+the higher bead index in each pair.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Path index tensor of shape (n, n_pairs)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 <section id="statistics">
 <h2>Statistics<a class="headerlink" href="#statistics" title="Link to this heading"></a></h2>
 <p>These functions gather statistics for further analysis or for parametrizing prior models.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="mlcg.geometry.statistics.compute_statistics">
+<span class="sig-prename descclassname"><span class="pre">mlcg.geometry.statistics.</span></span><span class="sig-name descname"><span class="pre">compute_statistics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">TargetPrior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;class</span> <span class="pre">'mlcg.nn.prior.harmonic.Harmonic'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nbins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bmin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit_from_values</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_fit_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/geometry/statistics.html#compute_statistics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.geometry.statistics.compute_statistics" title="Link to this definition"></a></dt>
+<dd><p>Function for computing atom type-specific statistics for
+every combination of atom types present in a collated AtomicData
+structure.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="data.html#mlcg.data.atomic_data.AtomicData" title="mlcg.data.atomic_data.AtomicData"><code class="xref py py-class docutils literal notranslate"><span class="pre">AtomicData</span></code></a></span>) – Input data, in the form of a collated list of individual AtomicData
+structures.</p></li>
+<li><p><strong>target</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – The keyword specifiying with <cite>neighbor_list</cite> sub_dictionary should
+be used to gather statisitics</p></li>
+<li><p><strong>beta</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – <p>Inverse thermodynamic temperature:</p>
+<div class="math notranslate nohighlight">
+\[\beta = \frac{1}{k_B T}\]</div>
+<p>where <span class="math notranslate nohighlight">\(k_B\)</span> is Boltzmann’s constant and <span class="math notranslate nohighlight">\(T\)</span> is the temperature.</p>
+</p></li>
+<li><p><strong>TargetPrior</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">_Prior</span></code></span>) – The class type of prior for which the statistics will be processed.</p></li>
+<li><p><strong>nbins</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – The number of bins over which 1-D feature histograms are constructed
+in order to estimate distributions</p></li>
+<li><p><strong>bmin</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]</span>) – If specified, the lower bound of bin edges. If not specified, the lower bound
+defaults to the lowest value in the input feature</p></li>
+<li><p><strong>bmax</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]</span>) – If specified, the upper bound of bin edges. If not specified, the upper bound
+defaults to the greatest value in the input feature</p></li>
+<li><p><strong>fit_from_values</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – If True, the prior parameters are estimated directly from features values
+instead of their implied emperical potentials</p></li>
+<li><p><strong>target_fit_kwargs</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code>]</span>) – Extra fit options that are prior_specific</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p>Dictionary of gathered statistics and estimated parameters based on
+the <cite>TargetPrior</cite>. The following key/value pairs are common across all <cite>TargetPrior</cite>
+choices:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="o">*</span><span class="n">specific_types</span><span class="p">)</span> <span class="p">:</span> <span class="p">{</span>
+
+    <span class="o">...</span>
+
+    <span class="s2">&quot;p&quot;</span> <span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="n">of</span> <span class="n">shape</span> <span class="p">[</span><span class="n">n_bins</span><span class="p">],</span> <span class="n">containing</span> <span class="n">the</span> <span class="n">normalized</span> <span class="nb">bin</span> <span class="n">counts</span>
+        <span class="n">of</span> <span class="n">the</span> <span class="n">of</span> <span class="n">the</span> <span class="mi">1</span><span class="o">-</span><span class="n">D</span> <span class="n">feature</span> <span class="n">corresponding</span> <span class="n">to</span> <span class="n">the</span> <span class="n">atom_type</span> <span class="n">group</span>
+        <span class="p">(</span><span class="o">*</span><span class="n">specific_types</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="n">specific_types</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">specific_types</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="o">...</span><span class="p">)</span>
+    <span class="s2">&quot;p_bin&quot;</span><span class="p">:</span> <span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="n">of</span> <span class="n">shape</span> <span class="p">[</span><span class="n">n_bins</span><span class="p">]</span> <span class="n">containing</span> <span class="n">the</span> <span class="nb">bin</span> <span class="n">center</span> <span class="n">values</span>
+    <span class="s2">&quot;V&quot;</span> <span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span> <span class="n">of</span> <span class="n">shape</span> <span class="p">[</span><span class="n">n_bins</span><span class="p">],</span> <span class="n">containing</span> <span class="n">the</span> <span class="n">emperically</span> <span class="n">estimated</span>
+        <span class="n">free</span> <span class="n">energy</span> <span class="n">curve</span> <span class="n">according</span> <span class="n">to</span> <span class="n">a</span> <span class="n">direct</span> <span class="n">Boltzmann</span> <span class="n">inversion</span> <span class="n">of</span> <span class="n">the</span>
+        <span class="n">normalized</span> <span class="n">probability</span> <span class="n">distribution</span> <span class="k">for</span> <span class="n">the</span> <span class="n">feature</span><span class="o">.</span>
+    <span class="s2">&quot;V_bin&quot;</span> <span class="p">:</span> <span class="n">torch_tensor</span> <span class="n">of</span> <span class="n">shape</span> <span class="p">[</span><span class="n">n_bins</span><span class="p">],</span> <span class="n">containing</span> <span class="n">the</span> <span class="nb">bin</span> <span class="n">center</span> <span class="n">values</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>where <cite>…</cite> indicates other sub-key/value pairs apart from those enumerated above,
+which may appear depending on the chosen <cite>TargetPrior</cite>. For example,
+if <cite>TargetPrior</cite> is <cite>HarmonicBonds</cite>, there will also be keys/values associated with
+estimated bond constants and means.</p>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict</p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">my_data</span> <span class="o">=</span> <span class="n">AtomicData</span><span class="p">(</span>
+    <span class="n">out</span><span class="o">=</span><span class="p">{},</span>
+    <span class="n">pos</span><span class="o">=</span><span class="p">[</span><span class="mi">769600</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+    <span class="n">atom_types</span><span class="o">=</span><span class="p">[</span><span class="mi">769600</span><span class="p">],</span>
+    <span class="n">n_atoms</span><span class="o">=</span><span class="p">[</span><span class="mi">20800</span><span class="p">],</span>
+    <span class="n">neighbor_list</span><span class="o">=</span><span class="p">{</span>
+        <span class="n">bonds</span><span class="o">=</span><span class="p">{</span>
+          <span class="n">tag</span><span class="o">=</span><span class="p">[</span><span class="mi">20800</span><span class="p">],</span>
+          <span class="n">order</span><span class="o">=</span><span class="p">[</span><span class="mi">20800</span><span class="p">],</span>
+          <span class="n">index_mapping</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">748800</span><span class="p">],</span>
+          <span class="n">cell_shifts</span><span class="o">=</span><span class="p">[</span><span class="mi">20800</span><span class="p">],</span>
+          <span class="n">rcut</span><span class="o">=</span><span class="p">[</span><span class="mi">20800</span><span class="p">],</span>
+          <span class="n">self_interaction</span><span class="o">=</span><span class="p">[</span><span class="mi">20800</span><span class="p">]</span>
+        <span class="p">},</span>
+        <span class="n">angles</span><span class="o">=</span><span class="p">{</span>
+          <span class="n">tag</span><span class="o">=</span><span class="p">[</span><span class="mi">20800</span><span class="p">],</span>
+          <span class="n">order</span><span class="o">=</span><span class="p">[</span><span class="mi">20800</span><span class="p">],</span>
+          <span class="n">index_mapping</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">977600</span><span class="p">],</span>
+          <span class="n">cell_shifts</span><span class="o">=</span><span class="p">[</span><span class="mi">20800</span><span class="p">],</span>
+          <span class="n">rcut</span><span class="o">=</span><span class="p">[</span><span class="mi">20800</span><span class="p">],</span>
+          <span class="n">self_interaction</span><span class="o">=</span><span class="p">[</span><span class="mi">20800</span><span class="p">]</span>
+        <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="n">batch</span><span class="o">=</span><span class="p">[</span><span class="mi">769600</span><span class="p">],</span>
+    <span class="n">ptr</span><span class="o">=</span><span class="p">[</span><span class="mi">20801</span><span class="p">]</span>
+<span class="p">)</span>
+
+<span class="n">angle_stats</span> <span class="o">=</span> <span class="n">bond_stats</span> <span class="o">=</span> <span class="n">compute_statistics</span><span class="p">(</span><span class="n">my_data</span><span class="p">,</span>
+     <span class="s1">&#39;bonds&#39;</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="n">beta</span><span class="p">,</span>
+     <span class="n">TargetPrior</span><span class="o">=</span><span class="n">HarmonicBonds</span>
+<span class="p">)</span>
+<span class="n">dihedral_stats</span> <span class="o">=</span> <span class="n">compute_statistics</span><span class="p">(</span><span class="n">my_data</span><span class="p">,</span>
+                                    <span class="s1">&#39;dihedrals&#39;</span><span class="p">,</span>
+                                    <span class="n">beta</span><span class="o">=</span><span class="n">beta</span><span class="p">,</span>
+                                    <span class="n">TargetPrior</span><span class="o">=</span><span class="n">Dihedral</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mlcg.geometry.statistics.fit_baseline_models">
+<span class="sig-prename descclassname"><span class="pre">mlcg.geometry.statistics.</span></span><span class="sig-name descname"><span class="pre">fit_baseline_models</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">priors_cls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nbins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bmin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/geometry/statistics.html#fit_baseline_models"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.geometry.statistics.fit_baseline_models" title="Link to this definition"></a></dt>
+<dd><p>Function for parametrizing a list of priors based on type-specific interactions contained in
+a collated AtomicData structure</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="data.html#mlcg.data.atomic_data.AtomicData" title="mlcg.data.atomic_data.AtomicData"><code class="xref py py-class docutils literal notranslate"><span class="pre">AtomicData</span></code></a></span>) – Input data, in the form of a collated list of individual AtomicData
+structures.</p></li>
+<li><p><strong>beta</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – <p>Inverse thermodynamic temperature:</p>
+<div class="math notranslate nohighlight">
+\[\]</div>
+<p>beta = frac{1}{k_B T}</p>
+<p>where <span class="math notranslate nohighlight">\(k_B\)</span> is Boltzmann’s constant and <span class="math notranslate nohighlight">\(T\)</span> is the temperature.</p>
+</p></li>
+<li><p><strong>priors_cls</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">_Prior</span></code>]</span>) – List of priors to parametrize based on the input data</p></li>
+<li><p><strong>nbins</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – The number of bins over which 1-D feature histograms are constructed
+in order to estimate distributions</p></li>
+<li><p><strong>bmin</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]</span>) – If specified, the lower bound of bin edges. If not specified, the lower bound
+defaults to the lowest value in the input feature</p></li>
+<li><p><strong>bmax</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]</span>) – If specified, the upper bound of bin edges. If not specified, the upper bound
+defaults to the greatest value in the input feature</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ModuleDict</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code>]</span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><em>nn.Module</em> – The list of parametrized priors</p></li>
+<li><p><em>Dict</em> – Corresponding statistsics for prior fits</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 </section>
 
@@ -112,7 +915,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2021, Felix Musil &amp; Nick Charron.</p>
+    <p>&#169; Copyright 2026, Felix Musil &amp; Nick Charron.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
