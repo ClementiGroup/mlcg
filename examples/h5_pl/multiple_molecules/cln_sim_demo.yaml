@@ -3,27 +3,18 @@ betas:
 model_file: model_with_prior.pt
 structure_file: cln_configurations_demo.pt
 simulation:
-  create_checkpoints: true
+  create_checkpoints: false
   device: cuda
   dt: 0.004
   dtype: single
-  export_interval: 5000
+  export_interval: 10000
   filename: sims/cln
   friction: 1.0
   log_interval: 10000
   log_type: write
-  n_timesteps: 30000
+  n_timesteps: 50000
   read_checkpoint_file: false
   save_energies: false
   save_forces: false
   save_interval: 250
   specialize_priors: true
-  compile: true
-  save_force_components: true
-  force_components:
-    - "SchNet"
-    - "angles"
-  save_energy_components: true
-  energy_components:
-    - "SchNet"
-
