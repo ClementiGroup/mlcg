@@ -379,7 +379,7 @@ class CFConv(MessagePassing):
 
 
 class StandardSchNet(SchNet):
-    """Small wrapper class for :ref:`SchNet` to simplify the definition of the
+    """Small wrapper class for :ref:`mlcg.nn.SchNet` to simplify the definition of the
     SchNet model through an input file. The upper distance cutoff attribute
     in is set by default to match the upper cutoff value in the cutoff function.
 
@@ -480,7 +480,7 @@ class StandardSchNet(SchNet):
 
 
 class AttentiveSchNet(SchNet):
-    """Small wrapper class for :ref:`SchNet` to simplify the definition of the
+    """Small wrapper class for :ref:`mlcg.nn.SchNet` to simplify the definition of the
     SchNet model with an Interaction block that includes attention through an input file. The upper distance cutoff attribute
     in is set by default to match the upper cutoff value in the cutoff function.
 

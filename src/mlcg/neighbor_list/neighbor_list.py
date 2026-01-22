@@ -10,12 +10,12 @@ def atomic_data2neighbor_list(
     self_interaction: bool = False,
     max_num_neighbors: int = 1000,
 ) -> Dict:
-    """Build a neighborlist from a :ref:`mlcg.data.atomic_data.AtomicData` by
+    """Build a neighborlist from a :ref:`mlcg.data.AtomicData` by
     searching for neighboring atom within a maximum radius `rcut`.
 
     Parameters
     ----------
-    data: :ref:`mlcg.data.atomic_data.AtomicData`
+    data: :ref:`mlcg.data.AtomicData`
         define an atomic structure
     rcut:
         cutoff radius used to compute the connectivity
