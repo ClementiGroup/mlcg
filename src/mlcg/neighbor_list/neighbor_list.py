@@ -32,7 +32,7 @@ def atomic_data2neighbor_list(
         Neighborlist dictionary
     """
     rcut = float(rcut)
-    idx_i, idx_j, cell_shifts, _ = nvalchemi_neighbor_list(
+    idx_i, idx_j, cell_shifts, _ = torch_neighbor_list(
         data,
         rcut,
         self_interaction=self_interaction,

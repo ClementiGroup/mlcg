@@ -74,7 +74,7 @@ model:
           embedding_size: 25
           num_interactions: 1
           activation: torch.nn.Tanh
-          max_num_neighbors: 100
+          max_num_neighbors: 400
           output_hidden_layer_widths:
             - 32
             - 16
