@@ -1,6 +1,7 @@
 from typing import Dict, Mapping, Optional
 import torch
 from .torch_impl import torch_neighbor_list
+from .nvalchemi_impl import nvalchemi_neighbor_list
 
 
 def atomic_data2neighbor_list(
@@ -31,7 +32,7 @@ def atomic_data2neighbor_list(
         Neighborlist dictionary
     """
     rcut = float(rcut)
-    idx_i, idx_j, cell_shifts, _ = torch_neighbor_list(
+    idx_i, idx_j, cell_shifts, _ = nvalchemi_neighbor_list(
         data,
         rcut,
         self_interaction=self_interaction,
