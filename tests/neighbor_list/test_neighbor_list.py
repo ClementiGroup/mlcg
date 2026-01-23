@@ -5,10 +5,20 @@ from torch_geometric.loader import DataLoader
 import numpy as np
 import torch
 
+from mlcg.neighbor_list.utils import ase2data
 from mlcg.neighbor_list.ase_impl import ase_neighbor_list
 from mlcg.neighbor_list.torch_impl import torch_neighbor_list
-from mlcg.neighbor_list.nvalchemi_impl import nvalchemi_neighbor_list
-from mlcg.neighbor_list.utils import ase2data
+
+try:
+    from mlcg.neighbor_list.nvalchemi_impl import nvalchemi_neighbor_list
+
+    NVALCH_AVAILABLE = True
+except ImportError:
+    print(
+        "nalchemiis not installed. Please install with "
+        + "pip install nvalchemi-toolkit-ops"
+    )
+    NVALCH_AVAILABLE = False
 
 
 def bulk_metal():
@@ -35,15 +45,25 @@ def atomic_structures():
         yield (frame.get_chemical_symbols(), frame)
 
 
-@pytest.mark.parametrize(
-    "nls_method, name, frame, cutoff, self_interaction",
-    [
-        (nls_met, name, frame, rc, self_interaction)
-        for nls_met in [torch_neighbor_list, nvalchemi_neighbor_list]
+test_set = [
+    (torch_neighbor_list, name, frame, rc, self_interaction)
+    for (name, frame) in atomic_structures()
+    for rc in range(2, 7, 2)
+    for self_interaction in [False, True]
+]
+
+if NVALCH_AVAILABLE:
+    test_set += [
+        (nvalchemi_neighbor_list, name, frame, rc, self_interaction)
         for (name, frame) in atomic_structures()
         for rc in range(2, 7, 2)
         for self_interaction in [False]
-    ],
+    ]
+
+
+@pytest.mark.parametrize(
+    "nls_method, name, frame, cutoff, self_interaction",
+    test_set,
 )
 def test_neighborlist(nls_method, name, frame, cutoff, self_interaction):
     """Check that torch_neighbor_list gives the same NL as ASE by comparing

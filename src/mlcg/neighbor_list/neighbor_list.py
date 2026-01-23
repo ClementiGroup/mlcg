@@ -1,7 +1,14 @@
 from typing import Dict, Mapping, Optional
 import torch
 from .torch_impl import torch_neighbor_list
-from .nvalchemi_impl import nvalchemi_neighbor_list
+
+try:
+    from .nvalchemi_impl import nvalchemi_neighbor_list
+except ImportError:
+    print(
+        "nalchemiis not installed. Please install with "
+        + "pip install nvalchemi-toolkit-ops"
+    )
 
 
 def atomic_data2neighbor_list(
