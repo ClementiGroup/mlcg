@@ -1,4 +1,5 @@
 --find-links https://data.pyg.org/whl/torch-2.8.0+cu128.html
+
 absl-py==2.3.1 \
     --hash=sha256:a97820526f7fbfd2ec1bce83f3f25e3a14840dac0d8e02a0b71cd75db3f77fc9 \
     --hash=sha256:eeecf07f0c2a93ace0772c92e596ace6d3d3996c042b2128459aaae2a76de11d
@@ -383,15 +384,19 @@ cuequivariance==0.8.1 \
     --hash=sha256:96a3d7208952f07d09f3559aab7f726a650cc7c7e62c0790d612ef632c2c3f62 \
     --hash=sha256:f398dd0b61f80894994ef12a6ac7dd844e3d301a5486b99ff17d0082f1e22b4c
     # via cuequivariance-torch
-cuequivariance-ops-cu12==0.4.0 \
-    --hash=sha256:4adb6e101b980ca8c246aca691715e010773e446d7ceb73f1a75205b7941f72a \
-    --hash=sha256:ae72161faffb0e58402b12c870f180b6e04dc9fe58bd90add1915f381e9f9e30
+cuequivariance-ops-cu12==0.8.1 \
+    --hash=sha256:418b593c7a43849c300988a19a8202e52ca6d47271bf1603cceb6f3ab5e4aa5a \
+    --hash=sha256:7bbdf5802748dbfecdf01dc886a406840eed81296f83e119222a5ec99421f917
     # via cuequivariance-ops-torch-cu12
-cuequivariance-ops-torch-cu12==0.4.0 \
-    --hash=sha256:55caef84791bd484fb3e7359a13f10cf920ea7ef9c62e307eca6cbe1a74bc767 \
-    --hash=sha256:9942e042a12dde9a7552b9436bc3b0a4e8645a97a20e18e3bd14fbc7f39bd7aa \
-    --hash=sha256:a6de36c7fe884c59a76cdc961ba4ebe43750565aa7acf304e7c767666a9abb67 \
-    --hash=sha256:f08d5487274201e8fef3ce19630b9fe680bd4c2a1d392cc2457d09fcded4869e
+cuequivariance-ops-torch-cu12==0.8.1 \
+    --hash=sha256:02de02bc1c9d442397606e1434a32eed58cc43204b609a5956c43cc1b0d7c4cf \
+    --hash=sha256:22416efb38221213bd4ae1c3b1611798d4430d174254f3c937dd7b3e3ab22de2 \
+    --hash=sha256:4770c4e730cd19abaa1e9b2e18845b25fccb2df0a195d132d01e428980804cf2 \
+    --hash=sha256:5e6ec8b97d328bedc34fdf7830ac0972951ecb18e18179f675cbf810e15d72f3 \
+    --hash=sha256:839a262c6bb461684e7d929f5bf4b96c2fa58a5308e64c213ec7835fb1c3907e \
+    --hash=sha256:908cf67cb891b523c1a52c202ca91117eba382d79271ee377a4ad9373beb8762 \
+    --hash=sha256:91965c60fcd681cc7e9e9141a326fd396ba31853bb628b514c6f35bd05565eec \
+    --hash=sha256:e842a26a61b45bd37276d0da658cadb94fec980279f5510b14723f1bc1d1cac9
 cuequivariance-torch==0.8.1 \
     --hash=sha256:03a924b7a4c57bed87ca3d0345218eb805d8d2e848f5f5c57192a2e4a8ebc3db \
     --hash=sha256:bd9c6f326427714dd4df2d769811b70efec1cde3196485f13e888d814d53a756
@@ -1225,6 +1230,7 @@ nvidia-cublas-cu12==12.8.4.1 \
     --hash=sha256:8ac4e771d5a348c551b2a426eda6193c19aa630236b418086020df5ba9667142 \
     --hash=sha256:b86f6dd8935884615a0683b663891d43781b819ac4f2ba2b0c9604676af346d0
     # via
+    #   cuequivariance-ops-cu12
     #   nvidia-cudnn-cu12
     #   nvidia-cusolver-cu12
     #   torch
@@ -1279,6 +1285,10 @@ nvidia-cusparselt-cu12==0.7.1 \
     --hash=sha256:f1bb701d6b930d5a7cea44c19ceb973311500847f81b634d802b7b539dc55623 \
     --hash=sha256:f67fbb5831940ec829c9117b7f33807db9f9678dc2a617fbe781cac17b4e1075
     # via torch
+nvidia-ml-py==13.590.48 \
+    --hash=sha256:8184d1be52914ac7f0991cd1c0d946c65dc88a840c754cd12c274b77b88760dd \
+    --hash=sha256:fd43d30ee9cd0b7940f5f9f9220b68d42722975e3992b6c21d14144c48760e43
+    # via cuequivariance-ops-cu12
 nvidia-nccl-cu12==2.27.3 \
     --hash=sha256:9ddf1a245abc36c550870f26d537a9b6087fb2e2e3d6e0ef03374c6fd19d984f \
     --hash=sha256:adf27ccf4238253e0b826bce3ff5fa532d65fc42322c8bfdfaf28024c0fbe039
@@ -1411,6 +1421,10 @@ pillow==12.1.0 \
     # via
     #   matplotlib
     #   tensorboard
+platformdirs==4.5.1 \
+    --hash=sha256:61d5cdcc6065745cdd94f0f878977f8de9437be93de97c1c12f853c9c0cdcbda \
+    --hash=sha256:d03afa3963c806a9bed9d5125c8f4cb2fdaf74a55ab60e5d59b3fde758104d31
+    # via cuequivariance-ops-cu12
 prompt-toolkit==3.0.52 \
     --hash=sha256:28cde192929c8e7321de85de1ddbe736f1375148b02f2e17edd840042b1be855 \
     --hash=sha256:9aac639a3bbd33284347de5ad8d68ecc044b91a762dc39b7c21095fcd6a19955
@@ -1723,6 +1737,7 @@ scipy==1.15.2 \
     # via
     #   -r mlcg-torch28-requirements.in
     #   cuequivariance
+    #   cuequivariance-ops-torch-cu12
     #   mdtraj
     #   torch-cluster
 setuptools==80.10.1 \
@@ -1789,7 +1804,9 @@ torch-geometric==2.6.1 \
 tqdm==4.67.1 \
     --hash=sha256:26445eca388f82e72884e0d580d5464cd801a3ea01e63e5601bdff9ba6a48de2 \
     --hash=sha256:f8aef9c52c08c13a65f30ea34f4e5aac3fd1a34959879d7e59e63027286627f2
-    # via torch-geometric
+    # via
+    #   cuequivariance-ops-cu12
+    #   torch-geometric
 traitlets==5.14.3 \
     --hash=sha256:9ed0579d3502c94b4b3732ac120375cda96f923114522847de4b3bb98b96b6b7 \
     --hash=sha256:b74e89e397b1ed28cc831db7aea759ba6640cb3de13090ca145426688ff1ac4f
