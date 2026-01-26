@@ -12,7 +12,9 @@ from ..nn import SumOut, SchNet, PaiNN, refresh_module_, fixed_pyg_inspector
 def extract_model_from_checkpoint(checkpoint_path, hparams_file):
     with fixed_pyg_inspector():
         plmodel = PLModel.load_from_checkpoint(
-            checkpoint_path=checkpoint_path, hparams_file=hparams_file, strict=False
+            checkpoint_path=checkpoint_path,
+            hparams_file=hparams_file,
+            strict=False,
         )
         model = plmodel.get_model()
         refresh_module_(model, SchNet)

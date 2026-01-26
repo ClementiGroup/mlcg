@@ -8,7 +8,11 @@ class CustomStepLR(_LRScheduler):
     the optimizer."""
 
     def __init__(
-        self, optimizer, step_sizes=[], gammas=[], last_epoch=-1,
+        self,
+        optimizer,
+        step_sizes=[],
+        gammas=[],
+        last_epoch=-1,
     ):
         # Ensure step_sizes and gammas match the number of param groups
         if not len(step_sizes) == len(gammas):
