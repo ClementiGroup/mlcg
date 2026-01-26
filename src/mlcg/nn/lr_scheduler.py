@@ -8,7 +8,7 @@ class CustomStepLR(_LRScheduler):
     the optimizer."""
 
     def __init__(
-        self, optimizer, step_sizes=[], gammas=[], last_epoch=-1, verbose=False
+        self, optimizer, step_sizes=[], gammas=[], last_epoch=-1,
     ):
         # Ensure step_sizes and gammas match the number of param groups
         if not len(step_sizes) == len(gammas):
@@ -22,7 +22,7 @@ class CustomStepLR(_LRScheduler):
 
         self.step_sizes = step_sizes
         self.gammas = gammas
-        super(CustomStepLR, self).__init__(optimizer, last_epoch, verbose)
+        super(CustomStepLR, self).__init__(optimizer, last_epoch)
 
     def get_lr(self):
         """Compute learning rate using step decay schedule with different parameters for each param group."""
