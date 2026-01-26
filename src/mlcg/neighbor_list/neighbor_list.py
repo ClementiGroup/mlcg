@@ -3,7 +3,7 @@ import torch
 from .torch_impl import torch_neighbor_list
 
 try:
-    from .nvalchemi_impl import nvalchemi_neighbor_list
+    from .nvalchemi_impl import nvalchemi_naive_neighbor_list, nvalchemi_cell_neighbor_list
 except ImportError:
     print(
         "nalchemi is not installed. Please install with "
@@ -51,8 +51,10 @@ def atomic_data2neighbor_list(
     rcut = float(rcut)
     if nls_distance_method == "torch":
         met = torch_neighbor_list
-    elif nls_distance_method == "nvalchemi":
-        met = nvalchemi_neighbor_list
+    elif nls_distance_method == "nvalchemi_naive":
+        met = nvalchemi_naive_neighbor_list
+    elif nls_distance_method == "nvalchemi_cell":
+        met = nvalchemi_cell_neighbor_list
     elif nls_distance_method == "custom_kernel":
         met = torch_neighbor_list
     else:
