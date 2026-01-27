@@ -39,7 +39,6 @@ import pytest
 import os
 from shutil import rmtree
 
-
 _here = Path(__file__).parent
 _script_dir = _here.parent / "src" / "mlcg" / "scripts"
 

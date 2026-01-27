@@ -3,7 +3,6 @@ import numpy as np
 from mlcg.datasets.split_utils import multimol_split, n_fold_multimol_split
 from sklearn.model_selection import KFold
 
-
 np.random.seed(15677)
 
 # 100 randomly named molecules and frame numbers
