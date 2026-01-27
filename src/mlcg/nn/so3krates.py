@@ -633,6 +633,9 @@ class So3krates(nn.Module):
             Maximum number of neighbors per atom.
         normalize_sph (bool):
             Whether to normalize spherical harmonics, default is True.
+        nls_distance_method:
+            Method for computing a neighbor list. Supported values are
+            `torch`, `nvalchemi_naive`, `nvalchemi_cell` and custom.
     """
 
     name: Final[str] = "So3krates"
@@ -647,6 +650,7 @@ class So3krates(nn.Module):
         degrees: List[int],
         max_num_neighbors: int = 1000,
         normalize_sph: bool = True,
+        nls_distance_method: str = "torch",
     ):
         super().__init__()
 
@@ -667,6 +671,7 @@ class So3krates(nn.Module):
         self.output_network = output_network
         self.degrees = degrees
         self.max_num_neighbors = max_num_neighbors
+        self.nls_distance_method = nls_distance_method
 
         # Spherical harmonics computation
         self.sph_harmonics = SphericalHarmonics(
@@ -737,16 +742,22 @@ class So3krates(nn.Module):
                 is_compatible = True
         return is_compatible
 
-    @staticmethod
     def neighbor_list(
-        data: AtomicData, rcut: float, max_num_neighbors: int = 1000
+        self,
+        data: AtomicData,
+        rcut: float,
+        max_num_neighbors: int = 1000,
     ) -> dict:
+        """Computes the neighborlist for :obj:`data` using a strict cutoff of :obj:`rcut`."""
+        if not hasattr(self,"nls_distance_method"):
+            self.nls_distance_method = "torch"
         return {
             So3krates.name: atomic_data2neighbor_list(
                 data,
                 rcut,
                 self_interaction=False,
                 max_num_neighbors=max_num_neighbors,
+                nls_distance_method=self.nls_distance_method,
             )
         }
 
@@ -796,6 +807,7 @@ class StandardSo3krates(So3krates):
         activation: nn.Module = nn.SiLU(),
         max_num_neighbors: int = 1000,
         normalize_sph: bool = True,
+        nls_distance_method: str = "torch",
     ):
         if num_interactions < 1:
             raise ValueError("At least one interaction block must be specified")
@@ -864,4 +876,5 @@ class StandardSo3krates(So3krates):
             degrees,
             max_num_neighbors,
             normalize_sph,
+            nls_distance_method=nls_distance_method,
         )

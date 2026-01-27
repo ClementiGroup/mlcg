@@ -78,6 +78,9 @@ class MACE(torch.nn.Module):
             Maximum number of neighbors per atom.
         pair_repulsion_fn (torch.nn.Module, optional):
             Optional pairwise repulsion energy function.
+        nls_distance_method:
+            Method for computing a neighbor list. Supported values are
+            `torch`, `nvalchemi_naive`, `nvalchemi_cell` and custom.
     """
 
     name: Final[str] = "mace"
@@ -94,6 +97,7 @@ class MACE(torch.nn.Module):
         r_max: float,
         max_num_neighbors: int,
         pair_repulsion_fn: torch.nn.Module = None,
+        nls_distance_method: str = "torch",
     ):
         super().__init__()
 
@@ -107,6 +111,7 @@ class MACE(torch.nn.Module):
         self.r_max = r_max
         self.max_num_neighbors = max_num_neighbors
         self.pair_repulsion_fn = pair_repulsion_fn
+        self.nls_distance_method = nls_distance_method
 
         self.register_buffer(
             "types_mapping",
@@ -220,17 +225,22 @@ class MACE(torch.nn.Module):
                 is_compatible = True
         return is_compatible
 
-    @staticmethod
     def neighbor_list(
-        data: AtomicData, rcut: float, max_num_neighbors: int = 1000
+        self,
+        data: AtomicData,
+        rcut: float,
+        max_num_neighbors: int = 1000,
     ) -> dict:
         """Computes the neighborlist for :obj:`data` using a strict cutoff of :obj:`rcut`."""
+        if not hasattr(self,"nls_distance_method"):
+            self.nls_distance_method = "torch"
         return {
             MACE.name: atomic_data2neighbor_list(
                 data,
                 rcut,
                 self_interaction=False,
                 max_num_neighbors=max_num_neighbors,
+                nls_distance_method=self.nls_distance_method,
             )
         }
 
@@ -313,6 +323,7 @@ class StandardMACE(MACE):
         use_cueq: Optional[
             bool
         ] = False,  # defaults to False for backwards compatibility
+        nls_distance_method: str = "torch",
     ):
         from mlcg.pl.model import get_class_from_str
 
@@ -466,4 +477,5 @@ class StandardMACE(MACE):
             r_max,
             max_num_neighbors,
             pair_repulsion_fn,
+            nls_distance_method=nls_distance_method,
         )

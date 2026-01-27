@@ -81,7 +81,7 @@ def build_cg_matrix(
     cg_mapping_ = OrderedDict()
     n_atoms = topology.n_atoms
     for i_at, at in enumerate(topology.atoms):
-        (cg_name, cg_type, cg_mass) = cg_mapping.get(
+        cg_name, cg_type, cg_mass = cg_mapping.get(
             (at.resname, at.name), (None, None, None)
         )
         if cg_name is None:
@@ -144,7 +144,7 @@ def build_cg_topology(
     """
     cg_topo = Topology()
     for at in topology.atoms:
-        (cg_name, cg_type, _) = cg_mapping.get(
+        cg_name, cg_type, _ = cg_mapping.get(
             (at.resname, at.name), (None, None, None)
         )
         if cg_name is None:

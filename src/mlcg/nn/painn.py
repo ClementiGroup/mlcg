@@ -298,6 +298,9 @@ class PaiNN(nn.Module):
         routine keyword max_num_neighbors, which normally defaults to 32.
         Users should set this to higher values if they are using higher upper
         distance cutoffs and expect more than 32 neighbors per node/atom.
+    nls_distance_method:
+        Method for computing a neighbor list. Supported values are
+        `torch`, `nvalchemi_naive`, `nvalchemi_cell` and custom.
     """
 
     name: Final[str] = "PaiNN"
@@ -310,6 +313,7 @@ class PaiNN(nn.Module):
         rbf_layer: torch.nn.Module,
         output_network: nn.Module,
         max_num_neighbors: int,
+        nls_distance_method: str = "torch",
     ):
         super(PaiNN, self).__init__()
 
@@ -341,6 +345,7 @@ class PaiNN(nn.Module):
         self.output_network = output_network
         self.rbf_layer = rbf_layer
         self.max_num_neighbors = max_num_neighbors
+        self.nls_distance_method = nls_distance_method
 
         self.reset_parameters()
 
@@ -420,17 +425,22 @@ class PaiNN(nn.Module):
                 is_compatible = True
         return is_compatible
 
-    @staticmethod
     def neighbor_list(
-        data: AtomicData, rcut: float, max_num_neighbors: int = 1000
+        self,
+        data: AtomicData,
+        rcut: float,
+        max_num_neighbors: int = 1000,
     ) -> dict:
         """Computes the neighborlist for :obj:`data` using a strict cutoff of :obj:`rcut`."""
+        if not hasattr(self,"nls_distance_method"):
+            self.nls_distance_method = "torch"
         return {
             PaiNN.name: atomic_data2neighbor_list(
                 data,
                 rcut,
                 self_interaction=False,
                 max_num_neighbors=max_num_neighbors,
+                nls_distance_method=self.nls_distance_method,
             )
         }
 
@@ -481,6 +491,7 @@ class StandardPaiNN(PaiNN):
         max_num_neighbors: int = 1000,
         aggr: str = "add",
         epsilon: float = 1e-8,
+        nls_distance_method: str = "torch",
     ):
         if num_interactions < 1:
             raise ValueError("At least one interaction block must be specified")
@@ -527,4 +538,5 @@ class StandardPaiNN(PaiNN):
             rbf_layer,
             output_network,
             max_num_neighbors,
+            nls_distance_method=nls_distance_method,
         )

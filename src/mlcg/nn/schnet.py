@@ -21,7 +21,8 @@ try:
     from mlcg_opt_radius.radius import radius_distance
 except ImportError:
     print(
-        "`mlcg_opt_radius` not installed. Please check the `opt_radius` folder and follow the instructions."
+        "`mlcg_opt_radius` not installed. Please check the"
+        + "`opt_radius` folder and follow the instructions."
     )
     radius_distance = None
 
@@ -60,6 +61,9 @@ class SchNet(torch.nn.Module):
         routine keyword max_num_neighbors, which normally defaults to 32.
         Users should set this to higher values if they are using higher upper
         distance cutoffs and expect more than 32 neighbors per node/atom.
+    nls_distance_method:
+        Method for computing a neighbor list. Supported values are
+        `torch`, `nvalchemi_naive`, `nvalchemi_cell` and custom.
     """
 
     name: Final[str] = "SchNet"
@@ -72,6 +76,7 @@ class SchNet(torch.nn.Module):
         output_network: torch.nn.Module,
         self_interaction: bool = False,
         max_num_neighbors: int = 1000,
+        nls_distance_method: str = "torch",
     ):
         super(SchNet, self).__init__()
 
@@ -93,7 +98,7 @@ class SchNet(torch.nn.Module):
                 "interaction_blocks must be a single InteractionBlock or "
                 "a list of InteractionBlocks."
             )
-
+        self.nls_distance_method = nls_distance_method
         self.output_network = output_network
         self.reset_parameters()
 
@@ -126,41 +131,18 @@ class SchNet(torch.nn.Module):
         neighbor_list = data.neighbor_list.get(self.name)
 
         if not self.is_nl_compatible(neighbor_list):
-            # we need to generate the neighbor list
-            # check whether we are using the custom kernel
-            # 1. mlcg_opt_radius is installed
-            # 2. input data is on CUDA
-            # 3. not using PBC (TODO)
-            use_custom_kernel = False
-            if (radius_distance is not None) and x.is_cuda:
-                use_custom_kernel = True
-            if not use_custom_kernel:
-                if hasattr(data, "exc_pair_index"):
-                    raise NotImplementedError(
-                        "Excluding pairs requires `mlcg_opt_radius` "
-                        "to be available and model running with CUDA."
-                    )
-                neighbor_list = self.neighbor_list(
-                    data,
-                    self.rbf_layer.cutoff.cutoff_upper,
-                    self.max_num_neighbors,
-                )[self.name]
-        if use_custom_kernel:
-            distances, edge_index = radius_distance(
-                data.pos,
+            neighbor_list = self.neighbor_list(
+                data,
                 self.rbf_layer.cutoff.cutoff_upper,
-                data.batch,
-                False,  # no loop edges due to compatibility & backward breaks with zero distance
                 self.max_num_neighbors,
-                exclude_pair_indices=data.get("exc_pair_index"),
-            )
-        else:
-            edge_index = neighbor_list["index_mapping"]
-            distances = compute_distances(
-                data.pos,
-                edge_index,
-                neighbor_list["cell_shifts"],
-            )
+            )[self.name]
+
+        edge_index = neighbor_list["index_mapping"]
+        distances = compute_distances(
+            data.pos,
+            edge_index,
+            neighbor_list["cell_shifts"],
+        )
 
         rbf_expansion = self.rbf_layer(distances)
         num_batch = data.batch[-1] + 1
@@ -187,17 +169,22 @@ class SchNet(torch.nn.Module):
                 is_compatible = True
         return is_compatible
 
-    @staticmethod
     def neighbor_list(
-        data: AtomicData, rcut: float, max_num_neighbors: int = 1000
+        self,
+        data: AtomicData,
+        rcut: float,
+        max_num_neighbors: int = 1000,
     ) -> dict:
         """Computes the neighborlist for :obj:`data` using a strict cutoff of :obj:`rcut`."""
+        if not hasattr(self,"nls_distance_method"):
+            self.nls_distance_method = "torch"
         return {
             SchNet.name: atomic_data2neighbor_list(
                 data,
                 rcut,
                 self_interaction=False,
                 max_num_neighbors=max_num_neighbors,
+                nls_distance_method=self.nls_distance_method,
             )
         }
 
@@ -379,7 +366,7 @@ class CFConv(MessagePassing):
 
 
 class StandardSchNet(SchNet):
-    """Small wrapper class for :ref:`SchNet` to simplify the definition of the
+    """Small wrapper class for :ref:`mlcg.nn.SchNet` to simplify the definition of the
     SchNet model through an input file. The upper distance cutoff attribute
     in is set by default to match the upper cutoff value in the cutoff function.
 
@@ -425,6 +412,7 @@ class StandardSchNet(SchNet):
         activation: torch.nn.Module = torch.nn.Tanh(),
         max_num_neighbors: int = 1000,
         aggr: str = "add",
+        nls_distance_method: str = "torch",
     ):
         if num_interactions < 1:
             raise ValueError("At least one interaction block must be specified")
@@ -476,11 +464,12 @@ class StandardSchNet(SchNet):
             rbf_layer,
             output_network,
             max_num_neighbors=max_num_neighbors,
+            nls_distance_method=nls_distance_method,
         )
 
 
 class AttentiveSchNet(SchNet):
-    """Small wrapper class for :ref:`SchNet` to simplify the definition of the
+    """Small wrapper class for :ref:`mlcg.nn.SchNet` to simplify the definition of the
     SchNet model with an Interaction block that includes attention through an input file. The upper distance cutoff attribute
     in is set by default to match the upper cutoff value in the cutoff function.
 
@@ -548,6 +537,7 @@ class AttentiveSchNet(SchNet):
         activation_first: bool = False,
         aggr: str = "add",
         attention_version: str = "normal",
+        nls_distance_method: str = "torch",
     ):
         if layer_widths is None:
             layer_widths = [128, 128]
@@ -669,4 +659,5 @@ class AttentiveSchNet(SchNet):
             embedding_layer=embedding_layer,
             output_network=output_network,
             max_num_neighbors=max_num_neighbors,
+            nls_distance_method=nls_distance_method,
         )

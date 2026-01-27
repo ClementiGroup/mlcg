@@ -1,28 +1,31 @@
-name: Check Pull Request
+name: Check branch names
 on: pull_request
 
 jobs:
   check_pr:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Check if PR target branch is ok
+      - name: Check if PR source name
         run: |
-          branch_name=${GITHUB_HEAD_REF}
-          echo "pr branch name: $branch_name"
+          source_name=${GITHUB_HEAD_REF}
+          echo "Source pr branch name: ${source_name}"
           
           target_branch=${GITHUB_BASE_REF}
-          echo "target branch: $target_branch"
+          echo "Target branch: $target_branch"
           dev_regex="^(bugfix|feat|cleanup)/.+$"
+          tar_regex="^(main|(bugfix|feat|cleanup)/.+)$"
 
-          if [[ "$branch_name" =~ $dev_regex ]]; then
-            echo "Branch name matches the regex pattern."
-            if [[ "$target_branch" != "main" ]]; then
-              echo "but doesn't match target branch"
+          if [[ "${source_name}" =~ $dev_regex ]]; then
+            echo "Source branch name matches the regex pattern."
+            if [[ "${target_branch}" =~ $tar_regex ]]; then
+              echo "Target branch matches the pattern"
+              exit 0
+            else
+              echo "Target branch doesn't match the pattern"
               exit 1
             fi
           else
-            echo "Branch name does not match any regex. Exiting..."
+            echo "Source branch name is not fitting"
             exit 1
           fi
         shell: bash
