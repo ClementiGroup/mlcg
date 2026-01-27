@@ -7,7 +7,6 @@ from nvalchemiops.neighborlist import (
 )
 import warnings
 
-
 RED = "\033[91m"
 YELLOW = "\033[93m"
 BOLD = "\033[1m"

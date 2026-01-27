@@ -1,7 +1,6 @@
 from setuptools import find_packages, setup, Extension
 from torch.utils import cpp_extension
 
-
 VERSION = "0.1.0"
 
 setup(
