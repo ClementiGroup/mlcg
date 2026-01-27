@@ -50,4 +50,5 @@ def ase_neighbor_list(
         torch.from_numpy(idx_i),
         torch.from_numpy(idx_j),
         torch.from_numpy(np.dot(idx_S, frame.cell)),
+        None,
     )

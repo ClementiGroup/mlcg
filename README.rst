@@ -123,7 +123,8 @@ following commands can do a similar job.
 
 .. code:: bash
 
-    pip install --extra-index-url=https://download.pytorch.org/whl/cu124 torch==2.6.0
+    pip install --extra-index-url=https://download.pytorch.org/whl/cu128 torch==2.8.0
     pip install torch_geometric
-    pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.6.0+cu124.html
+    pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.8.0+cu128.html
     pip install lightning tensorboard torchtnt
+    pip install cuequivariance-torch==0.8.1 cuequivariance-ops-torch-cu12==0.8.1 nvalchemi-toolkit-ops==0.2.0

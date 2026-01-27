@@ -13,7 +13,6 @@ import sys
 from ruamel.yaml import YAML
 import logging
 
-
 yaml = YAML(pure="true", typ="safe")
 yaml.default_flow_style = False
 

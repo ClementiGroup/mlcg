@@ -2,7 +2,7 @@ version: 2.1
 jobs:
   test:
     docker:
-      - image: jacopoventurin/mlcg_python_312:v0.1
+      - image: sayeg84/mlcg_python_312:v0.1
     parallelism: 6   # run tests across 6 parallel containers
     steps:
       - checkout
