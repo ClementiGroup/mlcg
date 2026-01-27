@@ -62,7 +62,7 @@ class SchNet(torch.nn.Module):
         Users should set this to higher values if they are using higher upper
         distance cutoffs and expect more than 32 neighbors per node/atom.
     nls_distance_method:
-        Method for computing a neighbohr list. Suppoerted values are
+        Method for computing a neighbor list. Supported values are
         `torch`, `nvalchemi_naive`, `nvalchemi_cell` and custom.
     """
 
@@ -535,6 +535,7 @@ class AttentiveSchNet(SchNet):
         activation_first: bool = False,
         aggr: str = "add",
         attention_version: str = "normal",
+        nls_distance_method: str = "torch",
     ):
         if layer_widths is None:
             layer_widths = [128, 128]
@@ -656,4 +657,5 @@ class AttentiveSchNet(SchNet):
             embedding_layer=embedding_layer,
             output_network=output_network,
             max_num_neighbors=max_num_neighbors,
+            nls_distance_method=nls_distance_method,
         )
