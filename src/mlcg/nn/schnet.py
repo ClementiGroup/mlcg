@@ -21,12 +21,10 @@ try:
     from mlcg_opt_radius.radius import radius_distance
 except ImportError:
     print(
-        "`mlcg_opt_radius` not installed. Please check the" 
+        "`mlcg_opt_radius` not installed. Please check the"
         + "`opt_radius` folder and follow the instructions."
     )
     radius_distance = None
-
-
 
 
 class SchNet(torch.nn.Module):
@@ -64,8 +62,8 @@ class SchNet(torch.nn.Module):
         Users should set this to higher values if they are using higher upper
         distance cutoffs and expect more than 32 neighbors per node/atom.
     nls_distance_method:
-        Methodology for computing a neighbohrlist. Suppoerted values are
-        torch, nvalchemi and custom.
+        Method for computing a neighbohr list. Suppoerted values are
+        `torch`, `nvalchemi_naive`, `nvalchemi_cell` and custom.
     """
 
     name: Final[str] = "SchNet"
@@ -131,7 +129,7 @@ class SchNet(torch.nn.Module):
         x = self.embedding_layer(data.atom_types)
 
         neighbor_list = data.neighbor_list.get(self.name)
-        
+
         if not self.is_nl_compatible(neighbor_list):
             neighbor_list = self.neighbor_list(
                 data,
@@ -145,7 +143,7 @@ class SchNet(torch.nn.Module):
             edge_index,
             neighbor_list["cell_shifts"],
         )
-        
+
         rbf_expansion = self.rbf_layer(distances)
         num_batch = data.batch[-1] + 1
         for block in self.interaction_blocks:
@@ -171,8 +169,11 @@ class SchNet(torch.nn.Module):
                 is_compatible = True
         return is_compatible
 
-    def neighbor_list(self,
-        data: AtomicData, rcut: float, max_num_neighbors: int = 1000,
+    def neighbor_list(
+        self,
+        data: AtomicData,
+        rcut: float,
+        max_num_neighbors: int = 1000,
     ) -> dict:
         """Computes the neighborlist for :obj:`data` using a strict cutoff of :obj:`rcut`."""
         return {

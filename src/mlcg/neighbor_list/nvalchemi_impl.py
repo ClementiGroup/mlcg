@@ -4,8 +4,29 @@ from torch_geometric.data import Data
 from nvalchemiops.neighborlist import (
     batch_cell_list,
     batch_naive_neighbor_list,
-    cell_list,
 )
+import warnings
+
+
+RED = "\033[91m"
+YELLOW = "\033[93m"
+BOLD = "\033[1m"
+RESET = "\033[0m"
+
+
+def no_pbc_warning(box_size):
+    return f"""
+{RED}{BOLD}
+============================================================
+!!!  WARNING: No PCB information  !!!
+============================================================{RESET}
+
+`nvachemi_cell` can only be used with PBC information. Currently 
+your data doesn't have pbc or cell entries, and a generic  
+square box of length {box_size} will be used to compute PBCs.
+{YELLOW}{BOLD}Neighbor list results are not guaranteed to be correct
+{RED}{BOLD}============================================================{RESET}
+"""
 
 
 def nvalchemi_naive_neighbor_list(
@@ -63,7 +84,7 @@ def nvalchemi_naive_neighbor_list(
             raise ValueError(
                 f"Periodic systems need to have a unit cell defined"
             )
-    
+
     result = batch_naive_neighbor_list(
         data.pos,
         rcut,
@@ -87,6 +108,7 @@ def nvalchemi_naive_neighbor_list(
         )
         return idx_i, idx_j, cell_shifts, None
 
+
 def nvalchemi_cell_neighbor_list(
     data: Data,
     rcut: float,
@@ -95,8 +117,8 @@ def nvalchemi_cell_neighbor_list(
     max_num_neighbors: int = 1000,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     """Function for computing neighbor lists from pytorch geometric data
-    instances that may or may not use periodic boundary conditions using
-    nvalchemi, an nvidia-provided kernel.
+    instances with periodic boundary conditions using nvalchemi and a cell
+    list structure, an nvidia-provided kernel.
 
     Note that this function is unable to take into account self interactions.
 
@@ -135,13 +157,22 @@ def nvalchemi_cell_neighbor_list(
         with_pbc = True
 
     else:
-        cell = torch.zeros(data.batch[-1]+1, 3, 3,
-             dtype=torch.float32, 
-            device=data.pos.device,
-        )+50
-        cell.diagonal(dim1=-2, dim2=-1).fill_(72)
+        box_size = 70
+        warnings.warn(no_pbc_warning(box_size), UserWarning)
+        # this is required as the method needs
+        cell = (
+            torch.zeros(
+                data.batch[-1] + 1,
+                3,
+                3,
+                dtype=torch.float32,
+                device=data.pos.device,
+            )
+            + 50
+        )
+        cell.diagonal(dim1=-2, dim2=-1).fill_(box_size)
         pbc = torch.zeros(
-            data.batch[-1]+1, 3, dtype=torch.bool, device=data.pos.device
+            data.batch[-1] + 1, 3, dtype=torch.bool, device=data.pos.device
         )
     if with_pbc and torch.any(pbc):
         if "cell" not in data:
@@ -162,10 +193,10 @@ def nvalchemi_cell_neighbor_list(
     (idx_i, idx_j), _, idx_S = result
 
     if with_pbc:
-        cell_shifts = torch.matmul(idx_S.to(cell.dtype), cell)    
+        cell_shifts = torch.matmul(idx_S.to(cell.dtype), cell)
     else:
         cell_shifts = torch.zeros(
             (idx_i.shape[0], 3), dtype=data.pos.dtype, device=data.pos.device
         )
-    
+
     return idx_i, idx_j, cell_shifts, None
