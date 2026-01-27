@@ -749,6 +749,8 @@ class So3krates(nn.Module):
         max_num_neighbors: int = 1000,
     ) -> dict:
         """Computes the neighborlist for :obj:`data` using a strict cutoff of :obj:`rcut`."""
+        if not hasattr(self,"nls_distance_method"):
+            self.nls_distance_method = "torch"
         return {
             So3krates.name: atomic_data2neighbor_list(
                 data,

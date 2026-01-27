@@ -176,6 +176,8 @@ class SchNet(torch.nn.Module):
         max_num_neighbors: int = 1000,
     ) -> dict:
         """Computes the neighborlist for :obj:`data` using a strict cutoff of :obj:`rcut`."""
+        if not hasattr(self,"nls_distance_method"):
+            self.nls_distance_method = "torch"
         return {
             SchNet.name: atomic_data2neighbor_list(
                 data,
