@@ -1,8 +1,8 @@
 {
-    "tests/continuity/test_sim_old_ckpts.py::test_simulation_pipeline[model_ckpt0-prior0-structures0]": 24.598419901914895,
-    "tests/continuity/test_sim_old_ckpts.py::test_simulation_pipeline[model_ckpt1-prior1-structures1]": 26.862995928153396,
-    "tests/continuity/test_sim_old_ckpts.py::test_simulation_pipeline[model_ckpt2-prior2-structures2]": 48.307537785731256,
-    "tests/continuity/test_sim_old_ckpts.py::test_simulation_pipeline[model_ckpt3-prior3-structures3]": 277.34285205206834,
+    "tests/continuity/test_sim_old_ckpts.py::test_simulation_pipeline[model_ckpt0-prior0-structures0]": 31.66023890906945,
+    "tests/continuity/test_sim_old_ckpts.py::test_simulation_pipeline[model_ckpt1-prior1-structures1]": 29.76581429108046,
+    "tests/continuity/test_sim_old_ckpts.py::test_simulation_pipeline[model_ckpt2-prior2-structures2]": 26.121944651938975,
+    "tests/continuity/test_sim_old_ckpts.py::test_simulation_pipeline[model_ckpt3-prior3-structures3]": 40.0210781537462,
     "tests/integration/test_examples.py::test_architecture[train_allegro]": 1033.021,
     "tests/integration/test_examples.py::test_architecture[train_mace]": 1001.868,
     "tests/integration/test_examples.py::test_architecture[train_painn]": 178.904,
