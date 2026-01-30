@@ -71,6 +71,7 @@ def test_dir(tmp_path):
     if tmp_path.exists():
         rmtree(tmp_path)
 
+
 @pytest.mark.parametrize("model_yaml", training_yaml_list, ids=lambda p: p.stem)
 def test_architecture(model_yaml, test_dir):
     name = model_yaml.stem.replace("train_", "")
@@ -100,9 +101,7 @@ def test_architecture(model_yaml, test_dir):
             if model_yaml.name in line:
                 sub_processes.append(line.split("`")[-2].strip())
     assert len(sub_processes) > 0, f"No command found for {model_yaml}"
-    assert (
-        len(sub_processes) < 2
-    ), f"Multiple commands found for {model_yaml}"
+    assert len(sub_processes) < 2, f"Multiple commands found for {model_yaml}"
 
     # Run the training command
     process = sub_processes[0]
@@ -110,7 +109,7 @@ def test_architecture(model_yaml, test_dir):
     for idx, arg in enumerate(arg_list):
         if "train" in arg and ".yaml" in arg:
             arg_list[idx] = str(test_dir / "pytest_training.yaml")
-            
+
     print(f"Running {' '.join(arg_list)} in {os.getcwd()}")
     result = subprocess.run(
         arg_list,
@@ -139,9 +138,7 @@ def test_architecture(model_yaml, test_dir):
     )
     print("STDOUT:\n", result.stdout)
     print("STDERR:\n", result.stderr)
-    assert (
-        result.returncode == 0
-    ), f"Failed extracting model with {model_yaml}"
+    assert result.returncode == 0, f"Failed extracting model with {model_yaml}"
 
     # Setup simulation yaml
     simulation_yaml = load_yaml(sim_yaml)
@@ -169,9 +166,7 @@ def test_architecture(model_yaml, test_dir):
     )
     print("STDOUT:\n", result.stdout)
     print("STDERR:\n", result.stderr)
-    assert (
-        result.returncode == 0
-    ), f"Failed simulating model with {model_yaml}"
+    assert result.returncode == 0, f"Failed simulating model with {model_yaml}"
     # Clean after every iteration: always run also if the test fails
     if test_dir.exists():
         for filename in os.listdir(test_dir):

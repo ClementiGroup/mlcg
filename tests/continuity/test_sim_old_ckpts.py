@@ -5,7 +5,6 @@ from shutil import rmtree
 from pathlib import Path
 from mlcg.utils import load_yaml, dump_yaml
 
-
 _here = Path(__file__).parent
 _ckpt_config_dir = _here / "model_ckpts"
 

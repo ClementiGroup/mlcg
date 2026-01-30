@@ -120,5 +120,5 @@
     "tests/unit/simulation/test_simulation.py::test_simulation_device[None-cuda]": 0.000620691804215312,
     "tests/unit/simulation/test_simulation.py::test_simulation_run[ASE_prior_model-get_initial_data-True-LangevinSimulation-sim_args1-1.0-sim_kwargs1]": 0.361539788544178,
     "tests/unit/simulation/test_simulation.py::test_simulation_run[ASE_prior_model-get_initial_data-True-OverdampedSimulation-sim_args0-1.0-sim_kwargs0]": 0.3595711290836334,
-    "tests/unit/simulation/test_simulation.py::test_simulation_run[ASE_prior_model-get_initial_data-True-PTSimulation-sim_args2-betas2-sim_kwargs2]": 0.4575289129279554,
+    "tests/unit/simulation/test_simulation.py::test_simulation_run[ASE_prior_model-get_initial_data-True-PTSimulation-sim_args2-betas2-sim_kwargs2]": 0.4575289129279554
 }
