@@ -14,23 +14,17 @@ jobs:
             pip install --no-deps git+https://github.com/ACEsuit/mace.git@v0.3.13
             pip install --no-deps nequip==0.12.1 nequip-allegro==0.7.0
             pip install .
+            pip install pytest-split
       - run:
-          name: "Run code tests"
-          command: |
-            set -e
-            TEST_FILES=$(circleci tests glob "tests/**/test_*.py" | circleci tests split --split-by=timings)
-            mkdir -p test-results
-            pytest --verbose --junitxml=test-results/junit.xml $TEST_FILES
-          no_output_timeout: 5m
-      - run:
-          name: "Run examples tests"
+          name: "Run tests"
           command: |
             if [ -n "$CIRCLE_PULL_REQUEST" ]; then
               set -e
               mkdir -p test-results
-              pytest --verbose --junitxml=test-results/examples.xml examples  --runner_idx=${CIRCLE_NODE_INDEX} --num_containers=${CIRCLE_NODE_TOTAL}
+              pytest --verbose --junitxml=test-results/tests.xml --durations-path tests/.test_durations --splits=${CIRCLE_NODE_TOTAL} --group=${CIRCLE_NODE_INDEX} --splitting-algorithm least_duration
             else
-              echo "Skipping examples test: not a PR"
+              echo "Skipping integration test: not a PR"
+              pytest -m "unit or continuity" --verbose --junitxml=test-results/tests.xml --durations-path tests/.test_durations --splits=${CIRCLE_NODE_TOTAL} --group=${CIRCLE_NODE_INDEX} --splitting-algorithm least_duration
             fi
           no_output_timeout: 80m
       - store_test_results:

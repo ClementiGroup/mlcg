@@ -111,12 +111,11 @@ extend-exclude = '''
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "-ra"
-testpaths = [
-    "tests",
-    "examples",
-]
+testpaths = ["tests"]
 markers = [
-    "heavy: test that should be skipped in --light mode"
+    "integration: slow CLI / system integration tests",
+    "unit: fast unit tests",
+    "continuity: tests for checking continuity with old checkpoints",
 ]
 filterwarnings = [
     "ignore::DeprecationWarning"
