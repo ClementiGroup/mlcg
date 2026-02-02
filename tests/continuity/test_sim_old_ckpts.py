@@ -21,11 +21,14 @@ def test_dir(tmp_path):
 @pytest.mark.parametrize(
     "model_ckpt,prior,structures",
     [
-        (  ## CLN CA
-            _ckpt_config_dir / "schnet_cln_ca.ckpt",
+        (  ## CLN CA, multiple architectures
+            _ckpt_config_dir / f"{arch}_cln_ca.ckpt",
             _ckpt_config_dir / "sparse_prior_cln_ca.pt",
             _ckpt_config_dir / "structures_cln_ca.pt",
-        ),
+        )
+        for arch in ["schnet", "mace", "allegro", "so3krates"]
+    ]
+    + [
         (  ##NTL9 5B Schnet
             _ckpt_config_dir / "schnet_ntl9_5b.ckpt",
             _ckpt_config_dir / "prior_ntl9_5b.pt",
