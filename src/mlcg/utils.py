@@ -118,13 +118,14 @@ def download_url(url: str, folder: str, log: bool = True):
 
 
 def load_yaml(fn):
-    """load a yaml file"""
+    """Load a yaml file using ruamel.yaml"""
     with open(fn, "r") as f:
         data = yaml.load(f)
     return data
 
 
 def dump_yaml(fn, data):
+    """dump a dictionary into a yaml file using ruamel.yaml"""
     with open(fn, "w") as f:
         yaml.dump(data, f)
 

@@ -1,4 +1,4 @@
-Data Representation
+Molecular Data Representation
 ===================
 
 `mlcg.data` defines the `AtomicData` class, the data structure used as input to models. It contains one or more atomic structures with

@@ -21,6 +21,12 @@ Torch Implementation
 .. autofunction:: mlcg.neighbor_list.torch_impl.compute_images
 .. autofunction:: mlcg.neighbor_list.torch_impl.wrap_positions
 
+Nvalchemi Implementation
+--------------------
+
+.. autofunction:: mlcg.neighbor_list.nvalchemi_impl.nvalchemi_naive_neighbor_list
+.. autofunction:: mlcg.neighbor_list.nvalchemi_impl.nvalchemi_cell_neighbor_list
+
 ASE Implementation
 ------------------
 

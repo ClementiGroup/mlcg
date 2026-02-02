@@ -50,7 +50,7 @@ The models defined in this library can be conveniently trained using the pytorch
 Examples
 --------
 
-Please take a look into the examples folder to see how to use this code to train a model over an existing dataset.
+Please take a look into the ``examples`` folder of the repository to see how to use this code to train a model over an existing dataset.
 
 
 .. end-intro
@@ -67,7 +67,7 @@ Dependencies
 
 .. code:: bash
 
-    pip install sphinx sphinx_rtd_theme sphinx-autodoc-typehints
+    pip install sphinx shibuya sphinx-autodoc-typehints
 
 
 How to build
