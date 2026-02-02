@@ -47,9 +47,12 @@ This ensures tests are correctly categorized and can be run selectively.
 
 ## Tests in CI/CD pipeline
 Code within the `mlcg` package is tested using `CircleCI` for continuous integration.
-The file `.test_durations` is used to split tests across different containers.
-When a new, consistent set of tests is added, it is recommended to update `.test_durations` by installing `pytest-split` and running:
+The file `.test_durations` is used to split tests across different containers according
+to their execution time. When a new, consistent set of tests is added, it is recommended 
+to update `.test_durations` by installing `pytest-split` via pip and running:
+
 ```bash
 pytest --store-durations
 ```
+
 This will create a new `.test_durations` file automatically.

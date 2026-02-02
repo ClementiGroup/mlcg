@@ -1,0 +1,9 @@
+{
+    "tests/continuity/test_sim_old_ckpts.py::test_simulation_pipeline[model_ckpt0-prior0-structures0]": 22.415279477019794,
+    "tests/continuity/test_sim_old_ckpts.py::test_simulation_pipeline[model_ckpt1-prior1-structures1]": 45.26147293089889,
+    "tests/continuity/test_sim_old_ckpts.py::test_simulation_pipeline[model_ckpt2-prior2-structures2]": 26.14403419487644,
+    "tests/continuity/test_sim_old_ckpts.py::test_simulation_pipeline[model_ckpt3-prior3-structures3]": 27.657068930915557,
+    "tests/continuity/test_sim_old_ckpts.py::test_simulation_pipeline[model_ckpt4-prior4-structures4]": 22.817100715939887,
+    "tests/continuity/test_sim_old_ckpts.py::test_simulation_pipeline[model_ckpt5-prior5-structures5]": 25.981004799017683,
+    "tests/continuity/test_sim_old_ckpts.py::test_simulation_pipeline[model_ckpt6-prior6-structures6]": 31.070878227008507
+}
