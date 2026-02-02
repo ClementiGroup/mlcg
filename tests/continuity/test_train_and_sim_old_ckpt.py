@@ -48,7 +48,7 @@ def test_dir(tmp_path):
 )
 def test_train_simulation_pipeline(model_ckpt, prior, structures, test_dir):
     """Test that old models can be merged and simulated
-    
+
     Continuity test reproducing:
       - model+prior combination
       - simulation config creation

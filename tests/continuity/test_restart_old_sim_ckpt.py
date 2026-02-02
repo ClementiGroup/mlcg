@@ -31,7 +31,8 @@ def test_dir(tmp_path):
     ]
     + [
         (  ## NTL9 5B Allegro
-            _ckpt_config_dir / "allegro_ntl9_5b_specialized_model_and_config.pt",
+            _ckpt_config_dir
+            / "allegro_ntl9_5b_specialized_model_and_config.pt",
             _ckpt_config_dir / "allegro_ntl9_5b_checkpoint.pt",
         ),
         (  ## PaiNN from Klara old PyG
@@ -42,15 +43,17 @@ def test_dir(tmp_path):
 )
 def test_restart_simulation(model_and_config_ckpt, sim_checkpoint, test_dir):
     r"""
-     test reproducing:
-      - model+prior combination
-      - simulation config creation
-      - NVT Langevin simulation
+    test reproducing:
+     - model+prior combination
+     - simulation config creation
+     - NVT Langevin simulation
     """
 
     ## load and expand model and configurations
 
-    old_simulated_model, old_configurations = load_and_adapt_old_checkpoint(model_and_config_ckpt)
+    old_simulated_model, old_configurations = load_and_adapt_old_checkpoint(
+        model_and_config_ckpt
+    )
     tsave(old_simulated_model, test_dir / "sim_extracted_model.pt")
     tsave(old_configurations, test_dir / "old_configurations.pt")
     old_simulation_ckpt = load_and_adapt_old_checkpoint(sim_checkpoint)
@@ -60,7 +63,10 @@ def test_restart_simulation(model_and_config_ckpt, sim_checkpoint, test_dir):
     sim_config = load_yaml(_here / "base_sim_config.yaml")
     sim_config["structure_file"] = "old_configurations.pt"
     sim_config["simulation"]["read_checkpoint_file"] = True
-    new_final_time=sim_config["simulation"]["n_timesteps"]+sim_config["simulation"]["export_interval"]*5
+    new_final_time = (
+        sim_config["simulation"]["n_timesteps"]
+        + sim_config["simulation"]["export_interval"] * 5
+    )
     sim_config["simulation"]["n_timesteps"] = int(new_final_time)
 
     # priors can't be specialized twice
