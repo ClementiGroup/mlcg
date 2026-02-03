@@ -1,6 +1,13 @@
-"""pyyaml does not support serializing nested type hints from typing and torch_geometric.nn.MessagePassing does include such information in the class in the form of inspect.Parameter objects.
-This files registers to yaml a (de)serialization procedure for inspect.Parameter objects that supports type hint annotation such as `typing.Optional[typing.Tuple[int,torch.Tensor, typing.List[torch.Tensor]]]`.
-These annotations are stored using their string representation, e.g. `"typing.Optional[int]"`, so the desirialization corresponds to recursively manipulate the string to convert the individual type strings to into python types/classes.
+"""
+pyyaml does not support serializing nested type hints from typing and
+torch_geometric.nn.MessagePassing does include such information in the class
+in the form of inspect.Parameter objects. This files registers to yaml a
+(de)serialization procedure for inspect.Parameter objects that supports type
+hint annotation such as `typing.Optional[typing.Tuple[int,torch.Tensor,
+typing.List[torch.Tensor]]]`. These annotations are stored using their string
+representation, e.g. `"typing.Optional[int]"`, so the desirialization corresponds
+to recursively manipulate the string to convert the individual type strings to
+into python types/classes.
 """
 
 import inspect

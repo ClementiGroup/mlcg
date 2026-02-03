@@ -65,8 +65,8 @@ def nvalchemi_naive_neighbor_list(
     torch.Tensor:
         The cell shifts associated with minimum image distances
         in the presence of periodic boundary conditions
-    torch.Tensor:
-        Mask for excluding self interactions
+    NoneType:
+        Empty entry, left for compatiblity reasons
     """
     with_pbc = False
     if "pbc" in data:
@@ -145,8 +145,8 @@ def nvalchemi_cell_neighbor_list(
     torch.Tensor:
         The cell shifts associated with minimum image distances
         in the presence of periodic boundary conditions
-    torch.Tensor:
-        Mask for excluding self interactions
+    NoneType:
+        Empty entry, left for compatiblity reasons
     """
     with_pbc = False
     if "pbc" in data:

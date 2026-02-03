@@ -28,8 +28,8 @@ class ExpNormalBasis(_RadialBasis):
 
         f_{cut} ( r_{ij},r_{low},r_{high} ) =  \cos{\left( r_{ij} \times \pi / r_{high}\right)} + 1.0
 
-    represents a cosine cutoff function (though users can specify their own cutoff function
-    if they desire).
+    represents a cosine cutoff function.
+
     Parameters
     ----------
     cutoff:

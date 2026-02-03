@@ -3,7 +3,7 @@ mlcg
 
 .. start-intro
 
-|Docs badge| |License|
+|Docs badge| |License| |Circleci|
 
 .. |Docs badge| image:: https://img.shields.io/badge/mlcg-docs-blue.svg
    :target: https://clementigroup.github.io/mlcg/
@@ -11,6 +11,8 @@ mlcg
 .. |License| image:: https://img.shields.io/github/license/Naereen/StrapDown.js.svg
    :target: https://opensource.org/licenses/MIT
 
+.. |Circleci| image:: https://dl.circleci.com/status-badge/img/gh/ClementiGroup/mlcg/tree/main.svg?style=shield
+    :target: https://dl.circleci.com/status-badge/redirect/gh/ClementiGroup/mlcg/tree/main
 
 This repository collects a set of tools to apply machine learning techniques to coarse grain atomic systems.
 
@@ -50,7 +52,7 @@ The models defined in this library can be conveniently trained using the pytorch
 Examples
 --------
 
-Please take a look into the examples folder to see how to use this code to train a model over an existing dataset.
+Please take a look into the ``examples`` folder of the repository to see how to use this code to train a model over an existing dataset.
 
 
 .. end-intro
@@ -67,7 +69,7 @@ Dependencies
 
 .. code:: bash
 
-    pip install sphinx sphinx_rtd_theme sphinx-autodoc-typehints
+    pip install sphinx shibuya sphinx-autodoc-typehints
 
 
 How to build

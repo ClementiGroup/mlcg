@@ -10,13 +10,11 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# iimport os
+# import os
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
 import sys, os
-
-sys.path.insert(0, os.path.abspath("../../src/"))
 
 # disable torch jitting when building the documentation
 os.environ["PYTORCH_JIT"] = "0"
@@ -24,8 +22,8 @@ os.environ["PYTORCH_JIT"] = "0"
 # -- Project information -----------------------------------------------------
 
 project = "mlcg"
-copyright = "2026, Felix Musil & Nick Charron"
-author = "Felix Musil & Nick Charron"
+copyright = "2026, Clementi Group"
+author = "Clementi Group"
 
 # The full version, including alpha/beta/rc tags
 release = "0.1.2"
@@ -57,15 +55,21 @@ templates_path = ["_templates"]
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
 
+pygments_style = "emacs"  # for light mode pages
+pygments_dark_style = "monokai"  # for dark mode pages (Sphinx ≥ 4.0)
+
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "sphinx_rtd_theme"
+html_theme = "shibuya"
 
+html_theme_options = {
+    "accent_color": "plum",
+}
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-# html_static_path = ['_static']
-html_static_path = []
+html_static_path = ["_static"]
+html_css_files = ["custom.css"]
