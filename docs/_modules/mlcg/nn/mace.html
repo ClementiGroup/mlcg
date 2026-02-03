@@ -106,6 +106,22 @@
         <span class="s2">&quot;&quot;</span>
     <span class="p">)</span>
 
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">cuequivariance</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cue</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">cuequivariance_torch</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cuet</span>
+
+    <span class="n">CUET_AVAILABLE</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">CUET_AVAILABLE</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="nb">print</span><span class="p">(</span>
+        <span class="s2">&quot;cuEquivariance is not installed. cuEquivariance features will be disabled. It is recommended to install cuEquivariance for better performance. &quot;</span>
+        <span class="o">+</span> <span class="s2">&quot;To install cuEquivariance run pip install cuequivariance cuequivariance-torch cuequivariance-ops-torch-cu12 &quot;</span>
+        <span class="o">+</span> <span class="s1">&#39;Replace &quot;cu12&quot; with &quot;cu11&quot; if you are using CUDA 11.&#39;</span>
+    <span class="p">)</span>
+
+<span class="k">if</span> <span class="n">CUET_AVAILABLE</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">mace.modules.wrapper_ops</span><span class="w"> </span><span class="kn">import</span> <span class="n">CuEquivarianceConfig</span>
+
 <span class="c1"># from ..pl.model import get_class_from_str</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..data.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">AtomicData</span><span class="p">,</span> <span class="n">ENERGY_KEY</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..neighbor_list.neighbor_list</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
@@ -144,6 +160,9 @@
 <span class="sd">            Maximum number of neighbors per atom.</span>
 <span class="sd">        pair_repulsion_fn (torch.nn.Module, optional):</span>
 <span class="sd">            Optional pairwise repulsion energy function.</span>
+<span class="sd">        nls_distance_method:</span>
+<span class="sd">            Method for computing a neighbor list. Supported values are</span>
+<span class="sd">            `torch`, `nvalchemi_naive`, `nvalchemi_cell` and custom.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">name</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;mace&quot;</span>
@@ -160,6 +179,7 @@
         <span class="n">r_max</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
         <span class="n">max_num_neighbors</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">pair_repulsion_fn</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">nls_distance_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;torch&quot;</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
@@ -173,6 +193,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">r_max</span> <span class="o">=</span> <span class="n">r_max</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_num_neighbors</span> <span class="o">=</span> <span class="n">max_num_neighbors</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pair_repulsion_fn</span> <span class="o">=</span> <span class="n">pair_repulsion_fn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nls_distance_method</span> <span class="o">=</span> <span class="n">nls_distance_method</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span>
             <span class="s2">&quot;types_mapping&quot;</span><span class="p">,</span>
@@ -291,17 +312,22 @@
 
 <div class="viewcode-block" id="MACE.neighbor_list">
 <a class="viewcode-back" href="../../../autodoc.html#mlcg.nn.mace.MACE.neighbor_list">[docs]</a>
-    <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">neighbor_list</span><span class="p">(</span>
-        <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">,</span> <span class="n">rcut</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">max_num_neighbors</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">,</span>
+        <span class="n">rcut</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">max_num_neighbors</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Computes the neighborlist for :obj:`data` using a strict cutoff of :obj:`rcut`.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;nls_distance_method&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nls_distance_method</span> <span class="o">=</span> <span class="s2">&quot;torch&quot;</span>
         <span class="k">return</span> <span class="p">{</span>
             <span class="n">MACE</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">atomic_data2neighbor_list</span><span class="p">(</span>
                 <span class="n">data</span><span class="p">,</span>
                 <span class="n">rcut</span><span class="p">,</span>
                 <span class="n">self_interaction</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                 <span class="n">max_num_neighbors</span><span class="o">=</span><span class="n">max_num_neighbors</span><span class="p">,</span>
+                <span class="n">nls_distance_method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nls_distance_method</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="p">}</span></div>
 </div>
@@ -359,7 +385,9 @@
 <span class="sd">        radial_type (Optional[str], optional):</span>
 <span class="sd">            Radial basis type.</span>
 <span class="sd">        cueq_config (Optional[Dict[str, Any]], optional):</span>
-<span class="sd">            Configuration for charge equilibration.</span>
+<span class="sd">            cuEquivariance configuration.</span>
+<span class="sd">        use_cueq (Optional[bool], optional):</span>
+<span class="sd">            Whether to use cuEquivariance acceleration.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
@@ -382,7 +410,11 @@
         <span class="n">distance_transform</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;None&quot;</span><span class="p">,</span>
         <span class="n">radial_MLP</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">radial_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;bessel&quot;</span><span class="p">,</span>
-        <span class="n">cueq_config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">cueq_config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">use_cueq</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span>
+            <span class="nb">bool</span>
+        <span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>  <span class="c1"># defaults to False for backwards compatibility</span>
+        <span class="n">nls_distance_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;torch&quot;</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">mlcg.pl.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_class_from_str</span>
 
@@ -392,7 +424,25 @@
 
         <span class="n">hidden_irreps</span> <span class="o">=</span> <span class="n">o3</span><span class="o">.</span><span class="n">Irreps</span><span class="p">(</span><span class="n">hidden_irreps</span><span class="p">)</span>
         <span class="n">MLP_irreps</span> <span class="o">=</span> <span class="n">o3</span><span class="o">.</span><span class="n">Irreps</span><span class="p">(</span><span class="n">MLP_irreps</span><span class="p">)</span>
-
+        <span class="c1"># Default to create CuEquivariance config if installed</span>
+        <span class="k">if</span> <span class="n">CUET_AVAILABLE</span> <span class="ow">and</span> <span class="n">use_cueq</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;INITIALIZING CUEQUIVARIANCE&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Note: CuEquivariance kernels will be compiled on first use.&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="s2">&quot;This may take a few minutes but only happens once per configuration.&quot;</span>
+            <span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+            <span class="n">cueq_config</span> <span class="o">=</span> <span class="n">CuEquivarianceConfig</span><span class="p">(</span>
+                <span class="n">enabled</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">layout</span><span class="o">=</span><span class="s2">&quot;ir_mul&quot;</span><span class="p">,</span>  <span class="c1"># irreps, multiplicity</span>
+                <span class="n">group</span><span class="o">=</span><span class="s2">&quot;O3&quot;</span><span class="p">,</span>
+                <span class="n">optimize_all</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Using e3nn. cuEquivariance acceleration is disabled.&quot;</span><span class="p">)</span>
+            <span class="n">cueq_config</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">correlation</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="n">correlation</span> <span class="o">=</span> <span class="p">[</span><span class="n">correlation</span><span class="p">]</span> <span class="o">*</span> <span class="n">num_interactions</span>
         <span class="c1"># Embedding</span>
@@ -518,6 +568,7 @@
             <span class="n">r_max</span><span class="p">,</span>
             <span class="n">max_num_neighbors</span><span class="p">,</span>
             <span class="n">pair_repulsion_fn</span><span class="p">,</span>
+            <span class="n">nls_distance_method</span><span class="o">=</span><span class="n">nls_distance_method</span><span class="p">,</span>
         <span class="p">)</span></div>
 
 </pre></div>
