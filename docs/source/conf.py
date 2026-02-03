@@ -17,7 +17,6 @@
 import sys, os
 
 
-
 # disable torch jitting when building the documentation
 os.environ["PYTORCH_JIT"] = "0"
 
@@ -57,8 +56,8 @@ templates_path = ["_templates"]
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
 
-pygments_style = "emacs"        # for light mode pages
-pygments_dark_style = "monokai"   # for dark mode pages (Sphinx ≥ 4.0)
+pygments_style = "emacs"  # for light mode pages
+pygments_dark_style = "monokai"  # for dark mode pages (Sphinx ≥ 4.0)
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -68,7 +67,7 @@ pygments_dark_style = "monokai"   # for dark mode pages (Sphinx ≥ 4.0)
 html_theme = "shibuya"
 
 html_theme_options = {
-  "accent_color": "plum",
+    "accent_color": "plum",
 }
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
