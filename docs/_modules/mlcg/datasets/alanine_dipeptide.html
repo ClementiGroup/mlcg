@@ -1,604 +1,672 @@
-
-
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" data-content_root="../../../">
+<html lang="en" data-accent-color="plum" data-content_root="../../../">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>mlcg.datasets.alanine_dipeptide &mdash; mlcg 0.1.2 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
-      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
-
-  
-      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
-      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=92734c54"></script>
-      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
-    <script src="../../../_static/js/theme.js"></script>
-    <link rel="index" title="Index" href="../../../genindex.html" />
-    <link rel="search" title="Search" href="../../../search.html" /> 
-</head>
-
-<body class="wy-body-for-nav"> 
-  <div class="wy-grid-for-nav">
-    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
-      <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
-
-          
-          
-          <a href="../../../index.html" class="icon icon-home">
-            mlcg
-          </a>
-<div role="search">
-  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
-    <input type="hidden" name="check_keywords" value="yes" />
-    <input type="hidden" name="area" value="default" />
-  </form>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>mlcg.datasets.alanine_dipeptide - mlcg 0.1.2 documentation</title><link rel="index" title="Index" href="../../../genindex.html" /><link rel="search" title="Search" href="../../../search.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=31853864" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/shibuya.css?v=44020203" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    <meta property="og:type" content="website"/><meta property="og:title" content="mlcg.datasets.alanine_dipeptide"/>
+    <meta name="twitter:card" content="summary"/>
+  </head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../index.html">
+      
+      
+      <strong>mlcg</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="sy-head-socials"></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
 </div>
-        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../data.html">Data Representation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../geometry.html">Geometry</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../neighbor_list.html">Neighbor Lists</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../coarse_graining.html">Coarse Graining</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../datasets.html">Datasets</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../priors.html">Priors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../models.html">Models</a></li>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6">
+        <div class="globaltoc" data-expand-depth="0"><ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../data/index.html">Data and datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../data/atom_data.html">Molecular Data Representation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../data/fixed_datasets.html">Fixed datasets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../data/h5_datasets.html">H5 Dataset</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../geometry/index.html">Geometry and Neighbor lists</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../geometry/internal_coordinates.html">Internal Coordinate Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../geometry/neighbor_list.html">Neighbor Lists</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../geometry/topology.html">Topology Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../geometry/statistics.html">Statistics Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../models/index.html">Model utilities</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../models/priors.html">Priors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../models/cutoffs.html">Cutoff Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../models/rbfs.html">Radial Basis Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../models/mlip.html">MLIPs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../models/wrappers.html">Gradient/sum wrappers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../models/losses.html">Loss Functions</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="../../../training.html">Training</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../simulation.html">Simulations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../dev/dev.html">Developer Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../simulation/index.html">Simulations</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../simulation/langevin.html">Langevin Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../simulation/overdamped.html">Overdamped Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../simulation/parallel_tempering.html">Parallel Tempering Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../simulation/utils.html">Simulation utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../misc/index.html">Miscellaneous utilities</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../misc/coarse_graining.html">Coarse Graining</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../misc/utils.html">General utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../misc/mol_utils.html">Molecular utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dev/index.html">Developer Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../dev/doc.html">Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../dev/tests.html">Tests</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Examples</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../bibliography.html">Bibliography</a></li>
 </ul>
 
         </div>
       </div>
-    </nav>
-
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
-          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../../index.html">mlcg</a>
-      </nav>
-
-      <div class="wy-nav-content">
-        <div class="rst-content">
-          <div role="navigation" aria-label="Page navigation">
-  <ul class="wy-breadcrumbs">
-      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
-          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
-      <li class="breadcrumb-item active">mlcg.datasets.alanine_dipeptide</li>
-      <li class="wy-breadcrumbs-aside">
-      </li>
-  </ul>
-  <hr/>
-</div>
-          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
-           <div itemprop="articleBody">
-             
-  <h1>Source code for mlcg.datasets.alanine_dipeptide</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">torch_geometric.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">InMemoryDataset</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">torch_geometric.data.collate</span><span class="w"> </span><span class="kn">import</span> <span class="n">collate</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">mdtraj</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">..utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span><span class="p">,</span> <span class="n">download_url</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">..geometry.topology</span><span class="w"> </span><span class="kn">import</span> <span class="n">Topology</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">..geometry.statistics</span><span class="w"> </span><span class="kn">import</span> <span class="n">fit_baseline_models</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">..cg</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_cg_matrix</span><span class="p">,</span> <span class="n">build_cg_topology</span><span class="p">,</span> <span class="n">AL_CG_MAP</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">..data</span><span class="w"> </span><span class="kn">import</span> <span class="n">AtomicData</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">..nn</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">HarmonicBonds</span><span class="p">,</span>
-    <span class="n">HarmonicAngles</span><span class="p">,</span>
-    <span class="n">Repulsion</span><span class="p">,</span>
-    <span class="n">GradientsOut</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">..nn.prior</span><span class="w"> </span><span class="kn">import</span> <span class="n">_Prior</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">remove_baseline_forces</span><span class="p">,</span> <span class="n">chunker</span>
-
-
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../index.html"><span itemprop="name">mlcg</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">Module code</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">mlcg.datasets.alanine_dipeptide</strong>
+        <meta itemprop="position" content="3" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <article class="yue" role="main">
+          <h1>Source code for mlcg.datasets.alanine_dipeptide</h1><div class="highlight"><pre>
+<span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+</span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+</span><span data-line="3"><span class="kn">from</span><span class="w"> </span><span class="nn">torch_geometric.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">InMemoryDataset</span>
+</span><span data-line="4"><span class="kn">from</span><span class="w"> </span><span class="nn">torch_geometric.data.collate</span><span class="w"> </span><span class="kn">import</span> <span class="n">collate</span>
+</span><span data-line="5"><span class="kn">import</span><span class="w"> </span><span class="nn">mdtraj</span>
+</span><span data-line="6"><span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
+</span><span data-line="7"><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
+</span><span data-line="8">
+</span><span data-line="9"><span class="kn">from</span><span class="w"> </span><span class="nn">..utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span><span class="p">,</span> <span class="n">download_url</span>
+</span><span data-line="10"><span class="kn">from</span><span class="w"> </span><span class="nn">..geometry.topology</span><span class="w"> </span><span class="kn">import</span> <span class="n">Topology</span>
+</span><span data-line="11"><span class="kn">from</span><span class="w"> </span><span class="nn">..geometry.statistics</span><span class="w"> </span><span class="kn">import</span> <span class="n">fit_baseline_models</span>
+</span><span data-line="12"><span class="kn">from</span><span class="w"> </span><span class="nn">..cg</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_cg_matrix</span><span class="p">,</span> <span class="n">build_cg_topology</span><span class="p">,</span> <span class="n">AL_CG_MAP</span>
+</span><span data-line="13"><span class="kn">from</span><span class="w"> </span><span class="nn">..data</span><span class="w"> </span><span class="kn">import</span> <span class="n">AtomicData</span>
+</span><span data-line="14"><span class="kn">from</span><span class="w"> </span><span class="nn">..nn</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+</span><span data-line="15">    <span class="n">HarmonicBonds</span><span class="p">,</span>
+</span><span data-line="16">    <span class="n">HarmonicAngles</span><span class="p">,</span>
+</span><span data-line="17">    <span class="n">Repulsion</span><span class="p">,</span>
+</span><span data-line="18">    <span class="n">GradientsOut</span><span class="p">,</span>
+</span><span data-line="19"><span class="p">)</span>
+</span><span data-line="20"><span class="kn">from</span><span class="w"> </span><span class="nn">..nn.prior</span><span class="w"> </span><span class="kn">import</span> <span class="n">_Prior</span>
+</span><span data-line="21"><span class="kn">from</span><span class="w"> </span><span class="nn">.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">remove_baseline_forces</span><span class="p">,</span> <span class="n">chunker</span>
+</span><span data-line="22">
+</span><span data-line="23">
 <div class="viewcode-block" id="AlanineDataset">
-<a class="viewcode-back" href="../../../datasets.html#mlcg.datasets.alanine_dipeptide.AlanineDataset">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">AlanineDataset</span><span class="p">(</span><span class="n">InMemoryDataset</span><span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Dataset for training a CG model of the alanine-dipeptide protein following a Cα + 1 C\beta CG mapping</span>
-
-<span class="sd">    Alanine Dipeptide CG structure:</span>
-
-<span class="sd">    .. code-block::</span>
-
-<span class="sd">                CB(3)</span>
-<span class="sd">                  |</span>
-<span class="sd">          N(1) - CA(2) - C(4)</span>
-<span class="sd">         /                  \</span>
-<span class="sd">        C(0)                 N(5)</span>
-
-
-<span class="sd">    This Dataset produces delta forces for model training, in which the CG prior forces (harmonic bonds and angles) have been subtracted from the full CG forces.</span>
-
-<span class="sd">    The class works as follows:</span>
-<span class="sd">        - If the raw data (coordinates, forces, and pdb file) for alanine dipeptide does not exist, the files will automatically be downloaded and processed</span>
-<span class="sd">        - If the raw data exists, &quot;root/processed/&quot; will be created and the raw dataset will be processed</span>
-<span class="sd">        - If the raw data and processed data exists, the class will load the processed dataset containing:</span>
-<span class="sd">            - data : AtomicData object containing all the CG positions, forces, embeddings</span>
-<span class="sd">            - slices : Slices of the AtomicData object</span>
-<span class="sd">            - prior_models : Prior models (HarmonicBonds, HarmonicAngles) of the dataset with x_0 and \sigma</span>
-<span class="sd">            - topologies : Object of Topology class containing all topology information of the _CG_ molecule, including neighbor lists for bond and angle priors</span>
-
-<span class="sd">    Inputs:</span>
-<span class="sd">        root :</span>
-<span class="sd">            Location for AlanineDataset to be downloaded and processed</span>
-<span class="sd">        stride :</span>
-<span class="sd">            Stride length over dataset</span>
-
-<span class="sd">    Default priors:</span>
-<span class="sd">        - HarmonicBonds, HarmonicAngles</span>
-<span class="sd">    Optional priors:</span>
-<span class="sd">        - Repulsion</span>
-<span class="sd">            - If repulsion prior is used, a custom neighbor list is created for the repulsion prior where all pairs of beads</span>
-<span class="sd">              not interacting through bonds and angles are included in the interaction set</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="c1">#:Temperature used to generate the underlying all-atom data in [K]</span>
-    <span class="n">temperature</span> <span class="o">=</span> <span class="mi">300</span>  <span class="c1"># K</span>
-    <span class="c1">#:Boltzmann constant in kcal/mol/K</span>
-    <span class="n">kB</span> <span class="o">=</span> <span class="mf">0.0019872041</span>
-    <span class="c1">#:</span>
-    <span class="n">_priors_cls</span> <span class="o">=</span> <span class="p">[</span><span class="n">HarmonicBonds</span><span class="p">,</span> <span class="n">HarmonicAngles</span><span class="p">]</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">stride</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-        <span class="n">transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">pre_transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">pre_filter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">stride</span> <span class="o">=</span> <span class="n">stride</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">priors_cls</span> <span class="o">=</span> <span class="n">AlanineDataset</span><span class="o">.</span><span class="n">_priors_cls</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">AlanineDataset</span><span class="o">.</span><span class="n">temperature</span> <span class="o">*</span> <span class="n">AlanineDataset</span><span class="o">.</span><span class="n">kB</span><span class="p">)</span>
-
-        <span class="nb">super</span><span class="p">(</span><span class="n">AlanineDataset</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">root</span><span class="p">,</span> <span class="n">transform</span><span class="p">,</span> <span class="n">pre_transform</span><span class="p">,</span> <span class="n">pre_filter</span>
-        <span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">slices</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">processed_paths</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">topologies</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;ala2&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">processed_paths</span><span class="p">[</span><span class="mi">1</span><span class="p">])}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">prior_models</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">processed_paths</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">raw_file_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="p">[</span>
-            <span class="s2">&quot;alanine-dipeptide-1Mx1ps-with-force.npz&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;al2.pdb&quot;</span><span class="p">,</span>
-        <span class="p">]</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">processed_file_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="p">[</span><span class="s2">&quot;ala2.pt&quot;</span><span class="p">,</span> <span class="s2">&quot;topologies.pt&quot;</span><span class="p">,</span> <span class="s2">&quot;priors.pt&quot;</span><span class="p">]</span>  <span class="c1"># , &quot;al2.pdb&quot;]</span>
-
+<a class="viewcode-back" href="../../../data/fixed_datasets.html#mlcg.datasets.alanine_dipeptide.AlanineDataset">[docs]</a>
+</span><span data-line="24"><span class="k">class</span><span class="w"> </span><span class="nc">AlanineDataset</span><span class="p">(</span><span class="n">InMemoryDataset</span><span class="p">):</span>
+</span><span data-line="25"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Dataset for training a CG model of the alanine-dipeptide protein following a Cα + 1 C\beta CG mapping</span>
+</span><span data-line="26">
+</span><span data-line="27"><span class="sd">    Alanine Dipeptide CG structure:</span>
+</span><span data-line="28">
+</span><span data-line="29"><span class="sd">    .. code-block::</span>
+</span><span data-line="30">
+</span><span data-line="31"><span class="sd">                CB(3)</span>
+</span><span data-line="32"><span class="sd">                  |</span>
+</span><span data-line="33"><span class="sd">          N(1) - CA(2) - C(4)</span>
+</span><span data-line="34"><span class="sd">         /                  \</span>
+</span><span data-line="35"><span class="sd">        C(0)                 N(5)</span>
+</span><span data-line="36">
+</span><span data-line="37">
+</span><span data-line="38"><span class="sd">    This Dataset produces delta forces for model training, in which the CG prior forces (harmonic bonds and angles) have been subtracted from the full CG forces.</span>
+</span><span data-line="39">
+</span><span data-line="40"><span class="sd">    The class works as follows:</span>
+</span><span data-line="41"><span class="sd">        - If the raw data (coordinates, forces, and pdb file) for alanine dipeptide does not exist, the files will automatically be downloaded and processed</span>
+</span><span data-line="42"><span class="sd">        - If the raw data exists, &quot;root/processed/&quot; will be created and the raw dataset will be processed</span>
+</span><span data-line="43"><span class="sd">        - If the raw data and processed data exists, the class will load the processed dataset containing:</span>
+</span><span data-line="44"><span class="sd">            - data : AtomicData object containing all the CG positions, forces, embeddings</span>
+</span><span data-line="45"><span class="sd">            - slices : Slices of the AtomicData object</span>
+</span><span data-line="46"><span class="sd">            - prior_models : Prior models (HarmonicBonds, HarmonicAngles) of the dataset with x_0 and \sigma</span>
+</span><span data-line="47"><span class="sd">            - topologies : Object of Topology class containing all topology information of the _CG_ molecule, including neighbor lists for bond and angle priors</span>
+</span><span data-line="48">
+</span><span data-line="49"><span class="sd">    Inputs:</span>
+</span><span data-line="50"><span class="sd">        root :</span>
+</span><span data-line="51"><span class="sd">            Location for AlanineDataset to be downloaded and processed</span>
+</span><span data-line="52"><span class="sd">        stride :</span>
+</span><span data-line="53"><span class="sd">            Stride length over dataset</span>
+</span><span data-line="54">
+</span><span data-line="55"><span class="sd">    Default priors:</span>
+</span><span data-line="56"><span class="sd">        - HarmonicBonds, HarmonicAngles</span>
+</span><span data-line="57"><span class="sd">    Optional priors:</span>
+</span><span data-line="58"><span class="sd">        - Repulsion</span>
+</span><span data-line="59"><span class="sd">            - If repulsion prior is used, a custom neighbor list is created for the repulsion prior where all pairs of beads</span>
+</span><span data-line="60"><span class="sd">              not interacting through bonds and angles are included in the interaction set</span>
+</span><span data-line="61"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="62">
+</span><span data-line="63">    <span class="c1">#:Temperature used to generate the underlying all-atom data in [K]</span>
+</span><span data-line="64">    <span class="n">temperature</span> <span class="o">=</span> <span class="mi">300</span>  <span class="c1"># K</span>
+</span><span data-line="65">    <span class="c1">#:Boltzmann constant in kcal/mol/K</span>
+</span><span data-line="66">    <span class="n">kB</span> <span class="o">=</span> <span class="mf">0.0019872041</span>
+</span><span data-line="67">    <span class="c1">#:</span>
+</span><span data-line="68">    <span class="n">_priors_cls</span> <span class="o">=</span> <span class="p">[</span><span class="n">HarmonicBonds</span><span class="p">,</span> <span class="n">HarmonicAngles</span><span class="p">]</span>
+</span><span data-line="69">
+</span><span data-line="70">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+</span><span data-line="71">        <span class="bp">self</span><span class="p">,</span>
+</span><span data-line="72">        <span class="n">root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="73">        <span class="n">stride</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+</span><span data-line="74">        <span class="n">transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+</span><span data-line="75">        <span class="n">pre_transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+</span><span data-line="76">        <span class="n">pre_filter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+</span><span data-line="77">    <span class="p">):</span>
+</span><span data-line="78">        <span class="bp">self</span><span class="o">.</span><span class="n">stride</span> <span class="o">=</span> <span class="n">stride</span>
+</span><span data-line="79">        <span class="bp">self</span><span class="o">.</span><span class="n">priors_cls</span> <span class="o">=</span> <span class="n">AlanineDataset</span><span class="o">.</span><span class="n">_priors_cls</span>
+</span><span data-line="80">        <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">AlanineDataset</span><span class="o">.</span><span class="n">temperature</span> <span class="o">*</span> <span class="n">AlanineDataset</span><span class="o">.</span><span class="n">kB</span><span class="p">)</span>
+</span><span data-line="81">
+</span><span data-line="82">        <span class="nb">super</span><span class="p">(</span><span class="n">AlanineDataset</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+</span><span data-line="83">            <span class="n">root</span><span class="p">,</span> <span class="n">transform</span><span class="p">,</span> <span class="n">pre_transform</span><span class="p">,</span> <span class="n">pre_filter</span>
+</span><span data-line="84">        <span class="p">)</span>
+</span><span data-line="85">
+</span><span data-line="86">        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">slices</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">processed_paths</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+</span><span data-line="87">        <span class="bp">self</span><span class="o">.</span><span class="n">topologies</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;ala2&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">processed_paths</span><span class="p">[</span><span class="mi">1</span><span class="p">])}</span>
+</span><span data-line="88">        <span class="bp">self</span><span class="o">.</span><span class="n">prior_models</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">processed_paths</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+</span><span data-line="89">
+</span><span data-line="90">    <span class="nd">@property</span>
+</span><span data-line="91">    <span class="k">def</span><span class="w"> </span><span class="nf">raw_file_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span data-line="92">        <span class="k">return</span> <span class="p">[</span>
+</span><span data-line="93">            <span class="s2">&quot;alanine-dipeptide-1Mx1ps-with-force.npz&quot;</span><span class="p">,</span>
+</span><span data-line="94">            <span class="s2">&quot;al2.pdb&quot;</span><span class="p">,</span>
+</span><span data-line="95">        <span class="p">]</span>
+</span><span data-line="96">
+</span><span data-line="97">    <span class="nd">@property</span>
+</span><span data-line="98">    <span class="k">def</span><span class="w"> </span><span class="nf">processed_file_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span data-line="99">        <span class="k">return</span> <span class="p">[</span><span class="s2">&quot;ala2.pt&quot;</span><span class="p">,</span> <span class="s2">&quot;topologies.pt&quot;</span><span class="p">,</span> <span class="s2">&quot;priors.pt&quot;</span><span class="p">]</span>  <span class="c1"># , &quot;al2.pdb&quot;]</span>
+</span><span data-line="100">
 <div class="viewcode-block" id="AlanineDataset.download">
-<a class="viewcode-back" href="../../../autodoc.html#mlcg.datasets.alanine_dipeptide.AlanineDataset.download">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">download</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="c1"># Download to `self.raw_dir`.</span>
-        <span class="n">url_trajectory</span> <span class="o">=</span> <span class="s2">&quot;http://ftp.mi.fu-berlin.de/pub/cmb-data/alanine-dipeptide-1Mx1ps-with-force.npz&quot;</span>
-        <span class="n">url_pdb</span> <span class="o">=</span> <span class="s2">&quot;http://ftp.mi.fu-berlin.de/pub/cmb-data/al2.pdb&quot;</span>
-        <span class="n">path_inputs</span> <span class="o">=</span> <span class="n">download_url</span><span class="p">(</span><span class="n">url_trajectory</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_dir</span><span class="p">)</span>
-        <span class="n">path_pdb</span> <span class="o">=</span> <span class="n">download_url</span><span class="p">(</span><span class="n">url_pdb</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_dir</span><span class="p">)</span></div>
+<a class="viewcode-back" href="../../../data/fixed_datasets.html#mlcg.datasets.alanine_dipeptide.AlanineDataset.download">[docs]</a>
+</span><span data-line="101">    <span class="k">def</span><span class="w"> </span><span class="nf">download</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span data-line="102">        <span class="c1"># Download to `self.raw_dir`.</span>
+</span><span data-line="103">        <span class="n">url_trajectory</span> <span class="o">=</span> <span class="s2">&quot;http://ftp.mi.fu-berlin.de/pub/cmb-data/alanine-dipeptide-1Mx1ps-with-force.npz&quot;</span>
+</span><span data-line="104">        <span class="n">url_pdb</span> <span class="o">=</span> <span class="s2">&quot;http://ftp.mi.fu-berlin.de/pub/cmb-data/al2.pdb&quot;</span>
+</span><span data-line="105">        <span class="n">path_inputs</span> <span class="o">=</span> <span class="n">download_url</span><span class="p">(</span><span class="n">url_trajectory</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_dir</span><span class="p">)</span>
+</span><span data-line="106">        <span class="n">path_pdb</span> <span class="o">=</span> <span class="n">download_url</span><span class="p">(</span><span class="n">url_pdb</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_dir</span><span class="p">)</span></div>
 
-
+</span><span data-line="107">
 <div class="viewcode-block" id="AlanineDataset.make_data_slices_prior">
-<a class="viewcode-back" href="../../../autodoc.html#mlcg.datasets.alanine_dipeptide.AlanineDataset.make_data_slices_prior">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">make_data_slices_prior</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">coords_forces_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">topology</span><span class="p">:</span> <span class="n">Topology</span><span class="p">,</span>
-        <span class="n">cg_mapping</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
-        <span class="n">cg_topo</span><span class="p">:</span> <span class="n">Topology</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">AtomicData</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleDict</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Method to make collated AtomicData object, slices, and baseline models</span>
+<a class="viewcode-back" href="../../../data/fixed_datasets.html#mlcg.datasets.alanine_dipeptide.AlanineDataset.make_data_slices_prior">[docs]</a>
+</span><span data-line="108">    <span class="k">def</span><span class="w"> </span><span class="nf">make_data_slices_prior</span><span class="p">(</span>
+</span><span data-line="109">        <span class="bp">self</span><span class="p">,</span>
+</span><span data-line="110">        <span class="n">coords_forces_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="111">        <span class="n">topology</span><span class="p">:</span> <span class="n">Topology</span><span class="p">,</span>
+</span><span data-line="112">        <span class="n">cg_mapping</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+</span><span data-line="113">        <span class="n">cg_topo</span><span class="p">:</span> <span class="n">Topology</span><span class="p">,</span>
+</span><span data-line="114">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">AtomicData</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleDict</span><span class="p">]:</span>
+</span><span data-line="115"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Method to make collated AtomicData object, slices, and baseline models</span>
+</span><span data-line="116">
+</span><span data-line="117"><span class="sd">        Parameters</span>
+</span><span data-line="118"><span class="sd">        ----------</span>
+</span><span data-line="119"><span class="sd">        coords_forces_file:</span>
+</span><span data-line="120"><span class="sd">            npz file containing the forces and coordinates from the all-atom simulation</span>
+</span><span data-line="121"><span class="sd">        topology:</span>
+</span><span data-line="122"><span class="sd">            Topology of all-atom model</span>
+</span><span data-line="123"><span class="sd">        cg_mapping:</span>
+</span><span data-line="124"><span class="sd">            Dictionary containing CG mapping.</span>
+</span><span data-line="125"><span class="sd">        cg_topo:</span>
+</span><span data-line="126"><span class="sd">            Topology of CG model</span>
+</span><span data-line="127">
+</span><span data-line="128"><span class="sd">        Returns</span>
+</span><span data-line="129"><span class="sd">        -------</span>
+</span><span data-line="130"><span class="sd">        data_list_coll:</span>
+</span><span data-line="131"><span class="sd">            Collated AtomicData object</span>
+</span><span data-line="132"><span class="sd">        slices:</span>
+</span><span data-line="133"><span class="sd">            Dictionary containing slices of the AtomicData object</span>
+</span><span data-line="134"><span class="sd">        baseline_models:</span>
+</span><span data-line="135"><span class="sd">            Module dictionary containing fitted prior models</span>
+</span><span data-line="136">
+</span><span data-line="137"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="138">        <span class="c1">## LOAD DATA FILE AND ALLOCATE COORDINATES AND FORCES</span>
+</span><span data-line="139">        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">coords_forces_file</span><span class="p">)</span>
+</span><span data-line="140">        <span class="n">coords</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;coordinates&quot;</span><span class="p">]</span>
+</span><span data-line="141">        <span class="n">forces</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;forces&quot;</span><span class="p">]</span>
+</span><span data-line="142">
+</span><span data-line="143">        <span class="c1">## MAKE EMBEDDINGS AND MASSES AND CG_MATRIX</span>
+</span><span data-line="144">        <span class="n">embeddings</span><span class="p">,</span> <span class="n">masses</span><span class="p">,</span> <span class="n">cg_matrix</span><span class="p">,</span> <span class="n">cg_mapping_</span> <span class="o">=</span> <span class="n">build_cg_matrix</span><span class="p">(</span>
+</span><span data-line="145">            <span class="n">topology</span><span class="p">,</span> <span class="n">cg_mapping</span><span class="o">=</span><span class="n">cg_mapping</span><span class="p">,</span> <span class="n">special_terminal</span><span class="o">=</span><span class="kc">False</span>
+</span><span data-line="146">        <span class="p">)</span>
+</span><span data-line="147">
+</span><span data-line="148">        <span class="n">n_beads</span> <span class="o">=</span> <span class="n">cg_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</span><span data-line="149">
+</span><span data-line="150">        <span class="c1">## MAKE PRIOR NEIGHBOR LIST</span>
+</span><span data-line="151">        <span class="n">prior_nls</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_priors</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">priors_cls</span><span class="p">,</span> <span class="n">cg_topo</span><span class="p">)</span>
+</span><span data-line="152">
+</span><span data-line="153">        <span class="c1">## MAKE ATOMICDATA OBJECT</span>
+</span><span data-line="154">        <span class="n">data_list</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span data-line="155">
+</span><span data-line="156">        <span class="c1"># MAKE CG COORDINATES AND CG FORCES</span>
+</span><span data-line="157">        <span class="n">cg_coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+</span><span data-line="158">            <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;mn, ind-&gt; imd&quot;</span><span class="p">,</span> <span class="n">cg_matrix</span><span class="p">,</span> <span class="n">coords</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span>
+</span><span data-line="159">        <span class="p">)</span>
+</span><span data-line="160">
+</span><span data-line="161">        <span class="n">f_proj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span>
+</span><span data-line="162">            <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">cg_matrix</span><span class="p">,</span> <span class="n">cg_matrix</span><span class="o">.</span><span class="n">T</span><span class="p">)),</span> <span class="n">cg_matrix</span>
+</span><span data-line="163">        <span class="p">)</span>
+</span><span data-line="164">
+</span><span data-line="165">        <span class="n">cg_forces</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+</span><span data-line="166">            <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;mn, ind-&gt; imd&quot;</span><span class="p">,</span> <span class="n">f_proj</span><span class="p">,</span> <span class="n">forces</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span>
+</span><span data-line="167">        <span class="p">)</span>
+</span><span data-line="168">
+</span><span data-line="169">        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">cg_coord</span><span class="p">,</span> <span class="n">cg_force</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span>
+</span><span data-line="170">            <span class="nb">zip</span><span class="p">(</span><span class="n">cg_coords</span><span class="p">[::</span> <span class="bp">self</span><span class="o">.</span><span class="n">stride</span><span class="p">],</span> <span class="n">cg_forces</span><span class="p">[::</span> <span class="bp">self</span><span class="o">.</span><span class="n">stride</span><span class="p">])</span>
+</span><span data-line="171">        <span class="p">):</span>
+</span><span data-line="172">            <span class="n">pos</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">cg_coord</span><span class="p">)</span>
+</span><span data-line="173">            <span class="n">z</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">embeddings</span><span class="p">)</span><span class="o">.</span><span class="n">long</span><span class="p">()</span>
+</span><span data-line="174">            <span class="n">force</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">cg_force</span><span class="p">)</span>
+</span><span data-line="175">
+</span><span data-line="176">            <span class="c1">## MAKE ATOMICDATA OBJECT</span>
+</span><span data-line="177">            <span class="n">atomicData</span> <span class="o">=</span> <span class="n">AtomicData</span><span class="o">.</span><span class="n">from_points</span><span class="p">(</span>
+</span><span data-line="178">                <span class="n">atom_types</span><span class="o">=</span><span class="n">z</span><span class="p">,</span>
+</span><span data-line="179">                <span class="n">pos</span><span class="o">=</span><span class="n">pos</span><span class="p">,</span>
+</span><span data-line="180">                <span class="n">forces</span><span class="o">=</span><span class="n">force</span><span class="p">,</span>
+</span><span data-line="181">                <span class="n">masses</span><span class="o">=</span><span class="n">masses</span><span class="p">,</span>
+</span><span data-line="182">                <span class="n">neighborlist</span><span class="o">=</span><span class="n">prior_nls</span><span class="p">,</span>
+</span><span data-line="183">                <span class="n">traj_id</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+</span><span data-line="184">                <span class="n">name</span><span class="o">=</span><span class="s2">&quot;ala2&quot;</span><span class="p">,</span>
+</span><span data-line="185">                <span class="n">frame_id</span><span class="o">=</span><span class="n">i</span><span class="p">,</span>
+</span><span data-line="186">            <span class="p">)</span>
+</span><span data-line="187">
+</span><span data-line="188">            <span class="n">data_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">atomicData</span><span class="p">)</span>
+</span><span data-line="189">
+</span><span data-line="190">        <span class="c1">## COLLATE ATOMICDATA DATASET</span>
+</span><span data-line="191">        <span class="n">data_list_coll</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">collate</span><span class="p">(</span>
+</span><span data-line="192">            <span class="n">data_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span>
+</span><span data-line="193">            <span class="n">data_list</span><span class="o">=</span><span class="n">data_list</span><span class="p">,</span>
+</span><span data-line="194">            <span class="n">increment</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span data-line="195">            <span class="n">add_batch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span data-line="196">        <span class="p">)</span>
+</span><span data-line="197">
+</span><span data-line="198">        <span class="c1">## MAKE BASELINE MODELS</span>
+</span><span data-line="199">        <span class="n">baseline_models</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_baseline_models</span><span class="p">(</span>
+</span><span data-line="200">            <span class="n">data_list_coll</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">priors_cls</span>
+</span><span data-line="201">        <span class="p">)</span>
+</span><span data-line="202">
+</span><span data-line="203">        <span class="c1">## REMOVE BASELINE FORCES</span>
+</span><span data-line="204">        <span class="c1">## Important -- This removes baseline forces in place rather than explicitly by returning values</span>
+</span><span data-line="205">        <span class="c1">## from the method</span>
+</span><span data-line="206">        <span class="n">batch_size</span> <span class="o">=</span> <span class="mi">512</span>
+</span><span data-line="207">        <span class="n">chunks</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">chunker</span><span class="p">(</span><span class="n">data_list</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">))</span>
+</span><span data-line="208">        <span class="k">for</span> <span class="n">sub_data_list</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">chunks</span><span class="p">,</span> <span class="s2">&quot;Removing baseline forces&quot;</span><span class="p">):</span>
+</span><span data-line="209">            <span class="n">_</span> <span class="o">=</span> <span class="n">remove_baseline_forces</span><span class="p">(</span>
+</span><span data-line="210">                <span class="n">sub_data_list</span><span class="p">,</span>
+</span><span data-line="211">                <span class="n">baseline_models</span><span class="p">,</span>
+</span><span data-line="212">            <span class="p">)</span>
+</span><span data-line="213">
+</span><span data-line="214">        <span class="c1">## COLLATE ATOMIC DATASET WITHOUT INCREMENT</span>
+</span><span data-line="215">        <span class="n">data_list_coll</span><span class="p">,</span> <span class="n">slices</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">collate</span><span class="p">(</span>
+</span><span data-line="216">            <span class="n">data_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span>
+</span><span data-line="217">            <span class="n">data_list</span><span class="o">=</span><span class="n">data_list</span><span class="p">,</span>
+</span><span data-line="218">            <span class="n">increment</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+</span><span data-line="219">            <span class="n">add_batch</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+</span><span data-line="220">        <span class="p">)</span>
+</span><span data-line="221">
+</span><span data-line="222">        <span class="c1">## REMOVE NEIGHBOR LIST AND BASELINE FORCES</span>
+</span><span data-line="223">        <span class="nb">delattr</span><span class="p">(</span><span class="n">data_list_coll</span><span class="p">,</span> <span class="s2">&quot;baseline_forces&quot;</span><span class="p">)</span>
+</span><span data-line="224">        <span class="n">data_list_coll</span><span class="o">.</span><span class="n">neighbor_list</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span data-line="225">
+</span><span data-line="226">        <span class="k">return</span> <span class="n">data_list_coll</span><span class="p">,</span> <span class="n">slices</span><span class="p">,</span> <span class="n">baseline_models</span></div>
 
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        coords_forces_file:</span>
-<span class="sd">            npz file containing the forces and coordinates from the all-atom simulation</span>
-<span class="sd">        topology:</span>
-<span class="sd">            Topology of all-atom model</span>
-<span class="sd">        cg_mapping:</span>
-<span class="sd">            Dictionary containing CG mapping.</span>
-<span class="sd">        cg_topo:</span>
-<span class="sd">            Topology of CG model</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        data_list_coll:</span>
-<span class="sd">            Collated AtomicData object</span>
-<span class="sd">        slices:</span>
-<span class="sd">            Dictionary containing slices of the AtomicData object</span>
-<span class="sd">        baseline_models:</span>
-<span class="sd">            Module dictionary containing fitted prior models</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1">## LOAD DATA FILE AND ALLOCATE COORDINATES AND FORCES</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">coords_forces_file</span><span class="p">)</span>
-        <span class="n">coords</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;coordinates&quot;</span><span class="p">]</span>
-        <span class="n">forces</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;forces&quot;</span><span class="p">]</span>
-
-        <span class="c1">## MAKE EMBEDDINGS AND MASSES AND CG_MATRIX</span>
-        <span class="n">embeddings</span><span class="p">,</span> <span class="n">masses</span><span class="p">,</span> <span class="n">cg_matrix</span><span class="p">,</span> <span class="n">cg_mapping_</span> <span class="o">=</span> <span class="n">build_cg_matrix</span><span class="p">(</span>
-            <span class="n">topology</span><span class="p">,</span> <span class="n">cg_mapping</span><span class="o">=</span><span class="n">cg_mapping</span><span class="p">,</span> <span class="n">special_terminal</span><span class="o">=</span><span class="kc">False</span>
-        <span class="p">)</span>
-
-        <span class="n">n_beads</span> <span class="o">=</span> <span class="n">cg_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-
-        <span class="c1">## MAKE PRIOR NEIGHBOR LIST</span>
-        <span class="n">prior_nls</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_priors</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">priors_cls</span><span class="p">,</span> <span class="n">cg_topo</span><span class="p">)</span>
-
-        <span class="c1">## MAKE ATOMICDATA OBJECT</span>
-        <span class="n">data_list</span> <span class="o">=</span> <span class="p">[]</span>
-
-        <span class="c1"># MAKE CG COORDINATES AND CG FORCES</span>
-        <span class="n">cg_coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;mn, ind-&gt; imd&quot;</span><span class="p">,</span> <span class="n">cg_matrix</span><span class="p">,</span> <span class="n">coords</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span>
-        <span class="p">)</span>
-
-        <span class="n">f_proj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">cg_matrix</span><span class="p">,</span> <span class="n">cg_matrix</span><span class="o">.</span><span class="n">T</span><span class="p">)),</span> <span class="n">cg_matrix</span>
-        <span class="p">)</span>
-
-        <span class="n">cg_forces</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;mn, ind-&gt; imd&quot;</span><span class="p">,</span> <span class="n">f_proj</span><span class="p">,</span> <span class="n">forces</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span>
-        <span class="p">)</span>
-
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">cg_coord</span><span class="p">,</span> <span class="n">cg_force</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span>
-            <span class="nb">zip</span><span class="p">(</span><span class="n">cg_coords</span><span class="p">[::</span> <span class="bp">self</span><span class="o">.</span><span class="n">stride</span><span class="p">],</span> <span class="n">cg_forces</span><span class="p">[::</span> <span class="bp">self</span><span class="o">.</span><span class="n">stride</span><span class="p">])</span>
-        <span class="p">):</span>
-            <span class="n">pos</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">cg_coord</span><span class="p">)</span>
-            <span class="n">z</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">embeddings</span><span class="p">)</span><span class="o">.</span><span class="n">long</span><span class="p">()</span>
-            <span class="n">force</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">cg_force</span><span class="p">)</span>
-
-            <span class="c1">## MAKE ATOMICDATA OBJECT</span>
-            <span class="n">atomicData</span> <span class="o">=</span> <span class="n">AtomicData</span><span class="o">.</span><span class="n">from_points</span><span class="p">(</span>
-                <span class="n">atom_types</span><span class="o">=</span><span class="n">z</span><span class="p">,</span>
-                <span class="n">pos</span><span class="o">=</span><span class="n">pos</span><span class="p">,</span>
-                <span class="n">forces</span><span class="o">=</span><span class="n">force</span><span class="p">,</span>
-                <span class="n">masses</span><span class="o">=</span><span class="n">masses</span><span class="p">,</span>
-                <span class="n">neighborlist</span><span class="o">=</span><span class="n">prior_nls</span><span class="p">,</span>
-                <span class="n">traj_id</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                <span class="n">name</span><span class="o">=</span><span class="s2">&quot;ala2&quot;</span><span class="p">,</span>
-                <span class="n">frame_id</span><span class="o">=</span><span class="n">i</span><span class="p">,</span>
-            <span class="p">)</span>
-
-            <span class="n">data_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">atomicData</span><span class="p">)</span>
-
-        <span class="c1">## COLLATE ATOMICDATA DATASET</span>
-        <span class="n">data_list_coll</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">collate</span><span class="p">(</span>
-            <span class="n">data_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span>
-            <span class="n">data_list</span><span class="o">=</span><span class="n">data_list</span><span class="p">,</span>
-            <span class="n">increment</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">add_batch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="p">)</span>
-
-        <span class="c1">## MAKE BASELINE MODELS</span>
-        <span class="n">baseline_models</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_baseline_models</span><span class="p">(</span>
-            <span class="n">data_list_coll</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">priors_cls</span>
-        <span class="p">)</span>
-
-        <span class="c1">## REMOVE BASELINE FORCES</span>
-        <span class="c1">## Important -- This removes baseline forces in place rather than explicitly by returning values</span>
-        <span class="c1">## from the method</span>
-        <span class="n">batch_size</span> <span class="o">=</span> <span class="mi">512</span>
-        <span class="n">chunks</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">chunker</span><span class="p">(</span><span class="n">data_list</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">))</span>
-        <span class="k">for</span> <span class="n">sub_data_list</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">chunks</span><span class="p">,</span> <span class="s2">&quot;Removing baseline forces&quot;</span><span class="p">):</span>
-            <span class="n">_</span> <span class="o">=</span> <span class="n">remove_baseline_forces</span><span class="p">(</span>
-                <span class="n">sub_data_list</span><span class="p">,</span>
-                <span class="n">baseline_models</span><span class="p">,</span>
-            <span class="p">)</span>
-
-        <span class="c1">## COLLATE ATOMIC DATASET WITHOUT INCREMENT</span>
-        <span class="n">data_list_coll</span><span class="p">,</span> <span class="n">slices</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">collate</span><span class="p">(</span>
-            <span class="n">data_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span>
-            <span class="n">data_list</span><span class="o">=</span><span class="n">data_list</span><span class="p">,</span>
-            <span class="n">increment</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-            <span class="n">add_batch</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        <span class="p">)</span>
-
-        <span class="c1">## REMOVE NEIGHBOR LIST AND BASELINE FORCES</span>
-        <span class="nb">delattr</span><span class="p">(</span><span class="n">data_list_coll</span><span class="p">,</span> <span class="s2">&quot;baseline_forces&quot;</span><span class="p">)</span>
-        <span class="n">data_list_coll</span><span class="o">.</span><span class="n">neighbor_list</span> <span class="o">=</span> <span class="p">{}</span>
-
-        <span class="k">return</span> <span class="n">data_list_coll</span><span class="p">,</span> <span class="n">slices</span><span class="p">,</span> <span class="n">baseline_models</span></div>
-
-
+</span><span data-line="227">
 <div class="viewcode-block" id="AlanineDataset.make_priors">
-<a class="viewcode-back" href="../../../autodoc.html#mlcg.datasets.alanine_dipeptide.AlanineDataset.make_priors">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">make_priors</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">priors_cls</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">_Prior</span><span class="p">],</span>
-        <span class="n">cg_topo</span><span class="p">:</span> <span class="n">Topology</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Method to make prior neighbor lists</span>
+<a class="viewcode-back" href="../../../data/fixed_datasets.html#mlcg.datasets.alanine_dipeptide.AlanineDataset.make_priors">[docs]</a>
+</span><span data-line="228">    <span class="k">def</span><span class="w"> </span><span class="nf">make_priors</span><span class="p">(</span>
+</span><span data-line="229">        <span class="bp">self</span><span class="p">,</span>
+</span><span data-line="230">        <span class="n">priors_cls</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">_Prior</span><span class="p">],</span>
+</span><span data-line="231">        <span class="n">cg_topo</span><span class="p">:</span> <span class="n">Topology</span><span class="p">,</span>
+</span><span data-line="232">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="233"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Method to make prior neighbor lists</span>
+</span><span data-line="234">
+</span><span data-line="235">
+</span><span data-line="236"><span class="sd">        Parameters</span>
+</span><span data-line="237"><span class="sd">        ----------</span>
+</span><span data-line="238"><span class="sd">        priors_cls:</span>
+</span><span data-line="239"><span class="sd">            List of prior classes</span>
+</span><span data-line="240"><span class="sd">        cg_topo:</span>
+</span><span data-line="241">
+</span><span data-line="242"><span class="sd">        Returns</span>
+</span><span data-line="243"><span class="sd">        -------</span>
+</span><span data-line="244"><span class="sd">        prior_nls:</span>
+</span><span data-line="245"><span class="sd">            Dictionary containing all prior neighbor lists</span>
+</span><span data-line="246">
+</span><span data-line="247"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="248">        <span class="n">prior_nls</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span data-line="249">        <span class="k">for</span> <span class="n">cl</span> <span class="ow">in</span> <span class="n">priors_cls</span><span class="p">:</span>
+</span><span data-line="250">            <span class="k">if</span> <span class="n">cl</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">Repulsion</span><span class="p">:</span>
+</span><span data-line="251">                <span class="n">prior_nls</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="o">**</span><span class="n">cl</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">(</span><span class="n">cg_topo</span><span class="p">))</span>
+</span><span data-line="252">            <span class="k">elif</span> <span class="n">cl</span> <span class="ow">is</span> <span class="n">Repulsion</span><span class="p">:</span>
+</span><span data-line="253">                <span class="n">prior_nls</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">repulsion_nls</span><span class="p">(</span><span class="n">cl</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">cg_topo</span><span class="p">))</span>
+</span><span data-line="254">        <span class="k">return</span> <span class="n">prior_nls</span></div>
 
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        priors_cls:</span>
-<span class="sd">            List of prior classes</span>
-<span class="sd">        cg_topo:</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        prior_nls:</span>
-<span class="sd">            Dictionary containing all prior neighbor lists</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">prior_nls</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">for</span> <span class="n">cl</span> <span class="ow">in</span> <span class="n">priors_cls</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">cl</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">Repulsion</span><span class="p">:</span>
-                <span class="n">prior_nls</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="o">**</span><span class="n">cl</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">(</span><span class="n">cg_topo</span><span class="p">))</span>
-            <span class="k">elif</span> <span class="n">cl</span> <span class="ow">is</span> <span class="n">Repulsion</span><span class="p">:</span>
-                <span class="n">prior_nls</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">repulsion_nls</span><span class="p">(</span><span class="n">cl</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">cg_topo</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">prior_nls</span></div>
-
-
+</span><span data-line="255">
 <div class="viewcode-block" id="AlanineDataset.repulsion_nls">
-<a class="viewcode-back" href="../../../autodoc.html#mlcg.datasets.alanine_dipeptide.AlanineDataset.repulsion_nls">[docs]</a>
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">repulsion_nls</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">cg_topo</span><span class="p">:</span> <span class="n">Topology</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Method for generating neighbor list for Repulsion prior - all interactions not included in bond or angle interactions</span>
+<a class="viewcode-back" href="../../../data/fixed_datasets.html#mlcg.datasets.alanine_dipeptide.AlanineDataset.repulsion_nls">[docs]</a>
+</span><span data-line="256">    <span class="nd">@staticmethod</span>
+</span><span data-line="257">    <span class="k">def</span><span class="w"> </span><span class="nf">repulsion_nls</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">cg_topo</span><span class="p">:</span> <span class="n">Topology</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="258"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Method for generating neighbor list for Repulsion prior - all interactions not included in bond or angle interactions</span>
+</span><span data-line="259">
+</span><span data-line="260">
+</span><span data-line="261"><span class="sd">        Parameters</span>
+</span><span data-line="262"><span class="sd">        ----------</span>
+</span><span data-line="263"><span class="sd">        name:</span>
+</span><span data-line="264"><span class="sd">            Name of prior class</span>
+</span><span data-line="265"><span class="sd">        cg_topo:</span>
+</span><span data-line="266"><span class="sd">            Topology object of CG molecule</span>
+</span><span data-line="267">
+</span><span data-line="268"><span class="sd">        Returns</span>
+</span><span data-line="269"><span class="sd">        -------</span>
+</span><span data-line="270"><span class="sd">        dict</span>
+</span><span data-line="271"><span class="sd">            Dictionary containing repulsion neighor list</span>
+</span><span data-line="272">
+</span><span data-line="273"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="274">        <span class="n">ids</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">cg_topo</span><span class="o">.</span><span class="n">n_atoms</span><span class="p">)</span>
+</span><span data-line="275">
+</span><span data-line="276">        <span class="c1">## MAKE MAPPING OF ALL PAIRS OF ATOMS</span>
+</span><span data-line="277">        <span class="n">mapping</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cartesian_prod</span><span class="p">(</span><span class="n">ids</span><span class="p">,</span> <span class="n">ids</span><span class="p">)</span><span class="o">.</span><span class="n">t</span><span class="p">()</span>
+</span><span data-line="278">        <span class="c1">## REMOVE MAPPING WITH SELF</span>
+</span><span data-line="279">        <span class="n">mapping</span> <span class="o">=</span> <span class="n">mapping</span><span class="p">[:,</span> <span class="n">mapping</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">mapping</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+</span><span data-line="280">
+</span><span data-line="281">        <span class="c1">## REMOVE BONDED MAPPINGS FROM REPULSION MAPPING</span>
+</span><span data-line="282">        <span class="k">for</span> <span class="n">bond_num</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cg_topo</span><span class="o">.</span><span class="n">bonds</span><span class="p">[</span><span class="mi">0</span><span class="p">])):</span>
+</span><span data-line="283">            <span class="n">atom_0</span> <span class="o">=</span> <span class="n">cg_topo</span><span class="o">.</span><span class="n">bonds</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">bond_num</span><span class="p">]</span>
+</span><span data-line="284">            <span class="n">atom_1</span> <span class="o">=</span> <span class="n">cg_topo</span><span class="o">.</span><span class="n">bonds</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">bond_num</span><span class="p">]</span>
+</span><span data-line="285">            <span class="n">mask_0</span> <span class="o">=</span> <span class="p">(</span><span class="n">mapping</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span> <span class="o">==</span> <span class="n">atom_0</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">mapping</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span> <span class="o">==</span> <span class="n">atom_0</span><span class="p">)</span>
+</span><span data-line="286">            <span class="n">mask_1</span> <span class="o">=</span> <span class="p">(</span><span class="n">mapping</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span> <span class="o">==</span> <span class="n">atom_1</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">mapping</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span> <span class="o">==</span> <span class="n">atom_1</span><span class="p">)</span>
+</span><span data-line="287">
+</span><span data-line="288">            <span class="n">mapping</span> <span class="o">=</span> <span class="n">mapping</span><span class="p">[:,</span> <span class="o">~</span><span class="p">(</span><span class="n">mask_0</span> <span class="o">*</span> <span class="n">mask_1</span><span class="p">)]</span>
+</span><span data-line="289">
+</span><span data-line="290">        <span class="c1">## REMOVE ANGLE MAPPINGS FROM REPULSION MAPPING</span>
+</span><span data-line="291">        <span class="k">for</span> <span class="n">angle_num</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cg_topo</span><span class="o">.</span><span class="n">angles</span><span class="p">[</span><span class="mi">0</span><span class="p">])):</span>
+</span><span data-line="292">            <span class="n">atom_0</span> <span class="o">=</span> <span class="n">cg_topo</span><span class="o">.</span><span class="n">angles</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">angle_num</span><span class="p">]</span>
+</span><span data-line="293">            <span class="n">atom_1</span> <span class="o">=</span> <span class="n">cg_topo</span><span class="o">.</span><span class="n">angles</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="n">angle_num</span><span class="p">]</span>
+</span><span data-line="294">            <span class="n">mask_0</span> <span class="o">=</span> <span class="p">(</span><span class="n">mapping</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span> <span class="o">==</span> <span class="n">atom_0</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">mapping</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span> <span class="o">==</span> <span class="n">atom_0</span><span class="p">)</span>
+</span><span data-line="295">            <span class="n">mask_1</span> <span class="o">=</span> <span class="p">(</span><span class="n">mapping</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span> <span class="o">==</span> <span class="n">atom_1</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">mapping</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span> <span class="o">==</span> <span class="n">atom_1</span><span class="p">)</span>
+</span><span data-line="296">
+</span><span data-line="297">            <span class="n">mapping</span> <span class="o">=</span> <span class="n">mapping</span><span class="p">[:,</span> <span class="o">~</span><span class="p">(</span><span class="n">mask_0</span> <span class="o">*</span> <span class="n">mask_1</span><span class="p">)]</span>
+</span><span data-line="298">
+</span><span data-line="299">        <span class="c1">## MAKE NEIGHBOR LIST IN STANDARD FORMAT USING MAKE_NEIGHBOR_LIST</span>
+</span><span data-line="300">        <span class="kn">from</span><span class="w"> </span><span class="nn">mlcg.neighbor_list.neighbor_list</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_neighbor_list</span>
+</span><span data-line="301">
+</span><span data-line="302">        <span class="n">nl</span> <span class="o">=</span> <span class="n">make_neighbor_list</span><span class="p">(</span>
+</span><span data-line="303">            <span class="n">tag</span><span class="o">=</span><span class="s2">&quot;fully connected&quot;</span><span class="p">,</span>
+</span><span data-line="304">            <span class="n">order</span><span class="o">=</span><span class="n">mapping</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+</span><span data-line="305">            <span class="n">index_mapping</span><span class="o">=</span><span class="n">mapping</span><span class="p">,</span>
+</span><span data-line="306">            <span class="n">self_interaction</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+</span><span data-line="307">        <span class="p">)</span>
+</span><span data-line="308">
+</span><span data-line="309">        <span class="k">return</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">nl</span><span class="p">}</span></div>
 
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        name:</span>
-<span class="sd">            Name of prior class</span>
-<span class="sd">        cg_topo:</span>
-<span class="sd">            Topology object of CG molecule</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        dict</span>
-<span class="sd">            Dictionary containing repulsion neighor list</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">ids</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">cg_topo</span><span class="o">.</span><span class="n">n_atoms</span><span class="p">)</span>
-
-        <span class="c1">## MAKE MAPPING OF ALL PAIRS OF ATOMS</span>
-        <span class="n">mapping</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cartesian_prod</span><span class="p">(</span><span class="n">ids</span><span class="p">,</span> <span class="n">ids</span><span class="p">)</span><span class="o">.</span><span class="n">t</span><span class="p">()</span>
-        <span class="c1">## REMOVE MAPPING WITH SELF</span>
-        <span class="n">mapping</span> <span class="o">=</span> <span class="n">mapping</span><span class="p">[:,</span> <span class="n">mapping</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">mapping</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
-
-        <span class="c1">## REMOVE BONDED MAPPINGS FROM REPULSION MAPPING</span>
-        <span class="k">for</span> <span class="n">bond_num</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cg_topo</span><span class="o">.</span><span class="n">bonds</span><span class="p">[</span><span class="mi">0</span><span class="p">])):</span>
-            <span class="n">atom_0</span> <span class="o">=</span> <span class="n">cg_topo</span><span class="o">.</span><span class="n">bonds</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">bond_num</span><span class="p">]</span>
-            <span class="n">atom_1</span> <span class="o">=</span> <span class="n">cg_topo</span><span class="o">.</span><span class="n">bonds</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">bond_num</span><span class="p">]</span>
-            <span class="n">mask_0</span> <span class="o">=</span> <span class="p">(</span><span class="n">mapping</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span> <span class="o">==</span> <span class="n">atom_0</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">mapping</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span> <span class="o">==</span> <span class="n">atom_0</span><span class="p">)</span>
-            <span class="n">mask_1</span> <span class="o">=</span> <span class="p">(</span><span class="n">mapping</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span> <span class="o">==</span> <span class="n">atom_1</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">mapping</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span> <span class="o">==</span> <span class="n">atom_1</span><span class="p">)</span>
-
-            <span class="n">mapping</span> <span class="o">=</span> <span class="n">mapping</span><span class="p">[:,</span> <span class="o">~</span><span class="p">(</span><span class="n">mask_0</span> <span class="o">*</span> <span class="n">mask_1</span><span class="p">)]</span>
-
-        <span class="c1">## REMOVE ANGLE MAPPINGS FROM REPULSION MAPPING</span>
-        <span class="k">for</span> <span class="n">angle_num</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cg_topo</span><span class="o">.</span><span class="n">angles</span><span class="p">[</span><span class="mi">0</span><span class="p">])):</span>
-            <span class="n">atom_0</span> <span class="o">=</span> <span class="n">cg_topo</span><span class="o">.</span><span class="n">angles</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">angle_num</span><span class="p">]</span>
-            <span class="n">atom_1</span> <span class="o">=</span> <span class="n">cg_topo</span><span class="o">.</span><span class="n">angles</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="n">angle_num</span><span class="p">]</span>
-            <span class="n">mask_0</span> <span class="o">=</span> <span class="p">(</span><span class="n">mapping</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span> <span class="o">==</span> <span class="n">atom_0</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">mapping</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span> <span class="o">==</span> <span class="n">atom_0</span><span class="p">)</span>
-            <span class="n">mask_1</span> <span class="o">=</span> <span class="p">(</span><span class="n">mapping</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span> <span class="o">==</span> <span class="n">atom_1</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">mapping</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span> <span class="o">==</span> <span class="n">atom_1</span><span class="p">)</span>
-
-            <span class="n">mapping</span> <span class="o">=</span> <span class="n">mapping</span><span class="p">[:,</span> <span class="o">~</span><span class="p">(</span><span class="n">mask_0</span> <span class="o">*</span> <span class="n">mask_1</span><span class="p">)]</span>
-
-        <span class="c1">## MAKE NEIGHBOR LIST IN STANDARD FORMAT USING MAKE_NEIGHBOR_LIST</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">mlcg.neighbor_list.neighbor_list</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_neighbor_list</span>
-
-        <span class="n">nl</span> <span class="o">=</span> <span class="n">make_neighbor_list</span><span class="p">(</span>
-            <span class="n">tag</span><span class="o">=</span><span class="s2">&quot;fully connected&quot;</span><span class="p">,</span>
-            <span class="n">order</span><span class="o">=</span><span class="n">mapping</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-            <span class="n">index_mapping</span><span class="o">=</span><span class="n">mapping</span><span class="p">,</span>
-            <span class="n">self_interaction</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        <span class="p">)</span>
-
-        <span class="k">return</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">nl</span><span class="p">}</span></div>
-
-
+</span><span data-line="310">
 <div class="viewcode-block" id="AlanineDataset.load_original_topology">
-<a class="viewcode-back" href="../../../autodoc.html#mlcg.datasets.alanine_dipeptide.AlanineDataset.load_original_topology">[docs]</a>
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">load_original_topology</span><span class="p">(</span><span class="n">pdb_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Topology</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Method to load origin topology</span>
+<a class="viewcode-back" href="../../../data/fixed_datasets.html#mlcg.datasets.alanine_dipeptide.AlanineDataset.load_original_topology">[docs]</a>
+</span><span data-line="311">    <span class="nd">@staticmethod</span>
+</span><span data-line="312">    <span class="k">def</span><span class="w"> </span><span class="nf">load_original_topology</span><span class="p">(</span><span class="n">pdb_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Topology</span><span class="p">:</span>
+</span><span data-line="313"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Method to load origin topology</span>
+</span><span data-line="314">
+</span><span data-line="315">
+</span><span data-line="316"><span class="sd">        Parameters</span>
+</span><span data-line="317"><span class="sd">        ----------</span>
+</span><span data-line="318"><span class="sd">        pdb_file:</span>
+</span><span data-line="319"><span class="sd">            Path of all-atom PDB file</span>
+</span><span data-line="320">
+</span><span data-line="321"><span class="sd">        Returns</span>
+</span><span data-line="322"><span class="sd">        -------</span>
+</span><span data-line="323"><span class="sd">        topology:</span>
+</span><span data-line="324"><span class="sd">            Topology class object for all-atom molecule</span>
+</span><span data-line="325">
+</span><span data-line="326"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="327">        <span class="c1"># LOAD TRAJECTORY AND REMOVE SOLVENT</span>
+</span><span data-line="328">        <span class="n">topo</span> <span class="o">=</span> <span class="n">mdtraj</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">pdb_file</span><span class="p">)</span><span class="o">.</span><span class="n">remove_solvent</span><span class="p">()</span><span class="o">.</span><span class="n">topology</span>
+</span><span data-line="329">
+</span><span data-line="330">        <span class="c1">## MAKE TOPOLOGY OBJECT FROM MDTRAJ FILE</span>
+</span><span data-line="331">        <span class="n">topology</span> <span class="o">=</span> <span class="n">Topology</span><span class="o">.</span><span class="n">from_mdtraj</span><span class="p">(</span><span class="n">topo</span><span class="p">)</span>
+</span><span data-line="332">
+</span><span data-line="333">        <span class="k">return</span> <span class="n">topology</span></div>
 
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        pdb_file:</span>
-<span class="sd">            Path of all-atom PDB file</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        topology:</span>
-<span class="sd">            Topology class object for all-atom molecule</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># LOAD TRAJECTORY AND REMOVE SOLVENT</span>
-        <span class="n">topo</span> <span class="o">=</span> <span class="n">mdtraj</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">pdb_file</span><span class="p">)</span><span class="o">.</span><span class="n">remove_solvent</span><span class="p">()</span><span class="o">.</span><span class="n">topology</span>
-
-        <span class="c1">## MAKE TOPOLOGY OBJECT FROM MDTRAJ FILE</span>
-        <span class="n">topology</span> <span class="o">=</span> <span class="n">Topology</span><span class="o">.</span><span class="n">from_mdtraj</span><span class="p">(</span><span class="n">topo</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">topology</span></div>
-
-
+</span><span data-line="334">
 <div class="viewcode-block" id="AlanineDataset.make_cg_topology">
-<a class="viewcode-back" href="../../../autodoc.html#mlcg.datasets.alanine_dipeptide.AlanineDataset.make_cg_topology">[docs]</a>
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">make_cg_topology</span><span class="p">(</span>
-        <span class="n">topology</span><span class="p">:</span> <span class="n">Topology</span><span class="p">,</span>
-        <span class="n">cg_mapping</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">AL_CG_MAP</span><span class="p">,</span>
-        <span class="n">special_terminal</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Topology</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Method to make Topology class object of CG molecule, creates custom bonds and angles to make a non-linear CG molecule</span>
+<a class="viewcode-back" href="../../../data/fixed_datasets.html#mlcg.datasets.alanine_dipeptide.AlanineDataset.make_cg_topology">[docs]</a>
+</span><span data-line="335">    <span class="nd">@staticmethod</span>
+</span><span data-line="336">    <span class="k">def</span><span class="w"> </span><span class="nf">make_cg_topology</span><span class="p">(</span>
+</span><span data-line="337">        <span class="n">topology</span><span class="p">:</span> <span class="n">Topology</span><span class="p">,</span>
+</span><span data-line="338">        <span class="n">cg_mapping</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">AL_CG_MAP</span><span class="p">,</span>
+</span><span data-line="339">        <span class="n">special_terminal</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span data-line="340">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Topology</span><span class="p">:</span>
+</span><span data-line="341"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Method to make Topology class object of CG molecule, creates custom bonds and angles to make a non-linear CG molecule</span>
+</span><span data-line="342">
+</span><span data-line="343"><span class="sd">        Parameters</span>
+</span><span data-line="344"><span class="sd">        ----------</span>
+</span><span data-line="345"><span class="sd">        topology:</span>
+</span><span data-line="346"><span class="sd">            All-atom topology</span>
+</span><span data-line="347"><span class="sd">        cg_mapping : (optional)</span>
+</span><span data-line="348"><span class="sd">            Dictionary containing CG mapping. The default is AL_CG_MAP.</span>
+</span><span data-line="349"><span class="sd">        special_terminal : (optional)</span>
+</span><span data-line="350"><span class="sd">            True if termini beads are to be treated separately. The default is False.</span>
+</span><span data-line="351">
+</span><span data-line="352"><span class="sd">        Returns</span>
+</span><span data-line="353"><span class="sd">        -------</span>
+</span><span data-line="354"><span class="sd">        cg_topo:</span>
+</span><span data-line="355"><span class="sd">            Topology class object for CG molecule</span>
+</span><span data-line="356">
+</span><span data-line="357"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="358">        <span class="c1">## BUILD CG TOPOLOGY USING CG MAPPING</span>
+</span><span data-line="359">        <span class="n">cg_topo</span> <span class="o">=</span> <span class="n">build_cg_topology</span><span class="p">(</span>
+</span><span data-line="360">            <span class="n">topology</span><span class="p">,</span> <span class="n">cg_mapping</span><span class="o">=</span><span class="n">cg_mapping</span><span class="p">,</span> <span class="n">special_terminal</span><span class="o">=</span><span class="n">special_terminal</span>
+</span><span data-line="361">        <span class="p">)</span>
+</span><span data-line="362">
+</span><span data-line="363">        <span class="c1">## MODIFY CG TOPOLOGY TO MAKE CORRECT TOPOLOGY</span>
+</span><span data-line="364">        <span class="c1">## Function build_cg_topology makes a linear chain topology by default, hence some modifications are required to make a non-linear chain molecule</span>
+</span><span data-line="365">        <span class="c1">## Hard-coded values for</span>
+</span><span data-line="366">        <span class="c1">## 1. removing 3-4 bond (where 3 is beta-carbon)</span>
+</span><span data-line="367">        <span class="c1">## 2. adding 2-4 bond</span>
+</span><span data-line="368">        <span class="c1">## 3. removing angles [2,3,4] and [3,4,5]</span>
+</span><span data-line="369">        <span class="c1">## 4. adding angles [2,4,5] (along backbone), [3,2,4] (carbon-beta angle), [1,2,4] (along backbone)</span>
+</span><span data-line="370">
+</span><span data-line="371">        <span class="n">cg_topo</span><span class="o">.</span><span class="n">remove_bond</span><span class="p">([[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]])</span>  <span class="c1"># 1</span>
+</span><span data-line="372">        <span class="n">cg_topo</span><span class="o">.</span><span class="n">add_bond</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>  <span class="c1"># 2</span>
+</span><span data-line="373">
+</span><span data-line="374">        <span class="n">cg_topo</span><span class="o">.</span><span class="n">remove_angle</span><span class="p">([[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]])</span>  <span class="c1"># 3</span>
+</span><span data-line="375">
+</span><span data-line="376">        <span class="n">cg_topo</span><span class="o">.</span><span class="n">add_angle</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>  <span class="c1"># 4</span>
+</span><span data-line="377">        <span class="n">cg_topo</span><span class="o">.</span><span class="n">add_angle</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>  <span class="c1"># 4</span>
+</span><span data-line="378">        <span class="n">cg_topo</span><span class="o">.</span><span class="n">add_angle</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>  <span class="c1"># 4</span>
+</span><span data-line="379">
+</span><span data-line="380">        <span class="k">return</span> <span class="n">cg_topo</span></div>
 
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        topology:</span>
-<span class="sd">            All-atom topology</span>
-<span class="sd">        cg_mapping : (optional)</span>
-<span class="sd">            Dictionary containing CG mapping. The default is AL_CG_MAP.</span>
-<span class="sd">        special_terminal : (optional)</span>
-<span class="sd">            True if termini beads are to be treated separately. The default is False.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        cg_topo:</span>
-<span class="sd">            Topology class object for CG molecule</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1">## BUILD CG TOPOLOGY USING CG MAPPING</span>
-        <span class="n">cg_topo</span> <span class="o">=</span> <span class="n">build_cg_topology</span><span class="p">(</span>
-            <span class="n">topology</span><span class="p">,</span> <span class="n">cg_mapping</span><span class="o">=</span><span class="n">cg_mapping</span><span class="p">,</span> <span class="n">special_terminal</span><span class="o">=</span><span class="n">special_terminal</span>
-        <span class="p">)</span>
-
-        <span class="c1">## MODIFY CG TOPOLOGY TO MAKE CORRECT TOPOLOGY</span>
-        <span class="c1">## Function build_cg_topology makes a linear chain topology by default, hence some modifications are required to make a non-linear chain molecule</span>
-        <span class="c1">## Hard-coded values for</span>
-        <span class="c1">## 1. removing 3-4 bond (where 3 is beta-carbon)</span>
-        <span class="c1">## 2. adding 2-4 bond</span>
-        <span class="c1">## 3. removing angles [2,3,4] and [3,4,5]</span>
-        <span class="c1">## 4. adding angles [2,4,5] (along backbone), [3,2,4] (carbon-beta angle), [1,2,4] (along backbone)</span>
-
-        <span class="n">cg_topo</span><span class="o">.</span><span class="n">remove_bond</span><span class="p">([[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]])</span>  <span class="c1"># 1</span>
-        <span class="n">cg_topo</span><span class="o">.</span><span class="n">add_bond</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>  <span class="c1"># 2</span>
-
-        <span class="n">cg_topo</span><span class="o">.</span><span class="n">remove_angle</span><span class="p">([[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]])</span>  <span class="c1"># 3</span>
-
-        <span class="n">cg_topo</span><span class="o">.</span><span class="n">add_angle</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>  <span class="c1"># 4</span>
-        <span class="n">cg_topo</span><span class="o">.</span><span class="n">add_angle</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>  <span class="c1"># 4</span>
-        <span class="n">cg_topo</span><span class="o">.</span><span class="n">add_angle</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>  <span class="c1"># 4</span>
-
-        <span class="k">return</span> <span class="n">cg_topo</span></div>
-
-
+</span><span data-line="381">
 <div class="viewcode-block" id="AlanineDataset.make_baseline_models">
-<a class="viewcode-back" href="../../../autodoc.html#mlcg.datasets.alanine_dipeptide.AlanineDataset.make_baseline_models">[docs]</a>
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">make_baseline_models</span><span class="p">(</span>
-        <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">,</span>
-        <span class="n">beta</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-        <span class="n">priors_cls</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">_Prior</span><span class="p">],</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleDict</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Method to make all baseline models</span>
+<a class="viewcode-back" href="../../../data/fixed_datasets.html#mlcg.datasets.alanine_dipeptide.AlanineDataset.make_baseline_models">[docs]</a>
+</span><span data-line="382">    <span class="nd">@staticmethod</span>
+</span><span data-line="383">    <span class="k">def</span><span class="w"> </span><span class="nf">make_baseline_models</span><span class="p">(</span>
+</span><span data-line="384">        <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">,</span>
+</span><span data-line="385">        <span class="n">beta</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+</span><span data-line="386">        <span class="n">priors_cls</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">_Prior</span><span class="p">],</span>
+</span><span data-line="387">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleDict</span><span class="p">:</span>
+</span><span data-line="388"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Method to make all baseline models</span>
+</span><span data-line="389">
+</span><span data-line="390">
+</span><span data-line="391"><span class="sd">        Parameters</span>
+</span><span data-line="392"><span class="sd">        ----------</span>
+</span><span data-line="393"><span class="sd">        data:</span>
+</span><span data-line="394"><span class="sd">            AtomicData object of entire trajectory</span>
+</span><span data-line="395"><span class="sd">        beta:</span>
+</span><span data-line="396"><span class="sd">            1/(k_B * T)</span>
+</span><span data-line="397"><span class="sd">        priors_cls:</span>
+</span><span data-line="398"><span class="sd">            List of prior classes</span>
+</span><span data-line="399">
+</span><span data-line="400"><span class="sd">        Returns</span>
+</span><span data-line="401"><span class="sd">        -------</span>
+</span><span data-line="402"><span class="sd">        baseline_models:</span>
+</span><span data-line="403"><span class="sd">            Dictionary of prior models fitted with the right harmonic restraint values</span>
+</span><span data-line="404">
+</span><span data-line="405"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="406">        <span class="n">baseline_models</span><span class="p">,</span> <span class="n">statistics</span> <span class="o">=</span> <span class="n">fit_baseline_models</span><span class="p">(</span>
+</span><span data-line="407">            <span class="n">data</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">priors_cls</span>
+</span><span data-line="408">        <span class="p">)</span>
+</span><span data-line="409">
+</span><span data-line="410">        <span class="c1">## TAKE GRADIENTS THROUGH BASELINE MODELS</span>
+</span><span data-line="411">        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">baseline_models</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+</span><span data-line="412">            <span class="n">baseline_models</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">GradientsOut</span><span class="p">(</span>
+</span><span data-line="413">                <span class="n">baseline_models</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">targets</span><span class="o">=</span><span class="s2">&quot;forces&quot;</span>
+</span><span data-line="414">            <span class="p">)</span>
+</span><span data-line="415">
+</span><span data-line="416">        <span class="k">return</span> <span class="n">baseline_models</span></div>
 
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        data:</span>
-<span class="sd">            AtomicData object of entire trajectory</span>
-<span class="sd">        beta:</span>
-<span class="sd">            1/(k_B * T)</span>
-<span class="sd">        priors_cls:</span>
-<span class="sd">            List of prior classes</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        baseline_models:</span>
-<span class="sd">            Dictionary of prior models fitted with the right harmonic restraint values</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">baseline_models</span><span class="p">,</span> <span class="n">statistics</span> <span class="o">=</span> <span class="n">fit_baseline_models</span><span class="p">(</span>
-            <span class="n">data</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">priors_cls</span>
-        <span class="p">)</span>
-
-        <span class="c1">## TAKE GRADIENTS THROUGH BASELINE MODELS</span>
-        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">baseline_models</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="n">baseline_models</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">GradientsOut</span><span class="p">(</span>
-                <span class="n">baseline_models</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">targets</span><span class="o">=</span><span class="s2">&quot;forces&quot;</span>
-            <span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">baseline_models</span></div>
-
-
+</span><span data-line="417">
 <div class="viewcode-block" id="AlanineDataset.save_dataset">
-<a class="viewcode-back" href="../../../autodoc.html#mlcg.datasets.alanine_dipeptide.AlanineDataset.save_dataset">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">save_dataset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pickle_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Method for saving dataset given pickle name</span>
+<a class="viewcode-back" href="../../../data/fixed_datasets.html#mlcg.datasets.alanine_dipeptide.AlanineDataset.save_dataset">[docs]</a>
+</span><span data-line="418">    <span class="k">def</span><span class="w"> </span><span class="nf">save_dataset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pickle_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+</span><span data-line="419"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Method for saving dataset given pickle name</span>
+</span><span data-line="420">
+</span><span data-line="421"><span class="sd">        Parameters</span>
+</span><span data-line="422"><span class="sd">        ----------</span>
+</span><span data-line="423"><span class="sd">        pickle_name:</span>
+</span><span data-line="424"><span class="sd">            Name of pickle to store the dataset in</span>
+</span><span data-line="425">
+</span><span data-line="426"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="427">        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">pickle_name</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+</span><span data-line="428">            <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span></div>
 
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        pickle_name:</span>
-<span class="sd">            Name of pickle to store the dataset in</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">pickle_name</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-            <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span></div>
-
-
+</span><span data-line="429">
 <div class="viewcode-block" id="AlanineDataset.process">
-<a class="viewcode-back" href="../../../autodoc.html#mlcg.datasets.alanine_dipeptide.AlanineDataset.process">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">cg_mapping</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">AL_CG_MAP</span><span class="p">,</span>
-    <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Method for processing the raw data - this is where all processing function calls take place</span>
-<span class="sd">        All outputs are stored in the relevant processed files</span>
-
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        cg_mapping: (optional)</span>
-<span class="sd">            CG mapping dictionary. The default is AL_CG_MAP.</span>
-
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1">## LOAD TOPOLOGY USING PDB FILE</span>
-        <span class="n">topology</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_original_topology</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_paths</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-
-        <span class="c1">## MAKE CG TOPOLOGY</span>
-        <span class="n">topologies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_cg_topology</span><span class="p">(</span>
-            <span class="n">topology</span><span class="p">,</span> <span class="n">cg_mapping</span><span class="o">=</span><span class="n">cg_mapping</span><span class="p">,</span> <span class="n">special_terminal</span><span class="o">=</span><span class="kc">False</span>
-        <span class="p">)</span>
-
-        <span class="c1">## MAKE ATOMIC DATA OBJECT AND ATOM SLICES</span>
-        <span class="n">data</span><span class="p">,</span> <span class="n">slices</span><span class="p">,</span> <span class="n">prior_models</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_data_slices_prior</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">raw_paths</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-            <span class="n">topology</span><span class="p">,</span>
-            <span class="n">cg_mapping</span><span class="p">,</span>
-            <span class="n">topologies</span><span class="p">,</span>
-        <span class="p">)</span>
-
-        <span class="c1">## SAVE PROCESSED OUTPUT</span>
-        <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">((</span><span class="n">data</span><span class="p">,</span> <span class="n">slices</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">processed_paths</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-        <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">((</span><span class="n">topologies</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">processed_paths</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-        <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">prior_models</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">processed_paths</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span></div>
+<a class="viewcode-back" href="../../../data/fixed_datasets.html#mlcg.datasets.alanine_dipeptide.AlanineDataset.process">[docs]</a>
+</span><span data-line="430">    <span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span>
+</span><span data-line="431">        <span class="bp">self</span><span class="p">,</span>
+</span><span data-line="432">        <span class="n">cg_mapping</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">AL_CG_MAP</span><span class="p">,</span>
+</span><span data-line="433">    <span class="p">):</span>
+</span><span data-line="434"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Method for processing the raw data - this is where all processing function calls take place</span>
+</span><span data-line="435"><span class="sd">        All outputs are stored in the relevant processed files</span>
+</span><span data-line="436">
+</span><span data-line="437">
+</span><span data-line="438"><span class="sd">        Parameters</span>
+</span><span data-line="439"><span class="sd">        ----------</span>
+</span><span data-line="440"><span class="sd">        cg_mapping: (optional)</span>
+</span><span data-line="441"><span class="sd">            CG mapping dictionary. The default is AL_CG_MAP.</span>
+</span><span data-line="442">
+</span><span data-line="443">
+</span><span data-line="444"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="445">        <span class="c1">## LOAD TOPOLOGY USING PDB FILE</span>
+</span><span data-line="446">        <span class="n">topology</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_original_topology</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_paths</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+</span><span data-line="447">
+</span><span data-line="448">        <span class="c1">## MAKE CG TOPOLOGY</span>
+</span><span data-line="449">        <span class="n">topologies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_cg_topology</span><span class="p">(</span>
+</span><span data-line="450">            <span class="n">topology</span><span class="p">,</span> <span class="n">cg_mapping</span><span class="o">=</span><span class="n">cg_mapping</span><span class="p">,</span> <span class="n">special_terminal</span><span class="o">=</span><span class="kc">False</span>
+</span><span data-line="451">        <span class="p">)</span>
+</span><span data-line="452">
+</span><span data-line="453">        <span class="c1">## MAKE ATOMIC DATA OBJECT AND ATOM SLICES</span>
+</span><span data-line="454">        <span class="n">data</span><span class="p">,</span> <span class="n">slices</span><span class="p">,</span> <span class="n">prior_models</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_data_slices_prior</span><span class="p">(</span>
+</span><span data-line="455">            <span class="bp">self</span><span class="o">.</span><span class="n">raw_paths</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+</span><span data-line="456">            <span class="n">topology</span><span class="p">,</span>
+</span><span data-line="457">            <span class="n">cg_mapping</span><span class="p">,</span>
+</span><span data-line="458">            <span class="n">topologies</span><span class="p">,</span>
+</span><span data-line="459">        <span class="p">)</span>
+</span><span data-line="460">
+</span><span data-line="461">        <span class="c1">## SAVE PROCESSED OUTPUT</span>
+</span><span data-line="462">        <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">((</span><span class="n">data</span><span class="p">,</span> <span class="n">slices</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">processed_paths</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+</span><span data-line="463">        <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">((</span><span class="n">topologies</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">processed_paths</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+</span><span data-line="464">        <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">prior_models</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">processed_paths</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span></div>
 </div>
 
-</pre></div>
-
-           </div>
-          </div>
-          <footer>
-
-  <hr/>
-
-  <div role="contentinfo">
-    <p>&#169; Copyright 2026, Felix Musil &amp; Nick Charron.</p>
+</span></pre></div>
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright"><p>2026, Clementi Group</p>
+  
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> and
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials"></div>
+    </div>
   </div>
-
-  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    provided by <a href="https://readthedocs.org">Read the Docs</a>.
-   
-
 </footer>
-        </div>
-      </div>
-    </section>
-  </div>
-  <script>
-      jQuery(function () {
-          SphinxRtdTheme.Navigation.enable(true);
-      });
-  </script> 
-
-</body>
+      <script src="../../../_static/documentation_options.js?v=92734c54"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../_static/shibuya.js?v=cac61aee"></script></body>
 </html>

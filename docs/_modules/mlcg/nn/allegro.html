@@ -1,704 +1,772 @@
-
-
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" data-content_root="../../../">
+<html lang="en" data-accent-color="plum" data-content_root="../../../">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>mlcg.nn.allegro &mdash; mlcg 0.1.2 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
-      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
-
-  
-      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
-      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=92734c54"></script>
-      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
-    <script src="../../../_static/js/theme.js"></script>
-    <link rel="index" title="Index" href="../../../genindex.html" />
-    <link rel="search" title="Search" href="../../../search.html" /> 
-</head>
-
-<body class="wy-body-for-nav"> 
-  <div class="wy-grid-for-nav">
-    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
-      <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
-
-          
-          
-          <a href="../../../index.html" class="icon icon-home">
-            mlcg
-          </a>
-<div role="search">
-  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
-    <input type="hidden" name="check_keywords" value="yes" />
-    <input type="hidden" name="area" value="default" />
-  </form>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>mlcg.nn.allegro - mlcg 0.1.2 documentation</title><link rel="index" title="Index" href="../../../genindex.html" /><link rel="search" title="Search" href="../../../search.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=31853864" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/shibuya.css?v=44020203" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    <meta property="og:type" content="website"/><meta property="og:title" content="mlcg.nn.allegro"/>
+    <meta name="twitter:card" content="summary"/>
+  </head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../index.html">
+      
+      
+      <strong>mlcg</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="sy-head-socials"></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
 </div>
-        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../data.html">Data Representation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../geometry.html">Geometry</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../neighbor_list.html">Neighbor Lists</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../coarse_graining.html">Coarse Graining</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../datasets.html">Datasets</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../priors.html">Priors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../models.html">Models</a></li>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6">
+        <div class="globaltoc" data-expand-depth="0"><ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../data/index.html">Data and datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../data/atom_data.html">Molecular Data Representation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../data/fixed_datasets.html">Fixed datasets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../data/h5_datasets.html">H5 Dataset</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../geometry/index.html">Geometry and Neighbor lists</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../geometry/internal_coordinates.html">Internal Coordinate Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../geometry/neighbor_list.html">Neighbor Lists</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../geometry/topology.html">Topology Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../geometry/statistics.html">Statistics Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../models/index.html">Model utilities</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../models/priors.html">Priors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../models/cutoffs.html">Cutoff Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../models/rbfs.html">Radial Basis Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../models/mlip.html">MLIPs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../models/wrappers.html">Gradient/sum wrappers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../models/losses.html">Loss Functions</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="../../../training.html">Training</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../simulation.html">Simulations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../dev/dev.html">Developer Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../simulation/index.html">Simulations</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../simulation/langevin.html">Langevin Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../simulation/overdamped.html">Overdamped Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../simulation/parallel_tempering.html">Parallel Tempering Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../simulation/utils.html">Simulation utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../misc/index.html">Miscellaneous utilities</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../misc/coarse_graining.html">Coarse Graining</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../misc/utils.html">General utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../misc/mol_utils.html">Molecular utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dev/index.html">Developer Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../dev/doc.html">Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../dev/tests.html">Tests</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Examples</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../bibliography.html">Bibliography</a></li>
 </ul>
 
         </div>
       </div>
-    </nav>
-
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
-          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../../index.html">mlcg</a>
-      </nav>
-
-      <div class="wy-nav-content">
-        <div class="rst-content">
-          <div role="navigation" aria-label="Page navigation">
-  <ul class="wy-breadcrumbs">
-      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
-          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
-      <li class="breadcrumb-item active">mlcg.nn.allegro</li>
-      <li class="wy-breadcrumbs-aside">
-      </li>
-  </ul>
-  <hr/>
-</div>
-          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
-           <div itemprop="articleBody">
-             
-  <h1>Source code for mlcg.nn.allegro</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Unraveled implementation of the Allegro neural network potential.</span>
-
-<span class="sd">This module provides an unraveled implementation of the Allegro model, a</span>
-<span class="sd">message-passing neural network for molecular dynamics simulations. It computes</span>
-<span class="sd">atomic energies and forces using spherical harmonic representations of atomic</span>
-<span class="sd">environments.</span>
-
-<span class="sd">Unlike the original implementation, this version explicitly tracks energy</span>
-<span class="sd">contributions through each component, making it more transparent and easier</span>
-<span class="sd">to debug or modify.</span>
-<span class="sd">&quot;&quot;&quot;</span>
-
-<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">e3nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">o3</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">nequip.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">AtomicDataDict</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">nequip.nn</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">ScalarMLP</span><span class="p">,</span>
-    <span class="n">PerTypeScaleShift</span><span class="p">,</span>
-<span class="p">)</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">nequip.nn.embedding</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">EdgeLengthNormalizer</span><span class="p">,</span>
-<span class="p">)</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">allegro.nn</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">TwoBodySphericalHarmonicTensorEmbed</span><span class="p">,</span>
-    <span class="n">EdgewiseReduce</span><span class="p">,</span>
-    <span class="n">Allegro_Module</span><span class="p">,</span>
-<span class="p">)</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Final</span><span class="p">,</span> <span class="n">List</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">mlcg.data.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">AtomicData</span><span class="p">,</span> <span class="n">ENERGY_KEY</span><span class="p">,</span> <span class="n">FORCE_KEY</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">torch_geometric.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">scatter</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">mlcg.neighbor_list.neighbor_list</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">atomic_data2neighbor_list</span><span class="p">,</span>
-    <span class="n">validate_neighborlist</span><span class="p">,</span>
-<span class="p">)</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">nequip.nn.mlp</span><span class="w"> </span><span class="kn">import</span> <span class="n">ScalarLinearLayer</span>
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="kn">import</span><span class="w"> </span><span class="nn">cuequivariance</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cue</span>
-    <span class="kn">import</span><span class="w"> </span><span class="nn">cuequivariance_torch</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cuet</span>
-
-    <span class="n">CUET_AVAILABLE</span> <span class="o">=</span> <span class="kc">True</span>
-<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
-    <span class="n">CUET_AVAILABLE</span> <span class="o">=</span> <span class="kc">False</span>
-    <span class="nb">print</span><span class="p">(</span>
-        <span class="s2">&quot;cuEquivariance is not installed. cuEquivariance features will be disabled. It is recommended to install cuEquivariance for better performance. &quot;</span>
-        <span class="o">+</span> <span class="s2">&quot;To install cuEquivariance run pip install cuequivariance cuequivariance-torch cuequivariance-ops-torch-cu12 &quot;</span>
-        <span class="o">+</span> <span class="s1">&#39;Replace &quot;cu12&quot; with &quot;cu11&quot; if you are using CUDA 11.&#39;</span>
-    <span class="p">)</span>
-
-<span class="k">if</span> <span class="n">CUET_AVAILABLE</span><span class="p">:</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">allegro.nn._strided._contract</span><span class="w"> </span><span class="kn">import</span> <span class="n">Contracter</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">init_xavier_uniform</span><span class="p">(</span>
-    <span class="n">module</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">zero_bias</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;initialize (in place) weights of the input module using xavier uniform.</span>
-<span class="sd">    Works only on `torch.nn.Linear` at the moment and the bias are set to 0</span>
-<span class="sd">    by default.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    module:</span>
-<span class="sd">        a torch module</span>
-<span class="sd">    zero_bias:</span>
-<span class="sd">        If True, the bias will be filled with zeroes. If False,</span>
-<span class="sd">        the bias will be filled according to the torch.nn.Linear</span>
-<span class="sd">        default distribution:</span>
-
-<span class="sd">        .. math:</span>
-
-<span class="sd">            \text{Uniform}(-\sqrt{k}, sqrt{k}) ; \quad \quad k = \frac{1}{\text{in_features}}</span>
-
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">ScalarLinearLayer</span><span class="p">):</span>
-        <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">xavier_uniform_</span><span class="p">(</span><span class="n">module</span><span class="o">.</span><span class="n">weight</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">module</span><span class="o">.</span><span class="n">bias</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">zero_bias</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
-            <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">constant_</span><span class="p">(</span><span class="n">module</span><span class="o">.</span><span class="n">bias</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Allegro</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Base Allegro implementation for energy and force prediction.</span>
-
-<span class="sd">    This class provides the core functionality for the Allegro model,</span>
-<span class="sd">    connecting various components like edge embeddings, spherical harmonic</span>
-<span class="sd">    representations, and readout layers to predict per-molecule energies.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    edge_norm : torch.nn.Module</span>
-<span class="sd">        Module that normalizes edge vectors and lengths.</span>
-<span class="sd">    radial_chemical_embed : torch.nn.Module</span>
-<span class="sd">        Module that embeds edge distances and atom types.</span>
-<span class="sd">    scalar_embed_mlp : torch.nn.Module</span>
-<span class="sd">        MLP that processes scalar edge embeddings.</span>
-<span class="sd">    tensor_embed : torch.nn.Module</span>
-<span class="sd">        Module that embeds edge features in spherical harmonic space.</span>
-<span class="sd">    allegro : torch.nn.Module</span>
-<span class="sd">        The main Allegro message-passing module.</span>
-<span class="sd">    edge_readout : torch.nn.Module</span>
-<span class="sd">        Module that converts edge features to edge energies.</span>
-<span class="sd">    edge_eng_sum : torch.nn.Module</span>
-<span class="sd">        Module that aggregates edge energies to per-atom energies.</span>
-<span class="sd">    per_type_energy_scale_shift : torch.nn.Module</span>
-<span class="sd">        Module that applies type-dependent scaling and shifting to energies.</span>
-<span class="sd">    pair_potential : Optional[Dict], default=None</span>
-<span class="sd">        Optional pair potential to add to the energy.</span>
-<span class="sd">    max_num_neighbors : int, default=1000</span>
-<span class="sd">        Maximum number of neighbors per atom to consider.</span>
-<span class="sd">    nls_distance_method:</span>
-<span class="sd">        Method for computing a neighbor list. Supported values are</span>
-<span class="sd">        `torch`, `nvalchemi_naive`, `nvalchemi_cell` and custom.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">name</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;allegro&quot;</span>
-    <span class="c1"># list of labels that need to be removed after a forward pass</span>
-    <span class="c1"># from an atomic data to avoid mismatches</span>
-    <span class="n">cleanup_labels</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="s2">&quot;edge_attrs&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;edge_cutoff&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;edge_features&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;edge_embedding&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;edge_index&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;normed_edge_lengths&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;edge_vectors&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;edge_energy&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;edge_lengths&quot;</span><span class="p">,</span>
-    <span class="p">]</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">edge_norm</span><span class="p">,</span>
-        <span class="n">radial_chemical_embed</span><span class="p">,</span>
-        <span class="n">scalar_embed_mlp</span><span class="p">,</span>
-        <span class="n">tensor_embed</span><span class="p">,</span>
-        <span class="n">allegro</span><span class="p">,</span>
-        <span class="n">edge_readout</span><span class="p">,</span>
-        <span class="n">edge_eng_sum</span><span class="p">,</span>
-        <span class="n">per_type_energy_scale_shift</span><span class="p">,</span>
-        <span class="n">pair_potential</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">max_num_neighbors</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
-        <span class="n">nls_distance_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;torch&quot;</span><span class="p">,</span>
-    <span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">edge_norm</span> <span class="o">=</span> <span class="n">edge_norm</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">radial_chemical_embed</span> <span class="o">=</span> <span class="n">radial_chemical_embed</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">scalar_embed_mlp</span> <span class="o">=</span> <span class="n">scalar_embed_mlp</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">tensor_embed</span> <span class="o">=</span> <span class="n">tensor_embed</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">allegro</span> <span class="o">=</span> <span class="n">allegro</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">edge_readout</span> <span class="o">=</span> <span class="n">edge_readout</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">edge_eng_sum</span> <span class="o">=</span> <span class="n">edge_eng_sum</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">per_type_energy_scale_shift</span> <span class="o">=</span> <span class="n">per_type_energy_scale_shift</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pair_potential</span> <span class="o">=</span> <span class="n">pair_potential</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">max_num_neighbors</span> <span class="o">=</span> <span class="n">max_num_neighbors</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">nls_distance_method</span> <span class="o">=</span> <span class="n">nls_distance_method</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">reset_parameters</span><span class="p">()</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Forward pass of the Allegro model.</span>
-
-<span class="sd">        Processes atomic data through the model components to predict per-molecule</span>
-<span class="sd">        energies and, optionally, forces.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        data : AtomicData</span>
-<span class="sd">            Input atomic data containing positions, atom types, and batch information.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        data : AtomicData</span>
-<span class="sd">            The input data object with added energy predictions under data.out[self.name].</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">dtype</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">dtype</span>
-
-        <span class="n">neighbor_list</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_nl_compatible</span><span class="p">(</span><span class="n">neighbor_list</span><span class="p">):</span>
-            <span class="n">neighbor_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">(</span>
-                <span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">r_max</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_num_neighbors</span>
-            <span class="p">)[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
-
-        <span class="n">edge_index</span> <span class="o">=</span> <span class="n">neighbor_list</span><span class="p">[</span><span class="s2">&quot;index_mapping&quot;</span><span class="p">]</span>
-
-        <span class="n">data</span><span class="p">[</span><span class="n">AtomicDataDict</span><span class="o">.</span><span class="n">EDGE_INDEX_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="n">edge_index</span>
-        <span class="n">data</span><span class="p">[</span><span class="n">AtomicDataDict</span><span class="o">.</span><span class="n">NUM_NODES_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">n_atoms</span>
-        <span class="c1"># FIXME: check compatibility with pbc</span>
-
-        <span class="c1"># populates &#39;edge_vectors&#39;, &#39;edge_lengths&#39;, &#39;normed_edge_lengths&#39;</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">edge_norm</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-        <span class="c1"># populates &#39;edge_cutoff&#39;, &#39;edge_embedding&#39;</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">radial_chemical_embed</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scalar_embed_mlp</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-
-        <span class="c1"># populates &#39;edge_attrs&#39;, &#39;edge_features&#39;</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tensor_embed</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-
-        <span class="c1"># updates &#39;edge_features&#39;</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">allegro</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-
-        <span class="c1"># FIXME: check if we can change from here on</span>
-
-        <span class="c1"># populates &#39;edge_energy&#39;</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">edge_readout</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-
-        <span class="c1"># aggregate &#39;edge_energy&#39; in &#39;atomic_energy&#39;</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">edge_eng_sum</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-
-        <span class="c1"># update &#39;atomic_energy&#39;</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">per_type_energy_scale_shift</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-
-        <span class="n">energy</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">scatter</span><span class="p">(</span>
-                <span class="n">data</span><span class="p">[</span><span class="s2">&quot;atomic_energy&quot;</span><span class="p">],</span>
-                <span class="n">data</span><span class="o">.</span><span class="n">batch</span><span class="p">,</span>
-                <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                <span class="n">dim_size</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">n_atoms</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
-                <span class="n">reduce</span><span class="o">=</span><span class="s2">&quot;sum&quot;</span><span class="p">,</span>
-            <span class="p">)</span>
-            <span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
-            <span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
-        <span class="p">)</span>
-
-        <span class="n">data</span><span class="o">.</span><span class="n">out</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">ENERGY_KEY</span><span class="p">:</span> <span class="n">energy</span><span class="p">}</span>
-        <span class="c1"># cleaning edge-related properties</span>
-        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cleanup_labels</span><span class="p">:</span>
-            <span class="k">del</span> <span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-        <span class="k">return</span> <span class="n">data</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">reset_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Reset parameters of all submodules to their initial values.</span>
-<span class="sd">        Currently accepts default values (the function does nothing),</span>
-<span class="sd">        but commented code uses Xavier distribution to try to replicate</span>
-<span class="sd">        Allegro functionality precisely.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">pass</span>
-
-        <span class="c1"># init_xavier_uniform(self.edge_norm)</span>
-        <span class="c1"># init_xavier_uniform(self.scalar_embed_mlp)</span>
-        <span class="c1"># init_xavier_uniform(self.tensor_embed)</span>
-        <span class="c1"># init_xavier_uniform(self.allegro)</span>
-        <span class="c1"># init_xavier_uniform(self.edge_readout)</span>
-        <span class="c1"># pass</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">is_nl_compatible</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nl</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Check if a neighbor list is compatible with this model.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        nl : dict</span>
-<span class="sd">            The neighbor list to check.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        bool</span>
-<span class="sd">            True if the neighbor list is compatible, False otherwise.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">is_compatible</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="k">if</span> <span class="n">validate_neighborlist</span><span class="p">(</span><span class="n">nl</span><span class="p">):</span>
-            <span class="k">if</span> <span class="p">(</span>
-                <span class="n">nl</span><span class="p">[</span><span class="s2">&quot;order&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span>
-                <span class="ow">and</span> <span class="n">nl</span><span class="p">[</span><span class="s2">&quot;self_interaction&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">False</span>
-                <span class="ow">and</span> <span class="n">nl</span><span class="p">[</span><span class="s2">&quot;rcut&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">r_max</span>
-            <span class="p">):</span>
-                <span class="n">is_compatible</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="k">return</span> <span class="n">is_compatible</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">neighbor_list</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">,</span>
-        <span class="n">rcut</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-        <span class="n">max_num_neighbors</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Computes the neighborlist for :obj:`data` using a strict cutoff of :obj:`rcut`.&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;nls_distance_method&quot;</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">nls_distance_method</span> <span class="o">=</span> <span class="s2">&quot;torch&quot;</span>
-        <span class="k">return</span> <span class="p">{</span>
-            <span class="n">Allegro</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">atomic_data2neighbor_list</span><span class="p">(</span>
-                <span class="n">data</span><span class="p">,</span>
-                <span class="n">rcut</span><span class="p">,</span>
-                <span class="n">self_interaction</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                <span class="n">max_num_neighbors</span><span class="o">=</span><span class="n">max_num_neighbors</span><span class="p">,</span>
-                <span class="n">nls_distance_method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nls_distance_method</span><span class="p">,</span>
-            <span class="p">)</span>
-        <span class="p">}</span>
-
-
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../index.html"><span itemprop="name">mlcg</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">Module code</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">mlcg.nn.allegro</strong>
+        <meta itemprop="position" content="3" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <article class="yue" role="main">
+          <h1>Source code for mlcg.nn.allegro</h1><div class="highlight"><pre>
+<span></span><span data-line="1"><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="2"><span class="sd">Unraveled implementation of the Allegro neural network potential.</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="sd">This module provides an unraveled implementation of the Allegro model, a</span>
+</span><span data-line="5"><span class="sd">message-passing neural network for molecular dynamics simulations. It computes</span>
+</span><span data-line="6"><span class="sd">atomic energies and forces using spherical harmonic representations of atomic</span>
+</span><span data-line="7"><span class="sd">environments.</span>
+</span><span data-line="8">
+</span><span data-line="9"><span class="sd">Unlike the original implementation, this version explicitly tracks energy</span>
+</span><span data-line="10"><span class="sd">contributions through each component, making it more transparent and easier</span>
+</span><span data-line="11"><span class="sd">to debug or modify.</span>
+</span><span data-line="12"><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="13">
+</span><span data-line="14"><span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+</span><span data-line="15"><span class="kn">from</span><span class="w"> </span><span class="nn">e3nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">o3</span>
+</span><span data-line="16"><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+</span><span data-line="17">
+</span><span data-line="18"><span class="kn">from</span><span class="w"> </span><span class="nn">nequip.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">AtomicDataDict</span>
+</span><span data-line="19"><span class="kn">from</span><span class="w"> </span><span class="nn">nequip.nn</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+</span><span data-line="20">    <span class="n">ScalarMLP</span><span class="p">,</span>
+</span><span data-line="21">    <span class="n">PerTypeScaleShift</span><span class="p">,</span>
+</span><span data-line="22"><span class="p">)</span>
+</span><span data-line="23">
+</span><span data-line="24"><span class="kn">from</span><span class="w"> </span><span class="nn">nequip.nn.embedding</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+</span><span data-line="25">    <span class="n">EdgeLengthNormalizer</span><span class="p">,</span>
+</span><span data-line="26"><span class="p">)</span>
+</span><span data-line="27">
+</span><span data-line="28"><span class="kn">from</span><span class="w"> </span><span class="nn">allegro.nn</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+</span><span data-line="29">    <span class="n">TwoBodySphericalHarmonicTensorEmbed</span><span class="p">,</span>
+</span><span data-line="30">    <span class="n">EdgewiseReduce</span><span class="p">,</span>
+</span><span data-line="31">    <span class="n">Allegro_Module</span><span class="p">,</span>
+</span><span data-line="32"><span class="p">)</span>
+</span><span data-line="33">
+</span><span data-line="34"><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Final</span><span class="p">,</span> <span class="n">List</span>
+</span><span data-line="35"><span class="kn">from</span><span class="w"> </span><span class="nn">mlcg.data.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">AtomicData</span><span class="p">,</span> <span class="n">ENERGY_KEY</span><span class="p">,</span> <span class="n">FORCE_KEY</span>
+</span><span data-line="36"><span class="kn">from</span><span class="w"> </span><span class="nn">torch_geometric.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">scatter</span>
+</span><span data-line="37"><span class="kn">from</span><span class="w"> </span><span class="nn">mlcg.neighbor_list.neighbor_list</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+</span><span data-line="38">    <span class="n">atomic_data2neighbor_list</span><span class="p">,</span>
+</span><span data-line="39">    <span class="n">validate_neighborlist</span><span class="p">,</span>
+</span><span data-line="40"><span class="p">)</span>
+</span><span data-line="41">
+</span><span data-line="42"><span class="kn">from</span><span class="w"> </span><span class="nn">nequip.nn.mlp</span><span class="w"> </span><span class="kn">import</span> <span class="n">ScalarLinearLayer</span>
+</span><span data-line="43">
+</span><span data-line="44"><span class="k">try</span><span class="p">:</span>
+</span><span data-line="45">    <span class="kn">import</span><span class="w"> </span><span class="nn">cuequivariance</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cue</span>
+</span><span data-line="46">    <span class="kn">import</span><span class="w"> </span><span class="nn">cuequivariance_torch</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cuet</span>
+</span><span data-line="47">
+</span><span data-line="48">    <span class="n">CUET_AVAILABLE</span> <span class="o">=</span> <span class="kc">True</span>
+</span><span data-line="49"><span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+</span><span data-line="50">    <span class="n">CUET_AVAILABLE</span> <span class="o">=</span> <span class="kc">False</span>
+</span><span data-line="51">    <span class="nb">print</span><span class="p">(</span>
+</span><span data-line="52">        <span class="s2">&quot;cuEquivariance is not installed. cuEquivariance features will be disabled. It is recommended to install cuEquivariance for better performance. &quot;</span>
+</span><span data-line="53">        <span class="o">+</span> <span class="s2">&quot;To install cuEquivariance run pip install cuequivariance cuequivariance-torch cuequivariance-ops-torch-cu12 &quot;</span>
+</span><span data-line="54">        <span class="o">+</span> <span class="s1">&#39;Replace &quot;cu12&quot; with &quot;cu11&quot; if you are using CUDA 11.&#39;</span>
+</span><span data-line="55">    <span class="p">)</span>
+</span><span data-line="56">
+</span><span data-line="57"><span class="k">if</span> <span class="n">CUET_AVAILABLE</span><span class="p">:</span>
+</span><span data-line="58">    <span class="kn">from</span><span class="w"> </span><span class="nn">allegro.nn._strided._contract</span><span class="w"> </span><span class="kn">import</span> <span class="n">Contracter</span>
+</span><span data-line="59">
+</span><span data-line="60">
+</span><span data-line="61"><span class="k">def</span><span class="w"> </span><span class="nf">init_xavier_uniform</span><span class="p">(</span>
+</span><span data-line="62">    <span class="n">module</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">zero_bias</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+</span><span data-line="63"><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="64"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;initialize (in place) weights of the input module using xavier uniform.</span>
+</span><span data-line="65"><span class="sd">    Works only on `torch.nn.Linear` at the moment and the bias are set to 0</span>
+</span><span data-line="66"><span class="sd">    by default.</span>
+</span><span data-line="67">
+</span><span data-line="68"><span class="sd">    Parameters</span>
+</span><span data-line="69"><span class="sd">    ----------</span>
+</span><span data-line="70"><span class="sd">    module:</span>
+</span><span data-line="71"><span class="sd">        a torch module</span>
+</span><span data-line="72"><span class="sd">    zero_bias:</span>
+</span><span data-line="73"><span class="sd">        If True, the bias will be filled with zeroes. If False,</span>
+</span><span data-line="74"><span class="sd">        the bias will be filled according to the torch.nn.Linear</span>
+</span><span data-line="75"><span class="sd">        default distribution:</span>
+</span><span data-line="76">
+</span><span data-line="77"><span class="sd">        .. math:</span>
+</span><span data-line="78">
+</span><span data-line="79"><span class="sd">            \text{Uniform}(-\sqrt{k}, sqrt{k}) ; \quad \quad k = \frac{1}{\text{in_features}}</span>
+</span><span data-line="80">
+</span><span data-line="81"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="82">    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">ScalarLinearLayer</span><span class="p">):</span>
+</span><span data-line="83">        <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">xavier_uniform_</span><span class="p">(</span><span class="n">module</span><span class="o">.</span><span class="n">weight</span><span class="p">)</span>
+</span><span data-line="84">        <span class="k">if</span> <span class="n">module</span><span class="o">.</span><span class="n">bias</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">zero_bias</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="85">            <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">constant_</span><span class="p">(</span><span class="n">module</span><span class="o">.</span><span class="n">bias</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+</span><span data-line="86">
+</span><span data-line="87">
+</span><span data-line="88"><span class="k">class</span><span class="w"> </span><span class="nc">Allegro</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+</span><span data-line="89"><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="90"><span class="sd">    Base Allegro implementation for energy and force prediction.</span>
+</span><span data-line="91">
+</span><span data-line="92"><span class="sd">    This class provides the core functionality for the Allegro model,</span>
+</span><span data-line="93"><span class="sd">    connecting various components like edge embeddings, spherical harmonic</span>
+</span><span data-line="94"><span class="sd">    representations, and readout layers to predict per-molecule energies.</span>
+</span><span data-line="95">
+</span><span data-line="96"><span class="sd">    Parameters</span>
+</span><span data-line="97"><span class="sd">    ----------</span>
+</span><span data-line="98"><span class="sd">    edge_norm : torch.nn.Module</span>
+</span><span data-line="99"><span class="sd">        Module that normalizes edge vectors and lengths.</span>
+</span><span data-line="100"><span class="sd">    radial_chemical_embed : torch.nn.Module</span>
+</span><span data-line="101"><span class="sd">        Module that embeds edge distances and atom types.</span>
+</span><span data-line="102"><span class="sd">    scalar_embed_mlp : torch.nn.Module</span>
+</span><span data-line="103"><span class="sd">        MLP that processes scalar edge embeddings.</span>
+</span><span data-line="104"><span class="sd">    tensor_embed : torch.nn.Module</span>
+</span><span data-line="105"><span class="sd">        Module that embeds edge features in spherical harmonic space.</span>
+</span><span data-line="106"><span class="sd">    allegro : torch.nn.Module</span>
+</span><span data-line="107"><span class="sd">        The main Allegro message-passing module.</span>
+</span><span data-line="108"><span class="sd">    edge_readout : torch.nn.Module</span>
+</span><span data-line="109"><span class="sd">        Module that converts edge features to edge energies.</span>
+</span><span data-line="110"><span class="sd">    edge_eng_sum : torch.nn.Module</span>
+</span><span data-line="111"><span class="sd">        Module that aggregates edge energies to per-atom energies.</span>
+</span><span data-line="112"><span class="sd">    per_type_energy_scale_shift : torch.nn.Module</span>
+</span><span data-line="113"><span class="sd">        Module that applies type-dependent scaling and shifting to energies.</span>
+</span><span data-line="114"><span class="sd">    pair_potential : Optional[Dict], default=None</span>
+</span><span data-line="115"><span class="sd">        Optional pair potential to add to the energy.</span>
+</span><span data-line="116"><span class="sd">    max_num_neighbors : int, default=1000</span>
+</span><span data-line="117"><span class="sd">        Maximum number of neighbors per atom to consider.</span>
+</span><span data-line="118"><span class="sd">    nls_distance_method:</span>
+</span><span data-line="119"><span class="sd">        Method for computing a neighbor list. Supported values are</span>
+</span><span data-line="120"><span class="sd">        `torch`, `nvalchemi_naive`, `nvalchemi_cell` and custom.</span>
+</span><span data-line="121"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="122">
+</span><span data-line="123">    <span class="n">name</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;allegro&quot;</span>
+</span><span data-line="124">    <span class="c1"># list of labels that need to be removed after a forward pass</span>
+</span><span data-line="125">    <span class="c1"># from an atomic data to avoid mismatches</span>
+</span><span data-line="126">    <span class="n">cleanup_labels</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+</span><span data-line="127">        <span class="s2">&quot;edge_attrs&quot;</span><span class="p">,</span>
+</span><span data-line="128">        <span class="s2">&quot;edge_cutoff&quot;</span><span class="p">,</span>
+</span><span data-line="129">        <span class="s2">&quot;edge_features&quot;</span><span class="p">,</span>
+</span><span data-line="130">        <span class="s2">&quot;edge_embedding&quot;</span><span class="p">,</span>
+</span><span data-line="131">        <span class="s2">&quot;edge_index&quot;</span><span class="p">,</span>
+</span><span data-line="132">        <span class="s2">&quot;normed_edge_lengths&quot;</span><span class="p">,</span>
+</span><span data-line="133">        <span class="s2">&quot;edge_vectors&quot;</span><span class="p">,</span>
+</span><span data-line="134">        <span class="s2">&quot;edge_energy&quot;</span><span class="p">,</span>
+</span><span data-line="135">        <span class="s2">&quot;edge_lengths&quot;</span><span class="p">,</span>
+</span><span data-line="136">    <span class="p">]</span>
+</span><span data-line="137">
+</span><span data-line="138">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+</span><span data-line="139">        <span class="bp">self</span><span class="p">,</span>
+</span><span data-line="140">        <span class="n">edge_norm</span><span class="p">,</span>
+</span><span data-line="141">        <span class="n">radial_chemical_embed</span><span class="p">,</span>
+</span><span data-line="142">        <span class="n">scalar_embed_mlp</span><span class="p">,</span>
+</span><span data-line="143">        <span class="n">tensor_embed</span><span class="p">,</span>
+</span><span data-line="144">        <span class="n">allegro</span><span class="p">,</span>
+</span><span data-line="145">        <span class="n">edge_readout</span><span class="p">,</span>
+</span><span data-line="146">        <span class="n">edge_eng_sum</span><span class="p">,</span>
+</span><span data-line="147">        <span class="n">per_type_energy_scale_shift</span><span class="p">,</span>
+</span><span data-line="148">        <span class="n">pair_potential</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+</span><span data-line="149">        <span class="n">max_num_neighbors</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
+</span><span data-line="150">        <span class="n">nls_distance_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;torch&quot;</span><span class="p">,</span>
+</span><span data-line="151">    <span class="p">):</span>
+</span><span data-line="152">        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+</span><span data-line="153">
+</span><span data-line="154">        <span class="bp">self</span><span class="o">.</span><span class="n">edge_norm</span> <span class="o">=</span> <span class="n">edge_norm</span>
+</span><span data-line="155">        <span class="bp">self</span><span class="o">.</span><span class="n">radial_chemical_embed</span> <span class="o">=</span> <span class="n">radial_chemical_embed</span>
+</span><span data-line="156">        <span class="bp">self</span><span class="o">.</span><span class="n">scalar_embed_mlp</span> <span class="o">=</span> <span class="n">scalar_embed_mlp</span>
+</span><span data-line="157">        <span class="bp">self</span><span class="o">.</span><span class="n">tensor_embed</span> <span class="o">=</span> <span class="n">tensor_embed</span>
+</span><span data-line="158">        <span class="bp">self</span><span class="o">.</span><span class="n">allegro</span> <span class="o">=</span> <span class="n">allegro</span>
+</span><span data-line="159">        <span class="bp">self</span><span class="o">.</span><span class="n">edge_readout</span> <span class="o">=</span> <span class="n">edge_readout</span>
+</span><span data-line="160">        <span class="bp">self</span><span class="o">.</span><span class="n">edge_eng_sum</span> <span class="o">=</span> <span class="n">edge_eng_sum</span>
+</span><span data-line="161">        <span class="bp">self</span><span class="o">.</span><span class="n">per_type_energy_scale_shift</span> <span class="o">=</span> <span class="n">per_type_energy_scale_shift</span>
+</span><span data-line="162">        <span class="bp">self</span><span class="o">.</span><span class="n">pair_potential</span> <span class="o">=</span> <span class="n">pair_potential</span>
+</span><span data-line="163">        <span class="bp">self</span><span class="o">.</span><span class="n">max_num_neighbors</span> <span class="o">=</span> <span class="n">max_num_neighbors</span>
+</span><span data-line="164">        <span class="bp">self</span><span class="o">.</span><span class="n">nls_distance_method</span> <span class="o">=</span> <span class="n">nls_distance_method</span>
+</span><span data-line="165">
+</span><span data-line="166">        <span class="bp">self</span><span class="o">.</span><span class="n">reset_parameters</span><span class="p">()</span>
+</span><span data-line="167">
+</span><span data-line="168">    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+</span><span data-line="169"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="170"><span class="sd">        Forward pass of the Allegro model.</span>
+</span><span data-line="171">
+</span><span data-line="172"><span class="sd">        Processes atomic data through the model components to predict per-molecule</span>
+</span><span data-line="173"><span class="sd">        energies and, optionally, forces.</span>
+</span><span data-line="174">
+</span><span data-line="175"><span class="sd">        Parameters</span>
+</span><span data-line="176"><span class="sd">        ----------</span>
+</span><span data-line="177"><span class="sd">        data : AtomicData</span>
+</span><span data-line="178"><span class="sd">            Input atomic data containing positions, atom types, and batch information.</span>
+</span><span data-line="179">
+</span><span data-line="180"><span class="sd">        Returns</span>
+</span><span data-line="181"><span class="sd">        -------</span>
+</span><span data-line="182"><span class="sd">        data : AtomicData</span>
+</span><span data-line="183"><span class="sd">            The input data object with added energy predictions under data.out[self.name].</span>
+</span><span data-line="184"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="185">        <span class="n">dtype</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">dtype</span>
+</span><span data-line="186">
+</span><span data-line="187">        <span class="n">neighbor_list</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+</span><span data-line="188">
+</span><span data-line="189">        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_nl_compatible</span><span class="p">(</span><span class="n">neighbor_list</span><span class="p">):</span>
+</span><span data-line="190">            <span class="n">neighbor_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">(</span>
+</span><span data-line="191">                <span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">r_max</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_num_neighbors</span>
+</span><span data-line="192">            <span class="p">)[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+</span><span data-line="193">
+</span><span data-line="194">        <span class="n">edge_index</span> <span class="o">=</span> <span class="n">neighbor_list</span><span class="p">[</span><span class="s2">&quot;index_mapping&quot;</span><span class="p">]</span>
+</span><span data-line="195">
+</span><span data-line="196">        <span class="n">data</span><span class="p">[</span><span class="n">AtomicDataDict</span><span class="o">.</span><span class="n">EDGE_INDEX_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="n">edge_index</span>
+</span><span data-line="197">        <span class="n">data</span><span class="p">[</span><span class="n">AtomicDataDict</span><span class="o">.</span><span class="n">NUM_NODES_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">n_atoms</span>
+</span><span data-line="198">        <span class="c1"># FIXME: check compatibility with pbc</span>
+</span><span data-line="199">
+</span><span data-line="200">        <span class="c1"># populates &#39;edge_vectors&#39;, &#39;edge_lengths&#39;, &#39;normed_edge_lengths&#39;</span>
+</span><span data-line="201">        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">edge_norm</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</span><span data-line="202">        <span class="c1"># populates &#39;edge_cutoff&#39;, &#39;edge_embedding&#39;</span>
+</span><span data-line="203">        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">radial_chemical_embed</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</span><span data-line="204">        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scalar_embed_mlp</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</span><span data-line="205">
+</span><span data-line="206">        <span class="c1"># populates &#39;edge_attrs&#39;, &#39;edge_features&#39;</span>
+</span><span data-line="207">        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tensor_embed</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</span><span data-line="208">
+</span><span data-line="209">        <span class="c1"># updates &#39;edge_features&#39;</span>
+</span><span data-line="210">        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">allegro</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</span><span data-line="211">
+</span><span data-line="212">        <span class="c1"># FIXME: check if we can change from here on</span>
+</span><span data-line="213">
+</span><span data-line="214">        <span class="c1"># populates &#39;edge_energy&#39;</span>
+</span><span data-line="215">        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">edge_readout</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</span><span data-line="216">
+</span><span data-line="217">        <span class="c1"># aggregate &#39;edge_energy&#39; in &#39;atomic_energy&#39;</span>
+</span><span data-line="218">        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">edge_eng_sum</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</span><span data-line="219">
+</span><span data-line="220">        <span class="c1"># update &#39;atomic_energy&#39;</span>
+</span><span data-line="221">        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">per_type_energy_scale_shift</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</span><span data-line="222">
+</span><span data-line="223">        <span class="n">energy</span> <span class="o">=</span> <span class="p">(</span>
+</span><span data-line="224">            <span class="n">scatter</span><span class="p">(</span>
+</span><span data-line="225">                <span class="n">data</span><span class="p">[</span><span class="s2">&quot;atomic_energy&quot;</span><span class="p">],</span>
+</span><span data-line="226">                <span class="n">data</span><span class="o">.</span><span class="n">batch</span><span class="p">,</span>
+</span><span data-line="227">                <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+</span><span data-line="228">                <span class="n">dim_size</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">n_atoms</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
+</span><span data-line="229">                <span class="n">reduce</span><span class="o">=</span><span class="s2">&quot;sum&quot;</span><span class="p">,</span>
+</span><span data-line="230">            <span class="p">)</span>
+</span><span data-line="231">            <span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
+</span><span data-line="232">            <span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+</span><span data-line="233">        <span class="p">)</span>
+</span><span data-line="234">
+</span><span data-line="235">        <span class="n">data</span><span class="o">.</span><span class="n">out</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">ENERGY_KEY</span><span class="p">:</span> <span class="n">energy</span><span class="p">}</span>
+</span><span data-line="236">        <span class="c1"># cleaning edge-related properties</span>
+</span><span data-line="237">        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cleanup_labels</span><span class="p">:</span>
+</span><span data-line="238">            <span class="k">del</span> <span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+</span><span data-line="239">        <span class="k">return</span> <span class="n">data</span>
+</span><span data-line="240">
+</span><span data-line="241">    <span class="k">def</span><span class="w"> </span><span class="nf">reset_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span data-line="242"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="243"><span class="sd">        Reset parameters of all submodules to their initial values.</span>
+</span><span data-line="244"><span class="sd">        Currently accepts default values (the function does nothing),</span>
+</span><span data-line="245"><span class="sd">        but commented code uses Xavier distribution to try to replicate</span>
+</span><span data-line="246"><span class="sd">        Allegro functionality precisely.</span>
+</span><span data-line="247"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="248">        <span class="k">pass</span>
+</span><span data-line="249">
+</span><span data-line="250">        <span class="c1"># init_xavier_uniform(self.edge_norm)</span>
+</span><span data-line="251">        <span class="c1"># init_xavier_uniform(self.scalar_embed_mlp)</span>
+</span><span data-line="252">        <span class="c1"># init_xavier_uniform(self.tensor_embed)</span>
+</span><span data-line="253">        <span class="c1"># init_xavier_uniform(self.allegro)</span>
+</span><span data-line="254">        <span class="c1"># init_xavier_uniform(self.edge_readout)</span>
+</span><span data-line="255">        <span class="c1"># pass</span>
+</span><span data-line="256">
+</span><span data-line="257">    <span class="k">def</span><span class="w"> </span><span class="nf">is_nl_compatible</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nl</span><span class="p">):</span>
+</span><span data-line="258"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="259"><span class="sd">        Check if a neighbor list is compatible with this model.</span>
+</span><span data-line="260">
+</span><span data-line="261"><span class="sd">        Parameters</span>
+</span><span data-line="262"><span class="sd">        ----------</span>
+</span><span data-line="263"><span class="sd">        nl : dict</span>
+</span><span data-line="264"><span class="sd">            The neighbor list to check.</span>
+</span><span data-line="265">
+</span><span data-line="266"><span class="sd">        Returns</span>
+</span><span data-line="267"><span class="sd">        -------</span>
+</span><span data-line="268"><span class="sd">        bool</span>
+</span><span data-line="269"><span class="sd">            True if the neighbor list is compatible, False otherwise.</span>
+</span><span data-line="270"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="271">        <span class="n">is_compatible</span> <span class="o">=</span> <span class="kc">False</span>
+</span><span data-line="272">        <span class="k">if</span> <span class="n">validate_neighborlist</span><span class="p">(</span><span class="n">nl</span><span class="p">):</span>
+</span><span data-line="273">            <span class="k">if</span> <span class="p">(</span>
+</span><span data-line="274">                <span class="n">nl</span><span class="p">[</span><span class="s2">&quot;order&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span>
+</span><span data-line="275">                <span class="ow">and</span> <span class="n">nl</span><span class="p">[</span><span class="s2">&quot;self_interaction&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">False</span>
+</span><span data-line="276">                <span class="ow">and</span> <span class="n">nl</span><span class="p">[</span><span class="s2">&quot;rcut&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">r_max</span>
+</span><span data-line="277">            <span class="p">):</span>
+</span><span data-line="278">                <span class="n">is_compatible</span> <span class="o">=</span> <span class="kc">True</span>
+</span><span data-line="279">        <span class="k">return</span> <span class="n">is_compatible</span>
+</span><span data-line="280">
+</span><span data-line="281">    <span class="k">def</span><span class="w"> </span><span class="nf">neighbor_list</span><span class="p">(</span>
+</span><span data-line="282">        <span class="bp">self</span><span class="p">,</span>
+</span><span data-line="283">        <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">,</span>
+</span><span data-line="284">        <span class="n">rcut</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+</span><span data-line="285">        <span class="n">max_num_neighbors</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
+</span><span data-line="286">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="287"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Computes the neighborlist for :obj:`data` using a strict cutoff of :obj:`rcut`.&quot;&quot;&quot;</span>
+</span><span data-line="288">        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;nls_distance_method&quot;</span><span class="p">):</span>
+</span><span data-line="289">            <span class="bp">self</span><span class="o">.</span><span class="n">nls_distance_method</span> <span class="o">=</span> <span class="s2">&quot;torch&quot;</span>
+</span><span data-line="290">        <span class="k">return</span> <span class="p">{</span>
+</span><span data-line="291">            <span class="n">Allegro</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">atomic_data2neighbor_list</span><span class="p">(</span>
+</span><span data-line="292">                <span class="n">data</span><span class="p">,</span>
+</span><span data-line="293">                <span class="n">rcut</span><span class="p">,</span>
+</span><span data-line="294">                <span class="n">self_interaction</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+</span><span data-line="295">                <span class="n">max_num_neighbors</span><span class="o">=</span><span class="n">max_num_neighbors</span><span class="p">,</span>
+</span><span data-line="296">                <span class="n">nls_distance_method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nls_distance_method</span><span class="p">,</span>
+</span><span data-line="297">            <span class="p">)</span>
+</span><span data-line="298">        <span class="p">}</span>
+</span><span data-line="299">
+</span><span data-line="300">
 <div class="viewcode-block" id="StandardAllegro">
-<a class="viewcode-back" href="../../../models.html#mlcg.nn.StandardAllegro">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">StandardAllegro</span><span class="p">(</span><span class="n">Allegro</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Standard implementation of the Allegro model with configurable parameters.</span>
+<a class="viewcode-back" href="../../../models/mlip.html#mlcg.nn.StandardAllegro">[docs]</a>
+</span><span data-line="301"><span class="k">class</span><span class="w"> </span><span class="nc">StandardAllegro</span><span class="p">(</span><span class="n">Allegro</span><span class="p">):</span>
+</span><span data-line="302"><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="303"><span class="sd">    Standard implementation of the Allegro model with configurable parameters.</span>
+</span><span data-line="304">
+</span><span data-line="305"><span class="sd">    This class provides a higher-level interface to the Allegro model, allowing</span>
+</span><span data-line="306"><span class="sd">    users to specify model parameters directly rather than constructing each</span>
+</span><span data-line="307"><span class="sd">    component manually.</span>
+</span><span data-line="308">
+</span><span data-line="309"><span class="sd">    Parameters</span>
+</span><span data-line="310"><span class="sd">    ----------</span>
+</span><span data-line="311"><span class="sd">    r_max : float, default=4.0</span>
+</span><span data-line="312"><span class="sd">        Cutoff radius for neighbor identification.</span>
+</span><span data-line="313"><span class="sd">    embedding_size : int, default=100</span>
+</span><span data-line="314"><span class="sd">        Dimension of the atom embedding space.</span>
+</span><span data-line="315"><span class="sd">    l_max : int, default=2</span>
+</span><span data-line="316"><span class="sd">        Maximum spherical harmonic degree to use.</span>
+</span><span data-line="317"><span class="sd">    parity : bool, default=False</span>
+</span><span data-line="318"><span class="sd">        Whether to use parity-equivariant features.</span>
+</span><span data-line="319"><span class="sd">    radial_chemical_embed : Optional[dict], default=None</span>
+</span><span data-line="320"><span class="sd">        Configuration for the radial chemical embedding.</span>
+</span><span data-line="321"><span class="sd">    radial_chemical_embed_dim : Optional[int], default=None</span>
+</span><span data-line="322"><span class="sd">        Dimension of the radial chemical embedding.</span>
+</span><span data-line="323"><span class="sd">    per_edge_type_cutoff : Optional[Dict], default=None</span>
+</span><span data-line="324"><span class="sd">        Cutoff parameters for each edge type.</span>
+</span><span data-line="325"><span class="sd">    scalar_embed_mlp_hidden_layers_depth : int, default=1</span>
+</span><span data-line="326"><span class="sd">        Depth of the scalar embedding MLP.</span>
+</span><span data-line="327"><span class="sd">    scalar_embed_mlp_hidden_layers_width : int, default=64</span>
+</span><span data-line="328"><span class="sd">        Width of the scalar embedding MLP.</span>
+</span><span data-line="329"><span class="sd">    scalar_embed_mlp_nonlinearity : Optional[str], default=&quot;silu&quot;</span>
+</span><span data-line="330"><span class="sd">        Nonlinearity to use in the scalar embedding MLP.</span>
+</span><span data-line="331"><span class="sd">    num_layers : int, default=2</span>
+</span><span data-line="332"><span class="sd">        Number of message-passing layers.</span>
+</span><span data-line="333"><span class="sd">    num_scalar_features : int, default=64</span>
+</span><span data-line="334"><span class="sd">        Number of scalar features.</span>
+</span><span data-line="335"><span class="sd">    num_tensor_features : int, default=16</span>
+</span><span data-line="336"><span class="sd">        Number of tensor features.</span>
+</span><span data-line="337"><span class="sd">    allegro_mlp_hidden_layers_depth : int, default=1</span>
+</span><span data-line="338"><span class="sd">        Depth of the Allegro MLP.</span>
+</span><span data-line="339"><span class="sd">    allegro_mlp_hidden_layers_width : int, default=64</span>
+</span><span data-line="340"><span class="sd">        Width of the Allegro MLP.</span>
+</span><span data-line="341"><span class="sd">    allegro_mlp_nonlinearity : Optional[str], default=&quot;silu&quot;</span>
+</span><span data-line="342"><span class="sd">        Nonlinearity to use in the Allegro MLP.</span>
+</span><span data-line="343"><span class="sd">    tp_path_channel_coupling : bool, default=True</span>
+</span><span data-line="344"><span class="sd">        Whether to use channel coupling in tensor product paths.</span>
+</span><span data-line="345"><span class="sd">    readout_mlp_hidden_layers_depth : int, default=1</span>
+</span><span data-line="346"><span class="sd">        Depth of the readout MLP.</span>
+</span><span data-line="347"><span class="sd">    readout_mlp_hidden_layers_width : int, default=32</span>
+</span><span data-line="348"><span class="sd">        Width of the readout MLP.</span>
+</span><span data-line="349"><span class="sd">    readout_mlp_nonlinearity : Optional[str], default=&quot;silu&quot;</span>
+</span><span data-line="350"><span class="sd">        Nonlinearity to use in the readout MLP.</span>
+</span><span data-line="351"><span class="sd">    avg_num_neighbors : Optional[float], default=10.0</span>
+</span><span data-line="352"><span class="sd">        Average number of neighbors per atom for normalization.</span>
+</span><span data-line="353"><span class="sd">    weight_individual_irreps : bool, default=True</span>
+</span><span data-line="354"><span class="sd">        Whether to use separate weights for each irreducible representation.</span>
+</span><span data-line="355"><span class="sd">    per_type_energy_scales : Optional[Union[float, Sequence[float]]], default=None</span>
+</span><span data-line="356"><span class="sd">        Scaling factors for energies of each atom type.</span>
+</span><span data-line="357"><span class="sd">    per_type_energy_shifts : Optional[Union[float, Sequence[float]]], default=None</span>
+</span><span data-line="358"><span class="sd">        Shift values for energies of each atom type.</span>
+</span><span data-line="359"><span class="sd">    per_type_energy_scales_trainable : Optional[bool], default=False</span>
+</span><span data-line="360"><span class="sd">        Whether the energy scales are trainable parameters.</span>
+</span><span data-line="361"><span class="sd">    per_type_energy_shifts_trainable : Optional[bool], default=False</span>
+</span><span data-line="362"><span class="sd">        Whether the energy shifts are trainable parameters.</span>
+</span><span data-line="363"><span class="sd">    pair_potential : Optional[Dict], default=None</span>
+</span><span data-line="364"><span class="sd">        Optional pair potential to add to the energy.</span>
+</span><span data-line="365"><span class="sd">    forward_normalize : bool, default=True</span>
+</span><span data-line="366"><span class="sd">        Whether to normalize weights in the forward pass.</span>
+</span><span data-line="367"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="368">
+</span><span data-line="369">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+</span><span data-line="370">        <span class="bp">self</span><span class="p">,</span>
+</span><span data-line="371">        <span class="n">r_max</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">4.0</span><span class="p">,</span>
+</span><span data-line="372">        <span class="n">embedding_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+</span><span data-line="373">        <span class="c1"># irreps</span>
+</span><span data-line="374">        <span class="n">l_max</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+</span><span data-line="375">        <span class="n">parity</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span data-line="376">        <span class="c1"># scalar embed</span>
+</span><span data-line="377">        <span class="n">radial_chemical_embed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="378">        <span class="n">radial_chemical_embed_dim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="379">        <span class="n">per_edge_type_cutoff</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span>
+</span><span data-line="380">            <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]]</span>
+</span><span data-line="381">        <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>  <span class="c1"># FIXME: check if useful</span>
+</span><span data-line="382">        <span class="c1"># scalar embed MLP</span>
+</span><span data-line="383">        <span class="n">scalar_embed_mlp_hidden_layers_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+</span><span data-line="384">        <span class="n">scalar_embed_mlp_hidden_layers_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">64</span><span class="p">,</span>
+</span><span data-line="385">        <span class="n">scalar_embed_mlp_nonlinearity</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;silu&quot;</span><span class="p">,</span>
+</span><span data-line="386">        <span class="c1"># allegro layers</span>
+</span><span data-line="387">        <span class="n">num_layers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+</span><span data-line="388">        <span class="n">num_scalar_features</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">64</span><span class="p">,</span>
+</span><span data-line="389">        <span class="n">num_tensor_features</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">16</span><span class="p">,</span>
+</span><span data-line="390">        <span class="n">allegro_mlp_hidden_layers_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+</span><span data-line="391">        <span class="n">allegro_mlp_hidden_layers_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">64</span><span class="p">,</span>
+</span><span data-line="392">        <span class="n">allegro_mlp_nonlinearity</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;silu&quot;</span><span class="p">,</span>
+</span><span data-line="393">        <span class="n">tp_path_channel_coupling</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>  <span class="c1"># FIXME: check if useful</span>
+</span><span data-line="394">        <span class="c1"># readout</span>
+</span><span data-line="395">        <span class="n">readout_mlp_hidden_layers_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+</span><span data-line="396">        <span class="n">readout_mlp_hidden_layers_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span>
+</span><span data-line="397">        <span class="n">readout_mlp_nonlinearity</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;silu&quot;</span><span class="p">,</span>
+</span><span data-line="398">        <span class="c1"># edge sum normalization</span>
+</span><span data-line="399">        <span class="n">avg_num_neighbors</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">10.0</span><span class="p">,</span>
+</span><span data-line="400">        <span class="c1"># allegro layers defaults</span>
+</span><span data-line="401">        <span class="n">weight_individual_irreps</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+</span><span data-line="402">        <span class="c1"># per atom energy params</span>
+</span><span data-line="403">        <span class="n">per_type_energy_scales</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="404">        <span class="n">per_type_energy_shifts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="405">        <span class="n">per_type_energy_scales_trainable</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span data-line="406">        <span class="n">per_type_energy_shifts_trainable</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span data-line="407">        <span class="n">pair_potential</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="408">        <span class="c1"># weight initialization and normalization</span>
+</span><span data-line="409">        <span class="n">forward_normalize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+</span><span data-line="410">        <span class="c1"># cuequivariance acceleration</span>
+</span><span data-line="411">        <span class="n">use_cueq</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span data-line="412">        <span class="n">nls_distance_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;torch&quot;</span><span class="p">,</span>
+</span><span data-line="413">    <span class="p">):</span>
+</span><span data-line="414">
+</span><span data-line="415">        <span class="c1">## haking jit for module</span>
+</span><span data-line="416">        <span class="n">_original_script</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">script</span>
+</span><span data-line="417">        <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">script</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">fn</span><span class="p">:</span> <span class="n">fn</span>  <span class="c1"># No-op</span>
+</span><span data-line="418">
+</span><span data-line="419">        <span class="bp">self</span><span class="o">.</span><span class="n">r_max</span> <span class="o">=</span> <span class="n">r_max</span>
+</span><span data-line="420">        <span class="n">irreps_edge_sh</span> <span class="o">=</span> <span class="nb">repr</span><span class="p">(</span><span class="n">o3</span><span class="o">.</span><span class="n">Irreps</span><span class="o">.</span><span class="n">spherical_harmonics</span><span class="p">(</span><span class="n">l_max</span><span class="p">,</span> <span class="n">p</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span>
+</span><span data-line="421">        <span class="c1"># set tensor_track_allowed_irreps</span>
+</span><span data-line="422">        <span class="c1"># note that it is treated as a set, so order doesn&#39;t really matter</span>
+</span><span data-line="423">        <span class="k">if</span> <span class="n">parity</span><span class="p">:</span>
+</span><span data-line="424">            <span class="c1"># we want all irreps up to lmax</span>
+</span><span data-line="425">            <span class="n">tensor_track_allowed_irreps</span> <span class="o">=</span> <span class="n">o3</span><span class="o">.</span><span class="n">Irreps</span><span class="p">(</span>
+</span><span data-line="426">                <span class="p">[</span>
+</span><span data-line="427">                    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="n">this_l</span><span class="p">,</span> <span class="n">p</span><span class="p">))</span>
+</span><span data-line="428">                    <span class="k">for</span> <span class="n">this_l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">l_max</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+</span><span data-line="429">                    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</span><span data-line="430">                <span class="p">]</span>
+</span><span data-line="431">            <span class="p">)</span>
+</span><span data-line="432">        <span class="k">else</span><span class="p">:</span>
+</span><span data-line="433">            <span class="c1"># we want only irreps that show up in the original SH</span>
+</span><span data-line="434">            <span class="n">tensor_track_allowed_irreps</span> <span class="o">=</span> <span class="n">irreps_edge_sh</span>
+</span><span data-line="435">
+</span><span data-line="436">        <span class="n">type_names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_size_to_type_names</span><span class="p">(</span><span class="n">embedding_size</span><span class="p">)</span>
+</span><span data-line="437">
+</span><span data-line="438">        <span class="k">if</span> <span class="n">radial_chemical_embed</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="439">            <span class="n">radial_chemical_embed</span> <span class="o">=</span> <span class="p">{</span>
+</span><span data-line="440">                <span class="s2">&quot;_target_&quot;</span><span class="p">:</span> <span class="s2">&quot;allegro.nn.TwoBodyBesselScalarEmbed&quot;</span><span class="p">,</span>
+</span><span data-line="441">                <span class="s2">&quot;num_bessels&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
+</span><span data-line="442">                <span class="s2">&quot;polynomial_cutoff_p&quot;</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>
+</span><span data-line="443">            <span class="p">}</span>
+</span><span data-line="444">
+</span><span data-line="445">        <span class="n">edge_norm</span> <span class="o">=</span> <span class="n">EdgeLengthNormalizer</span><span class="p">(</span>
+</span><span data-line="446">            <span class="n">r_max</span><span class="o">=</span><span class="n">r_max</span><span class="p">,</span>
+</span><span data-line="447">            <span class="n">type_names</span><span class="o">=</span><span class="n">type_names</span><span class="p">,</span>
+</span><span data-line="448">            <span class="n">per_edge_type_cutoff</span><span class="o">=</span><span class="n">per_edge_type_cutoff</span><span class="p">,</span>
+</span><span data-line="449">        <span class="p">)</span>
+</span><span data-line="450">
+</span><span data-line="451">        <span class="kn">from</span><span class="w"> </span><span class="nn">mlcg.pl.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_class_from_str</span>
+</span><span data-line="452">
+</span><span data-line="453">        <span class="n">radial_chemical_embed_module</span> <span class="o">=</span> <span class="n">get_class_from_str</span><span class="p">(</span>
+</span><span data-line="454">            <span class="n">radial_chemical_embed</span><span class="p">[</span><span class="s2">&quot;_target_&quot;</span><span class="p">]</span>
+</span><span data-line="455">        <span class="p">)(</span>
+</span><span data-line="456">            <span class="n">num_bessels</span><span class="o">=</span><span class="n">radial_chemical_embed</span><span class="p">[</span><span class="s2">&quot;num_bessels&quot;</span><span class="p">],</span>
+</span><span data-line="457">            <span class="n">polynomial_cutoff_p</span><span class="o">=</span><span class="n">radial_chemical_embed</span><span class="p">[</span><span class="s2">&quot;polynomial_cutoff_p&quot;</span><span class="p">],</span>
+</span><span data-line="458">            <span class="n">type_names</span><span class="o">=</span><span class="n">type_names</span><span class="p">,</span>
+</span><span data-line="459">            <span class="n">module_output_dim</span><span class="o">=</span><span class="p">(</span>
+</span><span data-line="460">                <span class="n">num_scalar_features</span>
+</span><span data-line="461">                <span class="k">if</span> <span class="n">radial_chemical_embed_dim</span> <span class="ow">is</span> <span class="kc">None</span>
+</span><span data-line="462">                <span class="k">else</span> <span class="n">radial_chemical_embed_dim</span>
+</span><span data-line="463">            <span class="p">),</span>
+</span><span data-line="464">            <span class="n">forward_weight_init</span><span class="o">=</span><span class="n">forward_normalize</span><span class="p">,</span>
+</span><span data-line="465">            <span class="n">scalar_embed_field</span><span class="o">=</span><span class="n">AtomicDataDict</span><span class="o">.</span><span class="n">EDGE_EMBEDDING_KEY</span><span class="p">,</span>
+</span><span data-line="466">            <span class="n">irreps_in</span><span class="o">=</span><span class="n">edge_norm</span><span class="o">.</span><span class="n">irreps_out</span><span class="p">,</span>
+</span><span data-line="467">        <span class="p">)</span>
+</span><span data-line="468">
+</span><span data-line="469">        <span class="n">scalar_embed_mlp</span> <span class="o">=</span> <span class="n">ScalarMLP</span><span class="p">(</span>
+</span><span data-line="470">            <span class="n">output_dim</span><span class="o">=</span><span class="n">num_scalar_features</span><span class="p">,</span>
+</span><span data-line="471">            <span class="n">hidden_layers_depth</span><span class="o">=</span><span class="n">scalar_embed_mlp_hidden_layers_depth</span><span class="p">,</span>
+</span><span data-line="472">            <span class="n">hidden_layers_width</span><span class="o">=</span><span class="n">scalar_embed_mlp_hidden_layers_width</span><span class="p">,</span>
+</span><span data-line="473">            <span class="n">nonlinearity</span><span class="o">=</span><span class="n">scalar_embed_mlp_nonlinearity</span><span class="p">,</span>
+</span><span data-line="474">            <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+</span><span data-line="475">            <span class="n">forward_weight_init</span><span class="o">=</span><span class="n">forward_normalize</span><span class="p">,</span>
+</span><span data-line="476">            <span class="n">field</span><span class="o">=</span><span class="n">AtomicDataDict</span><span class="o">.</span><span class="n">EDGE_EMBEDDING_KEY</span><span class="p">,</span>
+</span><span data-line="477">            <span class="n">out_field</span><span class="o">=</span><span class="n">AtomicDataDict</span><span class="o">.</span><span class="n">EDGE_EMBEDDING_KEY</span><span class="p">,</span>
+</span><span data-line="478">            <span class="n">irreps_in</span><span class="o">=</span><span class="n">radial_chemical_embed_module</span><span class="o">.</span><span class="n">irreps_out</span><span class="p">,</span>
+</span><span data-line="479">        <span class="p">)</span>
+</span><span data-line="480">
+</span><span data-line="481">        <span class="c1">##</span>
+</span><span data-line="482">        <span class="n">tensor_embed</span> <span class="o">=</span> <span class="n">TwoBodySphericalHarmonicTensorEmbed</span><span class="p">(</span>
+</span><span data-line="483">            <span class="n">irreps_edge_sh</span><span class="o">=</span><span class="n">irreps_edge_sh</span><span class="p">,</span>
+</span><span data-line="484">            <span class="n">num_tensor_features</span><span class="o">=</span><span class="n">num_tensor_features</span><span class="p">,</span>
+</span><span data-line="485">            <span class="n">forward_weight_init</span><span class="o">=</span><span class="n">forward_normalize</span><span class="p">,</span>
+</span><span data-line="486">            <span class="n">scalar_embedding_in_field</span><span class="o">=</span><span class="n">AtomicDataDict</span><span class="o">.</span><span class="n">EDGE_EMBEDDING_KEY</span><span class="p">,</span>
+</span><span data-line="487">            <span class="n">tensor_basis_out_field</span><span class="o">=</span><span class="n">AtomicDataDict</span><span class="o">.</span><span class="n">EDGE_ATTRS_KEY</span><span class="p">,</span>
+</span><span data-line="488">            <span class="n">tensor_embedding_out_field</span><span class="o">=</span><span class="n">AtomicDataDict</span><span class="o">.</span><span class="n">EDGE_FEATURES_KEY</span><span class="p">,</span>
+</span><span data-line="489">            <span class="n">irreps_in</span><span class="o">=</span><span class="n">scalar_embed_mlp</span><span class="o">.</span><span class="n">irreps_out</span><span class="p">,</span>
+</span><span data-line="490">        <span class="p">)</span>
+</span><span data-line="491">
+</span><span data-line="492">        <span class="n">allegro</span> <span class="o">=</span> <span class="n">Allegro_Module</span><span class="p">(</span>
+</span><span data-line="493">            <span class="n">num_layers</span><span class="o">=</span><span class="n">num_layers</span><span class="p">,</span>
+</span><span data-line="494">            <span class="n">num_scalar_features</span><span class="o">=</span><span class="n">num_scalar_features</span><span class="p">,</span>
+</span><span data-line="495">            <span class="n">num_tensor_features</span><span class="o">=</span><span class="n">num_tensor_features</span><span class="p">,</span>
+</span><span data-line="496">            <span class="n">tensor_track_allowed_irreps</span><span class="o">=</span><span class="n">tensor_track_allowed_irreps</span><span class="p">,</span>
+</span><span data-line="497">            <span class="n">avg_num_neighbors</span><span class="o">=</span><span class="n">avg_num_neighbors</span><span class="p">,</span>
+</span><span data-line="498">            <span class="c1"># MLP</span>
+</span><span data-line="499">            <span class="n">latent_kwargs</span><span class="o">=</span><span class="p">{</span>
+</span><span data-line="500">                <span class="s2">&quot;hidden_layers_depth&quot;</span><span class="p">:</span> <span class="n">allegro_mlp_hidden_layers_depth</span><span class="p">,</span>
+</span><span data-line="501">                <span class="s2">&quot;hidden_layers_width&quot;</span><span class="p">:</span> <span class="n">allegro_mlp_hidden_layers_width</span><span class="p">,</span>
+</span><span data-line="502">                <span class="s2">&quot;nonlinearity&quot;</span><span class="p">:</span> <span class="n">allegro_mlp_nonlinearity</span><span class="p">,</span>
+</span><span data-line="503">                <span class="s2">&quot;bias&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+</span><span data-line="504">                <span class="s2">&quot;forward_weight_init&quot;</span><span class="p">:</span> <span class="n">forward_normalize</span><span class="p">,</span>
+</span><span data-line="505">            <span class="p">},</span>
+</span><span data-line="506">            <span class="n">tp_path_channel_coupling</span><span class="o">=</span><span class="n">tp_path_channel_coupling</span><span class="p">,</span>
+</span><span data-line="507">            <span class="c1"># best to use defaults for these</span>
+</span><span data-line="508">            <span class="n">weight_individual_irreps</span><span class="o">=</span><span class="n">weight_individual_irreps</span><span class="p">,</span>
+</span><span data-line="509">            <span class="c1"># fields</span>
+</span><span data-line="510">            <span class="n">tensor_basis_in_field</span><span class="o">=</span><span class="n">AtomicDataDict</span><span class="o">.</span><span class="n">EDGE_ATTRS_KEY</span><span class="p">,</span>
+</span><span data-line="511">            <span class="n">tensor_features_in_field</span><span class="o">=</span><span class="n">AtomicDataDict</span><span class="o">.</span><span class="n">EDGE_FEATURES_KEY</span><span class="p">,</span>
+</span><span data-line="512">            <span class="n">scalar_in_field</span><span class="o">=</span><span class="n">AtomicDataDict</span><span class="o">.</span><span class="n">EDGE_EMBEDDING_KEY</span><span class="p">,</span>
+</span><span data-line="513">            <span class="n">scalar_out_field</span><span class="o">=</span><span class="n">AtomicDataDict</span><span class="o">.</span><span class="n">EDGE_FEATURES_KEY</span><span class="p">,</span>
+</span><span data-line="514">            <span class="n">irreps_in</span><span class="o">=</span><span class="n">tensor_embed</span><span class="o">.</span><span class="n">irreps_out</span><span class="p">,</span>
+</span><span data-line="515">        <span class="p">)</span>
+</span><span data-line="516">
+</span><span data-line="517">        <span class="n">edge_readout</span> <span class="o">=</span> <span class="n">ScalarMLP</span><span class="p">(</span>
+</span><span data-line="518">            <span class="n">output_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+</span><span data-line="519">            <span class="n">hidden_layers_depth</span><span class="o">=</span><span class="n">readout_mlp_hidden_layers_depth</span><span class="p">,</span>
+</span><span data-line="520">            <span class="n">hidden_layers_width</span><span class="o">=</span><span class="n">readout_mlp_hidden_layers_width</span><span class="p">,</span>
+</span><span data-line="521">            <span class="n">nonlinearity</span><span class="o">=</span><span class="n">readout_mlp_nonlinearity</span><span class="p">,</span>
+</span><span data-line="522">            <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+</span><span data-line="523">            <span class="n">forward_weight_init</span><span class="o">=</span><span class="n">forward_normalize</span><span class="p">,</span>
+</span><span data-line="524">            <span class="n">field</span><span class="o">=</span><span class="n">AtomicDataDict</span><span class="o">.</span><span class="n">EDGE_FEATURES_KEY</span><span class="p">,</span>
+</span><span data-line="525">            <span class="n">out_field</span><span class="o">=</span><span class="n">AtomicDataDict</span><span class="o">.</span><span class="n">EDGE_ENERGY_KEY</span><span class="p">,</span>
+</span><span data-line="526">            <span class="n">irreps_in</span><span class="o">=</span><span class="n">allegro</span><span class="o">.</span><span class="n">irreps_out</span><span class="p">,</span>
+</span><span data-line="527">        <span class="p">)</span>
+</span><span data-line="528">
+</span><span data-line="529">        <span class="n">edge_eng_sum</span> <span class="o">=</span> <span class="n">EdgewiseReduce</span><span class="p">(</span>
+</span><span data-line="530">            <span class="n">field</span><span class="o">=</span><span class="n">AtomicDataDict</span><span class="o">.</span><span class="n">EDGE_ENERGY_KEY</span><span class="p">,</span>
+</span><span data-line="531">            <span class="n">out_field</span><span class="o">=</span><span class="n">AtomicDataDict</span><span class="o">.</span><span class="n">PER_ATOM_ENERGY_KEY</span><span class="p">,</span>
+</span><span data-line="532">            <span class="n">factor</span><span class="o">=</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">avg_num_neighbors</span><span class="p">),</span>
+</span><span data-line="533">            <span class="c1"># ^ factor of 2 to normalize dE/dr_i which includes both contributions from dE/dr_ij and every other derivative against r_ji</span>
+</span><span data-line="534">            <span class="n">irreps_in</span><span class="o">=</span><span class="n">edge_readout</span><span class="o">.</span><span class="n">irreps_out</span><span class="p">,</span>
+</span><span data-line="535">        <span class="p">)</span>
+</span><span data-line="536">
+</span><span data-line="537">        <span class="n">per_type_energy_scale_shift</span> <span class="o">=</span> <span class="n">PerTypeScaleShift</span><span class="p">(</span>
+</span><span data-line="538">            <span class="n">type_names</span><span class="o">=</span><span class="n">type_names</span><span class="p">,</span>
+</span><span data-line="539">            <span class="n">field</span><span class="o">=</span><span class="n">AtomicDataDict</span><span class="o">.</span><span class="n">PER_ATOM_ENERGY_KEY</span><span class="p">,</span>
+</span><span data-line="540">            <span class="n">out_field</span><span class="o">=</span><span class="n">AtomicDataDict</span><span class="o">.</span><span class="n">PER_ATOM_ENERGY_KEY</span><span class="p">,</span>
+</span><span data-line="541">            <span class="n">scales</span><span class="o">=</span><span class="n">per_type_energy_scales</span><span class="p">,</span>
+</span><span data-line="542">            <span class="n">shifts</span><span class="o">=</span><span class="n">per_type_energy_shifts</span><span class="p">,</span>
+</span><span data-line="543">            <span class="n">scales_trainable</span><span class="o">=</span><span class="n">per_type_energy_scales_trainable</span><span class="p">,</span>
+</span><span data-line="544">            <span class="n">shifts_trainable</span><span class="o">=</span><span class="n">per_type_energy_shifts_trainable</span><span class="p">,</span>
+</span><span data-line="545">            <span class="n">irreps_in</span><span class="o">=</span><span class="n">edge_eng_sum</span><span class="o">.</span><span class="n">irreps_out</span><span class="p">,</span>
+</span><span data-line="546">        <span class="p">)</span>
+</span><span data-line="547">
+</span><span data-line="548">        <span class="c1"># Build the base model first</span>
+</span><span data-line="549">        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+</span><span data-line="550">            <span class="n">edge_norm</span><span class="o">=</span><span class="n">edge_norm</span><span class="p">,</span>
+</span><span data-line="551">            <span class="n">radial_chemical_embed</span><span class="o">=</span><span class="n">radial_chemical_embed_module</span><span class="p">,</span>
+</span><span data-line="552">            <span class="n">scalar_embed_mlp</span><span class="o">=</span><span class="n">scalar_embed_mlp</span><span class="p">,</span>
+</span><span data-line="553">            <span class="n">tensor_embed</span><span class="o">=</span><span class="n">tensor_embed</span><span class="p">,</span>
+</span><span data-line="554">            <span class="n">allegro</span><span class="o">=</span><span class="n">allegro</span><span class="p">,</span>
+</span><span data-line="555">            <span class="n">edge_readout</span><span class="o">=</span><span class="n">edge_readout</span><span class="p">,</span>
+</span><span data-line="556">            <span class="n">edge_eng_sum</span><span class="o">=</span><span class="n">edge_eng_sum</span><span class="p">,</span>
+</span><span data-line="557">            <span class="n">per_type_energy_scale_shift</span><span class="o">=</span><span class="n">per_type_energy_scale_shift</span><span class="p">,</span>
+</span><span data-line="558">            <span class="n">pair_potential</span><span class="o">=</span><span class="n">pair_potential</span><span class="p">,</span>
+</span><span data-line="559">            <span class="n">nls_distance_method</span><span class="o">=</span><span class="n">nls_distance_method</span><span class="p">,</span>
+</span><span data-line="560">        <span class="p">)</span>
+</span><span data-line="561">
+</span><span data-line="562">        <span class="c1"># Apply CuEquivariance modifier if requested</span>
+</span><span data-line="563">        <span class="k">if</span> <span class="n">use_cueq</span><span class="p">:</span>
+</span><span data-line="564">            <span class="k">if</span> <span class="ow">not</span> <span class="n">CUET_AVAILABLE</span><span class="p">:</span>
+</span><span data-line="565">                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+</span><span data-line="566">                    <span class="s2">&quot;use_cueq=True but cuEquivariance is not installed. &quot;</span>
+</span><span data-line="567">                    <span class="s2">&quot;Install with: pip install cuequivariance cuequivariance-torch cuequivariance-ops-torch-cu12&quot;</span>
+</span><span data-line="568">                <span class="p">)</span>
+</span><span data-line="569">
+</span><span data-line="570">            <span class="c1"># Use Allegro&#39;s built-in CuEquivariance modifier</span>
+</span><span data-line="571">            <span class="n">Contracter</span><span class="o">.</span><span class="n">enable_CuEquivarianceContracter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+</span><span data-line="572">
+</span><span data-line="573">        <span class="c1">## Restoring jit</span>
+</span><span data-line="574">        <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">script</span> <span class="o">=</span> <span class="n">_original_script</span>
+</span><span data-line="575">
+</span><span data-line="576">    <span class="nd">@staticmethod</span>
+</span><span data-line="577">    <span class="k">def</span><span class="w"> </span><span class="nf">embedding_size_to_type_names</span><span class="p">(</span><span class="n">embedding_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+</span><span data-line="578"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="579"><span class="sd">        Generate type names for a given embedding size.</span>
+</span><span data-line="580">
+</span><span data-line="581"><span class="sd">        Parameters</span>
+</span><span data-line="582"><span class="sd">        ----------</span>
+</span><span data-line="583"><span class="sd">        embedding_size : int</span>
+</span><span data-line="584"><span class="sd">            Size of the embedding space.</span>
+</span><span data-line="585">
+</span><span data-line="586"><span class="sd">        Returns</span>
+</span><span data-line="587"><span class="sd">        -------</span>
+</span><span data-line="588"><span class="sd">        List[str]</span>
+</span><span data-line="589"><span class="sd">            List of type names.</span>
+</span><span data-line="590"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="591">        <span class="k">return</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;emb_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">embedding_size</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span></div>
 
-<span class="sd">    This class provides a higher-level interface to the Allegro model, allowing</span>
-<span class="sd">    users to specify model parameters directly rather than constructing each</span>
-<span class="sd">    component manually.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    r_max : float, default=4.0</span>
-<span class="sd">        Cutoff radius for neighbor identification.</span>
-<span class="sd">    embedding_size : int, default=100</span>
-<span class="sd">        Dimension of the atom embedding space.</span>
-<span class="sd">    l_max : int, default=2</span>
-<span class="sd">        Maximum spherical harmonic degree to use.</span>
-<span class="sd">    parity : bool, default=False</span>
-<span class="sd">        Whether to use parity-equivariant features.</span>
-<span class="sd">    radial_chemical_embed : Optional[dict], default=None</span>
-<span class="sd">        Configuration for the radial chemical embedding.</span>
-<span class="sd">    radial_chemical_embed_dim : Optional[int], default=None</span>
-<span class="sd">        Dimension of the radial chemical embedding.</span>
-<span class="sd">    per_edge_type_cutoff : Optional[Dict], default=None</span>
-<span class="sd">        Cutoff parameters for each edge type.</span>
-<span class="sd">    scalar_embed_mlp_hidden_layers_depth : int, default=1</span>
-<span class="sd">        Depth of the scalar embedding MLP.</span>
-<span class="sd">    scalar_embed_mlp_hidden_layers_width : int, default=64</span>
-<span class="sd">        Width of the scalar embedding MLP.</span>
-<span class="sd">    scalar_embed_mlp_nonlinearity : Optional[str], default=&quot;silu&quot;</span>
-<span class="sd">        Nonlinearity to use in the scalar embedding MLP.</span>
-<span class="sd">    num_layers : int, default=2</span>
-<span class="sd">        Number of message-passing layers.</span>
-<span class="sd">    num_scalar_features : int, default=64</span>
-<span class="sd">        Number of scalar features.</span>
-<span class="sd">    num_tensor_features : int, default=16</span>
-<span class="sd">        Number of tensor features.</span>
-<span class="sd">    allegro_mlp_hidden_layers_depth : int, default=1</span>
-<span class="sd">        Depth of the Allegro MLP.</span>
-<span class="sd">    allegro_mlp_hidden_layers_width : int, default=64</span>
-<span class="sd">        Width of the Allegro MLP.</span>
-<span class="sd">    allegro_mlp_nonlinearity : Optional[str], default=&quot;silu&quot;</span>
-<span class="sd">        Nonlinearity to use in the Allegro MLP.</span>
-<span class="sd">    tp_path_channel_coupling : bool, default=True</span>
-<span class="sd">        Whether to use channel coupling in tensor product paths.</span>
-<span class="sd">    readout_mlp_hidden_layers_depth : int, default=1</span>
-<span class="sd">        Depth of the readout MLP.</span>
-<span class="sd">    readout_mlp_hidden_layers_width : int, default=32</span>
-<span class="sd">        Width of the readout MLP.</span>
-<span class="sd">    readout_mlp_nonlinearity : Optional[str], default=&quot;silu&quot;</span>
-<span class="sd">        Nonlinearity to use in the readout MLP.</span>
-<span class="sd">    avg_num_neighbors : Optional[float], default=10.0</span>
-<span class="sd">        Average number of neighbors per atom for normalization.</span>
-<span class="sd">    weight_individual_irreps : bool, default=True</span>
-<span class="sd">        Whether to use separate weights for each irreducible representation.</span>
-<span class="sd">    per_type_energy_scales : Optional[Union[float, Sequence[float]]], default=None</span>
-<span class="sd">        Scaling factors for energies of each atom type.</span>
-<span class="sd">    per_type_energy_shifts : Optional[Union[float, Sequence[float]]], default=None</span>
-<span class="sd">        Shift values for energies of each atom type.</span>
-<span class="sd">    per_type_energy_scales_trainable : Optional[bool], default=False</span>
-<span class="sd">        Whether the energy scales are trainable parameters.</span>
-<span class="sd">    per_type_energy_shifts_trainable : Optional[bool], default=False</span>
-<span class="sd">        Whether the energy shifts are trainable parameters.</span>
-<span class="sd">    pair_potential : Optional[Dict], default=None</span>
-<span class="sd">        Optional pair potential to add to the energy.</span>
-<span class="sd">    forward_normalize : bool, default=True</span>
-<span class="sd">        Whether to normalize weights in the forward pass.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">r_max</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">4.0</span><span class="p">,</span>
-        <span class="n">embedding_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
-        <span class="c1"># irreps</span>
-        <span class="n">l_max</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
-        <span class="n">parity</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="c1"># scalar embed</span>
-        <span class="n">radial_chemical_embed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">radial_chemical_embed_dim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">per_edge_type_cutoff</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span>
-            <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]]</span>
-        <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>  <span class="c1"># FIXME: check if useful</span>
-        <span class="c1"># scalar embed MLP</span>
-        <span class="n">scalar_embed_mlp_hidden_layers_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-        <span class="n">scalar_embed_mlp_hidden_layers_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">64</span><span class="p">,</span>
-        <span class="n">scalar_embed_mlp_nonlinearity</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;silu&quot;</span><span class="p">,</span>
-        <span class="c1"># allegro layers</span>
-        <span class="n">num_layers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
-        <span class="n">num_scalar_features</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">64</span><span class="p">,</span>
-        <span class="n">num_tensor_features</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">16</span><span class="p">,</span>
-        <span class="n">allegro_mlp_hidden_layers_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-        <span class="n">allegro_mlp_hidden_layers_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">64</span><span class="p">,</span>
-        <span class="n">allegro_mlp_nonlinearity</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;silu&quot;</span><span class="p">,</span>
-        <span class="n">tp_path_channel_coupling</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>  <span class="c1"># FIXME: check if useful</span>
-        <span class="c1"># readout</span>
-        <span class="n">readout_mlp_hidden_layers_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-        <span class="n">readout_mlp_hidden_layers_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span>
-        <span class="n">readout_mlp_nonlinearity</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;silu&quot;</span><span class="p">,</span>
-        <span class="c1"># edge sum normalization</span>
-        <span class="n">avg_num_neighbors</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">10.0</span><span class="p">,</span>
-        <span class="c1"># allegro layers defaults</span>
-        <span class="n">weight_individual_irreps</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="c1"># per atom energy params</span>
-        <span class="n">per_type_energy_scales</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">per_type_energy_shifts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">per_type_energy_scales_trainable</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="n">per_type_energy_shifts_trainable</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="n">pair_potential</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="c1"># weight initialization and normalization</span>
-        <span class="n">forward_normalize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="c1"># cuequivariance acceleration</span>
-        <span class="n">use_cueq</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="n">nls_distance_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;torch&quot;</span><span class="p">,</span>
-    <span class="p">):</span>
-
-        <span class="c1">## haking jit for module</span>
-        <span class="n">_original_script</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">script</span>
-        <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">script</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">fn</span><span class="p">:</span> <span class="n">fn</span>  <span class="c1"># No-op</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">r_max</span> <span class="o">=</span> <span class="n">r_max</span>
-        <span class="n">irreps_edge_sh</span> <span class="o">=</span> <span class="nb">repr</span><span class="p">(</span><span class="n">o3</span><span class="o">.</span><span class="n">Irreps</span><span class="o">.</span><span class="n">spherical_harmonics</span><span class="p">(</span><span class="n">l_max</span><span class="p">,</span> <span class="n">p</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span>
-        <span class="c1"># set tensor_track_allowed_irreps</span>
-        <span class="c1"># note that it is treated as a set, so order doesn&#39;t really matter</span>
-        <span class="k">if</span> <span class="n">parity</span><span class="p">:</span>
-            <span class="c1"># we want all irreps up to lmax</span>
-            <span class="n">tensor_track_allowed_irreps</span> <span class="o">=</span> <span class="n">o3</span><span class="o">.</span><span class="n">Irreps</span><span class="p">(</span>
-                <span class="p">[</span>
-                    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="n">this_l</span><span class="p">,</span> <span class="n">p</span><span class="p">))</span>
-                    <span class="k">for</span> <span class="n">this_l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">l_max</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-                    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-                <span class="p">]</span>
-            <span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># we want only irreps that show up in the original SH</span>
-            <span class="n">tensor_track_allowed_irreps</span> <span class="o">=</span> <span class="n">irreps_edge_sh</span>
-
-        <span class="n">type_names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_size_to_type_names</span><span class="p">(</span><span class="n">embedding_size</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">radial_chemical_embed</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">radial_chemical_embed</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;_target_&quot;</span><span class="p">:</span> <span class="s2">&quot;allegro.nn.TwoBodyBesselScalarEmbed&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;num_bessels&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
-                <span class="s2">&quot;polynomial_cutoff_p&quot;</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>
-            <span class="p">}</span>
-
-        <span class="n">edge_norm</span> <span class="o">=</span> <span class="n">EdgeLengthNormalizer</span><span class="p">(</span>
-            <span class="n">r_max</span><span class="o">=</span><span class="n">r_max</span><span class="p">,</span>
-            <span class="n">type_names</span><span class="o">=</span><span class="n">type_names</span><span class="p">,</span>
-            <span class="n">per_edge_type_cutoff</span><span class="o">=</span><span class="n">per_edge_type_cutoff</span><span class="p">,</span>
-        <span class="p">)</span>
-
-        <span class="kn">from</span><span class="w"> </span><span class="nn">mlcg.pl.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_class_from_str</span>
-
-        <span class="n">radial_chemical_embed_module</span> <span class="o">=</span> <span class="n">get_class_from_str</span><span class="p">(</span>
-            <span class="n">radial_chemical_embed</span><span class="p">[</span><span class="s2">&quot;_target_&quot;</span><span class="p">]</span>
-        <span class="p">)(</span>
-            <span class="n">num_bessels</span><span class="o">=</span><span class="n">radial_chemical_embed</span><span class="p">[</span><span class="s2">&quot;num_bessels&quot;</span><span class="p">],</span>
-            <span class="n">polynomial_cutoff_p</span><span class="o">=</span><span class="n">radial_chemical_embed</span><span class="p">[</span><span class="s2">&quot;polynomial_cutoff_p&quot;</span><span class="p">],</span>
-            <span class="n">type_names</span><span class="o">=</span><span class="n">type_names</span><span class="p">,</span>
-            <span class="n">module_output_dim</span><span class="o">=</span><span class="p">(</span>
-                <span class="n">num_scalar_features</span>
-                <span class="k">if</span> <span class="n">radial_chemical_embed_dim</span> <span class="ow">is</span> <span class="kc">None</span>
-                <span class="k">else</span> <span class="n">radial_chemical_embed_dim</span>
-            <span class="p">),</span>
-            <span class="n">forward_weight_init</span><span class="o">=</span><span class="n">forward_normalize</span><span class="p">,</span>
-            <span class="n">scalar_embed_field</span><span class="o">=</span><span class="n">AtomicDataDict</span><span class="o">.</span><span class="n">EDGE_EMBEDDING_KEY</span><span class="p">,</span>
-            <span class="n">irreps_in</span><span class="o">=</span><span class="n">edge_norm</span><span class="o">.</span><span class="n">irreps_out</span><span class="p">,</span>
-        <span class="p">)</span>
-
-        <span class="n">scalar_embed_mlp</span> <span class="o">=</span> <span class="n">ScalarMLP</span><span class="p">(</span>
-            <span class="n">output_dim</span><span class="o">=</span><span class="n">num_scalar_features</span><span class="p">,</span>
-            <span class="n">hidden_layers_depth</span><span class="o">=</span><span class="n">scalar_embed_mlp_hidden_layers_depth</span><span class="p">,</span>
-            <span class="n">hidden_layers_width</span><span class="o">=</span><span class="n">scalar_embed_mlp_hidden_layers_width</span><span class="p">,</span>
-            <span class="n">nonlinearity</span><span class="o">=</span><span class="n">scalar_embed_mlp_nonlinearity</span><span class="p">,</span>
-            <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-            <span class="n">forward_weight_init</span><span class="o">=</span><span class="n">forward_normalize</span><span class="p">,</span>
-            <span class="n">field</span><span class="o">=</span><span class="n">AtomicDataDict</span><span class="o">.</span><span class="n">EDGE_EMBEDDING_KEY</span><span class="p">,</span>
-            <span class="n">out_field</span><span class="o">=</span><span class="n">AtomicDataDict</span><span class="o">.</span><span class="n">EDGE_EMBEDDING_KEY</span><span class="p">,</span>
-            <span class="n">irreps_in</span><span class="o">=</span><span class="n">radial_chemical_embed_module</span><span class="o">.</span><span class="n">irreps_out</span><span class="p">,</span>
-        <span class="p">)</span>
-
-        <span class="c1">##</span>
-        <span class="n">tensor_embed</span> <span class="o">=</span> <span class="n">TwoBodySphericalHarmonicTensorEmbed</span><span class="p">(</span>
-            <span class="n">irreps_edge_sh</span><span class="o">=</span><span class="n">irreps_edge_sh</span><span class="p">,</span>
-            <span class="n">num_tensor_features</span><span class="o">=</span><span class="n">num_tensor_features</span><span class="p">,</span>
-            <span class="n">forward_weight_init</span><span class="o">=</span><span class="n">forward_normalize</span><span class="p">,</span>
-            <span class="n">scalar_embedding_in_field</span><span class="o">=</span><span class="n">AtomicDataDict</span><span class="o">.</span><span class="n">EDGE_EMBEDDING_KEY</span><span class="p">,</span>
-            <span class="n">tensor_basis_out_field</span><span class="o">=</span><span class="n">AtomicDataDict</span><span class="o">.</span><span class="n">EDGE_ATTRS_KEY</span><span class="p">,</span>
-            <span class="n">tensor_embedding_out_field</span><span class="o">=</span><span class="n">AtomicDataDict</span><span class="o">.</span><span class="n">EDGE_FEATURES_KEY</span><span class="p">,</span>
-            <span class="n">irreps_in</span><span class="o">=</span><span class="n">scalar_embed_mlp</span><span class="o">.</span><span class="n">irreps_out</span><span class="p">,</span>
-        <span class="p">)</span>
-
-        <span class="n">allegro</span> <span class="o">=</span> <span class="n">Allegro_Module</span><span class="p">(</span>
-            <span class="n">num_layers</span><span class="o">=</span><span class="n">num_layers</span><span class="p">,</span>
-            <span class="n">num_scalar_features</span><span class="o">=</span><span class="n">num_scalar_features</span><span class="p">,</span>
-            <span class="n">num_tensor_features</span><span class="o">=</span><span class="n">num_tensor_features</span><span class="p">,</span>
-            <span class="n">tensor_track_allowed_irreps</span><span class="o">=</span><span class="n">tensor_track_allowed_irreps</span><span class="p">,</span>
-            <span class="n">avg_num_neighbors</span><span class="o">=</span><span class="n">avg_num_neighbors</span><span class="p">,</span>
-            <span class="c1"># MLP</span>
-            <span class="n">latent_kwargs</span><span class="o">=</span><span class="p">{</span>
-                <span class="s2">&quot;hidden_layers_depth&quot;</span><span class="p">:</span> <span class="n">allegro_mlp_hidden_layers_depth</span><span class="p">,</span>
-                <span class="s2">&quot;hidden_layers_width&quot;</span><span class="p">:</span> <span class="n">allegro_mlp_hidden_layers_width</span><span class="p">,</span>
-                <span class="s2">&quot;nonlinearity&quot;</span><span class="p">:</span> <span class="n">allegro_mlp_nonlinearity</span><span class="p">,</span>
-                <span class="s2">&quot;bias&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-                <span class="s2">&quot;forward_weight_init&quot;</span><span class="p">:</span> <span class="n">forward_normalize</span><span class="p">,</span>
-            <span class="p">},</span>
-            <span class="n">tp_path_channel_coupling</span><span class="o">=</span><span class="n">tp_path_channel_coupling</span><span class="p">,</span>
-            <span class="c1"># best to use defaults for these</span>
-            <span class="n">weight_individual_irreps</span><span class="o">=</span><span class="n">weight_individual_irreps</span><span class="p">,</span>
-            <span class="c1"># fields</span>
-            <span class="n">tensor_basis_in_field</span><span class="o">=</span><span class="n">AtomicDataDict</span><span class="o">.</span><span class="n">EDGE_ATTRS_KEY</span><span class="p">,</span>
-            <span class="n">tensor_features_in_field</span><span class="o">=</span><span class="n">AtomicDataDict</span><span class="o">.</span><span class="n">EDGE_FEATURES_KEY</span><span class="p">,</span>
-            <span class="n">scalar_in_field</span><span class="o">=</span><span class="n">AtomicDataDict</span><span class="o">.</span><span class="n">EDGE_EMBEDDING_KEY</span><span class="p">,</span>
-            <span class="n">scalar_out_field</span><span class="o">=</span><span class="n">AtomicDataDict</span><span class="o">.</span><span class="n">EDGE_FEATURES_KEY</span><span class="p">,</span>
-            <span class="n">irreps_in</span><span class="o">=</span><span class="n">tensor_embed</span><span class="o">.</span><span class="n">irreps_out</span><span class="p">,</span>
-        <span class="p">)</span>
-
-        <span class="n">edge_readout</span> <span class="o">=</span> <span class="n">ScalarMLP</span><span class="p">(</span>
-            <span class="n">output_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-            <span class="n">hidden_layers_depth</span><span class="o">=</span><span class="n">readout_mlp_hidden_layers_depth</span><span class="p">,</span>
-            <span class="n">hidden_layers_width</span><span class="o">=</span><span class="n">readout_mlp_hidden_layers_width</span><span class="p">,</span>
-            <span class="n">nonlinearity</span><span class="o">=</span><span class="n">readout_mlp_nonlinearity</span><span class="p">,</span>
-            <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-            <span class="n">forward_weight_init</span><span class="o">=</span><span class="n">forward_normalize</span><span class="p">,</span>
-            <span class="n">field</span><span class="o">=</span><span class="n">AtomicDataDict</span><span class="o">.</span><span class="n">EDGE_FEATURES_KEY</span><span class="p">,</span>
-            <span class="n">out_field</span><span class="o">=</span><span class="n">AtomicDataDict</span><span class="o">.</span><span class="n">EDGE_ENERGY_KEY</span><span class="p">,</span>
-            <span class="n">irreps_in</span><span class="o">=</span><span class="n">allegro</span><span class="o">.</span><span class="n">irreps_out</span><span class="p">,</span>
-        <span class="p">)</span>
-
-        <span class="n">edge_eng_sum</span> <span class="o">=</span> <span class="n">EdgewiseReduce</span><span class="p">(</span>
-            <span class="n">field</span><span class="o">=</span><span class="n">AtomicDataDict</span><span class="o">.</span><span class="n">EDGE_ENERGY_KEY</span><span class="p">,</span>
-            <span class="n">out_field</span><span class="o">=</span><span class="n">AtomicDataDict</span><span class="o">.</span><span class="n">PER_ATOM_ENERGY_KEY</span><span class="p">,</span>
-            <span class="n">factor</span><span class="o">=</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">avg_num_neighbors</span><span class="p">),</span>
-            <span class="c1"># ^ factor of 2 to normalize dE/dr_i which includes both contributions from dE/dr_ij and every other derivative against r_ji</span>
-            <span class="n">irreps_in</span><span class="o">=</span><span class="n">edge_readout</span><span class="o">.</span><span class="n">irreps_out</span><span class="p">,</span>
-        <span class="p">)</span>
-
-        <span class="n">per_type_energy_scale_shift</span> <span class="o">=</span> <span class="n">PerTypeScaleShift</span><span class="p">(</span>
-            <span class="n">type_names</span><span class="o">=</span><span class="n">type_names</span><span class="p">,</span>
-            <span class="n">field</span><span class="o">=</span><span class="n">AtomicDataDict</span><span class="o">.</span><span class="n">PER_ATOM_ENERGY_KEY</span><span class="p">,</span>
-            <span class="n">out_field</span><span class="o">=</span><span class="n">AtomicDataDict</span><span class="o">.</span><span class="n">PER_ATOM_ENERGY_KEY</span><span class="p">,</span>
-            <span class="n">scales</span><span class="o">=</span><span class="n">per_type_energy_scales</span><span class="p">,</span>
-            <span class="n">shifts</span><span class="o">=</span><span class="n">per_type_energy_shifts</span><span class="p">,</span>
-            <span class="n">scales_trainable</span><span class="o">=</span><span class="n">per_type_energy_scales_trainable</span><span class="p">,</span>
-            <span class="n">shifts_trainable</span><span class="o">=</span><span class="n">per_type_energy_shifts_trainable</span><span class="p">,</span>
-            <span class="n">irreps_in</span><span class="o">=</span><span class="n">edge_eng_sum</span><span class="o">.</span><span class="n">irreps_out</span><span class="p">,</span>
-        <span class="p">)</span>
-
-        <span class="c1"># Build the base model first</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">edge_norm</span><span class="o">=</span><span class="n">edge_norm</span><span class="p">,</span>
-            <span class="n">radial_chemical_embed</span><span class="o">=</span><span class="n">radial_chemical_embed_module</span><span class="p">,</span>
-            <span class="n">scalar_embed_mlp</span><span class="o">=</span><span class="n">scalar_embed_mlp</span><span class="p">,</span>
-            <span class="n">tensor_embed</span><span class="o">=</span><span class="n">tensor_embed</span><span class="p">,</span>
-            <span class="n">allegro</span><span class="o">=</span><span class="n">allegro</span><span class="p">,</span>
-            <span class="n">edge_readout</span><span class="o">=</span><span class="n">edge_readout</span><span class="p">,</span>
-            <span class="n">edge_eng_sum</span><span class="o">=</span><span class="n">edge_eng_sum</span><span class="p">,</span>
-            <span class="n">per_type_energy_scale_shift</span><span class="o">=</span><span class="n">per_type_energy_scale_shift</span><span class="p">,</span>
-            <span class="n">pair_potential</span><span class="o">=</span><span class="n">pair_potential</span><span class="p">,</span>
-            <span class="n">nls_distance_method</span><span class="o">=</span><span class="n">nls_distance_method</span><span class="p">,</span>
-        <span class="p">)</span>
-
-        <span class="c1"># Apply CuEquivariance modifier if requested</span>
-        <span class="k">if</span> <span class="n">use_cueq</span><span class="p">:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">CUET_AVAILABLE</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-                    <span class="s2">&quot;use_cueq=True but cuEquivariance is not installed. &quot;</span>
-                    <span class="s2">&quot;Install with: pip install cuequivariance cuequivariance-torch cuequivariance-ops-torch-cu12&quot;</span>
-                <span class="p">)</span>
-
-            <span class="c1"># Use Allegro&#39;s built-in CuEquivariance modifier</span>
-            <span class="n">Contracter</span><span class="o">.</span><span class="n">enable_CuEquivarianceContracter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-
-        <span class="c1">## Restoring jit</span>
-        <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">script</span> <span class="o">=</span> <span class="n">_original_script</span>
-
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">embedding_size_to_type_names</span><span class="p">(</span><span class="n">embedding_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Generate type names for a given embedding size.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        embedding_size : int</span>
-<span class="sd">            Size of the embedding space.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        List[str]</span>
-<span class="sd">            List of type names.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;emb_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">embedding_size</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span></div>
-
-</pre></div>
-
-           </div>
-          </div>
-          <footer>
-
-  <hr/>
-
-  <div role="contentinfo">
-    <p>&#169; Copyright 2026, Felix Musil &amp; Nick Charron.</p>
+</span></pre></div>
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright"><p>2026, Clementi Group</p>
+  
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> and
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials"></div>
+    </div>
   </div>
-
-  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    provided by <a href="https://readthedocs.org">Read the Docs</a>.
-   
-
 </footer>
-        </div>
-      </div>
-    </section>
-  </div>
-  <script>
-      jQuery(function () {
-          SphinxRtdTheme.Navigation.enable(true);
-      });
-  </script> 
-
-</body>
+      <script src="../../../_static/documentation_options.js?v=92734c54"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../_static/shibuya.js?v=cac61aee"></script></body>
 </html>

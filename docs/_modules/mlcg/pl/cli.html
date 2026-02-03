@@ -1,192 +1,267 @@
-
-
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" data-content_root="../../../">
+<html lang="en" data-accent-color="plum" data-content_root="../../../">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>mlcg.pl.cli &mdash; mlcg 0.1.2 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
-      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
-
-  
-      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
-      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=92734c54"></script>
-      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
-    <script src="../../../_static/js/theme.js"></script>
-    <link rel="index" title="Index" href="../../../genindex.html" />
-    <link rel="search" title="Search" href="../../../search.html" /> 
-</head>
-
-<body class="wy-body-for-nav"> 
-  <div class="wy-grid-for-nav">
-    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
-      <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
-
-          
-          
-          <a href="../../../index.html" class="icon icon-home">
-            mlcg
-          </a>
-<div role="search">
-  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
-    <input type="hidden" name="check_keywords" value="yes" />
-    <input type="hidden" name="area" value="default" />
-  </form>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>mlcg.pl.cli - mlcg 0.1.2 documentation</title><link rel="index" title="Index" href="../../../genindex.html" /><link rel="search" title="Search" href="../../../search.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=31853864" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/shibuya.css?v=44020203" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    <meta property="og:type" content="website"/><meta property="og:title" content="mlcg.pl.cli"/>
+    <meta name="twitter:card" content="summary"/>
+  </head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../index.html">
+      
+      
+      <strong>mlcg</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="sy-head-socials"></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
 </div>
-        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../data.html">Data Representation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../geometry.html">Geometry</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../neighbor_list.html">Neighbor Lists</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../coarse_graining.html">Coarse Graining</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../datasets.html">Datasets</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../priors.html">Priors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../models.html">Models</a></li>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6">
+        <div class="globaltoc" data-expand-depth="0"><ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../data/index.html">Data and datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../data/atom_data.html">Molecular Data Representation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../data/fixed_datasets.html">Fixed datasets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../data/h5_datasets.html">H5 Dataset</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../geometry/index.html">Geometry and Neighbor lists</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../geometry/internal_coordinates.html">Internal Coordinate Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../geometry/neighbor_list.html">Neighbor Lists</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../geometry/topology.html">Topology Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../geometry/statistics.html">Statistics Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../models/index.html">Model utilities</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../models/priors.html">Priors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../models/cutoffs.html">Cutoff Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../models/rbfs.html">Radial Basis Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../models/mlip.html">MLIPs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../models/wrappers.html">Gradient/sum wrappers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../models/losses.html">Loss Functions</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="../../../training.html">Training</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../simulation.html">Simulations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../dev/dev.html">Developer Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../simulation/index.html">Simulations</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../simulation/langevin.html">Langevin Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../simulation/overdamped.html">Overdamped Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../simulation/parallel_tempering.html">Parallel Tempering Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../simulation/utils.html">Simulation utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../misc/index.html">Miscellaneous utilities</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../misc/coarse_graining.html">Coarse Graining</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../misc/utils.html">General utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../misc/mol_utils.html">Molecular utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dev/index.html">Developer Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../dev/doc.html">Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../dev/tests.html">Tests</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Examples</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../bibliography.html">Bibliography</a></li>
 </ul>
 
         </div>
       </div>
-    </nav>
-
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
-          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../../index.html">mlcg</a>
-      </nav>
-
-      <div class="wy-nav-content">
-        <div class="rst-content">
-          <div role="navigation" aria-label="Page navigation">
-  <ul class="wy-breadcrumbs">
-      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
-          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
-      <li class="breadcrumb-item active">mlcg.pl.cli</li>
-      <li class="wy-breadcrumbs-aside">
-      </li>
-  </ul>
-  <hr/>
-</div>
-          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
-           <div itemprop="articleBody">
-             
-  <h1>Source code for mlcg.pl.cli</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os.path</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">osp</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">pytorch_lightning.cli</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plc</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">torch_geometric.data.makedirs</span><span class="w"> </span><span class="kn">import</span> <span class="n">makedirs</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">torch_optimizer</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">optim</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
-
-
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../index.html"><span itemprop="name">mlcg</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">Module code</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">mlcg.pl.cli</strong>
+        <meta itemprop="position" content="3" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <article class="yue" role="main">
+          <h1>Source code for mlcg.pl.cli</h1><div class="highlight"><pre>
+<span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">os.path</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">osp</span>
+</span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+</span><span data-line="3"><span class="kn">import</span><span class="w"> </span><span class="nn">pytorch_lightning.cli</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plc</span>
+</span><span data-line="4"><span class="kn">from</span><span class="w"> </span><span class="nn">torch_geometric.data.makedirs</span><span class="w"> </span><span class="kn">import</span> <span class="n">makedirs</span>
+</span><span data-line="5"><span class="kn">import</span><span class="w"> </span><span class="nn">torch_optimizer</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">optim</span>
+</span><span data-line="6"><span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+</span><span data-line="7">
+</span><span data-line="8">
 <div class="viewcode-block" id="LightningCLI">
 <a class="viewcode-back" href="../../../training.html#mlcg.pl.LightningCLI">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">LightningCLI</span><span class="p">(</span><span class="n">plc</span><span class="o">.</span><span class="n">LightningCLI</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Command line interface for training a model with pytorch lightning.</span>
+</span><span data-line="9"><span class="k">class</span><span class="w"> </span><span class="nc">LightningCLI</span><span class="p">(</span><span class="n">plc</span><span class="o">.</span><span class="n">LightningCLI</span><span class="p">):</span>
+</span><span data-line="10"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Command line interface for training a model with pytorch lightning.</span>
+</span><span data-line="11">
+</span><span data-line="12"><span class="sd">    It adds a few functionalities to `pytorch_lightning.utilities.cli.LightningCLI`.</span>
+</span><span data-line="13">
+</span><span data-line="14"><span class="sd">    + register torch optimizers and lr_scheduler so that they can be specified</span>
+</span><span data-line="15"><span class="sd">    in the configuration file. Note that only single (optimizer,lr_scheduler)</span>
+</span><span data-line="16"><span class="sd">    can be specified like that and more complex patterns should be implemented</span>
+</span><span data-line="17"><span class="sd">    in the pytorch_lightning model definition (child of `pytorch_lightning.</span>
+</span><span data-line="18"><span class="sd">    LightningModule`). see `doc &lt;https://pytorch-lightning.readthedocs.io/en/1.</span>
+</span><span data-line="19"><span class="sd">    4.9/common/lightning_cli.html#optimizers-and-learning-rate-schedulers&gt;`_</span>
+</span><span data-line="20"><span class="sd">    for more details.</span>
+</span><span data-line="21">
+</span><span data-line="22"><span class="sd">    + link manually some arguments related to the definition of the work directory. If</span>
+</span><span data-line="23"><span class="sd">    `default_root_dir` argument of `pytorch_lightning.Trainer` is set and the</span>
+</span><span data-line="24"><span class="sd">    `save_dir` / `log_dir` / `dirpath` argument of `loggers` / `data` / `callbacks` is</span>
+</span><span data-line="25"><span class="sd">    set to `default_root_dir` then they will be set to the value of</span>
+</span><span data-line="26"><span class="sd">    `default_root_dir` / `default_root_dir/data` / `default_root_dir/ckpt`.</span>
+</span><span data-line="27">
+</span><span data-line="28"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="29">
+<div class="viewcode-block" id="LightningCLI.parse_arguments">
+<a class="viewcode-back" href="../../../training.html#mlcg.pl.LightningCLI.parse_arguments">[docs]</a>
+</span><span data-line="30">    <span class="k">def</span><span class="w"> </span><span class="nf">parse_arguments</span><span class="p">(</span>
+</span><span data-line="31">        <span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">:</span> <span class="n">plc</span><span class="o">.</span><span class="n">LightningArgumentParser</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="n">plc</span><span class="o">.</span><span class="n">ArgsType</span>
+</span><span data-line="32">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="33"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Parses command line arguments and stores it in self.config&quot;&quot;&quot;</span>
+</span><span data-line="34">        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">parse_arguments</span><span class="p">(</span><span class="n">parser</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+</span><span data-line="35">        <span class="k">if</span> <span class="s2">&quot;subcommand&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">:</span>
+</span><span data-line="36">            <span class="n">config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;subcommand&quot;</span><span class="p">]]</span>
+</span><span data-line="37">        <span class="k">else</span><span class="p">:</span>
+</span><span data-line="38">            <span class="n">config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span>
+</span><span data-line="39">
+</span><span data-line="40">        <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;seed_everything&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+</span><span data-line="41">            <span class="n">devices</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;trainer&quot;</span><span class="p">][</span><span class="s2">&quot;devices&quot;</span><span class="p">])</span>
+</span><span data-line="42">            <span class="n">num_nodes</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;trainer&quot;</span><span class="p">][</span><span class="s2">&quot;num_nodes&quot;</span><span class="p">])</span>
+</span><span data-line="43">            <span class="k">if</span> <span class="p">(</span><span class="n">num_nodes</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">devices</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">):</span>
+</span><span data-line="44">                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+</span><span data-line="45">                    <span class="s2">&quot; </span><span class="se">\n</span><span class="s2"> </span><span class="se">\n</span><span class="s2"> ###################################################### </span><span class="se">\n</span><span class="s2">&quot;</span>
+</span><span data-line="46">                    <span class="s2">&quot;           WARNING: Possible data leakage  </span><span class="se">\n</span><span class="s2"> &quot;</span>
+</span><span data-line="47">                    <span class="s2">&quot;######################################################  </span><span class="se">\n</span><span class="s2"> </span><span class="se">\n</span><span class="s2"> &quot;</span>
+</span><span data-line="48">                    <span class="s2">&quot;`seed_everything` has been set to false/null, but multiple &quot;</span>
+</span><span data-line="49">                    <span class="s2">&quot;devices are being used for distributed training. This can result in &quot;</span>
+</span><span data-line="50">                    <span class="s2">&quot;local ranks/procids making different train/val/test data splits, which &quot;</span>
+</span><span data-line="51">                    <span class="s2">&quot;can further result in train/val/test data leakage. Please follow the &quot;</span>
+</span><span data-line="52">                    <span class="s2">&quot;best practice as outlined by Lightning developers and set &quot;</span>
+</span><span data-line="53">                    <span class="s2">&quot;`seed_everything` to a non-zero integer for multi-device &quot;</span>
+</span><span data-line="54">                    <span class="s2">&quot;computations. Else, make sure that your `PLDataModule` &quot;</span>
+</span><span data-line="55">                    <span class="s2">&quot;avoids this be defining the splits to loaded from &quot;</span>
+</span><span data-line="56">                    <span class="s2">&quot;the disk beforehand. &quot;</span>
+</span><span data-line="57">                    <span class="s2">&quot;</span><span class="se">\n</span><span class="s2"> </span><span class="se">\n</span><span class="s2"> ###################################################### </span><span class="se">\n</span><span class="s2"> </span><span class="se">\n</span><span class="s2"> &quot;</span>
+</span><span data-line="58">                <span class="p">)</span>
+</span><span data-line="59">
+</span><span data-line="60">        <span class="n">trainer</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;trainer&quot;</span><span class="p">]</span>
+</span><span data-line="61">        <span class="n">default_root_dir</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;default_root_dir&quot;</span><span class="p">)</span>
+</span><span data-line="62">        <span class="k">if</span> <span class="n">default_root_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="63">            <span class="k">for</span> <span class="n">ii</span><span class="p">,</span> <span class="n">logger</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">trainer</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;logger&quot;</span><span class="p">,</span> <span class="p">[])):</span>
+</span><span data-line="64">                <span class="n">save_dir</span> <span class="o">=</span> <span class="n">logger</span><span class="p">[</span><span class="s2">&quot;init_args&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;save_dir&quot;</span><span class="p">)</span>
+</span><span data-line="65">                <span class="k">if</span> <span class="n">save_dir</span> <span class="o">==</span> <span class="s2">&quot;default_root_dir&quot;</span><span class="p">:</span>
+</span><span data-line="66">                    <span class="n">config</span><span class="p">[</span><span class="s2">&quot;trainer&quot;</span><span class="p">][</span><span class="s2">&quot;logger&quot;</span><span class="p">][</span><span class="n">ii</span><span class="p">][</span><span class="s2">&quot;init_args&quot;</span><span class="p">][</span>
+</span><span data-line="67">                        <span class="s2">&quot;save_dir&quot;</span>
+</span><span data-line="68">                    <span class="p">]</span> <span class="o">=</span> <span class="n">default_root_dir</span>
+</span><span data-line="69">
+</span><span data-line="70">            <span class="n">log_dir</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;log_dir&quot;</span><span class="p">)</span>
+</span><span data-line="71">            <span class="k">if</span> <span class="n">log_dir</span> <span class="o">==</span> <span class="s2">&quot;default_root_dir&quot;</span><span class="p">:</span>
+</span><span data-line="72">                <span class="n">path</span> <span class="o">=</span> <span class="n">osp</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">default_root_dir</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">)</span>
+</span><span data-line="73">                <span class="n">makedirs</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+</span><span data-line="74">                <span class="n">config</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">][</span><span class="s2">&quot;log_dir&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">path</span>
+</span><span data-line="75">
+</span><span data-line="76">            <span class="k">for</span> <span class="n">ii</span><span class="p">,</span> <span class="n">callback</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">trainer</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;callbacks&quot;</span><span class="p">,</span> <span class="p">[])):</span>
+</span><span data-line="77">                <span class="n">dirpath</span> <span class="o">=</span> <span class="n">callback</span><span class="p">[</span><span class="s2">&quot;init_args&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dirpath&quot;</span><span class="p">)</span>
+</span><span data-line="78">                <span class="k">if</span> <span class="n">dirpath</span> <span class="o">==</span> <span class="s2">&quot;default_root_dir&quot;</span><span class="p">:</span>
+</span><span data-line="79">                    <span class="n">path</span> <span class="o">=</span> <span class="n">osp</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">default_root_dir</span><span class="p">,</span> <span class="s2">&quot;ckpt&quot;</span><span class="p">)</span>
+</span><span data-line="80">                    <span class="n">makedirs</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+</span><span data-line="81">                    <span class="n">config</span><span class="p">[</span><span class="s2">&quot;trainer&quot;</span><span class="p">][</span><span class="s2">&quot;callbacks&quot;</span><span class="p">][</span><span class="n">ii</span><span class="p">][</span><span class="s2">&quot;init_args&quot;</span><span class="p">][</span>
+</span><span data-line="82">                        <span class="s2">&quot;dirpath&quot;</span>
+</span><span data-line="83">                    <span class="p">]</span> <span class="o">=</span> <span class="n">path</span></div>
+</div>
 
-<span class="sd">    It adds a few functionalities to `pytorch_lightning.utilities.cli.LightningCLI`.</span>
-
-<span class="sd">    + register torch optimizers and lr_scheduler so that they can be specified</span>
-<span class="sd">    in the configuration file. Note that only single (optimizer,lr_scheduler)</span>
-<span class="sd">    can be specified like that and more complex patterns should be implemented</span>
-<span class="sd">    in the pytorch_lightning model definition (child of `pytorch_lightning.</span>
-<span class="sd">    LightningModule`). see `doc &lt;https://pytorch-lightning.readthedocs.io/en/1.</span>
-<span class="sd">    4.9/common/lightning_cli.html#optimizers-and-learning-rate-schedulers&gt;`_</span>
-<span class="sd">    for more details.</span>
-
-<span class="sd">    + link manually some arguments related to the definition of the work directory. If `default_root_dir` argument of `pytorch_lightning.Trainer` is set and the `save_dir` / `log_dir` / `dirpath` argument of `loggers` / `data` / `callbacks` is set to `default_root_dir` then they will be set to the value of `default_root_dir` / `default_root_dir/data` / `default_root_dir/ckpt`.</span>
-
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">parse_arguments</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">:</span> <span class="n">plc</span><span class="o">.</span><span class="n">LightningArgumentParser</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="n">plc</span><span class="o">.</span><span class="n">ArgsType</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parses command line arguments and stores it in self.config&quot;&quot;&quot;</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">parse_arguments</span><span class="p">(</span><span class="n">parser</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
-        <span class="k">if</span> <span class="s2">&quot;subcommand&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">:</span>
-            <span class="n">config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;subcommand&quot;</span><span class="p">]]</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span>
-
-        <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;seed_everything&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
-            <span class="n">devices</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;trainer&quot;</span><span class="p">][</span><span class="s2">&quot;devices&quot;</span><span class="p">])</span>
-            <span class="n">num_nodes</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;trainer&quot;</span><span class="p">][</span><span class="s2">&quot;num_nodes&quot;</span><span class="p">])</span>
-            <span class="k">if</span> <span class="p">(</span><span class="n">num_nodes</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">devices</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">):</span>
-                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                    <span class="s2">&quot; </span><span class="se">\n</span><span class="s2"> </span><span class="se">\n</span><span class="s2"> ###################################################### </span><span class="se">\n</span><span class="s2">&quot;</span>
-                    <span class="s2">&quot;           WARNING: Possible data leakage  </span><span class="se">\n</span><span class="s2"> &quot;</span>
-                    <span class="s2">&quot;######################################################  </span><span class="se">\n</span><span class="s2"> </span><span class="se">\n</span><span class="s2"> &quot;</span>
-                    <span class="s2">&quot;`seed_everything` has been set to false/null, but multiple &quot;</span>
-                    <span class="s2">&quot;devices are being used for distributed training. This can result in &quot;</span>
-                    <span class="s2">&quot;local ranks/procids making different train/val/test data splits, which &quot;</span>
-                    <span class="s2">&quot;can further result in train/val/test data leakage. Please follow the &quot;</span>
-                    <span class="s2">&quot;best practice as outlined by Lightning developers and set &quot;</span>
-                    <span class="s2">&quot;`seed_everything` to a non-zero integer for multi-device &quot;</span>
-                    <span class="s2">&quot;computations. Else, make sure that your `PLDataModule` &quot;</span>
-                    <span class="s2">&quot;avoids this be defining the splits to loaded from &quot;</span>
-                    <span class="s2">&quot;the disk beforehand. &quot;</span>
-                    <span class="s2">&quot;</span><span class="se">\n</span><span class="s2"> </span><span class="se">\n</span><span class="s2"> ###################################################### </span><span class="se">\n</span><span class="s2"> </span><span class="se">\n</span><span class="s2"> &quot;</span>
-                <span class="p">)</span>
-
-        <span class="n">trainer</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;trainer&quot;</span><span class="p">]</span>
-        <span class="n">default_root_dir</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;default_root_dir&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">default_root_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">ii</span><span class="p">,</span> <span class="n">logger</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">trainer</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;logger&quot;</span><span class="p">,</span> <span class="p">[])):</span>
-                <span class="n">save_dir</span> <span class="o">=</span> <span class="n">logger</span><span class="p">[</span><span class="s2">&quot;init_args&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;save_dir&quot;</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">save_dir</span> <span class="o">==</span> <span class="s2">&quot;default_root_dir&quot;</span><span class="p">:</span>
-                    <span class="n">config</span><span class="p">[</span><span class="s2">&quot;trainer&quot;</span><span class="p">][</span><span class="s2">&quot;logger&quot;</span><span class="p">][</span><span class="n">ii</span><span class="p">][</span><span class="s2">&quot;init_args&quot;</span><span class="p">][</span>
-                        <span class="s2">&quot;save_dir&quot;</span>
-                    <span class="p">]</span> <span class="o">=</span> <span class="n">default_root_dir</span>
-
-            <span class="n">log_dir</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;log_dir&quot;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">log_dir</span> <span class="o">==</span> <span class="s2">&quot;default_root_dir&quot;</span><span class="p">:</span>
-                <span class="n">path</span> <span class="o">=</span> <span class="n">osp</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">default_root_dir</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">)</span>
-                <span class="n">makedirs</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
-                <span class="n">config</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">][</span><span class="s2">&quot;log_dir&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">path</span>
-
-            <span class="k">for</span> <span class="n">ii</span><span class="p">,</span> <span class="n">callback</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">trainer</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;callbacks&quot;</span><span class="p">,</span> <span class="p">[])):</span>
-                <span class="n">dirpath</span> <span class="o">=</span> <span class="n">callback</span><span class="p">[</span><span class="s2">&quot;init_args&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dirpath&quot;</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">dirpath</span> <span class="o">==</span> <span class="s2">&quot;default_root_dir&quot;</span><span class="p">:</span>
-                    <span class="n">path</span> <span class="o">=</span> <span class="n">osp</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">default_root_dir</span><span class="p">,</span> <span class="s2">&quot;ckpt&quot;</span><span class="p">)</span>
-                    <span class="n">makedirs</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
-                    <span class="n">config</span><span class="p">[</span><span class="s2">&quot;trainer&quot;</span><span class="p">][</span><span class="s2">&quot;callbacks&quot;</span><span class="p">][</span><span class="n">ii</span><span class="p">][</span><span class="s2">&quot;init_args&quot;</span><span class="p">][</span>
-                        <span class="s2">&quot;dirpath&quot;</span>
-                    <span class="p">]</span> <span class="o">=</span> <span class="n">path</span></div>
-
-</pre></div>
-
-           </div>
-          </div>
-          <footer>
-
-  <hr/>
-
-  <div role="contentinfo">
-    <p>&#169; Copyright 2026, Felix Musil &amp; Nick Charron.</p>
+</span></pre></div>
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright"><p>2026, Clementi Group</p>
+  
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> and
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials"></div>
+    </div>
   </div>
-
-  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    provided by <a href="https://readthedocs.org">Read the Docs</a>.
-   
-
 </footer>
-        </div>
-      </div>
-    </section>
-  </div>
-  <script>
-      jQuery(function () {
-          SphinxRtdTheme.Navigation.enable(true);
-      });
-  </script> 
-
-</body>
+      <script src="../../../_static/documentation_options.js?v=92734c54"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../_static/shibuya.js?v=cac61aee"></script></body>
 </html>

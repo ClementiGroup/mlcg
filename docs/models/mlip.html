@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-color="plum" data-content_root="../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>MLIPs - mlcg 0.1.2 documentation</title><link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Gradient/sum wrappers" href="wrappers.html" /><link rel="prev" title="Radial Basis Functions" href="rbfs.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=31853864" />
+    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=44020203" />
+    <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    <meta property="og:type" content="website"/><meta property="og:title" content="MLIPs"/>
+    <meta name="twitter:card" content="summary"/>
+  </head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../index.html">
+      
+      
+      <strong>mlcg</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="sy-head-socials"></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6">
+        <div class="globaltoc" data-expand-depth="0"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../data/index.html">Data and datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../data/atom_data.html">Molecular Data Representation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data/fixed_datasets.html">Fixed datasets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data/h5_datasets.html">H5 Dataset</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../geometry/index.html">Geometry and Neighbor lists</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/internal_coordinates.html">Internal Coordinate Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/neighbor_list.html">Neighbor Lists</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/topology.html">Topology Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/statistics.html">Statistics Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Model utilities</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="priors.html">Priors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cutoffs.html">Cutoff Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rbfs.html">Radial Basis Functions</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">MLIPs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="wrappers.html">Gradient/sum wrappers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="losses.html">Loss Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../training.html">Training</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation/index.html">Simulations</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../simulation/langevin.html">Langevin Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../simulation/overdamped.html">Overdamped Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../simulation/parallel_tempering.html">Parallel Tempering Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../simulation/utils.html">Simulation utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../misc/index.html">Miscellaneous utilities</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../misc/coarse_graining.html">Coarse Graining</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../misc/utils.html">General utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../misc/mol_utils.html">Molecular utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">Developer Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../dev/doc.html">Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/tests.html">Tests</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bibliography.html">Bibliography</a></li>
+</ul>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#schnet-utilities">SchNet Utilities</a><ul>
+<li><a class="reference internal" href="#mlcg.nn.StandardSchNet"><code class="docutils literal notranslate"><span class="pre">StandardSchNet</span></code></a></li>
+<li><a class="reference internal" href="#mlcg.nn.schnet.SchNet"><code class="docutils literal notranslate"><span class="pre">SchNet</span></code></a></li>
+<li><a class="reference internal" href="#mlcg.nn.schnet.InteractionBlock"><code class="docutils literal notranslate"><span class="pre">InteractionBlock</span></code></a></li>
+<li><a class="reference internal" href="#mlcg.nn.schnet.CFConv"><code class="docutils literal notranslate"><span class="pre">CFConv</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#painn-utilities">PaiNN Utilities</a><ul>
+<li><a class="reference internal" href="#mlcg.nn.StandardPaiNN"><code class="docutils literal notranslate"><span class="pre">StandardPaiNN</span></code></a></li>
+<li><a class="reference internal" href="#mlcg.nn.PaiNN"><code class="docutils literal notranslate"><span class="pre">PaiNN</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#so3krates-utilities">So3krates Utilities</a><ul>
+<li><a class="reference internal" href="#mlcg.nn.So3krates"><code class="docutils literal notranslate"><span class="pre">So3krates</span></code></a></li>
+<li><a class="reference internal" href="#mlcg.nn.StandardSo3krates"><code class="docutils literal notranslate"><span class="pre">StandardSo3krates</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#mace-utilities">MACE Utilities</a><ul>
+<li><a class="reference internal" href="#mlcg.nn.StandardMACE"><code class="docutils literal notranslate"><span class="pre">StandardMACE</span></code></a></li>
+<li><a class="reference internal" href="#mlcg.nn.mace.MACE"><code class="docutils literal notranslate"><span class="pre">MACE</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#allegro-utilities">Allegro Utilities</a><ul>
+<li><a class="reference internal" href="#mlcg.nn.StandardAllegro"><code class="docutils literal notranslate"><span class="pre">StandardAllegro</span></code></a></li>
+</ul>
+</li>
+</ul>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name">mlcg</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="index.html"><span itemprop="name">Model utilities</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">MLIPs</strong>
+        <meta itemprop="position" content="3" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <article class="yue" role="main">
+          <section id="mlips">
+<h1>MLIPs<a class="headerlink" href="#mlips" title="Link to this heading">¶</a></h1>
+<p><cite>mlcg.nn</cite> currently implements the SchNet graph neural network, as well as several utility classes for computing distance expansions and cutoffs. The <cite>nn</cite> subpackage also contains several useful classes for extracting other properties from energy predictions or aggregating the predictions from several different model types.</p>
+<section id="schnet-utilities">
+<h2>SchNet Utilities<a class="headerlink" href="#schnet-utilities" title="Link to this heading">¶</a></h2>
+<p>These classes are used to define a SchNet graph neural network. For “typical” SchNet models, users
+may find the class <cite>StandardSchNet</cite> to be helpful in getting started quickly.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcg.nn.StandardSchNet">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.nn.</span></span><span class="sig-name descname"><span class="pre">StandardSchNet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rbf_layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_hidden_layer_widths</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hidden_channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embedding_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_filters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_interactions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Tanh()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_neighbors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aggr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'add'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nls_distance_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'torch'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/nn/schnet.html#StandardSchNet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.StandardSchNet" title="Link to this definition">¶</a></dt>
+<dd><p>Small wrapper class for <span class="xref std std-ref">mlcg.nn.SchNet</span> to simplify the definition of the
+SchNet model through an input file. The upper distance cutoff attribute
+in is set by default to match the upper cutoff value in the cutoff function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rbf_layer</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – radial basis function used to project the distances <span class="math notranslate nohighlight">\(r_{ij}\)</span>.</p></li>
+<li><p><strong>cutoff</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – smooth cutoff function to supply to the CFConv</p></li>
+<li><p><strong>output_hidden_layer_widths</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]</span>) – List giving the number of hidden nodes of each hidden layer of the MLP
+used to predict the target property from the learned representation.</p></li>
+<li><p><strong>hidden_channels</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – dimension of the learned representation, i.e. dimension of the embeding projection, convolution layers, and interaction block.</p></li>
+<li><p><strong>embedding_size</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – dimension of the input embeddings (should be larger than <code class="xref py py-obj docutils literal notranslate"><span class="pre">AtomicData.atom_types.max()+1</span></code>).</p></li>
+<li><p><strong>num_filters</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – number of nodes of the networks used to filter the projected distances</p></li>
+<li><p><strong>num_interactions</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – number of interaction blocks</p></li>
+<li><p><strong>activation</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – activation function</p></li>
+<li><p><strong>max_num_neighbors</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – The maximum number of neighbors to return for each atom in <code class="xref py py-obj docutils literal notranslate"><span class="pre">data</span></code>.
+If the number of actual neighbors is greater than
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">max_num_neighbors</span></code>, returned neighbors are picked randomly.</p></li>
+<li><p><strong>aggr</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Aggregation scheme for continuous filter output. For all options,
+see <a class="reference external" href="https://pytorch-geometric.readthedocs.io/en/latest/notes/create_gnn.html?highlight=MessagePassing#the-messagepassing-base-class">here</a>
+for more options.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcg.nn.schnet.SchNet">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.nn.schnet.</span></span><span class="sig-name descname"><span class="pre">SchNet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">embedding_layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interaction_blocks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rbf_layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_network</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">self_interaction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_neighbors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nls_distance_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'torch'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/nn/schnet.html#SchNet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.schnet.SchNet" title="Link to this definition">¶</a></dt>
+<dd><p>PyTorch Geometric implementation of SchNet
+Code adapted from <a class="reference internal" href="../bibliography.html#pt-geom-schnet" id="id1"><span>[PT_geom_schnet]</span></a>  which is based on the architecture
+described in <a class="reference internal" href="../bibliography.html#schnet" id="id2"><span>[Schnet]</span></a> .</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>embedding_layer</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Initial embedding layer that transforms atoms/coarse grain bead
+types into embedded features</p></li>
+<li><p><strong>interaction_blocks</strong> (<em>list</em><em> of </em><em>torch.nn.Module</em><em> or </em><em>torch.nn.Sequential</em>) – Sequential interaction blocks of the model, where each interaction
+block applies</p></li>
+<li><p><strong>rbf_layer</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – The set of radial basis functions that expands pairwise distances
+between atoms/CG beads.</p></li>
+<li><p><strong>output_network</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Output neural network that predicts scalar energies from SchNet
+features. This network should transform (num_examples * num_atoms,
+hidden_channels) to (num_examples * num atoms, 1).</p></li>
+<li><p><strong>upper_distance_cutoff</strong> – Upper distance cutoff used for making neighbor lists.</p></li>
+<li><p><strong>self_interaction</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – If True, self interactions/distancess are calculated. But it never
+had a function due to a bug in the implementation (see static method
+<cite>neighbor_list</cite>). Should be kept False. This option shall not be
+deleted for compatibility.</p></li>
+<li><p><strong>max_num_neighbors</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Maximum number of neighbors to return for a
+given node/atom when constructing the molecular graph during forward
+passes. This attribute is passed to the torch_cluster radius_graph
+routine keyword max_num_neighbors, which normally defaults to 32.
+Users should set this to higher values if they are using higher upper
+distance cutoffs and expect more than 32 neighbors per node/atom.</p></li>
+<li><p><strong>nls_distance_method</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Method for computing a neighbor list. Supported values are
+<cite>torch</cite>, <cite>nvalchemi_naive</cite>, <cite>nvalchemi_cell</cite> and custom.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcg.nn.schnet.InteractionBlock">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.nn.schnet.</span></span><span class="sig-name descname"><span class="pre">InteractionBlock</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cfconv_layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hidden_channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Tanh()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/nn/schnet.html#InteractionBlock"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.schnet.InteractionBlock" title="Link to this definition">¶</a></dt>
+<dd><p>Interaction blocks for SchNet. Consists of atomwise
+transformations of embedded features that are continuously
+convolved with filters generated from radial basis function-expanded
+pairwise distances.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cfconv_layer</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Continuous filter convolution layer for convolutions of radial basis
+function-expanded distances with embedded features</p></li>
+<li><p><strong>hidden_channels</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Hidden dimension of embedded features</p></li>
+<li><p><strong>activation</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Activation function applied to linear layer outputs</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcg.nn.schnet.CFConv">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.nn.schnet.</span></span><span class="sig-name descname"><span class="pre">CFConv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filter_network</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">in_channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_filters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aggr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'add'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/nn/schnet.html#CFConv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.schnet.CFConv" title="Link to this definition">¶</a></dt>
+<dd><p>Continuous filter convolutions for <cite>SchNet</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filter_net</strong> – Neural network for generating filters from expanded pairwise distances</p></li>
+<li><p><strong>cutoff</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Cutoff envelope to apply to the output of the filter generating network.</p></li>
+<li><p><strong>in_channels</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Hidden input dimensions</p></li>
+<li><p><strong>out_channels</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Hidden output dimensions</p></li>
+<li><p><strong>num_filters</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Number of filters</p></li>
+<li><p><strong>aggr</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Aggregation scheme for continuous filter output. For all options,
+see <cite>here &lt;https://pytorch-geometric.readthedocs.io/en/latest/notes/create_gnn.html?highlight=MessagePassing#the-messagepassing-base-class&gt;</cite>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="painn-utilities">
+<h2>PaiNN Utilities<a class="headerlink" href="#painn-utilities" title="Link to this heading">¶</a></h2>
+<p>These classes are used to define a PaiNN graph neural network. For “typical” PaiNN models, users
+may find the class <cite>StandardPaiNN</cite> to be helpful in getting started quickly.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcg.nn.StandardPaiNN">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.nn.</span></span><span class="sig-name descname"><span class="pre">StandardPaiNN</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rbf_layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_hidden_layer_widths</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hidden_channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embedding_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_interactions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Tanh()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_neighbors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aggr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'add'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-08</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nls_distance_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'torch'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/nn/painn.html#StandardPaiNN"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.StandardPaiNN" title="Link to this definition">¶</a></dt>
+<dd><p>Small wrapper class for <span class="xref std std-ref">PaiNN</span> to simplify the definition of the
+PaiNN model through an input file. The upper distance cutoff attribute
+in is set by default to match the upper cutoff value in the cutoff function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rbf_layer</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Radial basis function used to project the distances <span class="math notranslate nohighlight">\(r_{ij}\)</span>.</p></li>
+<li><p><strong>cutoff</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Smooth cutoff function to supply to the PaiNNInteraction.</p></li>
+<li><p><strong>output_hidden_layer_widths</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]</span>) – List giving the number of hidden nodes of each hidden layer of the MLP
+used to predict the target property from the learned scalar representation.</p></li>
+<li><p><strong>hidden_channels</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Dimension of the learned representation, i.e. dimension of the embedding projection, convolution layers, and interaction block.</p></li>
+<li><p><strong>embedding_size</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Dimension of the input embeddings (should be larger than <code class="xref py py-obj docutils literal notranslate"><span class="pre">AtomicData.atom_types.max()+1</span></code>).</p></li>
+<li><p><strong>num_interactions</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Number of interaction blocks.</p></li>
+<li><p><strong>activation</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Activation function.</p></li>
+<li><p><strong>max_num_neighbors</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – The maximum number of neighbors to return for each atom in <code class="xref py py-obj docutils literal notranslate"><span class="pre">data</span></code>.
+If the number of actual neighbors is greater than
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">max_num_neighbors</span></code>, returned neighbors are picked randomly.</p></li>
+<li><p><strong>aggr</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – <p>Aggregation scheme for continuous filter output. For all options,
+see <a class="reference external" href="https://pytorch-geometric.readthedocs.io/en/latest/notes/create_gnn.html?highlight=MessagePassing#the-messagepassing-base-class">here</a>
+for more options.</p>
+</p></li>
+<li><p><strong>epsilon</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – Stability constant added in norm to prevent numerical instabilities.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcg.nn.PaiNN">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.nn.</span></span><span class="sig-name descname"><span class="pre">PaiNN</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">embedding_layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interaction_blocks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mixing_blocks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rbf_layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_network</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_neighbors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nls_distance_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'torch'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/nn/painn.html#PaiNN"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.PaiNN" title="Link to this definition">¶</a></dt>
+<dd><p>Implementation of PaiNN - polarizable interaction neural network
+Code adapted from <a class="reference external" href="https://schnetpack.readthedocs.io/en/latest/api/generated/representation.PaiNN.html">https://schnetpack.readthedocs.io/en/latest/api/generated/representation.PaiNN.html</a>
+which is based on the architecture described in <a class="reference external" href="http://proceedings.mlr.press/v139/schutt21a.html">http://proceedings.mlr.press/v139/schutt21a.html</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>embedding_layer</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Initial embedding layer that transforms atoms/coarse grain bead
+types into embedded features</p></li>
+<li><p><strong>interaction_blocks</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<a class="reference internal" href="../autodoc.html#mlcg.nn.painn.PaiNNInteraction" title="mlcg.nn.painn.PaiNNInteraction"><code class="xref py py-class docutils literal notranslate"><span class="pre">PaiNNInteraction</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<a class="reference internal" href="../autodoc.html#mlcg.nn.painn.PaiNNInteraction" title="mlcg.nn.painn.PaiNNInteraction"><code class="xref py py-class docutils literal notranslate"><span class="pre">PaiNNInteraction</span></code></a>]]</span>) – list of PaiNNInteraction or single PaiNNInteraction block.
+Sequential interaction blocks of the model, where each interaction
+block applies.</p></li>
+<li><p><strong>mixing_blocks</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<a class="reference internal" href="../autodoc.html#mlcg.nn.painn.PaiNNMixing" title="mlcg.nn.painn.PaiNNMixing"><code class="xref py py-class docutils literal notranslate"><span class="pre">PaiNNMixing</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<a class="reference internal" href="../autodoc.html#mlcg.nn.painn.PaiNNMixing" title="mlcg.nn.painn.PaiNNMixing"><code class="xref py py-class docutils literal notranslate"><span class="pre">PaiNNMixing</span></code></a>]]</span>) – List of PaiNNMixing or single PaiNNMixing block.
+Sequential mixing blocks of the model, where each mixing
+applies after each interaction block.</p></li>
+<li><p><strong>rbf_layer</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – The set of radial basis functions that expands pairwise distances
+between atoms/CG beads.</p></li>
+<li><p><strong>output_network</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Output neural network that predicts scalar energies from scalar PaiNN
+features. This network should transform (num_examples * num_atoms,
+hidden_channels) to (num_examples * num atoms, 1).</p></li>
+<li><p><strong>max_num_neighbors</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Maximum number of neighbors to return for a
+given node/atom when constructing the molecular graph during forward
+passes. This attribute is passed to the torch_cluster radius_graph
+routine keyword max_num_neighbors, which normally defaults to 32.
+Users should set this to higher values if they are using higher upper
+distance cutoffs and expect more than 32 neighbors per node/atom.</p></li>
+<li><p><strong>nls_distance_method</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Method for computing a neighbor list. Supported values are
+<cite>torch</cite>, <cite>nvalchemi_naive</cite>, <cite>nvalchemi_cell</cite> and custom.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="so3krates-utilities">
+<h2>So3krates Utilities<a class="headerlink" href="#so3krates-utilities" title="Link to this heading">¶</a></h2>
+<p>These classes are used to define a so3krates graph neural network. For “typical” so3krates models, users
+may find the class <cite>StandardPaiNN</cite> to be helpful in getting started quickly.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcg.nn.So3krates">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.nn.</span></span><span class="sig-name descname"><span class="pre">So3krates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">embedding_layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rbf_layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interaction_blocks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layer_norm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_network</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">degrees</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_neighbors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize_sph</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nls_distance_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'torch'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/nn/so3krates.html#So3krates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.So3krates" title="Link to this definition">¶</a></dt>
+<dd><p>Main SO3krates model for equivariant message passing neural networks.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>embedding_layer</strong> (<em>nn.Module</em>) – Embedding layer for atom types.</p></li>
+<li><p><strong>rbf_layer</strong> (<em>nn.Module</em>) – Radial basis function layer to project distances.</p></li>
+<li><p><strong>interaction_blocks</strong> (<em>List</em><em>[</em><em>So3kratesLayer</em><em>]</em>) – List of SO3krates layers.</p></li>
+<li><p><strong>layer_norm</strong> (<em>nn.Module</em>) – Layer normalization module.</p></li>
+<li><p><strong>output_network</strong> (<em>nn.Module</em>) – Output network for final energy prediction.</p></li>
+<li><p><strong>degrees</strong> (<em>List</em><em>[</em><em>int</em><em>]</em>) – List of spherical harmonic degrees.</p></li>
+<li><p><strong>max_num_neighbors</strong> (<em>int</em>) – Maximum number of neighbors per atom.</p></li>
+<li><p><strong>normalize_sph</strong> (<em>bool</em>) – Whether to normalize spherical harmonics, default is True.</p></li>
+<li><p><strong>nls_distance_method</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Method for computing a neighbor list. Supported values are
+<cite>torch</cite>, <cite>nvalchemi_naive</cite>, <cite>nvalchemi_cell</cite> and custom.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcg.nn.StandardSo3krates">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.nn.</span></span><span class="sig-name descname"><span class="pre">StandardSo3krates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rbf_layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_hidden_layer_widths</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hidden_channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">132</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embedding_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_interactions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">degrees</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[1,</span> <span class="pre">2,</span> <span class="pre">3]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_heads</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">SiLU()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_neighbors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize_sph</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nls_distance_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'torch'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/nn/so3krates.html#StandardSo3krates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.StandardSo3krates" title="Link to this definition">¶</a></dt>
+<dd><p>Standard configuration for the SO3krates model.</p>
+<p>Provides a convenient interface for constructing a SO3krates model with typical
+settings, including embedding, interaction, and output modules.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rbf_layer</strong> (<em>nn.Module</em>) – Radial basis function layer.</p></li>
+<li><p><strong>cutoff</strong> (<em>nn.Module</em>) – Cutoff function for edge weights.</p></li>
+<li><p><strong>output_hidden_layer_widths</strong> (<em>List</em><em>[</em><em>int</em><em>]</em>) – Widths for hidden layers in output MLP.</p></li>
+<li><p><strong>hidden_channels</strong> (<em>int</em>) – Number of hidden channels.</p></li>
+<li><p><strong>embedding_size</strong> (<em>int</em>) – Size of atom type embedding.</p></li>
+<li><p><strong>num_interactions</strong> (<em>int</em>) – Number of SO3krates layers.</p></li>
+<li><p><strong>degrees</strong> (<em>List</em><em>[</em><em>int</em><em>]</em>) – List of spherical harmonic degrees.</p></li>
+<li><p><strong>n_heads</strong> (<em>int</em>) – Number of attention heads.</p></li>
+<li><p><strong>activation</strong> (<em>nn.Module</em>) – Activation function.</p></li>
+<li><p><strong>max_num_neighbors</strong> (<em>int</em>) – Maximum number of neighbors per atom.</p></li>
+<li><p><strong>normalize_sph</strong> (<em>bool</em>) – Whether to normalize spherical harmonics, default is True.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="mace-utilities">
+<h2>MACE Utilities<a class="headerlink" href="#mace-utilities" title="Link to this heading">¶</a></h2>
+<p>These classes are used to define a MACE graph neural network, for which the base implementation is required and available <a class="reference external" href="https://github.com/ACEsuit/mace.git">here</a>. For “typical” MACE models, users
+may find the class <cite>StandardMACE</cite> to be helpful in getting started quickly.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcg.nn.StandardMACE">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.nn.</span></span><span class="sig-name descname"><span class="pre">StandardMACE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">r_max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_bessel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_polynomial_cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_ell</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interaction_cls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interaction_cls_first</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_interactions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hidden_irreps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">MLP_irreps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">avg_num_neighbors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atomic_numbers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">correlation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_neighbors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pair_repulsion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distance_transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'None'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radial_MLP</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radial_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'bessel'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cueq_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_cueq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nls_distance_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'torch'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/nn/mace.html#StandardMACE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.StandardMACE" title="Link to this definition">¶</a></dt>
+<dd><p>Standard configuration of the MACE model.</p>
+<p>This class provides a convenient interface for constructing a MACE model
+with typical settings and block choices, including embedding, interaction,
+and readout modules.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>r_max</strong> (<em>float</em>) – Cutoff radius for neighbor list.</p></li>
+<li><p><strong>num_bessel</strong> (<em>int</em>) – Number of Bessel functions for radial basis.</p></li>
+<li><p><strong>num_polynomial_cutoff</strong> (<em>int</em>) – Number of polynomial cutoff functions.</p></li>
+<li><p><strong>max_ell</strong> (<em>int</em>) – Maximum angular momentum for spherical harmonics.</p></li>
+<li><p><strong>interaction_cls</strong> (<em>str</em>) – Class name for interaction blocks.</p></li>
+<li><p><strong>interaction_cls_first</strong> (<em>str</em>) – Class name for the first interaction block.</p></li>
+<li><p><strong>num_interactions</strong> (<em>int</em>) – Number of interaction blocks.</p></li>
+<li><p><strong>hidden_irreps</strong> (<em>str</em>) – Irreducible representations for hidden features. For example if only
+a scalar representation with 128 channels is used can be “128x0e”. If
+also a vector representation is used can be “128x0e + 128x1o”.</p></li>
+<li><p><strong>MLP_irreps</strong> (<em>str</em>) – Irreducible representations for MLP layers.</p></li>
+<li><p><strong>avg_num_neighbors</strong> (<em>float</em>) – Average number of neighbors per atom used for normalization and numerical stability.</p></li>
+<li><p><strong>atomic_numbers</strong> (<em>List</em><em>[</em><em>int</em><em>]</em>) – List of atomic numbers in the system.</p></li>
+<li><p><strong>correlation</strong> (<em>Union</em><em>[</em><em>int</em><em>, </em><em>List</em><em>[</em><em>int</em><em>]</em><em>]</em>) – Correlation order(s) for product blocks.</p></li>
+<li><p><strong>gate</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>]</em>) – Activation function for non-linearities.</p></li>
+<li><p><strong>max_num_neighbors</strong> (<em>int</em><em>, </em><em>optional</em>) – Maximum number of neighbors per atom.</p></li>
+<li><p><strong>pair_repulsion</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to use pairwise repulsion.</p></li>
+<li><p><strong>distance_transform</strong> (<em>str</em><em>, </em><em>optional</em>) – Distance transformation type.</p></li>
+<li><p><strong>radial_MLP</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>int</em><em>]</em><em>]</em><em>, </em><em>optional</em>) – Radial MLP architecture.</p></li>
+<li><p><strong>radial_type</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – Radial basis type.</p></li>
+<li><p><strong>cueq_config</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em><em>, </em><em>optional</em>) – cuEquivariance configuration.</p></li>
+<li><p><strong>use_cueq</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em><em>, </em><em>optional</em>) – Whether to use cuEquivariance acceleration.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcg.nn.mace.MACE">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.nn.mace.</span></span><span class="sig-name descname"><span class="pre">MACE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">atomic_numbers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_embedding</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radial_embedding</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spherical_harmonics</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interactions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">products</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readouts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_neighbors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pair_repulsion_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nls_distance_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'torch'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/nn/mace.html#MACE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.mace.MACE" title="Link to this definition">¶</a></dt>
+<dd><p>Implementation of MACE neural network model from <a class="reference external" href="https://github.com/ACEsuit/mace">https://github.com/ACEsuit/mace</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>atomic_numbers</strong> (<em>torch.Tensor</em>) – Tensor of atomic numbers present in the system.</p></li>
+<li><p><strong>node_embedding</strong> (<em>torch.nn.Module</em>) – Module for embedding node (atom) attributes.</p></li>
+<li><p><strong>radial_embedding</strong> (<em>torch.nn.Module</em>) – Module for embedding radial (distance) features.</p></li>
+<li><p><strong>spherical_harmonics</strong> (<em>torch.nn.Module</em>) – Module for computing spherical harmonics of edge vectors.</p></li>
+<li><p><strong>interactions</strong> (<em>List</em><em>[</em><em>torch.nn.Module</em><em>]</em>) – List of interaction blocks.</p></li>
+<li><p><strong>products</strong> (<em>List</em><em>[</em><em>torch.nn.Module</em><em>]</em>) – List of product basis blocks.</p></li>
+<li><p><strong>readouts</strong> (<em>List</em><em>[</em><em>torch.nn.Module</em><em>]</em>) – List of readout blocks.</p></li>
+<li><p><strong>r_max</strong> (<em>float</em>) – Cutoff radius for neighbor list.</p></li>
+<li><p><strong>max_num_neighbors</strong> (<em>int</em>) – Maximum number of neighbors per atom.</p></li>
+<li><p><strong>pair_repulsion_fn</strong> (<em>torch.nn.Module</em><em>, </em><em>optional</em>) – Optional pairwise repulsion energy function.</p></li>
+<li><p><strong>nls_distance_method</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Method for computing a neighbor list. Supported values are
+<cite>torch</cite>, <cite>nvalchemi_naive</cite>, <cite>nvalchemi_cell</cite> and custom.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="allegro-utilities">
+<h2>Allegro Utilities<a class="headerlink" href="#allegro-utilities" title="Link to this heading">¶</a></h2>
+<p>These classes are used to define an Allegro graph neural network, for which the base implementation is required and available <a class="reference external" href="https://github.com/ACEsuit/mace.git">here</a>. For “typical” MACE models, users
+may find the class <cite>StandardAllegro</cite> to be helpful in getting started quickly.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcg.nn.StandardAllegro">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.nn.</span></span><span class="sig-name descname"><span class="pre">StandardAllegro</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">r_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embedding_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">l_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radial_chemical_embed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radial_chemical_embed_dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">per_edge_type_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scalar_embed_mlp_hidden_layers_depth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scalar_embed_mlp_hidden_layers_width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scalar_embed_mlp_nonlinearity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'silu'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_scalar_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_tensor_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allegro_mlp_hidden_layers_depth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allegro_mlp_hidden_layers_width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allegro_mlp_nonlinearity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'silu'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tp_path_channel_coupling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readout_mlp_hidden_layers_depth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readout_mlp_hidden_layers_width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readout_mlp_nonlinearity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'silu'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">avg_num_neighbors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_individual_irreps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">per_type_energy_scales</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">per_type_energy_shifts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">per_type_energy_scales_trainable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">per_type_energy_shifts_trainable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pair_potential</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forward_normalize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_cueq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nls_distance_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'torch'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/nn/allegro.html#StandardAllegro"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.StandardAllegro" title="Link to this definition">¶</a></dt>
+<dd><p>Standard implementation of the Allegro model with configurable parameters.</p>
+<p>This class provides a higher-level interface to the Allegro model, allowing
+users to specify model parameters directly rather than constructing each
+component manually.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>r_max</strong> (<em>float</em><em>, </em><em>default=4.0</em>) – Cutoff radius for neighbor identification.</p></li>
+<li><p><strong>embedding_size</strong> (<em>int</em><em>, </em><em>default=100</em>) – Dimension of the atom embedding space.</p></li>
+<li><p><strong>l_max</strong> (<em>int</em><em>, </em><em>default=2</em>) – Maximum spherical harmonic degree to use.</p></li>
+<li><p><strong>parity</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to use parity-equivariant features.</p></li>
+<li><p><strong>radial_chemical_embed</strong> (<em>Optional</em><em>[</em><em>dict</em><em>]</em><em>, </em><em>default=None</em>) – Configuration for the radial chemical embedding.</p></li>
+<li><p><strong>radial_chemical_embed_dim</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em><em>, </em><em>default=None</em>) – Dimension of the radial chemical embedding.</p></li>
+<li><p><strong>per_edge_type_cutoff</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>]</em><em>, </em><em>default=None</em>) – Cutoff parameters for each edge type.</p></li>
+<li><p><strong>scalar_embed_mlp_hidden_layers_depth</strong> (<em>int</em><em>, </em><em>default=1</em>) – Depth of the scalar embedding MLP.</p></li>
+<li><p><strong>scalar_embed_mlp_hidden_layers_width</strong> (<em>int</em><em>, </em><em>default=64</em>) – Width of the scalar embedding MLP.</p></li>
+<li><p><strong>scalar_embed_mlp_nonlinearity</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=&quot;silu&quot;</em>) – Nonlinearity to use in the scalar embedding MLP.</p></li>
+<li><p><strong>num_layers</strong> (<em>int</em><em>, </em><em>default=2</em>) – Number of message-passing layers.</p></li>
+<li><p><strong>num_scalar_features</strong> (<em>int</em><em>, </em><em>default=64</em>) – Number of scalar features.</p></li>
+<li><p><strong>num_tensor_features</strong> (<em>int</em><em>, </em><em>default=16</em>) – Number of tensor features.</p></li>
+<li><p><strong>allegro_mlp_hidden_layers_depth</strong> (<em>int</em><em>, </em><em>default=1</em>) – Depth of the Allegro MLP.</p></li>
+<li><p><strong>allegro_mlp_hidden_layers_width</strong> (<em>int</em><em>, </em><em>default=64</em>) – Width of the Allegro MLP.</p></li>
+<li><p><strong>allegro_mlp_nonlinearity</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=&quot;silu&quot;</em>) – Nonlinearity to use in the Allegro MLP.</p></li>
+<li><p><strong>tp_path_channel_coupling</strong> (<em>bool</em><em>, </em><em>default=True</em>) – Whether to use channel coupling in tensor product paths.</p></li>
+<li><p><strong>readout_mlp_hidden_layers_depth</strong> (<em>int</em><em>, </em><em>default=1</em>) – Depth of the readout MLP.</p></li>
+<li><p><strong>readout_mlp_hidden_layers_width</strong> (<em>int</em><em>, </em><em>default=32</em>) – Width of the readout MLP.</p></li>
+<li><p><strong>readout_mlp_nonlinearity</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=&quot;silu&quot;</em>) – Nonlinearity to use in the readout MLP.</p></li>
+<li><p><strong>avg_num_neighbors</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em><em>, </em><em>default=10.0</em>) – Average number of neighbors per atom for normalization.</p></li>
+<li><p><strong>weight_individual_irreps</strong> (<em>bool</em><em>, </em><em>default=True</em>) – Whether to use separate weights for each irreducible representation.</p></li>
+<li><p><strong>per_type_energy_scales</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>Sequence</em><em>[</em><em>float</em><em>]</em><em>]</em><em>]</em><em>, </em><em>default=None</em>) – Scaling factors for energies of each atom type.</p></li>
+<li><p><strong>per_type_energy_shifts</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>Sequence</em><em>[</em><em>float</em><em>]</em><em>]</em><em>]</em><em>, </em><em>default=None</em>) – Shift values for energies of each atom type.</p></li>
+<li><p><strong>per_type_energy_scales_trainable</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em><em>, </em><em>default=False</em>) – Whether the energy scales are trainable parameters.</p></li>
+<li><p><strong>per_type_energy_shifts_trainable</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em><em>, </em><em>default=False</em>) – Whether the energy shifts are trainable parameters.</p></li>
+<li><p><strong>pair_potential</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>]</em><em>, </em><em>default=None</em>) – Optional pair potential to add to the energy.</p></li>
+<li><p><strong>forward_normalize</strong> (<em>bool</em><em>, </em><em>default=True</em>) – Whether to normalize weights in the forward pass.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="rbfs.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title">Radial Basis Functions</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="wrappers.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title">Gradient/sum wrappers</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright"><p>2026, Clementi Group</p>
+  
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> and
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials"></div>
+    </div>
+  </div>
+</footer>
+      <script src="../_static/documentation_options.js?v=92734c54"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/shibuya.js?v=cac61aee"></script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script></body>
+</html>

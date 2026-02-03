@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-color="plum" data-content_root="../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Statistics Utilities - mlcg 0.1.2 documentation</title><link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Model utilities" href="../models/index.html" /><link rel="prev" title="Topology Utilities" href="topology.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=31853864" />
+    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=44020203" />
+    <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    <meta property="og:type" content="website"/><meta property="og:title" content="Statistics Utilities"/>
+    <meta name="twitter:card" content="summary"/>
+  </head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../index.html">
+      
+      
+      <strong>mlcg</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="sy-head-socials"></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6">
+        <div class="globaltoc" data-expand-depth="0"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../data/index.html">Data and datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../data/atom_data.html">Molecular Data Representation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data/fixed_datasets.html">Fixed datasets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data/h5_datasets.html">H5 Dataset</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Geometry and Neighbor lists</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="internal_coordinates.html">Internal Coordinate Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="neighbor_list.html">Neighbor Lists</a></li>
+<li class="toctree-l2"><a class="reference internal" href="topology.html">Topology Utilities</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Statistics Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../models/index.html">Model utilities</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../models/priors.html">Priors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../models/cutoffs.html">Cutoff Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../models/rbfs.html">Radial Basis Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../models/mlip.html">MLIPs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../models/wrappers.html">Gradient/sum wrappers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../models/losses.html">Loss Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../training.html">Training</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation/index.html">Simulations</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../simulation/langevin.html">Langevin Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../simulation/overdamped.html">Overdamped Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../simulation/parallel_tempering.html">Parallel Tempering Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../simulation/utils.html">Simulation utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../misc/index.html">Miscellaneous utilities</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../misc/coarse_graining.html">Coarse Graining</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../misc/utils.html">General utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../misc/mol_utils.html">Molecular utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">Developer Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../dev/doc.html">Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/tests.html">Tests</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bibliography.html">Bibliography</a></li>
+</ul>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#mlcg.geometry.statistics.compute_statistics"><code class="docutils literal notranslate"><span class="pre">compute_statistics()</span></code></a></li>
+<li><a class="reference internal" href="#mlcg.geometry.statistics.fit_baseline_models"><code class="docutils literal notranslate"><span class="pre">fit_baseline_models()</span></code></a></li>
+</ul>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name">mlcg</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="index.html"><span itemprop="name">Geometry and Neighbor lists</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">Statistics Utilities</strong>
+        <meta itemprop="position" content="3" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <article class="yue" role="main">
+          <section id="statistics-utilities">
+<h1>Statistics Utilities<a class="headerlink" href="#statistics-utilities" title="Link to this heading">¶</a></h1>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The code presented here is legacy which is not longer used. All the prior-related
+code has moved to the <a class="reference external" href="https://github.com/ClementiGroup/mlcg-tk">mlcg-tk repository</a>.</p>
+</div>
+<p>These functions gather statistics for further analysis or for parametrizing prior models.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="mlcg.geometry.statistics.compute_statistics">
+<span class="sig-prename descclassname"><span class="pre">mlcg.geometry.statistics.</span></span><span class="sig-name descname"><span class="pre">compute_statistics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">TargetPrior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;class</span> <span class="pre">'mlcg.nn.prior.harmonic.Harmonic'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nbins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bmin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit_from_values</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_fit_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/geometry/statistics.html#compute_statistics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.geometry.statistics.compute_statistics" title="Link to this definition">¶</a></dt>
+<dd><p>Function for computing atom type-specific statistics for
+every combination of atom types present in a collated AtomicData
+structure.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="../data/atom_data.html#mlcg.data.atomic_data.AtomicData" title="mlcg.data.atomic_data.AtomicData"><code class="xref py py-class docutils literal notranslate"><span class="pre">AtomicData</span></code></a></span>) – Input data, in the form of a collated list of individual AtomicData
+structures.</p></li>
+<li><p><strong>target</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – The keyword specifiying with <cite>neighbor_list</cite> sub_dictionary should
+be used to gather statisitics</p></li>
+<li><p><strong>beta</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – <p>Inverse thermodynamic temperature:</p>
+<div class="math-wrapper docutils container">
+<div class="math notranslate nohighlight">
+\[\beta = \frac{1}{k_B T}\]</div>
+</div>
+<p>where <span class="math notranslate nohighlight">\(k_B\)</span> is Boltzmann’s constant and <span class="math notranslate nohighlight">\(T\)</span> is the temperature.</p>
+</p></li>
+<li><p><strong>TargetPrior</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">_Prior</span></code></span>) – The class type of prior for which the statistics will be processed.</p></li>
+<li><p><strong>nbins</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – The number of bins over which 1-D feature histograms are constructed
+in order to estimate distributions</p></li>
+<li><p><strong>bmin</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]</span>) – If specified, the lower bound of bin edges. If not specified, the lower bound
+defaults to the lowest value in the input feature</p></li>
+<li><p><strong>bmax</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]</span>) – If specified, the upper bound of bin edges. If not specified, the upper bound
+defaults to the greatest value in the input feature</p></li>
+<li><p><strong>fit_from_values</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – If True, the prior parameters are estimated directly from features values
+instead of their implied emperical potentials</p></li>
+<li><p><strong>target_fit_kwargs</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code>]</span>) – Extra fit options that are prior_specific</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p>Dictionary of gathered statistics and estimated parameters based on
+the <cite>TargetPrior</cite>. The following key/value pairs are common across all <cite>TargetPrior</cite>
+choices:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="p">(</span><span class="o">*</span><span class="n">specific_types</span><span class="p">)</span> <span class="p">:</span> <span class="p">{</span>
+</span><span data-line="2">
+</span><span data-line="3">    <span class="o">...</span>
+</span><span data-line="4">
+</span><span data-line="5">    <span class="s2">&quot;p&quot;</span> <span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="n">of</span> <span class="n">shape</span> <span class="p">[</span><span class="n">n_bins</span><span class="p">],</span> <span class="n">containing</span> <span class="n">the</span> <span class="n">normalized</span> <span class="nb">bin</span> <span class="n">counts</span>
+</span><span data-line="6">        <span class="n">of</span> <span class="n">the</span> <span class="n">of</span> <span class="n">the</span> <span class="mi">1</span><span class="o">-</span><span class="n">D</span> <span class="n">feature</span> <span class="n">corresponding</span> <span class="n">to</span> <span class="n">the</span> <span class="n">atom_type</span> <span class="n">group</span>
+</span><span data-line="7">        <span class="p">(</span><span class="o">*</span><span class="n">specific_types</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="n">specific_types</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">specific_types</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="o">...</span><span class="p">)</span>
+</span><span data-line="8">    <span class="s2">&quot;p_bin&quot;</span><span class="p">:</span> <span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="n">of</span> <span class="n">shape</span> <span class="p">[</span><span class="n">n_bins</span><span class="p">]</span> <span class="n">containing</span> <span class="n">the</span> <span class="nb">bin</span> <span class="n">center</span> <span class="n">values</span>
+</span><span data-line="9">    <span class="s2">&quot;V&quot;</span> <span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span> <span class="n">of</span> <span class="n">shape</span> <span class="p">[</span><span class="n">n_bins</span><span class="p">],</span> <span class="n">containing</span> <span class="n">the</span> <span class="n">emperically</span> <span class="n">estimated</span>
+</span><span data-line="10">        <span class="n">free</span> <span class="n">energy</span> <span class="n">curve</span> <span class="n">according</span> <span class="n">to</span> <span class="n">a</span> <span class="n">direct</span> <span class="n">Boltzmann</span> <span class="n">inversion</span> <span class="n">of</span> <span class="n">the</span>
+</span><span data-line="11">        <span class="n">normalized</span> <span class="n">probability</span> <span class="n">distribution</span> <span class="k">for</span> <span class="n">the</span> <span class="n">feature</span><span class="o">.</span>
+</span><span data-line="12">    <span class="s2">&quot;V_bin&quot;</span> <span class="p">:</span> <span class="n">torch_tensor</span> <span class="n">of</span> <span class="n">shape</span> <span class="p">[</span><span class="n">n_bins</span><span class="p">],</span> <span class="n">containing</span> <span class="n">the</span> <span class="nb">bin</span> <span class="n">center</span> <span class="n">values</span>
+</span><span data-line="13"><span class="p">}</span>
+</span></pre></div>
+</div>
+<p>where <cite>…</cite> indicates other sub-key/value pairs apart from those enumerated above,
+which may appear depending on the chosen <cite>TargetPrior</cite>. For example,
+if <cite>TargetPrior</cite> is <cite>HarmonicBonds</cite>, there will also be keys/values associated with
+estimated bond constants and means.</p>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict</p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">my_data</span> <span class="o">=</span> <span class="n">AtomicData</span><span class="p">(</span>
+</span><span data-line="2">    <span class="n">out</span><span class="o">=</span><span class="p">{},</span>
+</span><span data-line="3">    <span class="n">pos</span><span class="o">=</span><span class="p">[</span><span class="mi">769600</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+</span><span data-line="4">    <span class="n">atom_types</span><span class="o">=</span><span class="p">[</span><span class="mi">769600</span><span class="p">],</span>
+</span><span data-line="5">    <span class="n">n_atoms</span><span class="o">=</span><span class="p">[</span><span class="mi">20800</span><span class="p">],</span>
+</span><span data-line="6">    <span class="n">neighbor_list</span><span class="o">=</span><span class="p">{</span>
+</span><span data-line="7">        <span class="n">bonds</span><span class="o">=</span><span class="p">{</span>
+</span><span data-line="8">          <span class="n">tag</span><span class="o">=</span><span class="p">[</span><span class="mi">20800</span><span class="p">],</span>
+</span><span data-line="9">          <span class="n">order</span><span class="o">=</span><span class="p">[</span><span class="mi">20800</span><span class="p">],</span>
+</span><span data-line="10">          <span class="n">index_mapping</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">748800</span><span class="p">],</span>
+</span><span data-line="11">          <span class="n">cell_shifts</span><span class="o">=</span><span class="p">[</span><span class="mi">20800</span><span class="p">],</span>
+</span><span data-line="12">          <span class="n">rcut</span><span class="o">=</span><span class="p">[</span><span class="mi">20800</span><span class="p">],</span>
+</span><span data-line="13">          <span class="n">self_interaction</span><span class="o">=</span><span class="p">[</span><span class="mi">20800</span><span class="p">]</span>
+</span><span data-line="14">        <span class="p">},</span>
+</span><span data-line="15">        <span class="n">angles</span><span class="o">=</span><span class="p">{</span>
+</span><span data-line="16">          <span class="n">tag</span><span class="o">=</span><span class="p">[</span><span class="mi">20800</span><span class="p">],</span>
+</span><span data-line="17">          <span class="n">order</span><span class="o">=</span><span class="p">[</span><span class="mi">20800</span><span class="p">],</span>
+</span><span data-line="18">          <span class="n">index_mapping</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">977600</span><span class="p">],</span>
+</span><span data-line="19">          <span class="n">cell_shifts</span><span class="o">=</span><span class="p">[</span><span class="mi">20800</span><span class="p">],</span>
+</span><span data-line="20">          <span class="n">rcut</span><span class="o">=</span><span class="p">[</span><span class="mi">20800</span><span class="p">],</span>
+</span><span data-line="21">          <span class="n">self_interaction</span><span class="o">=</span><span class="p">[</span><span class="mi">20800</span><span class="p">]</span>
+</span><span data-line="22">        <span class="p">}</span>
+</span><span data-line="23">    <span class="p">},</span>
+</span><span data-line="24">    <span class="n">batch</span><span class="o">=</span><span class="p">[</span><span class="mi">769600</span><span class="p">],</span>
+</span><span data-line="25">    <span class="n">ptr</span><span class="o">=</span><span class="p">[</span><span class="mi">20801</span><span class="p">]</span>
+</span><span data-line="26"><span class="p">)</span>
+</span><span data-line="27">
+</span><span data-line="28"><span class="n">angle_stats</span> <span class="o">=</span> <span class="n">bond_stats</span> <span class="o">=</span> <span class="n">compute_statistics</span><span class="p">(</span><span class="n">my_data</span><span class="p">,</span>
+</span><span data-line="29">     <span class="s1">&#39;bonds&#39;</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="n">beta</span><span class="p">,</span>
+</span><span data-line="30">     <span class="n">TargetPrior</span><span class="o">=</span><span class="n">HarmonicBonds</span>
+</span><span data-line="31"><span class="p">)</span>
+</span><span data-line="32"><span class="n">dihedral_stats</span> <span class="o">=</span> <span class="n">compute_statistics</span><span class="p">(</span><span class="n">my_data</span><span class="p">,</span>
+</span><span data-line="33">                                    <span class="s1">&#39;dihedrals&#39;</span><span class="p">,</span>
+</span><span data-line="34">                                    <span class="n">beta</span><span class="o">=</span><span class="n">beta</span><span class="p">,</span>
+</span><span data-line="35">                                    <span class="n">TargetPrior</span><span class="o">=</span><span class="n">Dihedral</span>
+</span><span data-line="36"><span class="p">)</span>
+</span></pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mlcg.geometry.statistics.fit_baseline_models">
+<span class="sig-prename descclassname"><span class="pre">mlcg.geometry.statistics.</span></span><span class="sig-name descname"><span class="pre">fit_baseline_models</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">priors_cls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nbins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bmin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/geometry/statistics.html#fit_baseline_models"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.geometry.statistics.fit_baseline_models" title="Link to this definition">¶</a></dt>
+<dd><p>Function for parametrizing a list of priors based on type-specific interactions contained in
+a collated AtomicData structure</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="../data/atom_data.html#mlcg.data.atomic_data.AtomicData" title="mlcg.data.atomic_data.AtomicData"><code class="xref py py-class docutils literal notranslate"><span class="pre">AtomicData</span></code></a></span>) – Input data, in the form of a collated list of individual AtomicData
+structures.</p></li>
+<li><p><strong>beta</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – <p>Inverse thermodynamic temperature:</p>
+<div class="math-wrapper docutils container">
+<div class="math notranslate nohighlight">
+\[\]</div>
+</div>
+<p>beta = frac{1}{k_B T}</p>
+<p>where <span class="math notranslate nohighlight">\(k_B\)</span> is Boltzmann’s constant and <span class="math notranslate nohighlight">\(T\)</span> is the temperature.</p>
+</p></li>
+<li><p><strong>priors_cls</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">_Prior</span></code>]</span>) – List of priors to parametrize based on the input data</p></li>
+<li><p><strong>nbins</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – The number of bins over which 1-D feature histograms are constructed
+in order to estimate distributions</p></li>
+<li><p><strong>bmin</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]</span>) – If specified, the lower bound of bin edges. If not specified, the lower bound
+defaults to the lowest value in the input feature</p></li>
+<li><p><strong>bmax</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]</span>) – If specified, the upper bound of bin edges. If not specified, the upper bound
+defaults to the greatest value in the input feature</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ModuleDict</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code>]</span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><em>nn.Module</em> – The list of parametrized priors</p></li>
+<li><p><em>Dict</em> – Corresponding statistsics for prior fits</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="topology.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title">Topology Utilities</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="../models/index.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title">Model utilities</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright"><p>2026, Clementi Group</p>
+  
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> and
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials"></div>
+    </div>
+  </div>
+</footer>
+      <script src="../_static/documentation_options.js?v=92734c54"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/shibuya.js?v=cac61aee"></script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script></body>
+</html>

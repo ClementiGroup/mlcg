@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-color="plum" data-content_root="../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Radial Basis Functions - mlcg 0.1.2 documentation</title><link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="MLIPs" href="mlip.html" /><link rel="prev" title="Cutoff Functions" href="cutoffs.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=31853864" />
+    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=44020203" />
+    <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    <meta property="og:type" content="website"/><meta property="og:title" content="Radial Basis Functions"/>
+    <meta name="twitter:card" content="summary"/>
+  </head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../index.html">
+      
+      
+      <strong>mlcg</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="sy-head-socials"></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6">
+        <div class="globaltoc" data-expand-depth="0"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../data/index.html">Data and datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../data/atom_data.html">Molecular Data Representation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data/fixed_datasets.html">Fixed datasets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data/h5_datasets.html">H5 Dataset</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../geometry/index.html">Geometry and Neighbor lists</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/internal_coordinates.html">Internal Coordinate Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/neighbor_list.html">Neighbor Lists</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/topology.html">Topology Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/statistics.html">Statistics Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Model utilities</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="priors.html">Priors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cutoffs.html">Cutoff Functions</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Radial Basis Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mlip.html">MLIPs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="wrappers.html">Gradient/sum wrappers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="losses.html">Loss Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../training.html">Training</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation/index.html">Simulations</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../simulation/langevin.html">Langevin Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../simulation/overdamped.html">Overdamped Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../simulation/parallel_tempering.html">Parallel Tempering Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../simulation/utils.html">Simulation utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../misc/index.html">Miscellaneous utilities</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../misc/coarse_graining.html">Coarse Graining</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../misc/utils.html">General utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../misc/mol_utils.html">Molecular utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">Developer Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../dev/doc.html">Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/tests.html">Tests</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bibliography.html">Bibliography</a></li>
+</ul>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#mlcg.nn.radial_basis.GaussianBasis"><code class="docutils literal notranslate"><span class="pre">GaussianBasis</span></code></a></li>
+<li><a class="reference internal" href="#mlcg.nn.radial_basis.ExpNormalBasis"><code class="docutils literal notranslate"><span class="pre">ExpNormalBasis</span></code></a></li>
+<li><a class="reference internal" href="#mlcg.nn.radial_basis.RIGTOBasis"><code class="docutils literal notranslate"><span class="pre">RIGTOBasis</span></code></a></li>
+<li><a class="reference internal" href="#mlcg.nn.radial_basis.SpacedExpBasis"><code class="docutils literal notranslate"><span class="pre">SpacedExpBasis</span></code></a></li>
+<li><a class="reference internal" href="#mlcg.nn.angular_basis.SphericalHarmonics"><code class="docutils literal notranslate"><span class="pre">SphericalHarmonics</span></code></a></li>
+</ul>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name">mlcg</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="index.html"><span itemprop="name">Model utilities</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">Radial Basis Functions</strong>
+        <meta itemprop="position" content="3" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <article class="yue" role="main">
+          <section id="radial-basis-functions">
+<h1>Radial Basis Functions<a class="headerlink" href="#radial-basis-functions" title="Link to this heading">¶</a></h1>
+<p>Sets of radial basis functions are used to expand the distances (or other molecular features) between atoms on a fixed-sized vector. For instance, this is the main transformation of the distances in the <cite>SchNet</cite> model.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcg.nn.radial_basis.GaussianBasis">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.nn.radial_basis.</span></span><span class="sig-name descname"><span class="pre">GaussianBasis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_rbf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/nn/radial_basis/gaussian.html#GaussianBasis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.radial_basis.GaussianBasis" title="Link to this definition">¶</a></dt>
+<dd><p>Class that generates a set of equidistant 1-D gaussian basis functions
+scattered between a specified lower and upper cutoff:</p>
+<div class="math-wrapper docutils container">
+<div class="math notranslate nohighlight">
+\[f_n = \exp{ \left( -\gamma(r-c_n)^2 \right) }\]</div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cutoff</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">_Cutoff</span></code>]</span>) – Defines the smooth cutoff function. If a float is provided, it will be interpreted as
+an upper cutoff and an IdentityCutoff will be used between 0 and the provided float. Otherwise,
+a chosen _Cutoff instance can be supplied.</p></li>
+<li><p><strong>num_rbf</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – The number of gaussian functions in the basis set.</p></li>
+<li><p><strong>trainable</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – If True, the parameters of the gaussian basis (the centers and widths of
+each function) are registered as optimizable parameters that will be
+updated during backpropagation. If False, these parameters will be
+instead fixed in an unoptimizable buffer.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcg.nn.radial_basis.ExpNormalBasis">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.nn.radial_basis.</span></span><span class="sig-name descname"><span class="pre">ExpNormalBasis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_rbf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/nn/radial_basis/exp_normal.html#ExpNormalBasis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.radial_basis.ExpNormalBasis" title="Link to this definition">¶</a></dt>
+<dd><p>Class for generating a set of exponential normal radial basis functions,
+as described in <a class="reference internal" href="../bibliography.html#physnet" id="id1"><span>[Physnet]</span></a> . The functions have the following form:</p>
+<div class="math-wrapper docutils container">
+<div class="math notranslate nohighlight">
+\[f_n(r_{ij};\alpha, r_{low},r_{high}) = f_{cut}(r_{ij},r_{low},r_{high})
+\times \exp\left[-\beta_n \left(e^{\alpha (r_{ij} -r_{high}) }
+- \mu_n \right)^2\right]\]</div>
+</div>
+<p>where</p>
+<div class="math-wrapper docutils container">
+<div class="math notranslate nohighlight">
+\[\alpha = 5.0/(r_{high} - r_{low})\]</div>
+</div>
+<p>is a distance rescaling factor, and, by default</p>
+<div class="math-wrapper docutils container">
+<div class="math notranslate nohighlight">
+\[f_{cut} ( r_{ij},r_{low},r_{high} ) =  \cos{\left( r_{ij} \times \pi / r_{high}\right)} + 1.0\]</div>
+</div>
+<p>represents a cosine cutoff function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cutoff</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">_Cutoff</span></code>]</span>) – Defines the smooth cutoff function. If a float is provided, it will be interpreted as
+an upper cutoff and a CosineCutoff will be used between 0 and the provided float. Otherwise,
+a chosen <cite>_Cutoff</cite> instance can be supplied.</p></li>
+<li><p><strong>num_rbf</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – The number of functions in the basis set.</p></li>
+<li><p><strong>trainable</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – If True, the parameters of the basis (the centers and widths of each
+function) are registered as optimizable parameters that will be updated
+during backpropagation. If False, these parameters will be instead fixed
+in an unoptimizable buffer.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcg.nn.radial_basis.RIGTOBasis">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.nn.radial_basis.</span></span><span class="sig-name descname"><span class="pre">RIGTOBasis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">300</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/nn/radial_basis/radial_integral_gto.html#RIGTOBasis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.radial_basis.RIGTOBasis" title="Link to this definition">¶</a></dt>
+<dd><p>This radial basis is the effective basis when expanding an atomic
+density smeared by Gaussains of width <span class="math notranslate nohighlight">\(\sigma\)</span> on a set of
+<span class="math notranslate nohighlight">\(n_{max}\)</span> orthonormal Gaussian Type Orbitals (GTOs) and
+<span class="math notranslate nohighlight">\(l_{max}+1\)</span> Spherical Harmonics (SPHs) namely.
+This radial basis set is interpolated using natural cubic splines for
+efficiency and the cutoff is included into the splined functions.</p>
+<p>The basis is defined as</p>
+<div class="math-wrapper docutils container">
+<div class="math notranslate nohighlight">
+\[R_{nl}(r) = f_c(r) \mathcal{N}_n \frac{\Gamma(\frac{n+l+3}{2})}{\Gamma(l+\frac{3}{2})}
+c^l r^l(c+b_n)^{-\frac{(n+l+3)}{2}}
+{}_1F_1\left(\frac{n+l+3}{2},l+\frac{3}{2};\frac{c^2 r^2}{c+b_n}\right),\]</div>
+</div>
+<p>where <span class="math notranslate nohighlight">\({}_1F_1\)</span> is the confluent hypergeometric function,
+<span class="math notranslate nohighlight">\(\Gamma\)</span> is the gamma function, <span class="math notranslate nohighlight">\(f_c\)</span> is a cutoff function,
+<span class="math notranslate nohighlight">\(b_n=\frac{1}{2\sigma_n^2}\)</span>, <span class="math notranslate nohighlight">\(c= 1 / (2\sigma^2\)</span>,
+<span class="math notranslate nohighlight">\(\sigma_n = r_\text{cut} \max(\sqrt{n},1)/n_{max}\)</span> and
+<span class="math notranslate nohighlight">\(\mathcal{N}_n^2 = \frac{2}{\sigma_n^{2n + 3}\Gamma(n + 3/2)}\)</span>.</p>
+<p>For more details on the derivation, refer to <a class="reference external" href="https://doi.org/10.5075/epfl-thesis-7997">appendix A</a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nmax</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – number of radial basis</p></li>
+<li><p><strong>lmax</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – maximum spherical order (lmax included so there are lmax+1 orders)</p></li>
+<li><p><strong>sigma</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – smearing of the atomic density</p></li>
+<li><p><strong>cutoff</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">_Cutoff</span></code>]</span>) – Defines the smooth cutoff function. If a float is provided, it will be
+interpreted as an upper cutoff and a CosineCutoff will be used between
+0 and the provided float. Otherwise, a chosen _Cutoff instance can be
+supplied.</p></li>
+<li><p><strong>mesh_size</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – number of points used to interpolate with splines the radial basis spanning uniformly the range difined by the cutoff <span class="math notranslate nohighlight">\([0, r_c]\)</span>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcg.nn.radial_basis.SpacedExpBasis">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.nn.radial_basis.</span></span><span class="sig-name descname"><span class="pre">SpacedExpBasis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_spacing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/nn/radial_basis/exp_spaced.html#SpacedExpBasis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.radial_basis.SpacedExpBasis" title="Link to this definition">¶</a></dt>
+<dd><p>Class for generating a set of exponential normal radial basis functions,
+with means and standard deviations designed to capture the physics around 2 <span class="math notranslate nohighlight">\(\AA\)</span>.
+The functions have an exponential form with the following means and std:</p>
+<div class="math-wrapper docutils container">
+<div class="math notranslate nohighlight">
+\[\begin{split}&amp;\mu_0 = 0                       &amp;,\quad &amp;\sigma_0 = \sigma_f/s \\
+&amp;\mu_1 = \sigma_f                &amp;,\quad &amp;\sigma_1 = \sigma_{min} \\
+&amp;\mu_2 = \mu_1 + s\,\sigma_1     &amp;,\quad &amp;\sigma_2 = \sigma_f \sigma_1 \\
+&amp;\vdots &amp;\vdots      \;         &amp;\vdots \\
+&amp;\mu_n = \mu_{n-1} + s\,\sigma_{n-1} &amp;,\quad &amp;\sigma_n = \sigma_f \sigma_{n-1}\end{split}\]</div>
+</div>
+<p>with <span class="math notranslate nohighlight">\(\sigma_{min}\)</span> the minimum sigma,  <span class="math notranslate nohighlight">\(\sigma_f\)</span> the sigma factor and
+<span class="math notranslate nohighlight">\(s\)</span> the mean spacing</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cutoff</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">_Cutoff</span></code>]</span>) – Defines the smooth cutoff function. If a float is provided, it will be interpreted as
+an IdentityCutoff ranging over [0, cutoff]. Otherwise,
+a chosen <cite>_Cutoff</cite> instance can be supplied.</p></li>
+<li><p><strong>sigma_min</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – <span class="math notranslate nohighlight">\(\sigma_{min}\)</span>, width of first non-zero-centered basis function</p></li>
+<li><p><strong>sigma_factor</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – <span class="math notranslate nohighlight">\(\sigma_f\)</span>, location of first non-zero-centered basis function and multiplicative factor to spread std of each new peak by</p></li>
+<li><p><strong>mean_spacing</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – <span class="math notranslate nohighlight">\(s\)</span> this time previous sigma indicates how much to distance the mean of subsequent gaussian by</p></li>
+<li><p><strong>trainable</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – If True, the parameters of the basis (the centers and widths of each
+function) are registered as optimizable parameters that will be updated
+during backpropagation. If False, these parameters will be instead fixed
+in an unoptimizable buffer.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcg.nn.angular_basis.SphericalHarmonics">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.nn.angular_basis.</span></span><span class="sig-name descname"><span class="pre">SphericalHarmonics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lmax</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalization</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'integral'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">irreps_in</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/nn/angular_basis/spherical_harmonics.html#SphericalHarmonics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.angular_basis.SphericalHarmonics" title="Link to this definition">¶</a></dt>
+<dd><p>JITable module version of real Spherical harmonics</p>
+<img alt="https://user-images.githubusercontent.com/333780/79220728-dbe82c00-7e54-11ea-82c7-b3acbd9b2246.gif" src="https://user-images.githubusercontent.com/333780/79220728-dbe82c00-7e54-11ea-82c7-b3acbd9b2246.gif" />
+<div class="line-block">
+<div class="line">Polynomials defined on the 3d space <span class="math notranslate nohighlight">\(Y^l: \mathbb{R}^3 \longrightarrow \mathbb{R}^{2l+1}\)</span></div>
+<div class="line">Usually restricted on the sphere (with <code class="docutils literal notranslate"><span class="pre">normalize=True</span></code>) <span class="math notranslate nohighlight">\(Y^l: S^2 \longrightarrow \mathbb{R}^{2l+1}\)</span></div>
+<div class="line">who satisfies the following properties:</div>
+</div>
+<ul class="simple">
+<li><p>are polynomials of the cartesian coordinates <code class="docutils literal notranslate"><span class="pre">x,</span> <span class="pre">y,</span> <span class="pre">z</span></code></p></li>
+<li><p>is equivariant <span class="math notranslate nohighlight">\(Y^l(R x) = D^l(R) Y^l(x)\)</span></p></li>
+<li><p>are orthogonal <span class="math notranslate nohighlight">\(\int_{S^2} Y^l_m(x) Y^j_n(x) dx = \text{cste} \; \delta_{lj} \delta_{mn}\)</span></p></li>
+</ul>
+<p>The value of the constant depends on the choice of normalization.</p>
+<p>It obeys the following property:</p>
+<div class="math-wrapper docutils container">
+<div class="math notranslate nohighlight">
+\[ \begin{align}\begin{aligned}Y^{l+1}_i(x) &amp;= \text{cste}(l) \; &amp; C_{ijk} Y^l_j(x) x_k\\\partial_k Y^{l+1}_i(x) &amp;= \text{cste}(l) \; (l+1) &amp; C_{ijk} Y^l_j(x)\end{aligned}\end{align} \]</div>
+</div>
+<p>Where <span class="math notranslate nohighlight">\(C\)</span> are the <a class="reference external" href="https://en.wikipedia.org/wiki/3-j_symbol">Wigner 3-j symbols</a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This function matches with the following table of standard real spherical harmonics from <a class="reference external" href="https://en.wikipedia.org/wiki/Table_of_spherical_harmonics#Real_spherical_harmonics">Wikipedia</a>
+when <code class="docutils literal notranslate"><span class="pre">normalize=True</span></code>, <code class="docutils literal notranslate"><span class="pre">normalization='integral'</span></code> and is called with the argument in the order <code class="docutils literal notranslate"><span class="pre">y,z,x</span></code> (instead of <code class="docutils literal notranslate"><span class="pre">x,y,z</span></code>).</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>l</strong> (<em>int</em><em> or </em><em>list</em><em> of </em><em>int</em>) – degree of the spherical harmonics.</p></li>
+<li><p><strong>x</strong> (<cite>torch.Tensor</cite>) – tensor <span class="math notranslate nohighlight">\(x\)</span> of shape <code class="docutils literal notranslate"><span class="pre">(...,</span> <span class="pre">3)</span></code>.</p></li>
+<li><p><strong>normalize</strong> (<em>bool</em>) – whether to normalize the <code class="docutils literal notranslate"><span class="pre">x</span></code> to vectors that lie on the unit sphere before projecting onto the spherical harmonics</p></li>
+<li><p><strong>normalization</strong> (<em>{'integral'</em><em>, </em><em>'component'</em><em>, </em><em>'norm'}</em>) – normalization of the output tensors — note that this option is independent of <code class="docutils literal notranslate"><span class="pre">normalize</span></code>, which controls the processing of the <em>input</em>, rather than the output.
+Valid options:
+* <em>component</em>: <span class="math notranslate nohighlight">\(\|Y^l(x)\|^2 = 2l+1, x \in S^2\)</span>
+* <em>norm</em>: <span class="math notranslate nohighlight">\(\|Y^l(x)\| = 1, x \in S^2\)</span>, <code class="docutils literal notranslate"><span class="pre">component</span> <span class="pre">/</span> <span class="pre">sqrt(2l+1)</span></code>
+* <em>integral</em>: <span class="math notranslate nohighlight">\(\int_{S^2} Y^l_m(x)^2 dx = 1\)</span>, <code class="docutils literal notranslate"><span class="pre">component</span> <span class="pre">/</span> <span class="pre">sqrt(4pi)</span></code></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p>a list of tensors of shapes <code class="docutils literal notranslate"><span class="pre">[lmax][n_neighbor,</span> <span class="pre">m]</span></code> where <span class="math notranslate nohighlight">\(m&lt;=l\)</span></p>
+<div class="math-wrapper docutils container">
+<div class="math notranslate nohighlight">
+\[Y^l(x)\]</div>
+</div>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[torch.Tensor]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="cutoffs.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title">Cutoff Functions</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="mlip.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title">MLIPs</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright"><p>2026, Clementi Group</p>
+  
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> and
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials"></div>
+    </div>
+  </div>
+</footer>
+      <script src="../_static/documentation_options.js?v=92734c54"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/shibuya.js?v=cac61aee"></script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script></body>
+</html>

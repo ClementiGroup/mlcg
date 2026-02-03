@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-color="plum" data-content_root="../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Priors - mlcg 0.1.2 documentation</title><link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Cutoff Functions" href="cutoffs.html" /><link rel="prev" title="Model utilities" href="index.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=31853864" />
+    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=44020203" />
+    <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    <meta property="og:type" content="website"/><meta property="og:title" content="Priors"/>
+    <meta name="twitter:card" content="summary"/>
+  </head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../index.html">
+      
+      
+      <strong>mlcg</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="sy-head-socials"></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6">
+        <div class="globaltoc" data-expand-depth="0"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../data/index.html">Data and datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../data/atom_data.html">Molecular Data Representation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data/fixed_datasets.html">Fixed datasets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data/h5_datasets.html">H5 Dataset</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../geometry/index.html">Geometry and Neighbor lists</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/internal_coordinates.html">Internal Coordinate Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/neighbor_list.html">Neighbor Lists</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/topology.html">Topology Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/statistics.html">Statistics Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Model utilities</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Priors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cutoffs.html">Cutoff Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rbfs.html">Radial Basis Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mlip.html">MLIPs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="wrappers.html">Gradient/sum wrappers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="losses.html">Loss Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../training.html">Training</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulation/index.html">Simulations</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../simulation/langevin.html">Langevin Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../simulation/overdamped.html">Overdamped Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../simulation/parallel_tempering.html">Parallel Tempering Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../simulation/utils.html">Simulation utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../misc/index.html">Miscellaneous utilities</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../misc/coarse_graining.html">Coarse Graining</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../misc/utils.html">General utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../misc/mol_utils.html">Molecular utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">Developer Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../dev/doc.html">Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/tests.html">Tests</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bibliography.html">Bibliography</a></li>
+</ul>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#harmonic">Harmonic</a><ul>
+<li><a class="reference internal" href="#mlcg.nn.prior.Harmonic"><code class="docutils literal notranslate"><span class="pre">Harmonic</span></code></a></li>
+<li><a class="reference internal" href="#mlcg.nn.prior.HarmonicBonds"><code class="docutils literal notranslate"><span class="pre">HarmonicBonds</span></code></a></li>
+<li><a class="reference internal" href="#mlcg.nn.prior.HarmonicAngles"><code class="docutils literal notranslate"><span class="pre">HarmonicAngles</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#polynomial">Polynomial</a><ul>
+<li><a class="reference internal" href="#mlcg.nn.prior.Polynomial"><code class="docutils literal notranslate"><span class="pre">Polynomial</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#fourier-series">Fourier Series</a><ul>
+<li><a class="reference internal" href="#mlcg.nn.prior.FourierSeries"><code class="docutils literal notranslate"><span class="pre">FourierSeries</span></code></a></li>
+<li><a class="reference internal" href="#mlcg.nn.prior.Dihedral"><code class="docutils literal notranslate"><span class="pre">Dihedral</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#excluded-volume">Excluded volume</a><ul>
+<li><a class="reference internal" href="#mlcg.nn.prior.Repulsion"><code class="docutils literal notranslate"><span class="pre">Repulsion</span></code></a></li>
+</ul>
+</li>
+</ul>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name">mlcg</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="index.html"><span itemprop="name">Model utilities</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">Priors</strong>
+        <meta itemprop="position" content="3" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <article class="yue" role="main">
+          <section id="priors">
+<h1>Priors<a class="headerlink" href="#priors" title="Link to this heading">¶</a></h1>
+<p><cite>mlcg.nn</cite> implements prior models that are important physical baselines imposing geometrical constraints on coarse-grained systems. These prior models can be supplied with a user-defined set of interaction parameters, or they can alternatively be parametrized directly from data for multiple interacting atom types.</p>
+<p>These classes define several common molecular interactions. Because each prior subclasses <cite>torch.nn.Module</cite>, they can be treated as normal property predictors.</p>
+<section id="harmonic">
+<h2>Harmonic<a class="headerlink" href="#harmonic" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcg.nn.prior.Harmonic">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.nn.prior.</span></span><span class="sig-name descname"><span class="pre">Harmonic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">statistics</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/nn/prior/harmonic.html#Harmonic"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.prior.Harmonic" title="Link to this definition">¶</a></dt>
+<dd><p>1-D Harmonic prior interaction for feature <span class="math notranslate nohighlight">\(x\)</span> of the form:</p>
+<div class="math-wrapper docutils container">
+<div class="math notranslate nohighlight">
+\[U_{\text{Harmonic}}(x) = k\left( x - x_0 \right)^2\]</div>
+</div>
+<p>where <span class="math notranslate nohighlight">\(k\)</span> is a harmonic/spring constant describing the interaction
+strength and <span class="math notranslate nohighlight">\(x_0\)</span> is the equilibrium value of the feature <span class="math notranslate nohighlight">\(x\)</span>.
+A an optimizable constant energy offset is added during the prior parameter
+fitting.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>statistics</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></span>) – <p>Dictionary of interaction parameters for each type of atom pair/triple,
+where the keys are tuples of interacting bead types and the
+corresponding values define the interaction parameters. These
+Can be hand-designed or taken from the output of
+<cite>mlcg.geometry.statistics.compute_statistics</cite>, but must minimally
+contain the following information for each key:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="nb">tuple</span><span class="p">(</span><span class="o">*</span><span class="n">specific_types</span><span class="p">)</span> <span class="p">:</span> <span class="p">{</span>
+</span><span data-line="2">    <span class="s2">&quot;k&quot;</span> <span class="p">:</span> <span class="c1">#torch.Tensor scalar that describes the strength of the</span>
+</span><span data-line="3">        <span class="c1">#harmonic interaction.</span>
+</span><span data-line="4">    <span class="s2">&quot;x_0&quot;</span> <span class="p">:</span> <span class="c1">#torch.Tensor scalar that describes the mean feature</span>
+</span><span data-line="5">        <span class="c1">#value.</span>
+</span><span data-line="6">    <span class="o">...</span>
+</span><span data-line="7">
+</span><span data-line="8">    <span class="p">}</span>
+</span></pre></div>
+</div>
+<p>The keys can be tuples of 2 or 3 atom type integers.</p>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcg.nn.prior.HarmonicBonds">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.nn.prior.</span></span><span class="sig-name descname"><span class="pre">HarmonicBonds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">statistics</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/nn/prior/harmonic.html#HarmonicBonds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.prior.HarmonicBonds" title="Link to this definition">¶</a></dt>
+<dd><p>Wrapper class for quickly computing bond priors
+(order 2 Harmonic priors)</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcg.nn.prior.HarmonicAngles">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.nn.prior.</span></span><span class="sig-name descname"><span class="pre">HarmonicAngles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">statistics</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/nn/prior/harmonic.html#HarmonicAngles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.prior.HarmonicAngles" title="Link to this definition">¶</a></dt>
+<dd><p>Wrapper class for quickly computing angle priors
+(order 3 Harmonic priors)</p>
+<p>To avoid numerical instabilities, we use a functional form of the following way:</p>
+<div class="math-wrapper docutils container">
+<div class="math notranslate nohighlight">
+\[U_{\text{HarmonicAngles}}(\theta) = k\left( \cos{(\theta)} - \cos{(\theta_0)} \right)^2\]</div>
+</div>
+<p>where <span class="math notranslate nohighlight">\(\theta_0\)</span> is the value of the angle at equilibrium.</p>
+</dd></dl>
+
+</section>
+<section id="polynomial">
+<h2>Polynomial<a class="headerlink" href="#polynomial" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcg.nn.prior.Polynomial">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.nn.prior.</span></span><span class="sig-name descname"><span class="pre">Polynomial</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">statistics</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_degs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/nn/prior/polynomial.html#Polynomial"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.prior.Polynomial" title="Link to this definition">¶</a></dt>
+<dd><p>Prior representing a polynomial with
+the following energy ansatz:</p>
+<div class="math-wrapper docutils container">
+<div class="math notranslate nohighlight">
+\[V(x) = V_0 + \sum_{n=1}^{n_{deg}} k_n x^n\]</div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>statistics</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></span>) – <p>Dictionary of interaction parameters for each type of atom combination,
+where the keys are tuples of interacting bead types and the
+corresponding values define the interaction parameters. These
+Can be hand-designed or taken from the output of
+<cite>mlcg.geometry.statistics.compute_statistics</cite>, but must minimally
+contain the following information for each key:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="nb">tuple</span><span class="p">(</span><span class="o">*</span><span class="n">specific_types</span><span class="p">)</span> <span class="p">:</span> <span class="p">{</span>
+</span><span data-line="2">    <span class="s2">&quot;ks&quot;</span> <span class="p">:</span> <span class="p">,</span><span class="c1">#torch.Tensor that contains all k_1,..,k_{n_degs} coefficients</span>
+</span><span data-line="3">    <span class="s2">&quot;v_0&quot;</span> <span class="p">:</span> <span class="p">,</span><span class="c1">#torch.Tensor that contains the constant offset</span>
+</span><span data-line="4">    <span class="o">...</span>
+</span><span data-line="5">    <span class="p">}</span>
+</span></pre></div>
+</div>
+<p>The keys must be tuples of 2,3,4 atoms.</p>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="fourier-series">
+<h2>Fourier Series<a class="headerlink" href="#fourier-series" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcg.nn.prior.FourierSeries">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.nn.prior.</span></span><span class="sig-name descname"><span class="pre">FourierSeries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">statistics</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_degs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/nn/prior/fourier_series.html#FourierSeries"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.prior.FourierSeries" title="Link to this definition">¶</a></dt>
+<dd><p>Prior class representing a fourier series of a periodic variable $theta$.
+The energy computed is given by the follwoing function</p>
+<div class="math-wrapper docutils container">
+<div class="math notranslate nohighlight">
+\[V(\theta) = v_0 + \sum_{n=1}^{n_{deg}} k1_n \sin{(n\theta)} + k2_n\cos{(n\theta)}\]</div>
+</div>
+<p>where <span class="math notranslate nohighlight">\(n_{deg}\)</span> is the maximum number of terms to take in the sinusoidal series,
+<span class="math notranslate nohighlight">\(v_0\)</span> is a constant offset, and <span class="math notranslate nohighlight">\(k1_n\)</span> and <span class="math notranslate nohighlight">\(k2_n\)</span> are coefficients
+for each term number <span class="math notranslate nohighlight">\(n\)</span>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>statistics</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></span>) – <p>Dictionary of interaction parameters for each type of atom quadruple,
+where the keys are tuples of interacting bead types and the
+corresponding values define the interaction parameters. These
+Can be hand-designed or taken from the output of
+<cite>mlcg.geometry.statistics.compute_statistics</cite>, but must minimally
+contain the following information for each key:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="nb">tuple</span><span class="p">(</span><span class="o">*</span><span class="n">specific_types</span><span class="p">)</span> <span class="p">:</span> <span class="p">{</span>
+</span><span data-line="2">    <span class="s2">&quot;k1s&quot;</span> <span class="p">:</span> <span class="c1">#torch.Tensor that contains all k1 coefficients</span>
+</span><span data-line="3">    <span class="s2">&quot;k2s&quot;</span> <span class="p">:</span> <span class="c1">#torch.Tensor that contains all k2 coefficients</span>
+</span><span data-line="4">    <span class="s2">&quot;v_0&quot;</span> <span class="p">:</span> <span class="c1">#torch.Tensor that contains the constant offset</span>
+</span><span data-line="5">    <span class="o">...</span>
+</span><span data-line="6">    <span class="p">}</span>
+</span></pre></div>
+</div>
+<p>The keys must be tuples of <cite>order</cite> atoms.</p>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcg.nn.prior.Dihedral">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.nn.prior.</span></span><span class="sig-name descname"><span class="pre">Dihedral</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">statistics</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_degs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'dihedrals'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/nn/prior/fourier_series.html#Dihedral"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.prior.Dihedral" title="Link to this definition">¶</a></dt>
+<dd><p>Class to represent a Dihedral potential using a fourier series</p>
+</dd></dl>
+
+</section>
+<section id="excluded-volume">
+<h2>Excluded volume<a class="headerlink" href="#excluded-volume" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcg.nn.prior.Repulsion">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.nn.prior.</span></span><span class="sig-name descname"><span class="pre">Repulsion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">statistics</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/nn/prior/repulsion.html#Repulsion"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.prior.Repulsion" title="Link to this definition">¶</a></dt>
+<dd><p>1-D power law repulsion prior for feature <span class="math notranslate nohighlight">\(x\)</span> of the form:</p>
+<div class="math-wrapper docutils container">
+<div class="math notranslate nohighlight">
+\[U_{ \textnormal{Repulsion}}(x) = \left(\frac{\sigma}{x}\right)^6\]</div>
+</div>
+<p>where <span class="math notranslate nohighlight">\(\sigma\)</span> is the excluded volume.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>statistics</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></span>) – <p>Dictionary of interaction parameters for each type of atom pair,
+where the keys are tuples of interacting bead types and the
+corresponding values define the interaction parameters. These
+Can be hand-designed or taken from the output of
+<cite>mlcg.geometry.statistics.compute_statistics</cite>, but must minimally
+contain the following information for each key:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="nb">tuple</span><span class="p">(</span><span class="o">*</span><span class="n">specific_types</span><span class="p">)</span> <span class="p">:</span> <span class="p">{</span>
+</span><span data-line="2">    <span class="s2">&quot;sigma&quot;</span> <span class="p">:</span> <span class="c1">#torch.Tensor scalar that describes the excluded</span>
+</span><span data-line="3">        <span class="c1">#volume of the two interacting atoms.</span>
+</span><span data-line="4">    <span class="o">...</span>
+</span><span data-line="5">
+</span><span data-line="6">    <span class="p">}</span>
+</span></pre></div>
+</div>
+<p>The keys can be tuples of 2 integer atom types.</p>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="index.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title">Model utilities</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="cutoffs.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title">Cutoff Functions</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright"><p>2026, Clementi Group</p>
+  
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> and
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials"></div>
+    </div>
+  </div>
+</footer>
+      <script src="../_static/documentation_options.js?v=92734c54"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/shibuya.js?v=cac61aee"></script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script></body>
+</html>

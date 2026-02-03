@@ -1,440 +1,508 @@
-
-
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" data-content_root="../../../">
+<html lang="en" data-accent-color="plum" data-content_root="../../../">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>mlcg.geometry.statistics &mdash; mlcg 0.1.2 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
-      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
-
-  
-      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
-      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=92734c54"></script>
-      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
-    <script src="../../../_static/js/theme.js"></script>
-    <link rel="index" title="Index" href="../../../genindex.html" />
-    <link rel="search" title="Search" href="../../../search.html" /> 
-</head>
-
-<body class="wy-body-for-nav"> 
-  <div class="wy-grid-for-nav">
-    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
-      <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
-
-          
-          
-          <a href="../../../index.html" class="icon icon-home">
-            mlcg
-          </a>
-<div role="search">
-  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
-    <input type="hidden" name="check_keywords" value="yes" />
-    <input type="hidden" name="area" value="default" />
-  </form>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>mlcg.geometry.statistics - mlcg 0.1.2 documentation</title><link rel="index" title="Index" href="../../../genindex.html" /><link rel="search" title="Search" href="../../../search.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=31853864" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/shibuya.css?v=44020203" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    <meta property="og:type" content="website"/><meta property="og:title" content="mlcg.geometry.statistics"/>
+    <meta name="twitter:card" content="summary"/>
+  </head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../index.html">
+      
+      
+      <strong>mlcg</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="sy-head-socials"></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
 </div>
-        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../data.html">Data Representation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../geometry.html">Geometry</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../neighbor_list.html">Neighbor Lists</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../coarse_graining.html">Coarse Graining</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../datasets.html">Datasets</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../priors.html">Priors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../models.html">Models</a></li>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6">
+        <div class="globaltoc" data-expand-depth="0"><ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../data/index.html">Data and datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../data/atom_data.html">Molecular Data Representation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../data/fixed_datasets.html">Fixed datasets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../data/h5_datasets.html">H5 Dataset</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../geometry/index.html">Geometry and Neighbor lists</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../geometry/internal_coordinates.html">Internal Coordinate Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../geometry/neighbor_list.html">Neighbor Lists</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../geometry/topology.html">Topology Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../geometry/statistics.html">Statistics Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../models/index.html">Model utilities</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../models/priors.html">Priors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../models/cutoffs.html">Cutoff Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../models/rbfs.html">Radial Basis Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../models/mlip.html">MLIPs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../models/wrappers.html">Gradient/sum wrappers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../models/losses.html">Loss Functions</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="../../../training.html">Training</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../simulation.html">Simulations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../dev/dev.html">Developer Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../simulation/index.html">Simulations</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../simulation/langevin.html">Langevin Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../simulation/overdamped.html">Overdamped Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../simulation/parallel_tempering.html">Parallel Tempering Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../simulation/utils.html">Simulation utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../misc/index.html">Miscellaneous utilities</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../misc/coarse_graining.html">Coarse Graining</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../misc/utils.html">General utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../misc/mol_utils.html">Molecular utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dev/index.html">Developer Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../dev/doc.html">Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../dev/tests.html">Tests</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Examples</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../bibliography.html">Bibliography</a></li>
 </ul>
 
         </div>
       </div>
-    </nav>
-
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
-          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../../index.html">mlcg</a>
-      </nav>
-
-      <div class="wy-nav-content">
-        <div class="rst-content">
-          <div role="navigation" aria-label="Page navigation">
-  <ul class="wy-breadcrumbs">
-      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
-          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
-      <li class="breadcrumb-item active">mlcg.geometry.statistics</li>
-      <li class="wy-breadcrumbs-aside">
-      </li>
-  </ul>
-  <hr/>
-</div>
-          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
-           <div itemprop="articleBody">
-             
-  <h1>Source code for mlcg.geometry.statistics</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.integrate</span><span class="w"> </span><span class="kn">import</span> <span class="n">trapezoid</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">..data</span><span class="w"> </span><span class="kn">import</span> <span class="n">AtomicData</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">..nn.prior</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dihedral</span><span class="p">,</span> <span class="n">Harmonic</span><span class="p">,</span> <span class="n">_Prior</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">..utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">tensor2tuple</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">._symmetrize</span><span class="w"> </span><span class="kn">import</span> <span class="n">_symmetrise_map</span><span class="p">,</span> <span class="n">_flip_map</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_get_all_unique_keys</span><span class="p">(</span>
-    <span class="n">unique_types</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">order</span><span class="p">:</span> <span class="nb">int</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function for returning all unique, symmetrised atom type keys</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    unique_types:</span>
-<span class="sd">        Tensor of unique atom types of shape (order, n_unique_atom_types)</span>
-<span class="sd">    order:</span>
-<span class="sd">        The order of the interaction type</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    torch.Tensor:</span>
-<span class="sd">       Tensor of unique atom types, symmetrised</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># get all combinations of size order between the elements of unique_types</span>
-    <span class="n">keys</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cartesian_prod</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">unique_types</span> <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">order</span><span class="p">)])</span><span class="o">.</span><span class="n">t</span><span class="p">()</span>
-    <span class="c1"># symmetrize the keys and keep only unique entries</span>
-    <span class="n">sym_keys</span> <span class="o">=</span> <span class="n">_symmetrise_map</span><span class="p">[</span><span class="n">order</span><span class="p">](</span><span class="n">keys</span><span class="p">)</span>
-    <span class="n">unique_sym_keys</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">sym_keys</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">unique_sym_keys</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_get_bin_centers</span><span class="p">(</span>
-    <span class="n">feature</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">nbins</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">b_min</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">b_max</span><span class="p">:</span> <span class="nb">float</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns bin centers for histograms.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    feature:</span>
-<span class="sd">        1-D input values of a feature.</span>
-<span class="sd">    nbins:</span>
-<span class="sd">        Number of bins in the histogram</span>
-<span class="sd">    b_min</span>
-<span class="sd">        If specified, the lower bound of bin edges. If not specified, the lower bound</span>
-<span class="sd">        defaults to the lowest value in the input feature</span>
-<span class="sd">    b_max</span>
-<span class="sd">        If specified, the upper bound of bin edges. If not specified, the upper bound</span>
-<span class="sd">        defaults to the greatest value in the input feature</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    torch.Tensor:</span>
-<span class="sd">        torch tensor containing the locaations of the bin centers</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">if</span> <span class="n">b_min</span> <span class="o">&gt;=</span> <span class="n">b_max</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;b_min must be less than b_max.&quot;</span><span class="p">)</span>
-
-    <span class="n">bin_centers</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nbins</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
-
-    <span class="n">delta</span> <span class="o">=</span> <span class="p">(</span><span class="n">b_max</span> <span class="o">-</span> <span class="n">b_min</span><span class="p">)</span> <span class="o">/</span> <span class="n">nbins</span>
-    <span class="n">bin_centers</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">b_min</span>
-        <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">delta</span>
-        <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">nbins</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span> <span class="o">*</span> <span class="n">delta</span>
-    <span class="p">)</span>
-    <span class="k">return</span> <span class="n">bin_centers</span>
-
-
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../index.html"><span itemprop="name">mlcg</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">Module code</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">mlcg.geometry.statistics</strong>
+        <meta itemprop="position" content="3" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <article class="yue" role="main">
+          <h1>Source code for mlcg.geometry.statistics</h1><div class="highlight"><pre>
+<span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+</span><span data-line="2"><span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
+</span><span data-line="3"><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+</span><span data-line="4"><span class="kn">from</span><span class="w"> </span><span class="nn">scipy.integrate</span><span class="w"> </span><span class="kn">import</span> <span class="n">trapezoid</span>
+</span><span data-line="5">
+</span><span data-line="6"><span class="kn">from</span><span class="w"> </span><span class="nn">..data</span><span class="w"> </span><span class="kn">import</span> <span class="n">AtomicData</span>
+</span><span data-line="7"><span class="kn">from</span><span class="w"> </span><span class="nn">..nn.prior</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dihedral</span><span class="p">,</span> <span class="n">Harmonic</span><span class="p">,</span> <span class="n">_Prior</span>
+</span><span data-line="8"><span class="kn">from</span><span class="w"> </span><span class="nn">..utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">tensor2tuple</span>
+</span><span data-line="9"><span class="kn">from</span><span class="w"> </span><span class="nn">._symmetrize</span><span class="w"> </span><span class="kn">import</span> <span class="n">_symmetrise_map</span><span class="p">,</span> <span class="n">_flip_map</span>
+</span><span data-line="10">
+</span><span data-line="11">
+</span><span data-line="12"><span class="k">def</span><span class="w"> </span><span class="nf">_get_all_unique_keys</span><span class="p">(</span>
+</span><span data-line="13">    <span class="n">unique_types</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">order</span><span class="p">:</span> <span class="nb">int</span>
+</span><span data-line="14"><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+</span><span data-line="15"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function for returning all unique, symmetrised atom type keys</span>
+</span><span data-line="16">
+</span><span data-line="17"><span class="sd">    Parameters</span>
+</span><span data-line="18"><span class="sd">    ----------</span>
+</span><span data-line="19"><span class="sd">    unique_types:</span>
+</span><span data-line="20"><span class="sd">        Tensor of unique atom types of shape (order, n_unique_atom_types)</span>
+</span><span data-line="21"><span class="sd">    order:</span>
+</span><span data-line="22"><span class="sd">        The order of the interaction type</span>
+</span><span data-line="23">
+</span><span data-line="24"><span class="sd">    Returns</span>
+</span><span data-line="25"><span class="sd">    -------</span>
+</span><span data-line="26"><span class="sd">    torch.Tensor:</span>
+</span><span data-line="27"><span class="sd">       Tensor of unique atom types, symmetrised</span>
+</span><span data-line="28"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="29">    <span class="c1"># get all combinations of size order between the elements of unique_types</span>
+</span><span data-line="30">    <span class="n">keys</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cartesian_prod</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">unique_types</span> <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">order</span><span class="p">)])</span><span class="o">.</span><span class="n">t</span><span class="p">()</span>
+</span><span data-line="31">    <span class="c1"># symmetrize the keys and keep only unique entries</span>
+</span><span data-line="32">    <span class="n">sym_keys</span> <span class="o">=</span> <span class="n">_symmetrise_map</span><span class="p">[</span><span class="n">order</span><span class="p">](</span><span class="n">keys</span><span class="p">)</span>
+</span><span data-line="33">    <span class="n">unique_sym_keys</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">sym_keys</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span><span data-line="34">    <span class="k">return</span> <span class="n">unique_sym_keys</span>
+</span><span data-line="35">
+</span><span data-line="36">
+</span><span data-line="37"><span class="k">def</span><span class="w"> </span><span class="nf">_get_bin_centers</span><span class="p">(</span>
+</span><span data-line="38">    <span class="n">feature</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">nbins</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">b_min</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">b_max</span><span class="p">:</span> <span class="nb">float</span>
+</span><span data-line="39"><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+</span><span data-line="40"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns bin centers for histograms.</span>
+</span><span data-line="41">
+</span><span data-line="42"><span class="sd">    Parameters</span>
+</span><span data-line="43"><span class="sd">    ----------</span>
+</span><span data-line="44"><span class="sd">    feature:</span>
+</span><span data-line="45"><span class="sd">        1-D input values of a feature.</span>
+</span><span data-line="46"><span class="sd">    nbins:</span>
+</span><span data-line="47"><span class="sd">        Number of bins in the histogram</span>
+</span><span data-line="48"><span class="sd">    b_min</span>
+</span><span data-line="49"><span class="sd">        If specified, the lower bound of bin edges. If not specified, the lower bound</span>
+</span><span data-line="50"><span class="sd">        defaults to the lowest value in the input feature</span>
+</span><span data-line="51"><span class="sd">    b_max</span>
+</span><span data-line="52"><span class="sd">        If specified, the upper bound of bin edges. If not specified, the upper bound</span>
+</span><span data-line="53"><span class="sd">        defaults to the greatest value in the input feature</span>
+</span><span data-line="54">
+</span><span data-line="55"><span class="sd">    Returns</span>
+</span><span data-line="56"><span class="sd">    -------</span>
+</span><span data-line="57"><span class="sd">    torch.Tensor:</span>
+</span><span data-line="58"><span class="sd">        torch tensor containing the locaations of the bin centers</span>
+</span><span data-line="59"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="60">
+</span><span data-line="61">    <span class="k">if</span> <span class="n">b_min</span> <span class="o">&gt;=</span> <span class="n">b_max</span><span class="p">:</span>
+</span><span data-line="62">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;b_min must be less than b_max.&quot;</span><span class="p">)</span>
+</span><span data-line="63">
+</span><span data-line="64">    <span class="n">bin_centers</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nbins</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+</span><span data-line="65">
+</span><span data-line="66">    <span class="n">delta</span> <span class="o">=</span> <span class="p">(</span><span class="n">b_max</span> <span class="o">-</span> <span class="n">b_min</span><span class="p">)</span> <span class="o">/</span> <span class="n">nbins</span>
+</span><span data-line="67">    <span class="n">bin_centers</span> <span class="o">=</span> <span class="p">(</span>
+</span><span data-line="68">        <span class="n">b_min</span>
+</span><span data-line="69">        <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">delta</span>
+</span><span data-line="70">        <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">nbins</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span> <span class="o">*</span> <span class="n">delta</span>
+</span><span data-line="71">    <span class="p">)</span>
+</span><span data-line="72">    <span class="k">return</span> <span class="n">bin_centers</span>
+</span><span data-line="73">
+</span><span data-line="74">
 <div class="viewcode-block" id="compute_statistics">
-<a class="viewcode-back" href="../../../geometry.html#mlcg.geometry.statistics.compute_statistics">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">compute_statistics</span><span class="p">(</span>
-    <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">,</span>
-    <span class="n">target</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">beta</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-    <span class="n">TargetPrior</span><span class="p">:</span> <span class="n">_Prior</span> <span class="o">=</span> <span class="n">Harmonic</span><span class="p">,</span>
-    <span class="n">nbins</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
-    <span class="n">bmin</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">bmax</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">fit_from_values</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="n">target_fit_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Function for computing atom type-specific statistics for</span>
-<span class="sd">    every combination of atom types present in a collated AtomicData</span>
-<span class="sd">    structure.</span>
+<a class="viewcode-back" href="../../../geometry/topology.html#mlcg.geometry.statistics.compute_statistics">[docs]</a>
+</span><span data-line="75"><span class="k">def</span><span class="w"> </span><span class="nf">compute_statistics</span><span class="p">(</span>
+</span><span data-line="76">    <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">,</span>
+</span><span data-line="77">    <span class="n">target</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="78">    <span class="n">beta</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+</span><span data-line="79">    <span class="n">TargetPrior</span><span class="p">:</span> <span class="n">_Prior</span> <span class="o">=</span> <span class="n">Harmonic</span><span class="p">,</span>
+</span><span data-line="80">    <span class="n">nbins</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+</span><span data-line="81">    <span class="n">bmin</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="82">    <span class="n">bmax</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="83">    <span class="n">fit_from_values</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span data-line="84">    <span class="n">target_fit_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="85"><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+</span><span data-line="86"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Function for computing atom type-specific statistics for</span>
+</span><span data-line="87"><span class="sd">    every combination of atom types present in a collated AtomicData</span>
+</span><span data-line="88"><span class="sd">    structure.</span>
+</span><span data-line="89">
+</span><span data-line="90"><span class="sd">    Parameters</span>
+</span><span data-line="91"><span class="sd">    ----------</span>
+</span><span data-line="92"><span class="sd">    data:</span>
+</span><span data-line="93"><span class="sd">        Input data, in the form of a collated list of individual AtomicData</span>
+</span><span data-line="94"><span class="sd">        structures.</span>
+</span><span data-line="95"><span class="sd">    target:</span>
+</span><span data-line="96"><span class="sd">        The keyword specifiying with `neighbor_list` sub_dictionary should</span>
+</span><span data-line="97"><span class="sd">        be used to gather statisitics</span>
+</span><span data-line="98"><span class="sd">    beta:</span>
+</span><span data-line="99"><span class="sd">        Inverse thermodynamic temperature:</span>
+</span><span data-line="100">
+</span><span data-line="101"><span class="sd">        .. math::</span>
+</span><span data-line="102">
+</span><span data-line="103"><span class="sd">            \beta = \frac{1}{k_B T}</span>
+</span><span data-line="104">
+</span><span data-line="105"><span class="sd">        where :math:`k_B` is Boltzmann&#39;s constant and :math:`T` is the temperature.</span>
+</span><span data-line="106"><span class="sd">    TargetPrior:</span>
+</span><span data-line="107"><span class="sd">        The class type of prior for which the statistics will be processed.</span>
+</span><span data-line="108"><span class="sd">    nbins:</span>
+</span><span data-line="109"><span class="sd">        The number of bins over which 1-D feature histograms are constructed</span>
+</span><span data-line="110"><span class="sd">        in order to estimate distributions</span>
+</span><span data-line="111"><span class="sd">    bmin:</span>
+</span><span data-line="112"><span class="sd">        If specified, the lower bound of bin edges. If not specified, the lower bound</span>
+</span><span data-line="113"><span class="sd">        defaults to the lowest value in the input feature</span>
+</span><span data-line="114"><span class="sd">    bmax:</span>
+</span><span data-line="115"><span class="sd">        If specified, the upper bound of bin edges. If not specified, the upper bound</span>
+</span><span data-line="116"><span class="sd">        defaults to the greatest value in the input feature</span>
+</span><span data-line="117"><span class="sd">    fit_from_values:</span>
+</span><span data-line="118"><span class="sd">        If True, the prior parameters are estimated directly from features values</span>
+</span><span data-line="119"><span class="sd">        instead of their implied emperical potentials</span>
+</span><span data-line="120"><span class="sd">    target_fit_kwargs:</span>
+</span><span data-line="121"><span class="sd">        Extra fit options that are prior_specific</span>
+</span><span data-line="122">
+</span><span data-line="123"><span class="sd">    Returns</span>
+</span><span data-line="124"><span class="sd">    -------</span>
+</span><span data-line="125"><span class="sd">    Dict:</span>
+</span><span data-line="126"><span class="sd">        Dictionary of gathered statistics and estimated parameters based on</span>
+</span><span data-line="127"><span class="sd">        the `TargetPrior`. The following key/value pairs are common across all `TargetPrior`</span>
+</span><span data-line="128"><span class="sd">        choices:</span>
+</span><span data-line="129">
+</span><span data-line="130"><span class="sd">        .. code-block:: python</span>
+</span><span data-line="131">
+</span><span data-line="132"><span class="sd">            (*specific_types) : {</span>
+</span><span data-line="133">
+</span><span data-line="134"><span class="sd">                ...</span>
+</span><span data-line="135">
+</span><span data-line="136"><span class="sd">                &quot;p&quot; : torch.Tensor of shape [n_bins], containing the normalized bin counts</span>
+</span><span data-line="137"><span class="sd">                    of the of the 1-D feature corresponding to the atom_type group</span>
+</span><span data-line="138"><span class="sd">                    (*specific_types) = (specific_types[0], specific_types[1], ...)</span>
+</span><span data-line="139"><span class="sd">                &quot;p_bin&quot;: : torch.Tensor of shape [n_bins] containing the bin center values</span>
+</span><span data-line="140"><span class="sd">                &quot;V&quot; : torch.tensor of shape [n_bins], containing the emperically estimated</span>
+</span><span data-line="141"><span class="sd">                    free energy curve according to a direct Boltzmann inversion of the</span>
+</span><span data-line="142"><span class="sd">                    normalized probability distribution for the feature.</span>
+</span><span data-line="143"><span class="sd">                &quot;V_bin&quot; : torch_tensor of shape [n_bins], containing the bin center values</span>
+</span><span data-line="144"><span class="sd">            }</span>
+</span><span data-line="145">
+</span><span data-line="146"><span class="sd">        where `...` indicates other sub-key/value pairs apart from those enumerated above,</span>
+</span><span data-line="147"><span class="sd">        which may appear depending on the chosen `TargetPrior`. For example,</span>
+</span><span data-line="148"><span class="sd">        if `TargetPrior` is `HarmonicBonds`, there will also be keys/values associated with</span>
+</span><span data-line="149"><span class="sd">        estimated bond constants and means.</span>
+</span><span data-line="150">
+</span><span data-line="151"><span class="sd">    Example</span>
+</span><span data-line="152"><span class="sd">    -------</span>
+</span><span data-line="153">
+</span><span data-line="154"><span class="sd">    .. code-block:: python</span>
+</span><span data-line="155">
+</span><span data-line="156"><span class="sd">        my_data = AtomicData(</span>
+</span><span data-line="157"><span class="sd">            out={},</span>
+</span><span data-line="158"><span class="sd">            pos=[769600, 3],</span>
+</span><span data-line="159"><span class="sd">            atom_types=[769600],</span>
+</span><span data-line="160"><span class="sd">            n_atoms=[20800],</span>
+</span><span data-line="161"><span class="sd">            neighbor_list={</span>
+</span><span data-line="162"><span class="sd">                bonds={</span>
+</span><span data-line="163"><span class="sd">                  tag=[20800],</span>
+</span><span data-line="164"><span class="sd">                  order=[20800],</span>
+</span><span data-line="165"><span class="sd">                  index_mapping=[2, 748800],</span>
+</span><span data-line="166"><span class="sd">                  cell_shifts=[20800],</span>
+</span><span data-line="167"><span class="sd">                  rcut=[20800],</span>
+</span><span data-line="168"><span class="sd">                  self_interaction=[20800]</span>
+</span><span data-line="169"><span class="sd">                },</span>
+</span><span data-line="170"><span class="sd">                angles={</span>
+</span><span data-line="171"><span class="sd">                  tag=[20800],</span>
+</span><span data-line="172"><span class="sd">                  order=[20800],</span>
+</span><span data-line="173"><span class="sd">                  index_mapping=[3, 977600],</span>
+</span><span data-line="174"><span class="sd">                  cell_shifts=[20800],</span>
+</span><span data-line="175"><span class="sd">                  rcut=[20800],</span>
+</span><span data-line="176"><span class="sd">                  self_interaction=[20800]</span>
+</span><span data-line="177"><span class="sd">                }</span>
+</span><span data-line="178"><span class="sd">            },</span>
+</span><span data-line="179"><span class="sd">            batch=[769600],</span>
+</span><span data-line="180"><span class="sd">            ptr=[20801]</span>
+</span><span data-line="181"><span class="sd">        )</span>
+</span><span data-line="182">
+</span><span data-line="183"><span class="sd">        angle_stats = bond_stats = compute_statistics(my_data,</span>
+</span><span data-line="184"><span class="sd">             &#39;bonds&#39;, beta=beta,</span>
+</span><span data-line="185"><span class="sd">             TargetPrior=HarmonicBonds</span>
+</span><span data-line="186"><span class="sd">        )</span>
+</span><span data-line="187"><span class="sd">        dihedral_stats = compute_statistics(my_data,</span>
+</span><span data-line="188"><span class="sd">                                            &#39;dihedrals&#39;,</span>
+</span><span data-line="189"><span class="sd">                                            beta=beta,</span>
+</span><span data-line="190"><span class="sd">                                            TargetPrior=Dihedral</span>
+</span><span data-line="191"><span class="sd">        )</span>
+</span><span data-line="192">
+</span><span data-line="193">
+</span><span data-line="194"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="195">    <span class="k">if</span> <span class="n">target_fit_kwargs</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="196">        <span class="n">target_fit_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span data-line="197">    <span class="n">unique_types</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">atom_types</span><span class="p">)</span>
+</span><span data-line="198">    <span class="n">order</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="n">target</span><span class="p">][</span><span class="s2">&quot;index_mapping&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</span><span data-line="199">    <span class="n">unique_keys</span> <span class="o">=</span> <span class="n">_get_all_unique_keys</span><span class="p">(</span><span class="n">unique_types</span><span class="p">,</span> <span class="n">order</span><span class="p">)</span>
+</span><span data-line="200">
+</span><span data-line="201">    <span class="n">mapping</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="n">target</span><span class="p">][</span><span class="s2">&quot;index_mapping&quot;</span><span class="p">]</span>
+</span><span data-line="202">    <span class="n">values</span> <span class="o">=</span> <span class="n">TargetPrior</span><span class="o">.</span><span class="n">compute_features</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span> <span class="n">mapping</span><span class="p">)</span>
+</span><span data-line="203">
+</span><span data-line="204">    <span class="n">interaction_types</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span>
+</span><span data-line="205">        <span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">atom_types</span><span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="n">ii</span><span class="p">]]</span> <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">order</span><span class="p">)]</span>
+</span><span data-line="206">    <span class="p">)</span>
+</span><span data-line="207">
+</span><span data-line="208">    <span class="n">interaction_types</span> <span class="o">=</span> <span class="n">_symmetrise_map</span><span class="p">[</span><span class="n">order</span><span class="p">](</span><span class="n">interaction_types</span><span class="p">)</span>
+</span><span data-line="209">
+</span><span data-line="210">    <span class="n">statistics</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span data-line="211">    <span class="k">for</span> <span class="n">unique_key</span> <span class="ow">in</span> <span class="n">unique_keys</span><span class="o">.</span><span class="n">t</span><span class="p">():</span>
+</span><span data-line="212">        <span class="c1"># find which values correspond to unique_key type of interaction</span>
+</span><span data-line="213">        <span class="n">mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">all</span><span class="p">(</span>
+</span><span data-line="214">            <span class="n">torch</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span>
+</span><span data-line="215">                <span class="p">[</span>
+</span><span data-line="216">                    <span class="n">interaction_types</span><span class="p">[</span><span class="n">ii</span><span class="p">,</span> <span class="p">:]</span> <span class="o">==</span> <span class="n">unique_key</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>
+</span><span data-line="217">                    <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">order</span><span class="p">)</span>
+</span><span data-line="218">                <span class="p">]</span>
+</span><span data-line="219">            <span class="p">),</span>
+</span><span data-line="220">            <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+</span><span data-line="221">        <span class="p">)</span>
+</span><span data-line="222">        <span class="n">val</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+</span><span data-line="223">        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+</span><span data-line="224">            <span class="k">continue</span>
+</span><span data-line="225">
+</span><span data-line="226">        <span class="k">if</span> <span class="n">bmin</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="227">            <span class="n">b_min</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+</span><span data-line="228">        <span class="k">else</span><span class="p">:</span>
+</span><span data-line="229">            <span class="n">b_min</span> <span class="o">=</span> <span class="n">bmin</span>
+</span><span data-line="230">        <span class="k">if</span> <span class="n">bmax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="231">            <span class="n">b_max</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+</span><span data-line="232">        <span class="k">else</span><span class="p">:</span>
+</span><span data-line="233">            <span class="n">b_max</span> <span class="o">=</span> <span class="n">bmax</span>
+</span><span data-line="234">
+</span><span data-line="235">        <span class="n">bin_centers</span> <span class="o">=</span> <span class="n">_get_bin_centers</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">nbins</span><span class="p">,</span> <span class="n">b_min</span><span class="o">=</span><span class="n">b_min</span><span class="p">,</span> <span class="n">b_max</span><span class="o">=</span><span class="n">b_max</span><span class="p">)</span>
+</span><span data-line="236">        <span class="n">hist</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">histc</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">nbins</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="n">b_min</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="n">b_max</span><span class="p">)</span>
+</span><span data-line="237">        <span class="n">mask</span> <span class="o">=</span> <span class="n">hist</span> <span class="o">&gt;</span> <span class="mi">0</span>
+</span><span data-line="238">        <span class="n">bin_centers_nz</span> <span class="o">=</span> <span class="n">bin_centers</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+</span><span data-line="239">        <span class="n">ncounts_nz</span> <span class="o">=</span> <span class="n">hist</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+</span><span data-line="240">        <span class="n">dG_nz</span> <span class="o">=</span> <span class="o">-</span><span class="n">torch</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">ncounts_nz</span><span class="p">)</span> <span class="o">/</span> <span class="n">beta</span>
+</span><span data-line="241">
+</span><span data-line="242">        <span class="k">if</span> <span class="n">fit_from_values</span><span class="p">:</span>
+</span><span data-line="243">            <span class="n">params</span> <span class="o">=</span> <span class="n">TargetPrior</span><span class="o">.</span><span class="n">fit_from_values</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="o">**</span><span class="n">target_fit_kwargs</span><span class="p">)</span>
+</span><span data-line="244">
+</span><span data-line="245">        <span class="k">else</span><span class="p">:</span>
+</span><span data-line="246">            <span class="n">params</span> <span class="o">=</span> <span class="n">TargetPrior</span><span class="o">.</span><span class="n">fit_from_potential_estimates</span><span class="p">(</span>
+</span><span data-line="247">                <span class="n">bin_centers_nz</span><span class="p">,</span> <span class="n">dG_nz</span><span class="p">,</span> <span class="o">**</span><span class="n">target_fit_kwargs</span>
+</span><span data-line="248">            <span class="p">)</span>
+</span><span data-line="249">
+</span><span data-line="250">        <span class="n">kk</span> <span class="o">=</span> <span class="n">tensor2tuple</span><span class="p">(</span><span class="n">unique_key</span><span class="p">)</span>
+</span><span data-line="251">        <span class="n">statistics</span><span class="p">[</span><span class="n">kk</span><span class="p">]</span> <span class="o">=</span> <span class="n">params</span>
+</span><span data-line="252">
+</span><span data-line="253">        <span class="n">statistics</span><span class="p">[</span><span class="n">kk</span><span class="p">][</span><span class="s2">&quot;p&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hist</span> <span class="o">/</span> <span class="n">trapezoid</span><span class="p">(</span>
+</span><span data-line="254">            <span class="n">hist</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">x</span><span class="o">=</span><span class="n">bin_centers</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+</span><span data-line="255">        <span class="p">)</span>
+</span><span data-line="256">        <span class="n">statistics</span><span class="p">[</span><span class="n">kk</span><span class="p">][</span><span class="s2">&quot;p_bin&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bin_centers</span>
+</span><span data-line="257">        <span class="n">statistics</span><span class="p">[</span><span class="n">kk</span><span class="p">][</span><span class="s2">&quot;V&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dG_nz</span>
+</span><span data-line="258">        <span class="n">statistics</span><span class="p">[</span><span class="n">kk</span><span class="p">][</span><span class="s2">&quot;V_bin&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bin_centers_nz</span>
+</span><span data-line="259">
+</span><span data-line="260">        <span class="n">kf</span> <span class="o">=</span> <span class="n">tensor2tuple</span><span class="p">(</span><span class="n">_flip_map</span><span class="p">[</span><span class="n">order</span><span class="p">](</span><span class="n">unique_key</span><span class="p">))</span>
+</span><span data-line="261">        <span class="n">statistics</span><span class="p">[</span><span class="n">kf</span><span class="p">]</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">statistics</span><span class="p">[</span><span class="n">kk</span><span class="p">])</span>
+</span><span data-line="262">
+</span><span data-line="263">    <span class="k">return</span> <span class="n">statistics</span></div>
 
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    data:</span>
-<span class="sd">        Input data, in the form of a collated list of individual AtomicData</span>
-<span class="sd">        structures.</span>
-<span class="sd">    target:</span>
-<span class="sd">        The keyword specifiying with `neighbor_list` sub_dictionary should</span>
-<span class="sd">        be used to gather statisitics</span>
-<span class="sd">    beta:</span>
-<span class="sd">        Inverse thermodynamic temperature:</span>
-
-<span class="sd">        .. math::</span>
-
-<span class="sd">            \beta = \frac{1}{k_B T}</span>
-
-<span class="sd">        where :math:`k_B` is Boltzmann&#39;s constant and :math:`T` is the temperature.</span>
-<span class="sd">    TargetPrior:</span>
-<span class="sd">        The class type of prior for which the statistics will be processed.</span>
-<span class="sd">    nbins:</span>
-<span class="sd">        The number of bins over which 1-D feature histograms are constructed</span>
-<span class="sd">        in order to estimate distributions</span>
-<span class="sd">    bmin:</span>
-<span class="sd">        If specified, the lower bound of bin edges. If not specified, the lower bound</span>
-<span class="sd">        defaults to the lowest value in the input feature</span>
-<span class="sd">    bmax:</span>
-<span class="sd">        If specified, the upper bound of bin edges. If not specified, the upper bound</span>
-<span class="sd">        defaults to the greatest value in the input feature</span>
-<span class="sd">    fit_from_values:</span>
-<span class="sd">        If True, the prior parameters are estimated directly from features values</span>
-<span class="sd">        instead of their implied emperical potentials</span>
-<span class="sd">    target_fit_kwargs:</span>
-<span class="sd">        Extra fit options that are prior_specific</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    Dict:</span>
-<span class="sd">        Dictionary of gathered statistics and estimated parameters based on</span>
-<span class="sd">        the `TargetPrior`. The following key/value pairs are common across all `TargetPrior`</span>
-<span class="sd">        choices:</span>
-
-<span class="sd">        .. code-block:: python</span>
-
-<span class="sd">            (*specific_types) : {</span>
-
-<span class="sd">                ...</span>
-
-<span class="sd">                &quot;p&quot; : torch.Tensor of shape [n_bins], containing the normalized bin counts</span>
-<span class="sd">                    of the of the 1-D feature corresponding to the atom_type group</span>
-<span class="sd">                    (*specific_types) = (specific_types[0], specific_types[1], ...)</span>
-<span class="sd">                &quot;p_bin&quot;: : torch.Tensor of shape [n_bins] containing the bin center values</span>
-<span class="sd">                &quot;V&quot; : torch.tensor of shape [n_bins], containing the emperically estimated</span>
-<span class="sd">                    free energy curve according to a direct Boltzmann inversion of the</span>
-<span class="sd">                    normalized probability distribution for the feature.</span>
-<span class="sd">                &quot;V_bin&quot; : torch_tensor of shape [n_bins], containing the bin center values</span>
-<span class="sd">            }</span>
-
-<span class="sd">        where `...` indicates other sub-key/value pairs apart from those enumerated above,</span>
-<span class="sd">        which may appear depending on the chosen `TargetPrior`. For example,</span>
-<span class="sd">        if `TargetPrior` is `HarmonicBonds`, there will also be keys/values associated with</span>
-<span class="sd">        estimated bond constants and means.</span>
-
-<span class="sd">    Example</span>
-<span class="sd">    -------</span>
-
-<span class="sd">    .. code-block:: python</span>
-
-<span class="sd">        my_data = AtomicData(</span>
-<span class="sd">            out={},</span>
-<span class="sd">            pos=[769600, 3],</span>
-<span class="sd">            atom_types=[769600],</span>
-<span class="sd">            n_atoms=[20800],</span>
-<span class="sd">            neighbor_list={</span>
-<span class="sd">                bonds={</span>
-<span class="sd">                  tag=[20800],</span>
-<span class="sd">                  order=[20800],</span>
-<span class="sd">                  index_mapping=[2, 748800],</span>
-<span class="sd">                  cell_shifts=[20800],</span>
-<span class="sd">                  rcut=[20800],</span>
-<span class="sd">                  self_interaction=[20800]</span>
-<span class="sd">                },</span>
-<span class="sd">                angles={</span>
-<span class="sd">                  tag=[20800],</span>
-<span class="sd">                  order=[20800],</span>
-<span class="sd">                  index_mapping=[3, 977600],</span>
-<span class="sd">                  cell_shifts=[20800],</span>
-<span class="sd">                  rcut=[20800],</span>
-<span class="sd">                  self_interaction=[20800]</span>
-<span class="sd">                }</span>
-<span class="sd">            },</span>
-<span class="sd">            batch=[769600],</span>
-<span class="sd">            ptr=[20801]</span>
-<span class="sd">        )</span>
-
-<span class="sd">        angle_stats = bond_stats = compute_statistics(my_data,</span>
-<span class="sd">             &#39;bonds&#39;, beta=beta,</span>
-<span class="sd">             TargetPrior=HarmonicBonds</span>
-<span class="sd">        )</span>
-<span class="sd">        dihedral_stats = compute_statistics(my_data,</span>
-<span class="sd">                                            &#39;dihedrals&#39;,</span>
-<span class="sd">                                            beta=beta,</span>
-<span class="sd">                                            TargetPrior=Dihedral</span>
-<span class="sd">        )</span>
-
-
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">target_fit_kwargs</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">target_fit_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">unique_types</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">atom_types</span><span class="p">)</span>
-    <span class="n">order</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="n">target</span><span class="p">][</span><span class="s2">&quot;index_mapping&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">unique_keys</span> <span class="o">=</span> <span class="n">_get_all_unique_keys</span><span class="p">(</span><span class="n">unique_types</span><span class="p">,</span> <span class="n">order</span><span class="p">)</span>
-
-    <span class="n">mapping</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="n">target</span><span class="p">][</span><span class="s2">&quot;index_mapping&quot;</span><span class="p">]</span>
-    <span class="n">values</span> <span class="o">=</span> <span class="n">TargetPrior</span><span class="o">.</span><span class="n">compute_features</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span> <span class="n">mapping</span><span class="p">)</span>
-
-    <span class="n">interaction_types</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span>
-        <span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">atom_types</span><span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="n">ii</span><span class="p">]]</span> <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">order</span><span class="p">)]</span>
-    <span class="p">)</span>
-
-    <span class="n">interaction_types</span> <span class="o">=</span> <span class="n">_symmetrise_map</span><span class="p">[</span><span class="n">order</span><span class="p">](</span><span class="n">interaction_types</span><span class="p">)</span>
-
-    <span class="n">statistics</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">unique_key</span> <span class="ow">in</span> <span class="n">unique_keys</span><span class="o">.</span><span class="n">t</span><span class="p">():</span>
-        <span class="c1"># find which values correspond to unique_key type of interaction</span>
-        <span class="n">mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">all</span><span class="p">(</span>
-            <span class="n">torch</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span>
-                <span class="p">[</span>
-                    <span class="n">interaction_types</span><span class="p">[</span><span class="n">ii</span><span class="p">,</span> <span class="p">:]</span> <span class="o">==</span> <span class="n">unique_key</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>
-                    <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">order</span><span class="p">)</span>
-                <span class="p">]</span>
-            <span class="p">),</span>
-            <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">val</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">continue</span>
-
-        <span class="k">if</span> <span class="n">bmin</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">b_min</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">b_min</span> <span class="o">=</span> <span class="n">bmin</span>
-        <span class="k">if</span> <span class="n">bmax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">b_max</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">b_max</span> <span class="o">=</span> <span class="n">bmax</span>
-
-        <span class="n">bin_centers</span> <span class="o">=</span> <span class="n">_get_bin_centers</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">nbins</span><span class="p">,</span> <span class="n">b_min</span><span class="o">=</span><span class="n">b_min</span><span class="p">,</span> <span class="n">b_max</span><span class="o">=</span><span class="n">b_max</span><span class="p">)</span>
-        <span class="n">hist</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">histc</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">nbins</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="n">b_min</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="n">b_max</span><span class="p">)</span>
-        <span class="n">mask</span> <span class="o">=</span> <span class="n">hist</span> <span class="o">&gt;</span> <span class="mi">0</span>
-        <span class="n">bin_centers_nz</span> <span class="o">=</span> <span class="n">bin_centers</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
-        <span class="n">ncounts_nz</span> <span class="o">=</span> <span class="n">hist</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
-        <span class="n">dG_nz</span> <span class="o">=</span> <span class="o">-</span><span class="n">torch</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">ncounts_nz</span><span class="p">)</span> <span class="o">/</span> <span class="n">beta</span>
-
-        <span class="k">if</span> <span class="n">fit_from_values</span><span class="p">:</span>
-            <span class="n">params</span> <span class="o">=</span> <span class="n">TargetPrior</span><span class="o">.</span><span class="n">fit_from_values</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="o">**</span><span class="n">target_fit_kwargs</span><span class="p">)</span>
-
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">params</span> <span class="o">=</span> <span class="n">TargetPrior</span><span class="o">.</span><span class="n">fit_from_potential_estimates</span><span class="p">(</span>
-                <span class="n">bin_centers_nz</span><span class="p">,</span> <span class="n">dG_nz</span><span class="p">,</span> <span class="o">**</span><span class="n">target_fit_kwargs</span>
-            <span class="p">)</span>
-
-        <span class="n">kk</span> <span class="o">=</span> <span class="n">tensor2tuple</span><span class="p">(</span><span class="n">unique_key</span><span class="p">)</span>
-        <span class="n">statistics</span><span class="p">[</span><span class="n">kk</span><span class="p">]</span> <span class="o">=</span> <span class="n">params</span>
-
-        <span class="n">statistics</span><span class="p">[</span><span class="n">kk</span><span class="p">][</span><span class="s2">&quot;p&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hist</span> <span class="o">/</span> <span class="n">trapezoid</span><span class="p">(</span>
-            <span class="n">hist</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">x</span><span class="o">=</span><span class="n">bin_centers</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
-        <span class="p">)</span>
-        <span class="n">statistics</span><span class="p">[</span><span class="n">kk</span><span class="p">][</span><span class="s2">&quot;p_bin&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bin_centers</span>
-        <span class="n">statistics</span><span class="p">[</span><span class="n">kk</span><span class="p">][</span><span class="s2">&quot;V&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dG_nz</span>
-        <span class="n">statistics</span><span class="p">[</span><span class="n">kk</span><span class="p">][</span><span class="s2">&quot;V_bin&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bin_centers_nz</span>
-
-        <span class="n">kf</span> <span class="o">=</span> <span class="n">tensor2tuple</span><span class="p">(</span><span class="n">_flip_map</span><span class="p">[</span><span class="n">order</span><span class="p">](</span><span class="n">unique_key</span><span class="p">))</span>
-        <span class="n">statistics</span><span class="p">[</span><span class="n">kf</span><span class="p">]</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">statistics</span><span class="p">[</span><span class="n">kk</span><span class="p">])</span>
-
-    <span class="k">return</span> <span class="n">statistics</span></div>
-
-
-
+</span><span data-line="264">
+</span><span data-line="265">
 <div class="viewcode-block" id="fit_baseline_models">
-<a class="viewcode-back" href="../../../geometry.html#mlcg.geometry.statistics.fit_baseline_models">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">fit_baseline_models</span><span class="p">(</span>
-    <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">,</span>
-    <span class="n">beta</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-    <span class="n">priors_cls</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">_Prior</span><span class="p">],</span>
-    <span class="n">nbins</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
-    <span class="n">bmin</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">bmax</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleDict</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]:</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Function for parametrizing a list of priors based on type-specific interactions contained in</span>
-<span class="sd">    a collated AtomicData structure</span>
+<a class="viewcode-back" href="../../../geometry/topology.html#mlcg.geometry.statistics.fit_baseline_models">[docs]</a>
+</span><span data-line="266"><span class="k">def</span><span class="w"> </span><span class="nf">fit_baseline_models</span><span class="p">(</span>
+</span><span data-line="267">    <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">,</span>
+</span><span data-line="268">    <span class="n">beta</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+</span><span data-line="269">    <span class="n">priors_cls</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">_Prior</span><span class="p">],</span>
+</span><span data-line="270">    <span class="n">nbins</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+</span><span data-line="271">    <span class="n">bmin</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="272">    <span class="n">bmax</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="273"><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleDict</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]:</span>
+</span><span data-line="274"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Function for parametrizing a list of priors based on type-specific interactions contained in</span>
+</span><span data-line="275"><span class="sd">    a collated AtomicData structure</span>
+</span><span data-line="276">
+</span><span data-line="277"><span class="sd">    Parameters</span>
+</span><span data-line="278"><span class="sd">    ----------</span>
+</span><span data-line="279"><span class="sd">    data:</span>
+</span><span data-line="280"><span class="sd">        Input data, in the form of a collated list of individual AtomicData</span>
+</span><span data-line="281"><span class="sd">        structures.</span>
+</span><span data-line="282"><span class="sd">    beta:</span>
+</span><span data-line="283"><span class="sd">        Inverse thermodynamic temperature:</span>
+</span><span data-line="284">
+</span><span data-line="285"><span class="sd">        .. math::</span>
+</span><span data-line="286">
+</span><span data-line="287"><span class="sd">        \beta = \frac{1}{k_B T}</span>
+</span><span data-line="288">
+</span><span data-line="289"><span class="sd">        where :math:`k_B` is Boltzmann&#39;s constant and :math:`T` is the temperature.</span>
+</span><span data-line="290"><span class="sd">    priors_cls:</span>
+</span><span data-line="291"><span class="sd">       List of priors to parametrize based on the input data</span>
+</span><span data-line="292"><span class="sd">    nbins:</span>
+</span><span data-line="293"><span class="sd">        The number of bins over which 1-D feature histograms are constructed</span>
+</span><span data-line="294"><span class="sd">        in order to estimate distributions</span>
+</span><span data-line="295"><span class="sd">    bmin</span>
+</span><span data-line="296"><span class="sd">        If specified, the lower bound of bin edges. If not specified, the lower bound</span>
+</span><span data-line="297"><span class="sd">        defaults to the lowest value in the input feature</span>
+</span><span data-line="298"><span class="sd">    bmax</span>
+</span><span data-line="299"><span class="sd">        If specified, the upper bound of bin edges. If not specified, the upper bound</span>
+</span><span data-line="300"><span class="sd">        defaults to the greatest value in the input feature</span>
+</span><span data-line="301">
+</span><span data-line="302"><span class="sd">    Returns</span>
+</span><span data-line="303"><span class="sd">    -------</span>
+</span><span data-line="304"><span class="sd">    nn.Module:</span>
+</span><span data-line="305"><span class="sd">        The list of parametrized priors</span>
+</span><span data-line="306"><span class="sd">    Dict:</span>
+</span><span data-line="307"><span class="sd">        Corresponding statistsics for prior fits</span>
+</span><span data-line="308"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="309">
+</span><span data-line="310">    <span class="n">statistics</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span data-line="311">    <span class="n">models</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleDict</span><span class="p">()</span>
+</span><span data-line="312">    <span class="k">for</span> <span class="n">TargetPrior</span> <span class="ow">in</span> <span class="n">priors_cls</span><span class="p">:</span>
+</span><span data-line="313">        <span class="n">k</span> <span class="o">=</span> <span class="n">TargetPrior</span><span class="o">.</span><span class="n">name</span>
+</span><span data-line="314">        <span class="n">statistics</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">compute_statistics</span><span class="p">(</span>
+</span><span data-line="315">            <span class="n">data</span><span class="p">,</span>
+</span><span data-line="316">            <span class="n">k</span><span class="p">,</span>
+</span><span data-line="317">            <span class="n">beta</span><span class="p">,</span>
+</span><span data-line="318">            <span class="n">TargetPrior</span><span class="o">=</span><span class="n">TargetPrior</span><span class="p">,</span>
+</span><span data-line="319">            <span class="n">nbins</span><span class="o">=</span><span class="n">nbins</span><span class="p">,</span>
+</span><span data-line="320">            <span class="n">bmin</span><span class="o">=</span><span class="n">bmin</span><span class="p">,</span>
+</span><span data-line="321">            <span class="n">bmax</span><span class="o">=</span><span class="n">bmax</span><span class="p">,</span>
+</span><span data-line="322">        <span class="p">)</span>
+</span><span data-line="323">        <span class="n">models</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">TargetPrior</span><span class="p">(</span><span class="n">statistics</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+</span><span data-line="324">    <span class="k">return</span> <span class="n">models</span><span class="p">,</span> <span class="n">statistics</span></div>
 
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    data:</span>
-<span class="sd">        Input data, in the form of a collated list of individual AtomicData</span>
-<span class="sd">        structures.</span>
-<span class="sd">    beta:</span>
-<span class="sd">        Inverse thermodynamic temperature:</span>
-
-<span class="sd">        .. math::</span>
-
-<span class="sd">        \beta = \frac{1}{k_B T}</span>
-
-<span class="sd">        where :math:`k_B` is Boltzmann&#39;s constant and :math:`T` is the temperature.</span>
-<span class="sd">    priors_cls:</span>
-<span class="sd">       List of priors to parametrize based on the input data</span>
-<span class="sd">    nbins:</span>
-<span class="sd">        The number of bins over which 1-D feature histograms are constructed</span>
-<span class="sd">        in order to estimate distributions</span>
-<span class="sd">    bmin</span>
-<span class="sd">        If specified, the lower bound of bin edges. If not specified, the lower bound</span>
-<span class="sd">        defaults to the lowest value in the input feature</span>
-<span class="sd">    bmax</span>
-<span class="sd">        If specified, the upper bound of bin edges. If not specified, the upper bound</span>
-<span class="sd">        defaults to the greatest value in the input feature</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    nn.Module:</span>
-<span class="sd">        The list of parametrized priors</span>
-<span class="sd">    Dict:</span>
-<span class="sd">        Corresponding statistsics for prior fits</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">statistics</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">models</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleDict</span><span class="p">()</span>
-    <span class="k">for</span> <span class="n">TargetPrior</span> <span class="ow">in</span> <span class="n">priors_cls</span><span class="p">:</span>
-        <span class="n">k</span> <span class="o">=</span> <span class="n">TargetPrior</span><span class="o">.</span><span class="n">name</span>
-        <span class="n">statistics</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">compute_statistics</span><span class="p">(</span>
-            <span class="n">data</span><span class="p">,</span>
-            <span class="n">k</span><span class="p">,</span>
-            <span class="n">beta</span><span class="p">,</span>
-            <span class="n">TargetPrior</span><span class="o">=</span><span class="n">TargetPrior</span><span class="p">,</span>
-            <span class="n">nbins</span><span class="o">=</span><span class="n">nbins</span><span class="p">,</span>
-            <span class="n">bmin</span><span class="o">=</span><span class="n">bmin</span><span class="p">,</span>
-            <span class="n">bmax</span><span class="o">=</span><span class="n">bmax</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">models</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">TargetPrior</span><span class="p">(</span><span class="n">statistics</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
-    <span class="k">return</span> <span class="n">models</span><span class="p">,</span> <span class="n">statistics</span></div>
-
-</pre></div>
-
-           </div>
-          </div>
-          <footer>
-
-  <hr/>
-
-  <div role="contentinfo">
-    <p>&#169; Copyright 2026, Felix Musil &amp; Nick Charron.</p>
+</span></pre></div>
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright"><p>2026, Clementi Group</p>
+  
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> and
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials"></div>
+    </div>
   </div>
-
-  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    provided by <a href="https://readthedocs.org">Read the Docs</a>.
-   
-
 </footer>
-        </div>
-      </div>
-    </section>
-  </div>
-  <script>
-      jQuery(function () {
-          SphinxRtdTheme.Navigation.enable(true);
-      });
-  </script> 
-
-</body>
+      <script src="../../../_static/documentation_options.js?v=92734c54"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../_static/shibuya.js?v=cac61aee"></script></body>
 </html>

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-color="plum" data-content_root="../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Parallel Tempering Simulation - mlcg 0.1.2 documentation</title><link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Simulation utilities" href="utils.html" /><link rel="prev" title="Overdamped Simulation" href="overdamped.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=31853864" />
+    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=44020203" />
+    <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    <meta property="og:type" content="website"/><meta property="og:title" content="Parallel Tempering Simulation"/>
+    <meta name="twitter:card" content="summary"/>
+  </head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../index.html">
+      
+      
+      <strong>mlcg</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="sy-head-socials"></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6">
+        <div class="globaltoc" data-expand-depth="0"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../data/index.html">Data and datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../data/atom_data.html">Molecular Data Representation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data/fixed_datasets.html">Fixed datasets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data/h5_datasets.html">H5 Dataset</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../geometry/index.html">Geometry and Neighbor lists</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/internal_coordinates.html">Internal Coordinate Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/neighbor_list.html">Neighbor Lists</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/topology.html">Topology Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../geometry/statistics.html">Statistics Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../models/index.html">Model utilities</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../models/priors.html">Priors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../models/cutoffs.html">Cutoff Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../models/rbfs.html">Radial Basis Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../models/mlip.html">MLIPs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../models/wrappers.html">Gradient/sum wrappers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../models/losses.html">Loss Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../training.html">Training</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Simulations</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="langevin.html">Langevin Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overdamped.html">Overdamped Simulation</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Parallel Tempering Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils.html">Simulation utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../misc/index.html">Miscellaneous utilities</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../misc/coarse_graining.html">Coarse Graining</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../misc/utils.html">General utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../misc/mol_utils.html">Molecular utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">Developer Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../dev/doc.html">Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/tests.html">Tests</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bibliography.html">Bibliography</a></li>
+</ul>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#mlcg.simulation.OverdampedSimulation"><code class="docutils literal notranslate"><span class="pre">OverdampedSimulation</span></code></a></li>
+</ul>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name">mlcg</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="index.html"><span itemprop="name">Simulations</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">Parallel Tempering Simulation</strong>
+        <meta itemprop="position" content="3" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <article class="yue" role="main">
+          <section id="parallel-tempering-simulation">
+<h1>Parallel Tempering Simulation<a class="headerlink" href="#parallel-tempering-simulation" title="Link to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcg.simulation.OverdampedSimulation">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.simulation.</span></span><span class="sig-name descname"><span class="pre">OverdampedSimulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">friction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/simulation/langevin.html#OverdampedSimulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.simulation.OverdampedSimulation" title="Link to this definition">¶</a></dt>
+<dd><p>Overdamped Langevin simulation class for trained models.</p>
+<p>The following Brownian motion scheme is used:</p>
+<div class="math-wrapper docutils container">
+<div class="math notranslate nohighlight">
+\[dX_t = - \nabla U( X_t )   D  \Delta t + \sqrt{( 2  D \Delta t / \beta )} dW_t\]</div>
+</div>
+<p>for coordinates <span class="math notranslate nohighlight">\(X_t\)</span> at time <span class="math notranslate nohighlight">\(t\)</span>, potential energy <span class="math notranslate nohighlight">\(U\)</span>,
+diffusion <span class="math notranslate nohighlight">\(D\)</span>, thermodynamic inverse temperature <span class="math notranslate nohighlight">\(\beta\)</span>,
+time step <span class="math notranslate nohighlight">\(\Delta t\)</span>, and stochastic Weiner process <span class="math notranslate nohighlight">\(W\)</span>.</p>
+<p>Due to the nature of Overdamped Langevin dynamics, the masses and velocities
+are not used.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>diffusion</strong> – The constant diffusion parameter <span class="math notranslate nohighlight">\(D\)</span>. By default, the diffusion
+is set to unity and is absorbed into the <span class="math notranslate nohighlight">\(\Delta t\)</span> argument.
+However, users may specify separate diffusion and <span class="math notranslate nohighlight">\(\Delta t\)</span>
+parameters in the case that they have some estimate of the diffusion.</p></li>
+<li><p><strong>dt</strong> (<em>float</em><em>, </em><em>default=5e-4</em>) – <p>The integration time step for the dynamics. The simulation code is unit agnostic
+and will use the same distance and energy units that the network and initial configurations.
+However, for the two other parameters in a simulation, time and mass, only one of them is unit-agnostic:
+<strong>if you provide the time thinking in a particular unit, the unit of mass is defined, and
+viceversa. Be aware that only either mass or time can be provided in custom units</strong>.</p>
+<p>The following relation must be satisfied by the units to ensure consistency:</p>
+<div class="math-wrapper docutils container">
+<div class="math notranslate nohighlight">
+\[[\text{Energy}] = [\text{Mass}]\frac{[\text{Length}]^2}{[\text{Time}]^2}\]</div>
+</div>
+<p>For example, if you are using kcal/mol for the energy, Angstrom from the distance and time
+in picoseconds, the masses will need to be provided in units of AMU/418.39.</p>
+</p></li>
+<li><p><strong>save_forces</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to save forces at the same saved interval as the simulation
+coordinates</p></li>
+<li><p><strong>save_energies</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to save potential at the same saved interval as the simulation
+coordinates</p></li>
+<li><p><strong>save_force_components</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to save model energy components at the same saved interval as the simulation
+coordinates.</p></li>
+<li><p><strong>save_energy_components</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to save model energy components at the same saved interval as the simulation
+coordinates.</p></li>
+<li><p><strong>force_components</strong> (<em>list</em><em>[</em><em>str</em><em>] </em><em>| </em><em>None</em><em>, </em><em>default= None - list</em><em> of </em><em>keys to be saved. Only used when</em>) – save_force_components is True.</p></li>
+<li><p><strong>energy_components</strong> (<em>list</em><em>[</em><em>str</em><em>] </em><em>| </em><em>None</em><em>, </em><em>default= None - list</em><em> of </em><em>keys to be saved. Only used when</em>) – save_energy_components is True.</p></li>
+<li><p><strong>create_checkpoints</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Save the atomic data object so it can be reloaded in. Overwrites previous object.</p></li>
+<li><p><strong>read_checkpoint_file</strong> (<em>[</em><em>str</em><em>,</em><em>bool</em><em>]</em><em>, </em><em>default=None</em>) – Whether to read in checkpoint file from. Can specify explicit file path or try to infer from self.filename</p></li>
+<li><p><strong>n_timesteps</strong> (<em>int</em><em>, </em><em>default=100</em>) – The length of the simulation in simulation timesteps</p></li>
+<li><p><strong>save_interval</strong> (<em>int</em><em>, </em><em>default=10</em>) – The interval at which simulation timesteps should be saved. Must be
+a factor of the simulation length</p></li>
+<li><p><strong>random_seed</strong> (<em>int</em><em>, </em><em>default=None</em>) – Seed for random number generator; if seeded, results always will be
+identical for the same random seed</p></li>
+<li><p><strong>device</strong> (<em>str</em><em>, </em><em>default='cpu'</em>) – Device upon which simulation computation will be carried out</p></li>
+<li><p><strong>dtype</strong> (<em>str</em><em>, </em><em>default='single'</em>) – precision to run the simulation with (single or double)</p></li>
+<li><p><strong>export_interval</strong> (<em>int</em><em>, </em><em>default=None</em>) – Interval at which .npy files will be saved. If an int is given, then
+the int specifies at what intervals numpy files will be saved per
+observable. This number must be an integer multiple of save_interval.
+All output files should be the same shape. Forces and potentials will
+also be saved according to the save_forces and save_energies
+arguments, respectively. If friction is not None, kinetic energies
+will also be saved. This method is only implemented for a maximum of
+1000 files per observable due to file naming conventions.
+If None, export_interval will be set to n_timesteps to output one file
+for the entire simulation</p></li>
+<li><p><strong>log_interval</strong> (<em>int</em><em>, </em><em>default=None</em>) – If not None, a log will be generated indicating simulation start and
+end times as well as completion updates at regular intervals. If an
+int is given, then the int specifies how many log statements will be
+output. This number must be a multiple of save_interval.</p></li>
+<li><p><strong>log_type</strong> (<em>str</em><em>, </em><em>default='write'</em>) – Only relevant if log_interval is not None. If ‘print’, a log statement
+will be printed. If ‘write’, the log will be written to a .txt file.</p></li>
+<li><p><strong>filename</strong> (<em>str</em><em>, </em><em>default=None</em>) – Specifies the location to which numpys and/or log files are saved.
+Must be provided if export_interval is not None and/or if log_interval
+is not None and log_type is ‘write’. This provides the base file name;
+for numpy outputs, ‘_coords_000.npy’ or similar is added. For log
+outputs, ‘_log.txt’ is added.</p></li>
+<li><p><strong>specialize_priors</strong> (<em>bool</em><em>, </em><em>default=False</em>) – use optimized version of the priors for a particular molecule</p></li>
+<li><p><strong>dtype</strong> – precision to run the simulation with (single or double)</p></li>
+<li><p><strong>sim_subroutine</strong> – Optional subroutine to run at at the interval specified by
+subroutine_interval after simulation updates. The subroutine should
+take only the internal collated <cite>AtomicData</cite> instance as an argument.</p></li>
+<li><p><strong>sim_subroutine_interval</strong> – Specifies the interval, in simulation steps, between successive calls to
+the subroutine, if specified.</p></li>
+<li><p><strong>save_subroutine</strong> – Specifies additional saving procedures for extra information at the
+same interval as export_interval. The subroutine should take only the
+internal collated <cite>AtomicData</cite> and the current timestep // save_interval as
+arguments.</p></li>
+<li><p><strong>compile</strong> – If set to True, model will be compiled using torch.compile.</p></li>
+<li><p><strong>compile_mode</strong> – Specifies the compilation mode for torch.compile.
+See <a class="reference external" href="https://docs.pytorch.org/docs/stable/generated/torch.compile.html">https://docs.pytorch.org/docs/stable/generated/torch.compile.html</a>
+for more information.</p></li>
+<li><p><strong>force_compile</strong> – If set to True, compilation will be forced even for single structure
+simulations. This should be used with extreme caution since it may
+expose known issues with scatter operations and may produce invalid
+outputs or NaN gradients.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="overdamped.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title">Overdamped Simulation</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="utils.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title">Simulation utilities</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright"><p>2026, Clementi Group</p>
+  
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> and
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials"></div>
+    </div>
+  </div>
+</footer>
+      <script src="../_static/documentation_options.js?v=92734c54"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/shibuya.js?v=cac61aee"></script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script></body>
+</html>
