@@ -106,7 +106,7 @@ To produce a report locally, run:
     coverage run -m pytest
     coverage report
 
-This will run the full set of tests in `mlcg` and the larger test under `examples/test_examples.py`, 
+This will run the full set of unit and continuity tests in `mlcg` and the larger integration tests under `tests/integration`, 
 including training and simulation of all models described in `examples/input_yamls/README.md`.  
 
 For quick local development testing, it is also possible to exclude the large test by running:

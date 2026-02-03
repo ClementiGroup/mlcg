@@ -23,7 +23,7 @@ The `slurm` folder contains an example of a SLURM bash script, and its accompany
 
 ## Warning (for developers!)
 
-The tests in `test_examples` directly parse and execute the example commands written in this README to validate all the YAML files in the `./input_yamls` folder.  
+The tests in `tests/integration/test_examples.py` directly parse and execute the example commands written in this README to validate all the YAML files in the `./input_yamls` folder.  
 This means:
 - Any modification to the example YAMLs **or** to this document must be done very carefully.  
 - Changes may break the automated tests if the commands, file names, or structure no longer match.  
