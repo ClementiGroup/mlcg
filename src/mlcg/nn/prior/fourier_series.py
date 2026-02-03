@@ -39,9 +39,9 @@ class FourierSeries(_Prior):
         .. code-block:: python
 
             tuple(*specific_types) : {
-                "k1s" : torch.Tensor that contains all k1 coefficients
-                "k2s" : torch.Tensor that contains all k2 coefficients
-                "v_0" : torch.Tensor that contains the constant offset
+                "k1s" : #torch.Tensor that contains all k1 coefficients
+                "k2s" : #torch.Tensor that contains all k2 coefficients
+                "v_0" : #torch.Tensor that contains the constant offset
                 ...
                 }
 

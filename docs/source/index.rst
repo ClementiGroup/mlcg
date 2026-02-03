@@ -19,27 +19,25 @@ This is the base code to create models such as the ones described in [TransCGSch
 
 
 Contents
---------
+========
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
-   data
-   geometry
-   neighbor_list
-   coarse_graining
-   datasets
-   priors
-   models
+   data/index
+   geometry/index
+   models/index
    training
-   simulation
-   dev/dev
+   simulation/index
+   misc/index
+   dev/index
+   examples
    bibliography
 
 
 
 Indices and tables
-==================
+-----------------
 
 * :ref:`genindex`
 * :ref:`modindex`
