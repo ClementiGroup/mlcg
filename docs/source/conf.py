@@ -26,7 +26,7 @@ copyright = "2026, Clementi Group"
 author = "Clementi Group"
 
 # The full version, including alpha/beta/rc tags
-release = "0.1.2"
+release = "0.1.3"
 
 
 # -- General configuration ---------------------------------------------------
