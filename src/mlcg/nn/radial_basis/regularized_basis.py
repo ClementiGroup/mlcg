@@ -158,8 +158,12 @@ class RegularizedBasis(torch.nn.Module):
         Compute the regualrization parameters for the case were regularization
         parameters are specific for different basis sets.
         """
-        return torch.stack(
-            [r(type_i, type_j) for r in self.regularization], dim=0
+        return torch.clamp(
+            torch.stack(
+                [r(type_i, type_j) for r in self.regularization], dim=0
+            ),
+            min=0.0,
+            max=1.0,
         )
 
     def _compute_shared_regularization_params(self, type_i, type_j):
@@ -167,10 +171,12 @@ class RegularizedBasis(torch.nn.Module):
         Compute the regualrization parameters for the case were regularization
         parameters are shared between different basis sets.
         """
-        return (
+        return torch.clamp(
             self.regularization(type_i, type_j)
             .unsqueeze(0)
-            .expand(self.n_basis_set, -1, -1)
+            .expand(self.n_basis_set, -1, -1),
+            min=0.0,
+            max=1.0,
         )
 
     def _get_independent_regularization_parameters(self) -> torch.Tensor:
@@ -208,3 +214,31 @@ class RegularizedBasis(torch.nn.Module):
 
     def reset_parameters(self):
         pass  # Added for compatibility: reset is done in the initialization
+
+    def plot(self, i, j, layer=0, ax=None, **kwargs):
+        r"""Method for quickly visualizing a specific basis. This is useful for
+        inspecting the distance coverage of basis functions for non-default lower
+        and upper cutoffs.
+        """
+
+        import matplotlib.pyplot as plt
+
+        distances = torch.linspace(
+            self.cutoff.cutoff_lower - 1,
+            self.cutoff.cutoff_upper + 1,
+            1000,
+        )
+        i, j = torch.as_tensor(i), torch.as_tensor(j)
+        expanded_distances = self(distances, i, j)
+
+        if ax is None:
+            fig, ax = plt.subplots()
+
+        for _i in range(expanded_distances.shape[-1]):
+            ax.plot(
+                distances.numpy(),
+                expanded_distances[layer, :, _i].detach().numpy(),
+                **kwargs,
+            )
+
+        return ax
