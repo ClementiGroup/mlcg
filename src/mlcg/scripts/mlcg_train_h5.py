@@ -21,8 +21,8 @@ def main():
     print("Start: {}".format(ctime()))
 
     cli = LightningCLI(
-        PLModel,
-        H5DataModule,
+        model_class=PLModel,
+        datamodule_class=H5DataModule,
         save_config_kwargs={"overwrite": True},
         parser_kwargs={"error_handler": None},
     )

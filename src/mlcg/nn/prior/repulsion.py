@@ -16,7 +16,7 @@ class Repulsion(_Prior):
 
     .. math::
 
-        U_{ \textnormal{Repulsion}}(x) = (\sigma/x)^6
+        U_{ \textnormal{Repulsion}}(x) = \left(\frac{\sigma}{x}\right)^6
 
     where :math:`\sigma` is the excluded volume.
 
@@ -33,8 +33,8 @@ class Repulsion(_Prior):
         .. code-block:: python
 
             tuple(*specific_types) : {
-                "sigma" : torch.Tensor scalar that describes the excluded
-                    volume of the two interacting atoms.
+                "sigma" : #torch.Tensor scalar that describes the excluded
+                    #volume of the two interacting atoms.
                 ...
 
                 }

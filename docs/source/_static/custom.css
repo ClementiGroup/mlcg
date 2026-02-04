@@ -1,0 +1,38 @@
+/* --- 1) Stop Shibuya/Sphinx signature gutter hacks from clipping --- */
+dl.py > dt.sig,
+dl.py > dt.sig-object {
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+  text-indent: 0 !important;
+  left: auto !important;
+}
+
+/* Some themes use a pseudo-element for a left bar/offset; disable it */
+dl.py > dt.sig::before,
+dl.py > dt.sig-object::before {
+  content: none !important;
+}
+
+/* --- 2) Now apply the box cleanly --- */
+dl.py > dt.sig,
+dl.py > dt.sig-object {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+
+  padding: 0.6rem 0.8rem !important;
+  margin: 1rem 0 0.5rem !important;
+
+  border: 1px solid var(--shibuya-border, var(--color-foreground-border, rgba(127,127,127,.35)));
+  border-radius: 6px;
+  background: var(--shibuya-surface, var(--color-background-secondary, rgba(127,127,127,.08)));
+}
+
+/* Keep the "class"/"method" label from being clipped */
+dl.py > dt.sig .sig-prename,
+dl.py > dt.sig-object .sig-prename {
+  display: inline-block;
+  padding-right: 0.25em;
+}

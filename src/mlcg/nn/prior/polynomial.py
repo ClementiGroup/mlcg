@@ -15,9 +15,9 @@ class Polynomial(_Prior):
     Prior representing a polynomial with
     the following energy ansatz:
 
-    .. math:
+    .. math::
 
-        V(r) = V_0 + \sum_{n=1}^{n_deg} k_n (x-x_0)^n
+        V(x) = V_0 + \sum_{n=1}^{n_{deg}} k_n x^n
 
 
     Parameters
@@ -33,8 +33,8 @@ class Polynomial(_Prior):
         .. code-block:: python
 
             tuple(*specific_types) : {
-                "ks" : torch.Tensor that contains all k_1,..,k_{n_degs} coefficients
-                "v_0" : torch.Tensor that contains the constant offset
+                "ks" : ,#torch.Tensor that contains all k_1,..,k_{n_degs} coefficients
+                "v_0" : ,#torch.Tensor that contains the constant offset
                 ...
                 }
 

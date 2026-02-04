@@ -2,19 +2,40 @@ from typing import Dict, Mapping, Optional
 import torch
 from .torch_impl import torch_neighbor_list
 
+try:
+    from .nvalchemi_impl import (
+        nvalchemi_naive_neighbor_list,
+        nvalchemi_cell_neighbor_list,
+    )
+except ImportError:
+    print(
+        "nalchemi is not installed. Please install with "
+        + "pip install nvalchemi-toolkit-ops"
+    )
+
+try:
+    from mlcg_opt_radius.radius import radius_distance
+except ImportError:
+    print(
+        "`mlcg_opt_radius` not installed. Please check the"
+        + "`opt_radius` folder and follow the instructions."
+    )
+    radius_distance = None
+
 
 def atomic_data2neighbor_list(
     data,
     rcut: float,
     self_interaction: bool = False,
     max_num_neighbors: int = 1000,
+    nls_distance_method: str = "torch",
 ) -> Dict:
-    """Build a neighborlist from a :ref:`mlcg.data.atomic_data.AtomicData` by
+    """Build a neighborlist from a :ref:`mlcg.data.AtomicData` by
     searching for neighboring atom within a maximum radius `rcut`.
 
     Parameters
     ----------
-    data: :ref:`mlcg.data.atomic_data.AtomicData`
+    data: :ref:`mlcg.data.AtomicData`
         define an atomic structure
     rcut:
         cutoff radius used to compute the connectivity
@@ -24,14 +45,28 @@ def atomic_data2neighbor_list(
         The maximum number of neighbors to return for each atom in :obj:`data`.
         If the number of actual neighbors is greater than
         :obj:`max_num_neighbors`, returned neighbors are picked randomly.
-
+    nls_distance_method:
+        Method for computing a neighbohr list. Suppoerted values are
+        `torch`, `nvalchemi_naive`, `nvalchemi_cell` and `custom_kernel`.
     Returns
     -------
     Dict:
         Neighborlist dictionary
     """
     rcut = float(rcut)
-    idx_i, idx_j, cell_shifts, _ = torch_neighbor_list(
+    if nls_distance_method == "torch":
+        met = torch_neighbor_list
+    elif nls_distance_method == "nvalchemi_naive":
+        met = nvalchemi_naive_neighbor_list
+    elif nls_distance_method == "nvalchemi_cell":
+        met = nvalchemi_cell_neighbor_list
+    elif nls_distance_method == "custom_kernel":
+        met = torch_neighbor_list
+    else:
+        raise ValueError(
+            f"Method {nls_distance_method} not supported for nls-distance computation "
+        )
+    idx_i, idx_j, cell_shifts, _ = met(
         data,
         rcut,
         self_interaction=self_interaction,
@@ -49,7 +84,7 @@ def atomic_data2neighbor_list(
 
     assert torch.all(
         batch[mapping[0]] == batch[mapping[1]]
-    ), "torch_neighbor_list() returned pairs of indices in different structures"
+    ), f"neighbor list method {nls_distance_method} returned pairs of indices in different structures"
 
     mapping_batch = batch[mapping[0]]
     return make_neighbor_list(

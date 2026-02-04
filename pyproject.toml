@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mlcg"
-version = "0.1.2"
+version = "0.1.3"
 description = "A collection of tools for processing raw simulation data for use in training machine-learned, coarse-grained (CG) force fields using the MLCG library"
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.12"
@@ -53,6 +53,9 @@ dependencies = [
     "torch-cluster",
     "torchist>=1.0.1",
     "torch_optimizer<=1.5.1",
+    "cuequivariance",
+    "cuequivariance-torch",
+    "cuequivariance-ops-torch-cu12",
     "tqdm>=4.67.1",
     # developer tools
     "black[jupyter]",
@@ -110,12 +113,11 @@ extend-exclude = '''
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "-ra"
-testpaths = [
-    "tests",
-    "examples",
-]
+testpaths = ["tests"]
 markers = [
-    "heavy: test that should be skipped in --light mode"
+    "integration: slow CLI / system integration tests",
+    "unit: fast unit tests",
+    "continuity: tests for checking continuity with old checkpoints",
 ]
 filterwarnings = [
     "ignore::DeprecationWarning"
