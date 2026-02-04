@@ -217,6 +217,7 @@ class Repulsion(_Prior):
             )
         }
 
+
 class ExpRepulsion(_Prior):
     r"""1-D exp-6 potential repulsion prior for feature :math:`x` of the form:
 
@@ -303,7 +304,9 @@ class ExpRepulsion(_Prior):
             data.atom_types[mapping[ii]] for ii in range(self.order)
         ]
         features = self.data2features(data)
-        y = ExpRepulsion.compute(features, self.alpha[interaction_types], self.r_0[interaction_types])
+        y = ExpRepulsion.compute(
+            features, self.alpha[interaction_types], self.r_0[interaction_types]
+        )
         y = scatter(y, mapping_batch, dim=0, reduce="sum")
         data.out[self.name] = {"energy": y}
         return data
@@ -317,7 +320,6 @@ class ExpRepulsion(_Prior):
         """Method defining the repulsion interaction"""
         rr = 1 - (x / r_0)
         return (6 / alpha) * torch.exp(alpha * rr)
-
 
     @staticmethod
     def neighbor_list(topology: Topology) -> Dict:

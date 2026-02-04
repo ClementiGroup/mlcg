@@ -219,6 +219,16 @@ class RegularizedBasis(torch.nn.Module):
         r"""Method for quickly visualizing a specific basis. This is useful for
         inspecting the distance coverage of basis functions for non-default lower
         and upper cutoffs.
+
+        Parameters:
+        ----------
+        distances : torch.Tensor
+            Tensor of shape (num_edges,) containing the distances between atom pairs.
+        i : torch.Tensor
+            Tensor of shape (num_edges,) containing the types of the first atom in each pair.
+        j : torch.Tensor
+            Tensor of shape (num_edges,) containing the types of the second atom in each pair.
+
         """
 
         import matplotlib.pyplot as plt
