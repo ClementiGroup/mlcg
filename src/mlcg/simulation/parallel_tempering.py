@@ -146,13 +146,11 @@ class PTSimulation(LangevinSimulation):
 
         else:
             # Initialize velocities according to Maxwell-Boltzmann distribution
-            self.initial_data[
-                VELOCITY_KEY
-            ] = LangevinSimulation.sample_maxwell_boltzmann(
-                self.beta.repeat_interleave(self.n_atoms),
-                self.initial_data[MASS_KEY],
-            ).to(
-                self.dtype
+            self.initial_data[VELOCITY_KEY] = (
+                LangevinSimulation.sample_maxwell_boltzmann(
+                    self.beta.repeat_interleave(self.n_atoms),
+                    self.initial_data[MASS_KEY],
+                ).to(self.dtype)
             )
         self.initial_data[MASS_KEY] = self.initial_data[MASS_KEY].to(self.dtype)
         self.initial_data[POSITIONS_KEY] = self.initial_data[POSITIONS_KEY].to(
@@ -239,13 +237,11 @@ class PTSimulation(LangevinSimulation):
                 POSITIONS_KEY
             ].to(self.dtype)
             # Initialize velocities according to Maxwell-Boltzmann distribution
-            self.initial_data[
-                VELOCITY_KEY
-            ] = LangevinSimulation.sample_maxwell_boltzmann(
-                self.beta.repeat_interleave(self.n_atoms),
-                self.initial_data[MASS_KEY],
-            ).to(
-                self.dtype
+            self.initial_data[VELOCITY_KEY] = (
+                LangevinSimulation.sample_maxwell_boltzmann(
+                    self.beta.repeat_interleave(self.n_atoms),
+                    self.initial_data[MASS_KEY],
+                ).to(self.dtype)
             )
 
         self.initial_data[MASS_KEY] = self.initial_data[MASS_KEY].to(self.dtype)

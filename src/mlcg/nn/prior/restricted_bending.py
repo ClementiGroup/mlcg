@@ -176,7 +176,7 @@ class RestrictedQuartic(_Prior):
 
     @staticmethod
     def compute_features(
-        pos: torch.Tensor, 
+        pos: torch.Tensor,
         mapping: torch.Tensor,
         pbc: torch.Tensor = None,
         cell: torch.Tensor = None,
