@@ -26,6 +26,22 @@ except ImportError as e:
         ""
     )
 
+try:
+    import cuequivariance as cue
+    import cuequivariance_torch as cuet
+
+    CUET_AVAILABLE = True
+except ImportError:
+    CUET_AVAILABLE = False
+    print(
+        "cuEquivariance is not installed. cuEquivariance features will be disabled. It is recommended to install cuEquivariance for better performance. "
+        + "To install cuEquivariance run pip install cuequivariance cuequivariance-torch cuequivariance-ops-torch-cu12 "
+        + 'Replace "cu12" with "cu11" if you are using CUDA 11.'
+    )
+
+if CUET_AVAILABLE:
+    from mace.modules.wrapper_ops import CuEquivarianceConfig
+
 # from ..pl.model import get_class_from_str
 from ..data.atomic_data import AtomicData, ENERGY_KEY
 from ..neighbor_list.neighbor_list import (
@@ -62,6 +78,9 @@ class MACE(torch.nn.Module):
             Maximum number of neighbors per atom.
         pair_repulsion_fn (torch.nn.Module, optional):
             Optional pairwise repulsion energy function.
+        nls_distance_method:
+            Method for computing a neighbor list. Supported values are
+            `torch`, `nvalchemi_naive`, `nvalchemi_cell` and custom.
     """
 
     name: Final[str] = "mace"
@@ -78,6 +97,7 @@ class MACE(torch.nn.Module):
         r_max: float,
         max_num_neighbors: int,
         pair_repulsion_fn: torch.nn.Module = None,
+        nls_distance_method: str = "torch",
     ):
         super().__init__()
 
@@ -91,6 +111,7 @@ class MACE(torch.nn.Module):
         self.r_max = r_max
         self.max_num_neighbors = max_num_neighbors
         self.pair_repulsion_fn = pair_repulsion_fn
+        self.nls_distance_method = nls_distance_method
 
         self.register_buffer(
             "types_mapping",
@@ -135,7 +156,7 @@ class MACE(torch.nn.Module):
         vectors, lengths = get_edge_vectors_and_lengths(
             positions=data.pos,
             edge_index=edge_index,
-            shifts=neighbor_list["cell_shifts"][:, :, 1],  # TODO check on that
+            shifts=neighbor_list["cell_shifts"],
         )
         edge_attrs = self.spherical_harmonics(vectors)
         edge_feats = self.radial_embedding(
@@ -204,17 +225,22 @@ class MACE(torch.nn.Module):
                 is_compatible = True
         return is_compatible
 
-    @staticmethod
     def neighbor_list(
-        data: AtomicData, rcut: float, max_num_neighbors: int = 1000
+        self,
+        data: AtomicData,
+        rcut: float,
+        max_num_neighbors: int = 1000,
     ) -> dict:
         """Computes the neighborlist for :obj:`data` using a strict cutoff of :obj:`rcut`."""
+        if not hasattr(self, "nls_distance_method"):
+            self.nls_distance_method = "torch"
         return {
             MACE.name: atomic_data2neighbor_list(
                 data,
                 rcut,
                 self_interaction=False,
                 max_num_neighbors=max_num_neighbors,
+                nls_distance_method=self.nls_distance_method,
             )
         }
 
@@ -268,7 +294,9 @@ class StandardMACE(MACE):
         radial_type (Optional[str], optional):
             Radial basis type.
         cueq_config (Optional[Dict[str, Any]], optional):
-            Configuration for charge equilibration.
+            cuEquivariance configuration.
+        use_cueq (Optional[bool], optional):
+            Whether to use cuEquivariance acceleration.
     """
 
     def __init__(
@@ -291,7 +319,11 @@ class StandardMACE(MACE):
         distance_transform: str = "None",
         radial_MLP: Optional[List[int]] = None,
         radial_type: Optional[str] = "bessel",
-        cueq_config: Optional[Dict[str, Any]] = None,
+        cueq_config: Optional[Any] = None,
+        use_cueq: Optional[
+            bool
+        ] = False,  # defaults to False for backwards compatibility
+        nls_distance_method: str = "torch",
     ):
         from mlcg.pl.model import get_class_from_str
 
@@ -301,7 +333,25 @@ class StandardMACE(MACE):
 
         hidden_irreps = o3.Irreps(hidden_irreps)
         MLP_irreps = o3.Irreps(MLP_irreps)
-
+        # Default to create CuEquivariance config if installed
+        if CUET_AVAILABLE and use_cueq:
+            print("=" * 60)
+            print("INITIALIZING CUEQUIVARIANCE")
+            print("=" * 60)
+            print("Note: CuEquivariance kernels will be compiled on first use.")
+            print(
+                "This may take a few minutes but only happens once per configuration."
+            )
+            print("=" * 60)
+            cueq_config = CuEquivarianceConfig(
+                enabled=True,
+                layout="ir_mul",  # irreps, multiplicity
+                group="O3",
+                optimize_all=True,
+            )
+        else:
+            print("Using e3nn. cuEquivariance acceleration is disabled.")
+            cueq_config = None
         if isinstance(correlation, int):
             correlation = [correlation] * num_interactions
         # Embedding
@@ -427,4 +477,5 @@ class StandardMACE(MACE):
             r_max,
             max_num_neighbors,
             pair_repulsion_fn,
+            nls_distance_method=nls_distance_method,
         )

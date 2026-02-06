@@ -1,7 +1,0 @@
-Developer Documentation
-=======================
-
-
-.. toctree::
-
-   doc

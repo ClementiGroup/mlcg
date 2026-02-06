@@ -61,6 +61,7 @@ model:
           embedding_size: 50
           num_filters: 128
           num_interactions: 2
+          max_num_neighbors: 400
           output_hidden_layer_widths:
             - 100
             - 60

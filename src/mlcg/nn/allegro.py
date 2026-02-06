@@ -41,6 +41,22 @@ from mlcg.neighbor_list.neighbor_list import (
 
 from nequip.nn.mlp import ScalarLinearLayer
 
+try:
+    import cuequivariance as cue
+    import cuequivariance_torch as cuet
+
+    CUET_AVAILABLE = True
+except ImportError:
+    CUET_AVAILABLE = False
+    print(
+        "cuEquivariance is not installed. cuEquivariance features will be disabled. It is recommended to install cuEquivariance for better performance. "
+        + "To install cuEquivariance run pip install cuequivariance cuequivariance-torch cuequivariance-ops-torch-cu12 "
+        + 'Replace "cu12" with "cu11" if you are using CUDA 11.'
+    )
+
+if CUET_AVAILABLE:
+    from allegro.nn._strided._contract import Contracter
+
 
 def init_xavier_uniform(
     module: torch.nn.Module, zero_bias: bool = True
@@ -99,6 +115,9 @@ class Allegro(torch.nn.Module):
         Optional pair potential to add to the energy.
     max_num_neighbors : int, default=1000
         Maximum number of neighbors per atom to consider.
+    nls_distance_method:
+        Method for computing a neighbor list. Supported values are
+        `torch`, `nvalchemi_naive`, `nvalchemi_cell` and custom.
     """
 
     name: Final[str] = "allegro"
@@ -128,6 +147,7 @@ class Allegro(torch.nn.Module):
         per_type_energy_scale_shift,
         pair_potential=None,
         max_num_neighbors: int = 1000,
+        nls_distance_method: str = "torch",
     ):
         super().__init__()
 
@@ -141,6 +161,7 @@ class Allegro(torch.nn.Module):
         self.per_type_energy_scale_shift = per_type_energy_scale_shift
         self.pair_potential = pair_potential
         self.max_num_neighbors = max_num_neighbors
+        self.nls_distance_method = nls_distance_method
 
         self.reset_parameters()
 
@@ -257,33 +278,22 @@ class Allegro(torch.nn.Module):
                 is_compatible = True
         return is_compatible
 
-    @staticmethod
     def neighbor_list(
-        data: AtomicData, rcut: float, max_num_neighbors: int = 1000
+        self,
+        data: AtomicData,
+        rcut: float,
+        max_num_neighbors: int = 1000,
     ) -> dict:
-        """
-        Compute a neighbor list for the given atomic data.
-
-        Parameters
-        ----------
-        data : AtomicData
-            The atomic data to compute neighbor lists for.
-        rcut : float
-            Cutoff radius for neighbor identification.
-        max_num_neighbors : int, default=1000
-            Maximum number of neighbors per atom.
-
-        Returns
-        -------
-        dict
-            A dictionary containing the computed neighbor list.
-        """
+        """Computes the neighborlist for :obj:`data` using a strict cutoff of :obj:`rcut`."""
+        if not hasattr(self, "nls_distance_method"):
+            self.nls_distance_method = "torch"
         return {
             Allegro.name: atomic_data2neighbor_list(
                 data,
                 rcut,
                 self_interaction=False,
                 max_num_neighbors=max_num_neighbors,
+                nls_distance_method=self.nls_distance_method,
             )
         }
 
@@ -397,6 +407,9 @@ class StandardAllegro(Allegro):
         pair_potential: Optional[Dict] = None,
         # weight initialization and normalization
         forward_normalize: bool = True,
+        # cuequivariance acceleration
+        use_cueq: bool = False,
+        nls_distance_method: str = "torch",
     ):
         ## haking jit for module
         _original_script = torch.jit.script
@@ -531,6 +544,7 @@ class StandardAllegro(Allegro):
             irreps_in=edge_eng_sum.irreps_out,
         )
 
+        # Build the base model first
         super().__init__(
             edge_norm=edge_norm,
             radial_chemical_embed=radial_chemical_embed_module,
@@ -541,7 +555,20 @@ class StandardAllegro(Allegro):
             edge_eng_sum=edge_eng_sum,
             per_type_energy_scale_shift=per_type_energy_scale_shift,
             pair_potential=pair_potential,
+            nls_distance_method=nls_distance_method,
         )
+
+        # Apply CuEquivariance modifier if requested
+        if use_cueq:
+            if not CUET_AVAILABLE:
+                raise RuntimeError(
+                    "use_cueq=True but cuEquivariance is not installed. "
+                    "Install with: pip install cuequivariance cuequivariance-torch cuequivariance-ops-torch-cu12"
+                )
+
+            # Use Allegro's built-in CuEquivariance modifier
+            Contracter.enable_CuEquivarianceContracter(self)
+
         ## Restoring jit
         torch.jit.script = _original_script
 

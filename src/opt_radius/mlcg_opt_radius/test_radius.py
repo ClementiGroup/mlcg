@@ -66,7 +66,7 @@ TOL = 1e-6
 def test_radius(
     x_c, dim, x_range, r, batch_size, max_num_neighbors, loop, fdtype, device
 ):
-    (x_min, x_max) = x_range
+    x_min, x_max = x_range
     x = (x_max - x_min) * torch.rand(
         (x_c, dim), dtype=fdtype, device=device
     ) + x_min
@@ -124,7 +124,7 @@ def test_radius(
     ),
 )
 def test_with_gradcheck(x_c, dim, x_range, r, batch_size, fdtype, device):
-    (x_min, x_max) = x_range
+    x_min, x_max = x_range
     x = (x_max - x_min) * torch.rand(
         (x_c, dim), dtype=fdtype, device=device
     ) + x_min

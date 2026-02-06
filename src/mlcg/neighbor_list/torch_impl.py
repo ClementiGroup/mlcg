@@ -75,8 +75,7 @@ def torch_neighbor_list(
         (
             idx_i,
             idx_j,
-            cell_shifts_2d,
-            #cell_shifts,
+            cell_shifts,
             self_interaction_mask,
         ) = torch_neighbor_list_pbc(
             data,
@@ -85,13 +84,6 @@ def torch_neighbor_list(
             num_workers=num_workers,
             max_num_neighbors=max_num_neighbors,
         )
-        # HOTFIX: To match cell_shift requested in compute_distances it must
-        # be expanded to 3D (n_edges, 3, 2) with zeros in the first column 
-        # and shifts with respect to reference node in the second column. 
-        cell_shifts = torch.zeros(
-            (idx_i.shape[0], 3, 2), dtype=data.pos.dtype, device=data.pos.device
-        )
-        cell_shifts[:, :, 1] = cell_shifts_2d
     else:
         idx_i, idx_j, self_interaction_mask = torch_neighbor_list_no_pbc(
             data,
@@ -101,7 +93,7 @@ def torch_neighbor_list(
             max_num_neighbors=max_num_neighbors,
         )
         cell_shifts = torch.zeros(
-            (idx_i.shape[0], 3, 2), dtype=data.pos.dtype, device=data.pos.device
+            (idx_i.shape[0], 3), dtype=data.pos.dtype, device=data.pos.device
         )
 
     return idx_i, idx_j, cell_shifts, self_interaction_mask

@@ -1,3 +1,20 @@
+"""It is convinient to define various prior models for many types of
+interactions which leads to a large number of priors. While this is convinient
+when difining these priors, it results in a clear slowdown of the simulation.
+Below are defined Prior models that are specialized to a specific simulation.
+
+The prior models for which such specialization is available using the function
+
+.. autofunction:: condense_all_priors_for_simulation
+
+are listed in the :obj:`to_reduce` dictionary:
+
+.. autodata:: to_reduce
+
+The names of the specialized prior classes have the name of their original class
+with `Static` prepended and they are inherit from :obj:`StaticPrior`.
+"""
+
 import torch
 from typing import List, Type, Tuple
 from copy import deepcopy
@@ -17,25 +34,6 @@ from ..nn.prior import (
     HarmonicAngles,
     HarmonicImpropers,
 )
-
-"""It is convinient to define various prior models for many types of
-interactions which leads to a large number of priors. While this is convinient
-when difining these priors, it results in a clear slowdown of the simulation.
-Below are defined Prior models that are specialized to a specific simulation.
-
-The prior models for which such specialization is available using the function
-
-.. autofunction:: condense_all_priors_for_simulation
-
-are listed in the :obj:`to_reduce` dictionary:
-
-.. autodata:: to_reduce
-    :annotation:
-
-The names of the specialized prior classes have the name of their original class
-with `Static` prepended and they are inherit from :obj:`StaticPrior`.
-
-"""
 
 #: register the types of prior that can be reduced
 to_reduce = {

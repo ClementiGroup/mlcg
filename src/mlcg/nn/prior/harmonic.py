@@ -16,7 +16,6 @@ from ...geometry.internal_coordinates import (
     compute_torsions,
 )
 
-
 torch_pi = torch.tensor(pi)
 
 
@@ -45,10 +44,10 @@ class Harmonic(_Prior):
         .. code-block:: python
 
             tuple(*specific_types) : {
-                "k" : torch.Tensor scalar that describes the strength of the
-                    harmonic interaction.
-                "x_0" : torch.Tensor scalar that describes the mean feature
-                    value.
+                "k" : #torch.Tensor scalar that describes the strength of the
+                    #harmonic interaction.
+                "x_0" : #torch.Tensor scalar that describes the mean feature
+                    #value.
                 ...
 
                 }
@@ -251,7 +250,7 @@ class HarmonicAngles(Harmonic):
 
     .. math::
 
-        U_{\text{HarmonicAngles}}(\theta) = k\left( \cos{\theta} - \cos{\theta}_0 \right)^2
+        U_{\text{HarmonicAngles}}(\theta) = k\left( \cos{(\theta)} - \cos{(\theta_0)} \right)^2
 
     where :math:`\theta_0` is the value of the angle at equilibrium.
 

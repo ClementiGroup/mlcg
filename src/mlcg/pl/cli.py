@@ -19,7 +19,11 @@ class LightningCLI(plc.LightningCLI):
     4.9/common/lightning_cli.html#optimizers-and-learning-rate-schedulers>`_
     for more details.
 
-    + link manually some arguments related to the definition of the work directory. If `default_root_dir` argument of `pytorch_lightning.Trainer` is set and the `save_dir` / `log_dir` / `dirpath` argument of `loggers` / `data` / `callbacks` is set to `default_root_dir` then they will be set to the value of `default_root_dir` / `default_root_dir/data` / `default_root_dir/ckpt`.
+    + link manually some arguments related to the definition of the work directory. If
+    `default_root_dir` argument of `pytorch_lightning.Trainer` is set and the
+    `save_dir` / `log_dir` / `dirpath` argument of `loggers` / `data` / `callbacks` is
+    set to `default_root_dir` then they will be set to the value of
+    `default_root_dir` / `default_root_dir/data` / `default_root_dir/ckpt`.
 
     """
 

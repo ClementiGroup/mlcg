@@ -41,7 +41,7 @@ class SphericalHarmonics(torch.nn.Module):
 
         \partial_k Y^{l+1}_i(x) &= \text{cste}(l) \; (l+1) & C_{ijk} Y^l_j(x)
 
-    Where :math:`C` are the `wigner_3j`.
+    Where :math:`C` are the `Wigner 3-j symbols <https://en.wikipedia.org/wiki/3-j_symbol>`_.
 
     .. note::
 
