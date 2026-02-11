@@ -45,7 +45,7 @@ def compute_cell_shifts(
         batch_ids = batch[mapping[0]]
         cell_inv = torch.linalg.inv(cell[batch_ids])
         for ii in range(cell_shifts.shape[-1]):
-            drs = pos[mapping[0]] - pos[mapping[ii]]
+            drs = pos[mapping[0]] - pos[mapping[ii+1]]
             # convert to fractional displacement
             frac_dr = torch.einsum(
                 "bij,bj->bi",
