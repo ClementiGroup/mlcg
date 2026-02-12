@@ -15,8 +15,7 @@ def make_hdf5(tdir, detailed_idx=True):
     for i in range(10):
         n_atoms = np.random.randint(2, high=11)
         n_frames = np.random.randint(10, high=25)
-        name = np.random.randint(1, high=1000)
-        name = str(name)
+        name = str(i)
         mol_list.append(name)
         mol_frames.append(n_frames)
         coords = np.random.randn(n_frames, n_atoms, 3)
