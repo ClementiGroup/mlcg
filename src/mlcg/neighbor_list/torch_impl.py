@@ -360,9 +360,7 @@ def wrap_positions(data: AtomicData, device: str, eps: float = 1e-7) -> None:
     shift = -eps
 
     fractional = torch.where(
-        pbc_mask, 
-        (fractional - shift) % 1.0 + shift, 
-        fractional
+        pbc_mask, (fractional - shift) % 1.0 + shift, fractional
     )
     # Convert back to cartesian coordinates
     data.pos = torch.einsum("ni,nij->nj", fractional, cell_batch)
