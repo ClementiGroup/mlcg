@@ -69,7 +69,10 @@ from e3nn.util.jit import compile_mode
 @compile_mode("script")
 class CustomRealAgnosticResidualInteractionBlock(InteractionBlock):
     r"""version of the mace.modules.blocks RealAgnosticResidualInteractionBlock
-    without a hardcoded gate.
+    without a hardcoded tanh gate.
+
+    We avoid doing a general AgnosticResidualInteractionBlock as it would require
+    a larger rewritting of our MACE implementation
     """
 
     def _setup(self) -> None:
