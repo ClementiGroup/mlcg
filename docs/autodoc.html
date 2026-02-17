@@ -179,6 +179,10 @@ data-aria-dark="Switch to auto color mode">
 </ul>
 </li>
 <li><a class="reference internal" href="#mlcg.nn.painn.StandardPaiNN"><code class="docutils literal notranslate"><span class="pre">StandardPaiNN</span></code></a></li>
+<li><a class="reference internal" href="#mlcg.nn.mace.CustomRealAgnosticResidualInteractionBlock"><code class="docutils literal notranslate"><span class="pre">CustomRealAgnosticResidualInteractionBlock</span></code></a><ul>
+<li><a class="reference internal" href="#mlcg.nn.mace.CustomRealAgnosticResidualInteractionBlock.forward"><code class="docutils literal notranslate">forward()</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#mlcg.nn.mace.MACE"><code class="docutils literal notranslate"><span class="pre">MACE</span></code></a><ul>
 <li><a class="reference internal" href="#mlcg.nn.mace.MACE.forward"><code class="docutils literal notranslate">forward()</span></code></a></li>
 <li><a class="reference internal" href="#mlcg.nn.mace.MACE.neighbor_list"><code class="docutils literal notranslate">neighbor_list()</span></code></a></li>
@@ -1268,6 +1272,34 @@ for more options.</p>
 </dd></dl>
 
 <dl class="py class" id="module-mlcg.nn.mace">
+<dt class="sig sig-object py" id="mlcg.nn.mace.CustomRealAgnosticResidualInteractionBlock">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.nn.mace.</span></span><span class="sig-name descname"><span class="pre">CustomRealAgnosticResidualInteractionBlock</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node_attrs_irreps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_feats_irreps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_attrs_irreps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_feats_irreps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_irreps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hidden_irreps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">avg_num_neighbors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radial_MLP</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cueq_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/mace.html#CustomRealAgnosticResidualInteractionBlock"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.mace.CustomRealAgnosticResidualInteractionBlock" title="Link to this definition">¶</a></dt>
+<dd><p>version of the mace.modules.blocks RealAgnosticResidualInteractionBlock
+without a hardcoded tanh gate.</p>
+<p>We avoid doing a general AgnosticResidualInteractionBlock as it would require
+a larger rewritting of our MACE implementation</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcg.nn.mace.CustomRealAgnosticResidualInteractionBlock.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node_attrs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_feats</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_attrs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_feats</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lammps_class</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lammps_natoms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0,</span> <span class="pre">0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">first_layer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/mace.html#CustomRealAgnosticResidualInteractionBlock.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.mace.CustomRealAgnosticResidualInteractionBlock.forward" title="Link to this definition">¶</a></dt>
+<dd><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="mlcg.nn.mace.MACE">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.nn.mace.</span></span><span class="sig-name descname"><span class="pre">MACE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">atomic_numbers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_embedding</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radial_embedding</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spherical_harmonics</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interactions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">products</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readouts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_neighbors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pair_repulsion_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nls_distance_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'torch'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/mace.html#MACE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.mace.MACE" title="Link to this definition">¶</a></dt>
 <dd><p>Implementation of MACE neural network model from <a class="reference external" href="https://github.com/ACEsuit/mace">https://github.com/ACEsuit/mace</a></p>
