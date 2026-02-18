@@ -16,6 +16,7 @@ import logging
 from ..utils import tqdm
 
 from ..data.atomic_data import AtomicData
+from ..neighbor_list.torch_impl import wrap_positions
 from ..data._keys import (
     ENERGY_KEY,
     FORCE_KEY,
@@ -369,6 +370,11 @@ class _Simulation(object):
         ):
             # step forward in time
             data, potential, forces = self.timestep(data, forces)
+
+            pbc = getattr(data, "pbc", None)
+            cell = getattr(data, "cell", None)
+            if all([feat != None for feat in [pbc, cell]]):
+                data = wrap_positions(data, self.device)
 
             # save to arrays if relevant
             if (t + 1) % self.save_interval == 0:

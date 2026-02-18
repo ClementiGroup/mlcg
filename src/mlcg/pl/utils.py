@@ -158,7 +158,6 @@ class GradNormLogger(pl.Callback):
         self.log_every_n_steps = log_every_n_steps
 
     def on_after_backward(self, trainer, pl_module):
-
         if trainer.global_step % self.log_every_n_steps != 0:
             return
 

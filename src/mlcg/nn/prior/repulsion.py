@@ -75,7 +75,15 @@ class Repulsion(_Prior):
         """
 
         mapping = data.neighbor_list[self.name]["index_mapping"]
-        return Repulsion.compute_features(data.pos, mapping)
+        pbc = getattr(data, "pbc", None)
+        cell = getattr(data, "cell", None)
+        return self.compute_features(
+            pos=data.pos,
+            mapping=mapping,
+            pbc=pbc,
+            cell=cell,
+            batch=data.batch,
+        )
 
     def forward(self, data: AtomicData) -> AtomicData:
         """Forward pass through the repulsion interaction.
@@ -110,8 +118,20 @@ class Repulsion(_Prior):
         return data
 
     @staticmethod
-    def compute_features(pos, mapping):
-        return compute_distances(pos, mapping)
+    def compute_features(
+        pos: torch.Tensor,
+        mapping: torch.Tensor,
+        pbc: torch.Tensor = None,
+        cell: torch.Tensor = None,
+        batch: torch.Tensor = None,
+    ) -> torch.Tensor:
+        if all([feat != None for feat in [pbc, cell]]):
+            cell_shifts = _Prior._get_cell_shifts(
+                pos, mapping, pbc, cell, batch
+            )
+        else:
+            cell_shifts = None
+        return compute_distances(pos, mapping, cell_shifts)
 
     @staticmethod
     def compute(x, sigma):
