@@ -8,7 +8,7 @@ from .harmonic import (
     GeneralBonds,
     ShiftedHarmonicAnglesRaw,
 )
-from .repulsion import Repulsion, RepulsionBuckMod, LennardJonesShifted
+from .repulsion import Repulsion, RepulsionBuckMod, LennardJonesShifted, CutoffRepulsion
 from .fourier_series import FourierSeries, Dihedral,PeriodicAngles
 from .polynomial import Polynomial, QuarticAngles, QuarticRawAngles
 from .restricted_bending import RestrictedQuartic
