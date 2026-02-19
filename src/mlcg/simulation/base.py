@@ -218,6 +218,7 @@ class _Simulation(object):
         self.sim_subroutine_interval = sim_subroutine_interval
         self.save_subroutine = save_subroutine
         self.tqdm_refresh = tqdm_refresh
+        self.sim_t = 0
 
         # check to make sure input options for the simulation
         self.input_option_checks()
@@ -369,7 +370,7 @@ class _Simulation(object):
         ):
             # step forward in time
             data, potential, forces = self.timestep(data, forces)
-
+            self.sim_t = t
             # save to arrays if relevant
             if (t + 1) % self.save_interval == 0:
                 # save arrays

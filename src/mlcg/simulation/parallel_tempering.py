@@ -86,6 +86,14 @@ class PTSimulation(LangevinSimulation):
 
         self._replica_exchange_approved = 0
         self._replica_exchange_attempts = 0
+        if self.read_checkpoint_file is None:
+            self._old_save_step = 0
+        else:
+            self._old_save_step = (
+                self.current_timestep
+                * self.export_interval
+                // self.save_interval
+            )
 
     def _reset_exchange_stats(self):
         """Setup function that resets exchange statistics before running a simulation"""
@@ -95,6 +103,7 @@ class PTSimulation(LangevinSimulation):
     def _set_up_simulation(self, overwrite: bool = False):
         super(PTSimulation, self)._set_up_simulation(overwrite=overwrite)
         self._reset_exchange_stats()
+        self.exchange_arr = torch.zeros((self.n_sims, self._save_size))
         self.acceptance_matrix = torch.zeros(
             self.n_replicas, self.n_replicas
         ).to(self.device)
@@ -358,10 +367,8 @@ class PTSimulation(LangevinSimulation):
             pair_b, all possible
         """
         if self._propose_even_pairs:
-            self._propose_even_pairs = False
             return self._even_pairs
         else:
-            self._propose_even_pairs = True
             return self._odd_pairs
 
     def _detect_exchange(self, data: AtomicData) -> Dict:
@@ -389,8 +396,8 @@ class PTSimulation(LangevinSimulation):
         )
         # Assemble pairs of beta undergoing exchange - useful for indexing below
         beta_pairs = torch.unique(torch.stack((beta_idx_a, beta_idx_b)), dim=1)
-        p_pair = torch.exp((u_a - u_b) * (betas_a - betas_b)).cpu()
-        approved = torch.rand(len(p_pair)) < p_pair
+        p_pair = ((u_a - u_b) * (betas_a - betas_b)).cpu()
+        approved = torch.log(torch.rand(len(p_pair))) < p_pair
         num_approved = torch.sum(approved)
         num_attempted = len(pair_a)
         self._replica_exchange_approved += num_approved
@@ -439,6 +446,14 @@ class PTSimulation(LangevinSimulation):
             have been exchanged according to the appropriate supplied exchange pairs
         """
         pair_a, pair_b = pairs_for_exchange["a"], pairs_for_exchange["b"]
+        save_t_idx = (self.sim_t + 1) // self.save_interval
+        exchange_parity = 2 if self._propose_even_pairs else 1
+        self.exchange_arr[pairs_for_exchange["a"], save_t_idx - 1] = (
+            exchange_parity
+        )
+        self.exchange_arr[pairs_for_exchange["b"], save_t_idx - 1] = (
+            -exchange_parity
+        )
         # exchange the coordinates
         # Here we must make swaps in the coordinates and velocities
         # according to to the collated batch attribute
@@ -498,6 +513,7 @@ class PTSimulation(LangevinSimulation):
         """
         pairs_for_exchange = self._detect_exchange(data)
         data = self._perform_exchange(data, pairs_for_exchange)
+        self._propose_even_pairs = not self._propose_even_pairs
         return data
 
     def save_exchanges(self, data: AtomicData, save_step: int) -> None:
@@ -510,7 +526,12 @@ class PTSimulation(LangevinSimulation):
             "{}_acceptance_{}.npy".format(self.filename, key),
             self.acceptance_matrix.detach().cpu().numpy(),
         )
+        np.save(
+            "{}_exchanges_{}.npy".format(self.filename, key),
+            self.exchange_arr[:, self._old_save_step : save_step],
+        )
         # Reset
+        self._old_save_step = save_step
         self.acceptance_matrix = torch.zeros(
             self.n_replicas, self.n_replicas
         ).to(self.device)
