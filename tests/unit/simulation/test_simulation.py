@@ -331,7 +331,7 @@ def test_exchange_and_rescale(tmp_path):
     fn = tmp_path / PTSimulation.__name__
     simulation = PTSimulation(filename=fn)
     simulation._attach_configurations(configurations, betas)
-
+    simulation._set_up_simulation()
     # randomize coordinates and velocites - as if we had run some simulation and the replicas
     # evolved independently in time.
 
