@@ -129,6 +129,7 @@ class Allegro(torch.nn.Module):
         "edge_features",
         "edge_embedding",
         "edge_index",
+        "edge_cell_shift",
         "normed_edge_lengths",
         "edge_vectors",
         "edge_energy",
@@ -195,6 +196,7 @@ class Allegro(torch.nn.Module):
 
         data[AtomicDataDict.EDGE_INDEX_KEY] = edge_index
         data[AtomicDataDict.NUM_NODES_KEY] = data.n_atoms
+        data[AtomicDataDict.EDGE_CELL_SHIFT_KEY] = neighbor_list["cell_shifts"]
         # FIXME: check compatibility with pbc
 
         # populates 'edge_vectors', 'edge_lengths', 'normed_edge_lengths'

@@ -1,4 +1,5 @@
 from typing import Any, Callable, Dict, List, Optional, Union, Final, Tuple
+import logging
 
 import torch
 from e3nn import nn, o3
@@ -32,9 +33,8 @@ except ImportError as e:
     print(e)
     print(
         "Please install or set mace to your path before using this interface. "
-        + "To install you can either run 'pip install git+https://github.com/ACEsuit/mace.git@v0.3.13', "
-        + "or clone the repository and add it to your PYTHONPATH."
-        ""
+        + "To install run 'pip install mace-torch' or "
+        + "'pip install git+https://github.com/ACEsuit/mace.git'."
     )
 
 try:
@@ -52,6 +52,8 @@ except ImportError:
 
 if CUET_AVAILABLE:
     from mace.modules.wrapper_ops import CuEquivarianceConfig
+
+logger = logging.getLogger(__name__)
 
 # from ..pl.model import get_class_from_str
 from ..data.atomic_data import AtomicData, ENERGY_KEY
@@ -277,7 +279,7 @@ class MACE(torch.nn.Module):
             shifts=neighbor_list["cell_shifts"],
         )
         edge_attrs = self.spherical_harmonics(vectors)
-        edge_feats = self.radial_embedding(
+        edge_feats, cutoff = self.radial_embedding(
             lengths, node_attrs, edge_index, self.atomic_numbers
         )
 
@@ -451,25 +453,14 @@ class StandardMACE(MACE):
 
         hidden_irreps = o3.Irreps(hidden_irreps)
         MLP_irreps = o3.Irreps(MLP_irreps)
-        # Default to create CuEquivariance config if installed
-        if CUET_AVAILABLE and use_cueq:
-            print("=" * 60)
-            print("INITIALIZING CUEQUIVARIANCE")
-            print("=" * 60)
-            print("Note: CuEquivariance kernels will be compiled on first use.")
-            print(
-                "This may take a few minutes but only happens once per configuration."
-            )
-            print("=" * 60)
-            cueq_config = CuEquivarianceConfig(
-                enabled=True,
-                layout="ir_mul",  # irreps, multiplicity
-                group="O3",
-                optimize_all=True,
-            )
-        else:
-            print("Using e3nn. cuEquivariance acceleration is disabled.")
-            cueq_config = None
+
+        # When use_cueq=True, build as e3nn first then convert after
+        # construction via convert_to_cueq(), which guarantees identical
+        # weight initialisation.  An explicit cueq_config (passed by
+        # convert_to_cueq internally) is used as-is.
+        if use_cueq and cueq_config is None:
+            cueq_config = None  # build e3nn, convert after __init__
+
         if isinstance(correlation, int):
             correlation = [correlation] * num_interactions
         # Embedding
@@ -597,3 +588,156 @@ class StandardMACE(MACE):
             pair_repulsion_fn,
             nls_distance_method=nls_distance_method,
         )
+
+        # Store args needed by convert_to_cueq / convert_to_e3nn
+        self._init_kwargs = dict(
+            r_max=r_max,
+            num_bessel=num_bessel,
+            num_polynomial_cutoff=num_polynomial_cutoff,
+            max_ell=max_ell,
+            interaction_cls=interaction_cls,
+            interaction_cls_first=interaction_cls_first,
+            num_interactions=num_interactions,
+            hidden_irreps=str(hidden_irreps),
+            MLP_irreps=str(MLP_irreps),
+            avg_num_neighbors=avg_num_neighbors,
+            atomic_numbers=atomic_numbers.tolist(),
+            correlation=correlation,
+            gate=gate,
+            max_num_neighbors=max_num_neighbors,
+            pair_repulsion=pair_repulsion,
+            distance_transform=distance_transform,
+            radial_MLP=radial_MLP,
+            radial_type=radial_type,
+            nls_distance_method=nls_distance_method,
+        )
+        self._use_cueq = False
+        self._correlation = correlation
+        self._max_ell = max_ell
+
+        # Convert to cueq if requested
+        if use_cueq and CUET_AVAILABLE:
+            self.convert_to_cueq()
+
+    def _has_cueq_modules(self) -> bool:
+        """Detect whether the model currently uses cueq modules by inspecting state dict keys."""
+        return any("symmetric_contractions.weight" in k for k in self.state_dict().keys())
+
+    def convert_to_cueq(self, device: Optional[str] = None) -> "StandardMACE":
+        """Convert this e3nn model to use cuEquivariance kernels in-place.
+
+        Builds a second ``StandardMACE`` with cueq-enabled blocks and
+        transfers weights via ``mace.cli.convert_e3nn_cueq.transfer_weights``,
+        matching upstream MACE's ``--enable_cueq`` pattern.
+
+        Returns:
+            self (for chaining)
+        """
+        if getattr(self, '_use_cueq', False) or self._has_cueq_modules():
+            logger.info("Model already uses cueq, skipping conversion")
+            self._use_cueq = True
+            return self
+
+        if not CUET_AVAILABLE:
+            raise RuntimeError(
+                "cuEquivariance is not installed. "
+                "Install with: pip install cuequivariance cuequivariance-torch "
+                "cuequivariance-ops-torch-cu12"
+            )
+
+        from mace.cli.convert_e3nn_cueq import transfer_weights
+
+        if not hasattr(self, '_init_kwargs'):
+            raise RuntimeError(
+                "Cannot convert: missing _init_kwargs. "
+                "Re-create the model with current code and load state_dict manually."
+            )
+
+        if device is None:
+            device = next(self.parameters()).device
+        device_str = device.type if isinstance(device, torch.device) else str(device).split(":")[0]
+
+        logger.info("Converting e3nn model to cueq")
+
+        # ir_mul layout matches e3nn's internal tensor layout (zero numerical diff).
+        # conv_fusion enables fused scatter+TP kernels on CUDA.
+        # use_reduced_cg=False must match how e3nn Contraction blocks were built.
+        cueq_config = CuEquivarianceConfig(
+            enabled=True,
+            layout="ir_mul",
+            group="O3_e3nn",
+            optimize_all=True,
+            conv_fusion=(device_str == "cuda"),
+        )
+
+        kwargs = dict(self._init_kwargs)
+        kwargs["cueq_config"] = cueq_config
+        kwargs["use_cueq"] = False  # prevent recursion
+        target = StandardMACE(**kwargs).to(device)
+
+        hidden_irreps = o3.Irreps(self._init_kwargs["hidden_irreps"])
+        transfer_weights(
+            source_model=self,
+            target_model=target,
+            num_product_irreps=len(hidden_irreps.slices()) - 1,
+            correlation=max(self._correlation),
+            num_layers=len(self.interactions),
+            use_reduced_cg=False,
+        )
+
+        self._replace_modules(target)
+        self._use_cueq = True
+        logger.info("Successfully converted model to cueq")
+        return self
+
+    def convert_to_e3nn(self, device: Optional[str] = None) -> "StandardMACE":
+        """Convert this cueq model back to e3nn in-place.
+
+        Checkpoints saved as e3nn can be loaded without cuEquivariance.
+
+        Returns:
+            self (for chaining)
+        """
+        if not getattr(self, '_use_cueq', False) and not self._has_cueq_modules():
+            logger.info("Model already uses e3nn, skipping conversion")
+            return self
+
+        from mace.cli.convert_cueq_e3nn import transfer_weights
+
+        if not hasattr(self, '_init_kwargs'):
+            raise RuntimeError(
+                "Cannot convert: missing _init_kwargs. "
+                "Re-create the model with current code and load state_dict manually."
+            )
+
+        if device is None:
+            device = next(self.parameters()).device
+
+        logger.info("Converting cueq model back to e3nn")
+
+        kwargs = dict(self._init_kwargs)
+        kwargs["use_cueq"] = False
+        target = StandardMACE(**kwargs).to(device)
+
+        hidden_irreps = o3.Irreps(self._init_kwargs["hidden_irreps"])
+        transfer_weights(
+            source_model=self,
+            target_model=target,
+            num_product_irreps=len(hidden_irreps.slices()) - 1,
+            correlation=max(self._correlation),
+            num_layers=len(self.interactions),
+            use_reduced_cg=False,
+        )
+
+        self._replace_modules(target)
+        self._use_cueq = False
+        logger.info("Successfully converted model back to e3nn")
+        return self
+
+    def _replace_modules(self, source: "StandardMACE"):
+        """Replace all child modules and top-level buffers from *source*."""
+        for name, module in source.named_children():
+            setattr(self, name, module)
+        for name, buf in source.named_buffers(recurse=False):
+            if hasattr(self, name):
+                self.register_buffer(name, buf)
