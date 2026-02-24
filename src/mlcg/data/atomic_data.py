@@ -181,7 +181,13 @@ class AtomicData(Data):
         # CG bead types (0, 1, 2, ...) get mapped to (1, 2, 3, ...)
         needs_shift = np.any(numbers < 1)
         if needs_shift:
-            numbers = numbers + 1
+            raise NotImplementedError(
+                "Conversion to ASE for atom types < 1 (CG bead labels) is not supported. "
+                "ASE requires valid atomic numbers (1-118); automatic remapping would be ambiguous "
+                "and may produce incorrect element assignments. Please convert CG bead types to "
+                "valid atomic numbers or set masses explicitly before calling to_ase(). "
+                "This will be supported soon."
+            ) #FIXME: in the future, we can support automatic remapping of CG bead types to valid atomic numbers (e.g. by adding a fixed offset for ASE Atoms object and then remapping at the calculator) if needed, but for now we require users to handle this explicitly to avoid confusion and errors with element assignments in ASE.
 
         # PBC and cell
         if hasattr(self, PBC_KEY) and self.pbc is not None:
