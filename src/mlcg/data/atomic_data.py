@@ -14,6 +14,7 @@ from ._keys import (
     TAG_KEY,
     ENERGY_KEY,
     FORCE_KEY,
+    STRESS_KEY,
     MASS_KEY,
     VELOCITY_KEY,
 )
@@ -42,6 +43,8 @@ class AtomicData(Data):
         reference energy associated with each structures
     forces: [n_atoms * n_structures, 3] (Optional)
         reference forces associated with each structures
+    stress: [n_structures, 3, 3] (Optional)
+        reference stress associated with each structure, stored as a symmetric 3x3 tensor
     velocities: [n_atoms * n_structures, 3] (optional)
         velocities associated with each structure
     neighbor_list: Dict[str, Dict[str, Any]] (Optional)
@@ -84,6 +87,9 @@ class AtomicData(Data):
         if VELOCITY_KEY in self and self[VELOCITY_KEY] is not None:
             assert self[VELOCITY_KEY].shape == self[POSITIONS_KEY].shape
             assert self[VELOCITY_KEY].dtype == self[POSITIONS_KEY].dtype
+        if STRESS_KEY in self and self[STRESS_KEY] is not None:
+            assert self[STRESS_KEY].shape == (self.num_structures, 3, 3)
+            assert self[STRESS_KEY].dtype == self[POSITIONS_KEY].dtype
         if ENERGY_KEY in self and self[ENERGY_KEY] is not None:
             assert self[ENERGY_KEY].shape == self[N_ATOMS_KEY].shape
             assert self[ENERGY_KEY].dtype == self[POSITIONS_KEY].dtype
@@ -108,6 +114,7 @@ class AtomicData(Data):
         frame,
         energy_tag: str = ENERGY_KEY,
         force_tag: str = FORCE_KEY,
+        stress_tag: str = STRESS_KEY,
     ):
         r"""Method for constructing an AtomicData instance from
         an ASE Atoms instance. Atom types are taken from atomic
@@ -122,7 +129,8 @@ class AtomicData(Data):
             String value used to access the ASE energy
         force_tag:
             String value used to access the ASE forces
-
+        stress_tag:
+            String value used to access the ASE stress
         Returns
         -------
         data:
@@ -139,7 +147,7 @@ class AtomicData(Data):
 
         energy = frame.info.get(energy_tag)
         forces = frame.arrays.get(force_tag)
-
+        stress = frame.arrays.get(stress_tag)
         return AtomicData.from_points(
             pos=pos,
             atom_types=z,
@@ -149,9 +157,10 @@ class AtomicData(Data):
             tag=tag,
             energy=energy,
             forces=forces,
+            stress=stress,
         )
 
-    def to_ase(self, energy_tag: str = ENERGY_KEY, force_tag: str = FORCE_KEY):
+    def to_ase(self, energy_tag: str = ENERGY_KEY, force_tag: str = FORCE_KEY, stress_tag: str = STRESS_KEY):
         r"""Convert this AtomicData instance to an ASE Atoms object.
 
         Atom types are mapped to atomic numbers. For CG models where
@@ -166,6 +175,8 @@ class AtomicData(Data):
             Key under which to store energy in ``atoms.info``
         force_tag:
             Key under which to store forces in ``atoms.arrays``
+        stress_tag:
+            Key under which to store stress in ``atoms.arrays`` (if model outputs stress)
 
         Returns
         -------
@@ -220,6 +231,10 @@ class AtomicData(Data):
         if hasattr(self, FORCE_KEY) and self[FORCE_KEY] is not None:
             atoms.arrays[force_tag] = self[FORCE_KEY].detach().cpu().numpy()
 
+        # Stress
+        if hasattr(self, STRESS_KEY) and self[STRESS_KEY] is not None:
+            atoms.arrays[stress_tag] = self[STRESS_KEY].detach().cpu().numpy()
+
         # Tag
         if hasattr(self, TAG_KEY) and self.tag is not None:
             atoms.info["tag"] = self.tag
@@ -236,6 +251,7 @@ class AtomicData(Data):
         tag: Optional[str] = None,
         energy: Optional[torch.Tensor] = None,
         forces: Optional[torch.Tensor] = None,
+        stress: Optional[torch.Tensor] = None,
         velocities: Optional[torch.Tensor] = None,
         neighborlist: Optional[Dict[str, Dict[str, Any]]] = None,
         **kwargs,
@@ -264,6 +280,8 @@ class AtomicData(Data):
         forces:
             Reference cartesian forces for the configuration, of
             shape (n_atoms, 3)
+        stress:
+            Reference stress tensor for the configuration, of shape (3, 3)
         velocities:
             Atomic velocities, of shape (n_atoms, 3)
         neighborlist:
@@ -293,6 +311,10 @@ class AtomicData(Data):
         if forces is not None:
             data[FORCE_KEY] = torch.as_tensor(
                 forces, dtype=data[POSITIONS_KEY].dtype
+            )
+        if stress is not None:
+            data[STRESS_KEY] = torch.as_tensor(
+                stress, dtype=data[POSITIONS_KEY].dtype
             )
         if velocities is not None:
             data[VELOCITY_KEY] = torch.as_tensor(
