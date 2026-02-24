@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 from torch_geometric.data import Data
 from typing import Optional, Dict, Any
@@ -149,6 +150,75 @@ class AtomicData(Data):
             energy=energy,
             forces=forces,
         )
+
+    def to_ase(self, energy_tag: str = ENERGY_KEY, force_tag: str = FORCE_KEY):
+        r"""Convert this AtomicData instance to an ASE Atoms object.
+
+        Atom types are mapped to atomic numbers. For CG models where
+        atom types are bead-type indices (0, 1, 2, ...) rather than
+        real element numbers, the resulting ASE Atoms will have
+        placeholder element symbols — set masses explicitly via
+        ``atoms.set_masses(...)`` if needed for dynamics.
+
+        Parameters
+        ----------
+        energy_tag:
+            Key under which to store energy in ``atoms.info``
+        force_tag:
+            Key under which to store forces in ``atoms.arrays``
+
+        Returns
+        -------
+        atoms:
+            ASE Atoms instance
+        """
+        from ase import Atoms
+
+        positions = self.pos.detach().cpu().numpy()
+        numbers = self.atom_types.detach().cpu().long().numpy()
+
+        # Clamp atom types to valid range [1, 118] for ASE
+        # CG bead types (0, 1, 2, ...) get mapped to (1, 2, 3, ...)
+        needs_shift = np.any(numbers < 1)
+        if needs_shift:
+            numbers = numbers + 1
+
+        # PBC and cell
+        if hasattr(self, PBC_KEY) and self.pbc is not None:
+            pbc = self.pbc.detach().cpu().numpy().flatten()
+        else:
+            pbc = False
+
+        if hasattr(self, CELL_KEY) and self.cell is not None:
+            cell = self.cell.detach().cpu().numpy().reshape(3, 3)
+        else:
+            cell = None
+
+        atoms = Atoms(
+            numbers=numbers,
+            positions=positions,
+            pbc=pbc,
+            cell=cell,
+        )
+
+        # Masses — use CG masses, not periodic-table defaults
+        if hasattr(self, MASS_KEY) and self.masses is not None:
+            atoms.set_masses(self.masses.detach().cpu().numpy())
+
+        # Energy
+        if hasattr(self, ENERGY_KEY) and self[ENERGY_KEY] is not None:
+            e = self[ENERGY_KEY].detach().cpu()
+            atoms.info[energy_tag] = e.item() if e.numel() == 1 else e.numpy()
+
+        # Forces
+        if hasattr(self, FORCE_KEY) and self[FORCE_KEY] is not None:
+            atoms.arrays[force_tag] = self[FORCE_KEY].detach().cpu().numpy()
+
+        # Tag
+        if hasattr(self, TAG_KEY) and self.tag is not None:
+            atoms.info["tag"] = self.tag
+
+        return atoms
 
     @staticmethod
     def from_points(
