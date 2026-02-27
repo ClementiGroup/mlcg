@@ -214,7 +214,7 @@ def fixed_pyg_inspector():
     finally:
         if monkey_patched:
             # recover changes made by the monkey patch
-            del sys.modules["torch_geometric.nn.conv.utils.inspector"]
+            sys.modules.pop("torch_geometric.nn.conv.utils.inspector", None)
 
 
 def load_and_adapt_old_checkpoint(f, **kwargs):
