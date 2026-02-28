@@ -194,6 +194,7 @@ class Allegro(torch.nn.Module):
         edge_index = neighbor_list["index_mapping"]
 
         data[AtomicDataDict.EDGE_INDEX_KEY] = edge_index
+        data[AtomicDataDict.EDGE_CELL_SHIFT_KEY] = neighbor_list["cell_shifts"]
         data[AtomicDataDict.NUM_NODES_KEY] = data.n_atoms
         # FIXME: check compatibility with pbc
 
