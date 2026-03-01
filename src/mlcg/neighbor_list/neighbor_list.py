@@ -7,6 +7,7 @@ try:
     from .nvalchemi_impl import (
         nvalchemi_naive_neighbor_list,
         nvalchemi_cell_neighbor_list,
+        nvalchemi_cell_neighbor_list_raw,
     )
 except ImportError:
     print(
@@ -63,8 +64,8 @@ def atomic_data2neighbor_list(
         met = nvalchemi_cell_neighbor_list
     elif nls_distance_method == "custom_kernel":
         met = torch_neighbor_list
-    elif nls_distance_method == "ase_raw":
-        met = ase_raw_neighbor_list
+    elif nls_distance_method == "nvalchemi_raw":
+        met = nvalchemi_cell_neighbor_list_raw
     else:
         raise ValueError(
             f"Method {nls_distance_method} not supported for nls-distance computation "
