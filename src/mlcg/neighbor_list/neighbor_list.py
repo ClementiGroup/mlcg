@@ -1,6 +1,7 @@
 from typing import Dict, Mapping, Optional
 import torch
 from .torch_impl import torch_neighbor_list
+from .ase_impl import ase_raw_neighbor_list
 
 try:
     from .nvalchemi_impl import (
@@ -62,6 +63,8 @@ def atomic_data2neighbor_list(
         met = nvalchemi_cell_neighbor_list
     elif nls_distance_method == "custom_kernel":
         met = torch_neighbor_list
+    elif nls_distance_method == "ase_raw":
+        met = ase_raw_neighbor_list
     else:
         raise ValueError(
             f"Method {nls_distance_method} not supported for nls-distance computation "
