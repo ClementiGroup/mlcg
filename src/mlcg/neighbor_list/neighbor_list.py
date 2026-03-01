@@ -1,7 +1,6 @@
 from typing import Dict, Mapping, Optional
 import torch
 from .torch_impl import torch_neighbor_list
-from .ase_impl import ase_raw_neighbor_list
 
 try:
     from .nvalchemi_impl import (
