@@ -14,6 +14,7 @@ to debug or modify.
 import math
 from e3nn import o3
 import torch
+import warnings
 
 from nequip.data import AtomicDataDict
 from nequip.nn import (
@@ -58,6 +59,11 @@ if CUET_AVAILABLE:
     from allegro.nn._strided._contract import Contracter
 
 
+RED = "\033[91m"
+YELLOW = "\033[93m"
+BOLD = "\033[1m"
+RESET = "\033[0m"
+
 def init_xavier_uniform(
     module: torch.nn.Module, zero_bias: bool = True
 ) -> None:
@@ -84,7 +90,27 @@ def init_xavier_uniform(
         if module.bias is not None and zero_bias == True:
             torch.nn.init.constant_(module.bias, 0.0)
 
+def _nls_warning(method):
+    
+    if torch.compiler.is_compiling():
+        return ""
+    else:
+        return f"""
+        {RED}{BOLD}
+        ============================================================
+        !!!  NLS method warning  !!!
+        ============================================================{RESET}
 
+        You have selected {method} as your neighbor list method for this 
+        allegro model.
+
+        if you want to train or simulate with PBC information, you need to use 
+        the `nvalchemi_raw` method in order to accurately use the PBC information
+        with an allegro model. 
+        {YELLOW}{BOLD}
+        Neighbor list results with other methods WILL BE WRONG
+        {RED}{BOLD}============================================================{RESET}
+        """
 class Allegro(torch.nn.Module):
     """
     Base Allegro implementation for energy and force prediction.
@@ -119,7 +145,7 @@ class Allegro(torch.nn.Module):
         Method for computing a neighbor list. Supported values are
         `torch`, `nvalchemi_naive`, `nvalchemi_cell` and custom.
     """
-
+    _warned = False
     name: Final[str] = "allegro"
     # list of labels that need to be removed after a forward pass
     # from an atomic data to avoid mismatches
@@ -134,6 +160,19 @@ class Allegro(torch.nn.Module):
         "edge_energy",
         "edge_lengths",
     ]
+
+    # used only to warn 
+    def __setstate__(self, state):
+        # Let nn.Module restore itself
+        super().__setstate__(state)
+        nls_met = getattr(self, 'nls_distance_method', "torch")
+        if nls_met != "nvalchemi_raw":
+        # nls metod warning
+            warnings.warn(
+                _nls_warning(nls_met),
+                category=UserWarning,
+                stacklevel=2,
+            )
 
     def __init__(
         self,
@@ -162,7 +201,13 @@ class Allegro(torch.nn.Module):
         self.pair_potential = pair_potential
         self.max_num_neighbors = max_num_neighbors
         self.nls_distance_method = nls_distance_method
-
+        if self.nls_distance_method != "nvalchemi_raw":
+            # nls metod warning
+            warnings.warn(
+                _nls_warning(getattr(self, 'nls_distance_method', None)),
+                category=UserWarning,
+                stacklevel=2,
+            )
         self.reset_parameters()
 
     def forward(self, data):
