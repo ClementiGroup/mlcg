@@ -1,6 +1,6 @@
 """Keys for dictionaries/AtomicData objects.
 
-This is a seperate module to compensate for a TorchScript bug that can only 
+This is a seperate module to compensate for a TorchScript bug that can only
 recognize constants when they are accessed as attributes of an imported module.
 
 Adapted from NequIP (https://github.com/mir-group/nequip)
