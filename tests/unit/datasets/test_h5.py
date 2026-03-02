@@ -15,19 +15,22 @@ def make_hdf5(tdir, detailed_idx=True):
     for i in range(10):
         n_atoms = np.random.randint(2, high=11)
         n_frames = np.random.randint(10, high=25)
-        name = np.random.randint(1, high=1000)
-        name = str(name)
+        name = str(i)
         mol_list.append(name)
         mol_frames.append(n_frames)
         coords = np.random.randn(n_frames, n_atoms, 3)
         forces = np.random.randn(n_frames, n_atoms, 3)
         types = np.random.randn(n_atoms)
+        pbcs = np.full((n_frames, 3), False)
+        cells = np.random.randn(n_frames, 3, 3)
 
         grp = f.create_group(name)
         grp.create_dataset("cg_coords", data=coords)
-        grp.create_dataset("cg_delta_forces", data=coords)
+        grp.create_dataset("cg_delta_forces", data=forces)
         grp.attrs["cg_embeds"] = types
         grp.attrs["N_frames"] = n_frames
+        grp.create_dataset("pbc", data=pbcs)
+        grp.create_dataset("cell", data=cells)
 
     if detailed_idx:
         detailed_idx = {

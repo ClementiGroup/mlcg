@@ -92,7 +92,15 @@ class FourierSeries(_Prior):
             Tensor of computed features
         """
         mapping = data.neighbor_list[self.name]["index_mapping"]
-        return self.compute_features(data.pos, mapping)
+        pbc = getattr(data, "pbc", None)
+        cell = getattr(data, "cell", None)
+        return self.compute_features(
+            pos=data.pos,
+            mapping=mapping,
+            pbc=pbc,
+            cell=cell,
+            batch=data.batch,
+        )
 
     def data2parameters(self, data: AtomicData) -> Dict:
         mapping = data.neighbor_list[self.name]["index_mapping"]
@@ -460,6 +468,16 @@ class Dihedral(FourierSeries):
 
     @staticmethod
     def compute_features(
-        pos: torch.Tensor, mapping: torch.Tensor
+        pos: torch.Tensor,
+        mapping: torch.Tensor,
+        pbc: torch.Tensor = None,
+        cell: torch.Tensor = None,
+        batch: torch.Tensor = None,
     ) -> torch.Tensor:
-        return compute_torsions(pos, mapping)
+        if all([feat != None for feat in [pbc, cell]]):
+            cell_shifts = _Prior._get_cell_shifts(
+                pos, mapping, pbc, cell, batch
+            )
+        else:
+            cell_shifts = None
+        return compute_torsions(pos, mapping, cell_shifts)

@@ -199,8 +199,15 @@ def compute_statistics(
     unique_keys = _get_all_unique_keys(unique_types, order)
 
     mapping = data.neighbor_list[target]["index_mapping"]
-    values = TargetPrior.compute_features(data.pos, mapping)
-
+    pbc = getattr(data, "pbc", None)
+    cell = getattr(data, "cell", None)
+    values = TargetPrior.compute_features(
+        data.pos,
+        mapping,
+        pbc=pbc,
+        cell=cell,
+        batch=data.batch,
+    )
     interaction_types = torch.vstack(
         [data.atom_types[mapping[ii]] for ii in range(order)]
     )

@@ -8,7 +8,10 @@ from ..data.atomic_data import AtomicData
 
 
 def ase_neighbor_list(
-    data: AtomicData, rcut: float, self_interaction: bool = False
+    data: AtomicData,
+    rcut: float,
+    self_interaction: bool = False,
+    max_num_neighbors: int = 1000,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """Function for converting a list of neighbor edges from
     an input AtomicData instance, to an ASE neighborlist as
