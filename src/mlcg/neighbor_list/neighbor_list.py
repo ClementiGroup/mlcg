@@ -56,7 +56,7 @@ def atomic_data2neighbor_list(
     """
     rcut = float(rcut)
     match nls_distance_method:
-        case  "torch":
+        case "torch":
             met = torch_neighbor_list
         case "nvalchemi_naive":
             met = nvalchemi_naive_neighbor_list
