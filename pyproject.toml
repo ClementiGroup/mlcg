@@ -100,7 +100,7 @@ mlcg-nvt_pt_langevin = "mlcg.scripts.mlcg_pt_nvt_langevin:main"
 
 [tool.black]
 line-length = 80
-target-version = ['py38', 'py39']
+target-version = ['py312']
 include = '\.pyi?$'
 extend-exclude = '''
 /(
