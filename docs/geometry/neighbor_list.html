@@ -326,20 +326,25 @@ large.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="mlcg.neighbor_list.torch_impl.wrap_positions">
-<span class="sig-prename descclassname"><span class="pre">mlcg.neighbor_list.torch_impl.</span></span><span class="sig-name descname"><span class="pre">wrap_positions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-07</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/neighbor_list/torch_impl.html#wrap_positions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.neighbor_list.torch_impl.wrap_positions" title="Link to this definition">¶</a></dt>
-<dd><p>Wrap positions to unit cell.</p>
-<p>Returns positions changed by a multiple of the unit cell vectors to
-fit inside the space spanned by these vectors.</p>
+<span class="sig-prename descclassname"><span class="pre">mlcg.neighbor_list.torch_impl.</span></span><span class="sig-name descname"><span class="pre">wrap_positions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-07</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/neighbor_list/torch_impl.html#wrap_positions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.neighbor_list.torch_impl.wrap_positions" title="Link to this definition">¶</a></dt>
+<dd><p>Vectorized version of position wrapping to unit cell.
+Returns positions changed by a multiple of the unit cell vectors to
+fit inside the space spanned by these vectors.
+:type data: <span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="../data/atom_data.html#mlcg.data.atomic_data.AtomicData" title="mlcg.data.atomic_data.AtomicData"><code class="xref py py-class docutils literal notranslate"><span class="pre">AtomicData</span></code></a></span>
+:param data: torch_geometric.Data instance with pos, cell, pbc, batch attributes
+:type data: AtomicData
+:type device: <span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>
+:param device: Device to perform computations on
+:type device: str
+:type eps: <span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>
+:param eps: Small number to prevent slightly negative coordinates from being wrapped
+:type eps: float</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Data</span></code></span>) – torch_geometric.Data instance</p></li>
-<li><p><strong>eps</strong> (<em>float</em>) – Small number to prevent slightly negative coordinates from being
-wrapped.</p></li>
-</ul>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch_geometric.Data instance with positions wrapped in unit cell</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+<dd class="field-even"><p><a class="reference internal" href="../data/atom_data.html#mlcg.data.atomic_data.AtomicData" title="mlcg.data.atomic_data.AtomicData">AtomicData</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -352,7 +357,7 @@ wrapped.</p></li>
 <h2>ASE Implementation<a class="headerlink" href="#ase-implementation" title="Link to this heading">¶</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="mlcg.neighbor_list.ase_impl.ase_neighbor_list">
-<span class="sig-prename descclassname"><span class="pre">mlcg.neighbor_list.ase_impl.</span></span><span class="sig-name descname"><span class="pre">ase_neighbor_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rcut</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">self_interaction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/neighbor_list/ase_impl.html#ase_neighbor_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.neighbor_list.ase_impl.ase_neighbor_list" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">mlcg.neighbor_list.ase_impl.</span></span><span class="sig-name descname"><span class="pre">ase_neighbor_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rcut</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">self_interaction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_neighbors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/neighbor_list/ase_impl.html#ase_neighbor_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.neighbor_list.ase_impl.ase_neighbor_list" title="Link to this definition">¶</a></dt>
 <dd><p>Function for converting a list of neighbor edges from
 an input AtomicData instance, to an ASE neighborlist as
 output by ase.neighborlist.neighbor_list. Return documenation

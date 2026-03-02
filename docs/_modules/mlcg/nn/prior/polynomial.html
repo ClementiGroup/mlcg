@@ -321,13 +321,31 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="172"><span class="sd">            Tensor of computed features</span>
 </span><span data-line="173"><span class="sd">        &quot;&quot;&quot;</span>
 </span><span data-line="174">        <span class="n">mapping</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;index_mapping&quot;</span><span class="p">]</span>
-</span><span data-line="175">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_features</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span> <span class="n">mapping</span><span class="p">)</span>
-</span><span data-line="176">
-</span><span data-line="177">    <span class="nd">@staticmethod</span>
-</span><span data-line="178">    <span class="k">def</span><span class="w"> </span><span class="nf">compute_features</span><span class="p">(</span>
-</span><span data-line="179">        <span class="n">pos</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">,</span> <span class="n">mapping</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
-</span><span data-line="180">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-</span><span data-line="181">        <span class="k">return</span> <span class="n">compute_angles_cos</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">mapping</span><span class="p">)</span>
+</span><span data-line="175">        <span class="n">pbc</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;pbc&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</span><span data-line="176">        <span class="n">cell</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;cell&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</span><span data-line="177">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_features</span><span class="p">(</span>
+</span><span data-line="178">            <span class="n">pos</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span>
+</span><span data-line="179">            <span class="n">mapping</span><span class="o">=</span><span class="n">mapping</span><span class="p">,</span>
+</span><span data-line="180">            <span class="n">pbc</span><span class="o">=</span><span class="n">pbc</span><span class="p">,</span>
+</span><span data-line="181">            <span class="n">cell</span><span class="o">=</span><span class="n">cell</span><span class="p">,</span>
+</span><span data-line="182">            <span class="n">batch</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">batch</span><span class="p">,</span>
+</span><span data-line="183">        <span class="p">)</span>
+</span><span data-line="184">
+</span><span data-line="185">    <span class="nd">@staticmethod</span>
+</span><span data-line="186">    <span class="k">def</span><span class="w"> </span><span class="nf">compute_features</span><span class="p">(</span>
+</span><span data-line="187">        <span class="n">pos</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+</span><span data-line="188">        <span class="n">mapping</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+</span><span data-line="189">        <span class="n">pbc</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="190">        <span class="n">cell</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="191">        <span class="n">batch</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="192">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+</span><span data-line="193">        <span class="k">if</span> <span class="nb">all</span><span class="p">([</span><span class="n">feat</span> <span class="o">!=</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">feat</span> <span class="ow">in</span> <span class="p">[</span><span class="n">pbc</span><span class="p">,</span> <span class="n">cell</span><span class="p">]]):</span>
+</span><span data-line="194">            <span class="n">cell_shifts</span> <span class="o">=</span> <span class="n">_Prior</span><span class="o">.</span><span class="n">_get_cell_shifts</span><span class="p">(</span>
+</span><span data-line="195">                <span class="n">pos</span><span class="p">,</span> <span class="n">mapping</span><span class="p">,</span> <span class="n">pbc</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">batch</span>
+</span><span data-line="196">            <span class="p">)</span>
+</span><span data-line="197">        <span class="k">else</span><span class="p">:</span>
+</span><span data-line="198">            <span class="n">cell_shifts</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span data-line="199">        <span class="k">return</span> <span class="n">compute_angles_cos</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">mapping</span><span class="p">,</span> <span class="n">cell_shifts</span><span class="p">)</span>
 </span></pre></div>
         </article><button class="back-to-top" type="button">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">

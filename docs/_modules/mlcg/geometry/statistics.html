@@ -347,132 +347,139 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="199">    <span class="n">unique_keys</span> <span class="o">=</span> <span class="n">_get_all_unique_keys</span><span class="p">(</span><span class="n">unique_types</span><span class="p">,</span> <span class="n">order</span><span class="p">)</span>
 </span><span data-line="200">
 </span><span data-line="201">    <span class="n">mapping</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="n">target</span><span class="p">][</span><span class="s2">&quot;index_mapping&quot;</span><span class="p">]</span>
-</span><span data-line="202">    <span class="n">values</span> <span class="o">=</span> <span class="n">TargetPrior</span><span class="o">.</span><span class="n">compute_features</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span> <span class="n">mapping</span><span class="p">)</span>
-</span><span data-line="203">
-</span><span data-line="204">    <span class="n">interaction_types</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span>
-</span><span data-line="205">        <span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">atom_types</span><span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="n">ii</span><span class="p">]]</span> <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">order</span><span class="p">)]</span>
-</span><span data-line="206">    <span class="p">)</span>
-</span><span data-line="207">
-</span><span data-line="208">    <span class="n">interaction_types</span> <span class="o">=</span> <span class="n">_symmetrise_map</span><span class="p">[</span><span class="n">order</span><span class="p">](</span><span class="n">interaction_types</span><span class="p">)</span>
-</span><span data-line="209">
-</span><span data-line="210">    <span class="n">statistics</span> <span class="o">=</span> <span class="p">{}</span>
-</span><span data-line="211">    <span class="k">for</span> <span class="n">unique_key</span> <span class="ow">in</span> <span class="n">unique_keys</span><span class="o">.</span><span class="n">t</span><span class="p">():</span>
-</span><span data-line="212">        <span class="c1"># find which values correspond to unique_key type of interaction</span>
-</span><span data-line="213">        <span class="n">mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">all</span><span class="p">(</span>
-</span><span data-line="214">            <span class="n">torch</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span>
-</span><span data-line="215">                <span class="p">[</span>
-</span><span data-line="216">                    <span class="n">interaction_types</span><span class="p">[</span><span class="n">ii</span><span class="p">,</span> <span class="p">:]</span> <span class="o">==</span> <span class="n">unique_key</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>
-</span><span data-line="217">                    <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">order</span><span class="p">)</span>
-</span><span data-line="218">                <span class="p">]</span>
-</span><span data-line="219">            <span class="p">),</span>
-</span><span data-line="220">            <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-</span><span data-line="221">        <span class="p">)</span>
-</span><span data-line="222">        <span class="n">val</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
-</span><span data-line="223">        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-</span><span data-line="224">            <span class="k">continue</span>
-</span><span data-line="225">
-</span><span data-line="226">        <span class="k">if</span> <span class="n">bmin</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="227">            <span class="n">b_min</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
-</span><span data-line="228">        <span class="k">else</span><span class="p">:</span>
-</span><span data-line="229">            <span class="n">b_min</span> <span class="o">=</span> <span class="n">bmin</span>
-</span><span data-line="230">        <span class="k">if</span> <span class="n">bmax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="231">            <span class="n">b_max</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
-</span><span data-line="232">        <span class="k">else</span><span class="p">:</span>
-</span><span data-line="233">            <span class="n">b_max</span> <span class="o">=</span> <span class="n">bmax</span>
-</span><span data-line="234">
-</span><span data-line="235">        <span class="n">bin_centers</span> <span class="o">=</span> <span class="n">_get_bin_centers</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">nbins</span><span class="p">,</span> <span class="n">b_min</span><span class="o">=</span><span class="n">b_min</span><span class="p">,</span> <span class="n">b_max</span><span class="o">=</span><span class="n">b_max</span><span class="p">)</span>
-</span><span data-line="236">        <span class="n">hist</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">histc</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">nbins</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="n">b_min</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="n">b_max</span><span class="p">)</span>
-</span><span data-line="237">        <span class="n">mask</span> <span class="o">=</span> <span class="n">hist</span> <span class="o">&gt;</span> <span class="mi">0</span>
-</span><span data-line="238">        <span class="n">bin_centers_nz</span> <span class="o">=</span> <span class="n">bin_centers</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
-</span><span data-line="239">        <span class="n">ncounts_nz</span> <span class="o">=</span> <span class="n">hist</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
-</span><span data-line="240">        <span class="n">dG_nz</span> <span class="o">=</span> <span class="o">-</span><span class="n">torch</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">ncounts_nz</span><span class="p">)</span> <span class="o">/</span> <span class="n">beta</span>
+</span><span data-line="202">    <span class="n">pbc</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;pbc&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</span><span data-line="203">    <span class="n">cell</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;cell&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</span><span data-line="204">    <span class="n">values</span> <span class="o">=</span> <span class="n">TargetPrior</span><span class="o">.</span><span class="n">compute_features</span><span class="p">(</span>
+</span><span data-line="205">        <span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span>
+</span><span data-line="206">        <span class="n">mapping</span><span class="p">,</span>
+</span><span data-line="207">        <span class="n">pbc</span><span class="o">=</span><span class="n">pbc</span><span class="p">,</span>
+</span><span data-line="208">        <span class="n">cell</span><span class="o">=</span><span class="n">cell</span><span class="p">,</span>
+</span><span data-line="209">        <span class="n">batch</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">batch</span><span class="p">,</span>
+</span><span data-line="210">    <span class="p">)</span>
+</span><span data-line="211">    <span class="n">interaction_types</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span>
+</span><span data-line="212">        <span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">atom_types</span><span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="n">ii</span><span class="p">]]</span> <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">order</span><span class="p">)]</span>
+</span><span data-line="213">    <span class="p">)</span>
+</span><span data-line="214">
+</span><span data-line="215">    <span class="n">interaction_types</span> <span class="o">=</span> <span class="n">_symmetrise_map</span><span class="p">[</span><span class="n">order</span><span class="p">](</span><span class="n">interaction_types</span><span class="p">)</span>
+</span><span data-line="216">
+</span><span data-line="217">    <span class="n">statistics</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span data-line="218">    <span class="k">for</span> <span class="n">unique_key</span> <span class="ow">in</span> <span class="n">unique_keys</span><span class="o">.</span><span class="n">t</span><span class="p">():</span>
+</span><span data-line="219">        <span class="c1"># find which values correspond to unique_key type of interaction</span>
+</span><span data-line="220">        <span class="n">mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">all</span><span class="p">(</span>
+</span><span data-line="221">            <span class="n">torch</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span>
+</span><span data-line="222">                <span class="p">[</span>
+</span><span data-line="223">                    <span class="n">interaction_types</span><span class="p">[</span><span class="n">ii</span><span class="p">,</span> <span class="p">:]</span> <span class="o">==</span> <span class="n">unique_key</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>
+</span><span data-line="224">                    <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">order</span><span class="p">)</span>
+</span><span data-line="225">                <span class="p">]</span>
+</span><span data-line="226">            <span class="p">),</span>
+</span><span data-line="227">            <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+</span><span data-line="228">        <span class="p">)</span>
+</span><span data-line="229">        <span class="n">val</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+</span><span data-line="230">        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+</span><span data-line="231">            <span class="k">continue</span>
+</span><span data-line="232">
+</span><span data-line="233">        <span class="k">if</span> <span class="n">bmin</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="234">            <span class="n">b_min</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+</span><span data-line="235">        <span class="k">else</span><span class="p">:</span>
+</span><span data-line="236">            <span class="n">b_min</span> <span class="o">=</span> <span class="n">bmin</span>
+</span><span data-line="237">        <span class="k">if</span> <span class="n">bmax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="238">            <span class="n">b_max</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+</span><span data-line="239">        <span class="k">else</span><span class="p">:</span>
+</span><span data-line="240">            <span class="n">b_max</span> <span class="o">=</span> <span class="n">bmax</span>
 </span><span data-line="241">
-</span><span data-line="242">        <span class="k">if</span> <span class="n">fit_from_values</span><span class="p">:</span>
-</span><span data-line="243">            <span class="n">params</span> <span class="o">=</span> <span class="n">TargetPrior</span><span class="o">.</span><span class="n">fit_from_values</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="o">**</span><span class="n">target_fit_kwargs</span><span class="p">)</span>
-</span><span data-line="244">
-</span><span data-line="245">        <span class="k">else</span><span class="p">:</span>
-</span><span data-line="246">            <span class="n">params</span> <span class="o">=</span> <span class="n">TargetPrior</span><span class="o">.</span><span class="n">fit_from_potential_estimates</span><span class="p">(</span>
-</span><span data-line="247">                <span class="n">bin_centers_nz</span><span class="p">,</span> <span class="n">dG_nz</span><span class="p">,</span> <span class="o">**</span><span class="n">target_fit_kwargs</span>
-</span><span data-line="248">            <span class="p">)</span>
-</span><span data-line="249">
-</span><span data-line="250">        <span class="n">kk</span> <span class="o">=</span> <span class="n">tensor2tuple</span><span class="p">(</span><span class="n">unique_key</span><span class="p">)</span>
-</span><span data-line="251">        <span class="n">statistics</span><span class="p">[</span><span class="n">kk</span><span class="p">]</span> <span class="o">=</span> <span class="n">params</span>
-</span><span data-line="252">
-</span><span data-line="253">        <span class="n">statistics</span><span class="p">[</span><span class="n">kk</span><span class="p">][</span><span class="s2">&quot;p&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hist</span> <span class="o">/</span> <span class="n">trapezoid</span><span class="p">(</span>
-</span><span data-line="254">            <span class="n">hist</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">x</span><span class="o">=</span><span class="n">bin_centers</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
-</span><span data-line="255">        <span class="p">)</span>
-</span><span data-line="256">        <span class="n">statistics</span><span class="p">[</span><span class="n">kk</span><span class="p">][</span><span class="s2">&quot;p_bin&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bin_centers</span>
-</span><span data-line="257">        <span class="n">statistics</span><span class="p">[</span><span class="n">kk</span><span class="p">][</span><span class="s2">&quot;V&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dG_nz</span>
-</span><span data-line="258">        <span class="n">statistics</span><span class="p">[</span><span class="n">kk</span><span class="p">][</span><span class="s2">&quot;V_bin&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bin_centers_nz</span>
+</span><span data-line="242">        <span class="n">bin_centers</span> <span class="o">=</span> <span class="n">_get_bin_centers</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">nbins</span><span class="p">,</span> <span class="n">b_min</span><span class="o">=</span><span class="n">b_min</span><span class="p">,</span> <span class="n">b_max</span><span class="o">=</span><span class="n">b_max</span><span class="p">)</span>
+</span><span data-line="243">        <span class="n">hist</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">histc</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">nbins</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="n">b_min</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="n">b_max</span><span class="p">)</span>
+</span><span data-line="244">        <span class="n">mask</span> <span class="o">=</span> <span class="n">hist</span> <span class="o">&gt;</span> <span class="mi">0</span>
+</span><span data-line="245">        <span class="n">bin_centers_nz</span> <span class="o">=</span> <span class="n">bin_centers</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+</span><span data-line="246">        <span class="n">ncounts_nz</span> <span class="o">=</span> <span class="n">hist</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+</span><span data-line="247">        <span class="n">dG_nz</span> <span class="o">=</span> <span class="o">-</span><span class="n">torch</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">ncounts_nz</span><span class="p">)</span> <span class="o">/</span> <span class="n">beta</span>
+</span><span data-line="248">
+</span><span data-line="249">        <span class="k">if</span> <span class="n">fit_from_values</span><span class="p">:</span>
+</span><span data-line="250">            <span class="n">params</span> <span class="o">=</span> <span class="n">TargetPrior</span><span class="o">.</span><span class="n">fit_from_values</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="o">**</span><span class="n">target_fit_kwargs</span><span class="p">)</span>
+</span><span data-line="251">
+</span><span data-line="252">        <span class="k">else</span><span class="p">:</span>
+</span><span data-line="253">            <span class="n">params</span> <span class="o">=</span> <span class="n">TargetPrior</span><span class="o">.</span><span class="n">fit_from_potential_estimates</span><span class="p">(</span>
+</span><span data-line="254">                <span class="n">bin_centers_nz</span><span class="p">,</span> <span class="n">dG_nz</span><span class="p">,</span> <span class="o">**</span><span class="n">target_fit_kwargs</span>
+</span><span data-line="255">            <span class="p">)</span>
+</span><span data-line="256">
+</span><span data-line="257">        <span class="n">kk</span> <span class="o">=</span> <span class="n">tensor2tuple</span><span class="p">(</span><span class="n">unique_key</span><span class="p">)</span>
+</span><span data-line="258">        <span class="n">statistics</span><span class="p">[</span><span class="n">kk</span><span class="p">]</span> <span class="o">=</span> <span class="n">params</span>
 </span><span data-line="259">
-</span><span data-line="260">        <span class="n">kf</span> <span class="o">=</span> <span class="n">tensor2tuple</span><span class="p">(</span><span class="n">_flip_map</span><span class="p">[</span><span class="n">order</span><span class="p">](</span><span class="n">unique_key</span><span class="p">))</span>
-</span><span data-line="261">        <span class="n">statistics</span><span class="p">[</span><span class="n">kf</span><span class="p">]</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">statistics</span><span class="p">[</span><span class="n">kk</span><span class="p">])</span>
-</span><span data-line="262">
-</span><span data-line="263">    <span class="k">return</span> <span class="n">statistics</span></div>
+</span><span data-line="260">        <span class="n">statistics</span><span class="p">[</span><span class="n">kk</span><span class="p">][</span><span class="s2">&quot;p&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hist</span> <span class="o">/</span> <span class="n">trapezoid</span><span class="p">(</span>
+</span><span data-line="261">            <span class="n">hist</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">x</span><span class="o">=</span><span class="n">bin_centers</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+</span><span data-line="262">        <span class="p">)</span>
+</span><span data-line="263">        <span class="n">statistics</span><span class="p">[</span><span class="n">kk</span><span class="p">][</span><span class="s2">&quot;p_bin&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bin_centers</span>
+</span><span data-line="264">        <span class="n">statistics</span><span class="p">[</span><span class="n">kk</span><span class="p">][</span><span class="s2">&quot;V&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dG_nz</span>
+</span><span data-line="265">        <span class="n">statistics</span><span class="p">[</span><span class="n">kk</span><span class="p">][</span><span class="s2">&quot;V_bin&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bin_centers_nz</span>
+</span><span data-line="266">
+</span><span data-line="267">        <span class="n">kf</span> <span class="o">=</span> <span class="n">tensor2tuple</span><span class="p">(</span><span class="n">_flip_map</span><span class="p">[</span><span class="n">order</span><span class="p">](</span><span class="n">unique_key</span><span class="p">))</span>
+</span><span data-line="268">        <span class="n">statistics</span><span class="p">[</span><span class="n">kf</span><span class="p">]</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">statistics</span><span class="p">[</span><span class="n">kk</span><span class="p">])</span>
+</span><span data-line="269">
+</span><span data-line="270">    <span class="k">return</span> <span class="n">statistics</span></div>
 
-</span><span data-line="264">
-</span><span data-line="265">
+</span><span data-line="271">
+</span><span data-line="272">
 <div class="viewcode-block" id="fit_baseline_models">
 <a class="viewcode-back" href="../../../geometry/topology.html#mlcg.geometry.statistics.fit_baseline_models">[docs]</a>
-</span><span data-line="266"><span class="k">def</span><span class="w"> </span><span class="nf">fit_baseline_models</span><span class="p">(</span>
-</span><span data-line="267">    <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">,</span>
-</span><span data-line="268">    <span class="n">beta</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-</span><span data-line="269">    <span class="n">priors_cls</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">_Prior</span><span class="p">],</span>
-</span><span data-line="270">    <span class="n">nbins</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
-</span><span data-line="271">    <span class="n">bmin</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="272">    <span class="n">bmax</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="273"><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleDict</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]:</span>
-</span><span data-line="274"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Function for parametrizing a list of priors based on type-specific interactions contained in</span>
-</span><span data-line="275"><span class="sd">    a collated AtomicData structure</span>
-</span><span data-line="276">
-</span><span data-line="277"><span class="sd">    Parameters</span>
-</span><span data-line="278"><span class="sd">    ----------</span>
-</span><span data-line="279"><span class="sd">    data:</span>
-</span><span data-line="280"><span class="sd">        Input data, in the form of a collated list of individual AtomicData</span>
-</span><span data-line="281"><span class="sd">        structures.</span>
-</span><span data-line="282"><span class="sd">    beta:</span>
-</span><span data-line="283"><span class="sd">        Inverse thermodynamic temperature:</span>
-</span><span data-line="284">
-</span><span data-line="285"><span class="sd">        .. math::</span>
-</span><span data-line="286">
-</span><span data-line="287"><span class="sd">        \beta = \frac{1}{k_B T}</span>
-</span><span data-line="288">
-</span><span data-line="289"><span class="sd">        where :math:`k_B` is Boltzmann&#39;s constant and :math:`T` is the temperature.</span>
-</span><span data-line="290"><span class="sd">    priors_cls:</span>
-</span><span data-line="291"><span class="sd">       List of priors to parametrize based on the input data</span>
-</span><span data-line="292"><span class="sd">    nbins:</span>
-</span><span data-line="293"><span class="sd">        The number of bins over which 1-D feature histograms are constructed</span>
-</span><span data-line="294"><span class="sd">        in order to estimate distributions</span>
-</span><span data-line="295"><span class="sd">    bmin</span>
-</span><span data-line="296"><span class="sd">        If specified, the lower bound of bin edges. If not specified, the lower bound</span>
-</span><span data-line="297"><span class="sd">        defaults to the lowest value in the input feature</span>
-</span><span data-line="298"><span class="sd">    bmax</span>
-</span><span data-line="299"><span class="sd">        If specified, the upper bound of bin edges. If not specified, the upper bound</span>
-</span><span data-line="300"><span class="sd">        defaults to the greatest value in the input feature</span>
-</span><span data-line="301">
-</span><span data-line="302"><span class="sd">    Returns</span>
-</span><span data-line="303"><span class="sd">    -------</span>
-</span><span data-line="304"><span class="sd">    nn.Module:</span>
-</span><span data-line="305"><span class="sd">        The list of parametrized priors</span>
-</span><span data-line="306"><span class="sd">    Dict:</span>
-</span><span data-line="307"><span class="sd">        Corresponding statistsics for prior fits</span>
-</span><span data-line="308"><span class="sd">    &quot;&quot;&quot;</span>
-</span><span data-line="309">
-</span><span data-line="310">    <span class="n">statistics</span> <span class="o">=</span> <span class="p">{}</span>
-</span><span data-line="311">    <span class="n">models</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleDict</span><span class="p">()</span>
-</span><span data-line="312">    <span class="k">for</span> <span class="n">TargetPrior</span> <span class="ow">in</span> <span class="n">priors_cls</span><span class="p">:</span>
-</span><span data-line="313">        <span class="n">k</span> <span class="o">=</span> <span class="n">TargetPrior</span><span class="o">.</span><span class="n">name</span>
-</span><span data-line="314">        <span class="n">statistics</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">compute_statistics</span><span class="p">(</span>
-</span><span data-line="315">            <span class="n">data</span><span class="p">,</span>
-</span><span data-line="316">            <span class="n">k</span><span class="p">,</span>
-</span><span data-line="317">            <span class="n">beta</span><span class="p">,</span>
-</span><span data-line="318">            <span class="n">TargetPrior</span><span class="o">=</span><span class="n">TargetPrior</span><span class="p">,</span>
-</span><span data-line="319">            <span class="n">nbins</span><span class="o">=</span><span class="n">nbins</span><span class="p">,</span>
-</span><span data-line="320">            <span class="n">bmin</span><span class="o">=</span><span class="n">bmin</span><span class="p">,</span>
-</span><span data-line="321">            <span class="n">bmax</span><span class="o">=</span><span class="n">bmax</span><span class="p">,</span>
-</span><span data-line="322">        <span class="p">)</span>
-</span><span data-line="323">        <span class="n">models</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">TargetPrior</span><span class="p">(</span><span class="n">statistics</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
-</span><span data-line="324">    <span class="k">return</span> <span class="n">models</span><span class="p">,</span> <span class="n">statistics</span></div>
+</span><span data-line="273"><span class="k">def</span><span class="w"> </span><span class="nf">fit_baseline_models</span><span class="p">(</span>
+</span><span data-line="274">    <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">,</span>
+</span><span data-line="275">    <span class="n">beta</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+</span><span data-line="276">    <span class="n">priors_cls</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">_Prior</span><span class="p">],</span>
+</span><span data-line="277">    <span class="n">nbins</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+</span><span data-line="278">    <span class="n">bmin</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="279">    <span class="n">bmax</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="280"><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleDict</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]:</span>
+</span><span data-line="281"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Function for parametrizing a list of priors based on type-specific interactions contained in</span>
+</span><span data-line="282"><span class="sd">    a collated AtomicData structure</span>
+</span><span data-line="283">
+</span><span data-line="284"><span class="sd">    Parameters</span>
+</span><span data-line="285"><span class="sd">    ----------</span>
+</span><span data-line="286"><span class="sd">    data:</span>
+</span><span data-line="287"><span class="sd">        Input data, in the form of a collated list of individual AtomicData</span>
+</span><span data-line="288"><span class="sd">        structures.</span>
+</span><span data-line="289"><span class="sd">    beta:</span>
+</span><span data-line="290"><span class="sd">        Inverse thermodynamic temperature:</span>
+</span><span data-line="291">
+</span><span data-line="292"><span class="sd">        .. math::</span>
+</span><span data-line="293">
+</span><span data-line="294"><span class="sd">        \beta = \frac{1}{k_B T}</span>
+</span><span data-line="295">
+</span><span data-line="296"><span class="sd">        where :math:`k_B` is Boltzmann&#39;s constant and :math:`T` is the temperature.</span>
+</span><span data-line="297"><span class="sd">    priors_cls:</span>
+</span><span data-line="298"><span class="sd">       List of priors to parametrize based on the input data</span>
+</span><span data-line="299"><span class="sd">    nbins:</span>
+</span><span data-line="300"><span class="sd">        The number of bins over which 1-D feature histograms are constructed</span>
+</span><span data-line="301"><span class="sd">        in order to estimate distributions</span>
+</span><span data-line="302"><span class="sd">    bmin</span>
+</span><span data-line="303"><span class="sd">        If specified, the lower bound of bin edges. If not specified, the lower bound</span>
+</span><span data-line="304"><span class="sd">        defaults to the lowest value in the input feature</span>
+</span><span data-line="305"><span class="sd">    bmax</span>
+</span><span data-line="306"><span class="sd">        If specified, the upper bound of bin edges. If not specified, the upper bound</span>
+</span><span data-line="307"><span class="sd">        defaults to the greatest value in the input feature</span>
+</span><span data-line="308">
+</span><span data-line="309"><span class="sd">    Returns</span>
+</span><span data-line="310"><span class="sd">    -------</span>
+</span><span data-line="311"><span class="sd">    nn.Module:</span>
+</span><span data-line="312"><span class="sd">        The list of parametrized priors</span>
+</span><span data-line="313"><span class="sd">    Dict:</span>
+</span><span data-line="314"><span class="sd">        Corresponding statistsics for prior fits</span>
+</span><span data-line="315"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="316">
+</span><span data-line="317">    <span class="n">statistics</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span data-line="318">    <span class="n">models</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleDict</span><span class="p">()</span>
+</span><span data-line="319">    <span class="k">for</span> <span class="n">TargetPrior</span> <span class="ow">in</span> <span class="n">priors_cls</span><span class="p">:</span>
+</span><span data-line="320">        <span class="n">k</span> <span class="o">=</span> <span class="n">TargetPrior</span><span class="o">.</span><span class="n">name</span>
+</span><span data-line="321">        <span class="n">statistics</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">compute_statistics</span><span class="p">(</span>
+</span><span data-line="322">            <span class="n">data</span><span class="p">,</span>
+</span><span data-line="323">            <span class="n">k</span><span class="p">,</span>
+</span><span data-line="324">            <span class="n">beta</span><span class="p">,</span>
+</span><span data-line="325">            <span class="n">TargetPrior</span><span class="o">=</span><span class="n">TargetPrior</span><span class="p">,</span>
+</span><span data-line="326">            <span class="n">nbins</span><span class="o">=</span><span class="n">nbins</span><span class="p">,</span>
+</span><span data-line="327">            <span class="n">bmin</span><span class="o">=</span><span class="n">bmin</span><span class="p">,</span>
+</span><span data-line="328">            <span class="n">bmax</span><span class="o">=</span><span class="n">bmax</span><span class="p">,</span>
+</span><span data-line="329">        <span class="p">)</span>
+</span><span data-line="330">        <span class="n">models</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">TargetPrior</span><span class="p">(</span><span class="n">statistics</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+</span><span data-line="331">    <span class="k">return</span> <span class="n">models</span><span class="p">,</span> <span class="n">statistics</span></div>
 
 </span></pre></div>
         </article><button class="back-to-top" type="button">

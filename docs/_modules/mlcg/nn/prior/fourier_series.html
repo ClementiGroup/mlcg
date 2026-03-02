@@ -240,380 +240,398 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="92"><span class="sd">            Tensor of computed features</span>
 </span><span data-line="93"><span class="sd">        &quot;&quot;&quot;</span>
 </span><span data-line="94">        <span class="n">mapping</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;index_mapping&quot;</span><span class="p">]</span>
-</span><span data-line="95">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_features</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span> <span class="n">mapping</span><span class="p">)</span>
-</span><span data-line="96">
-</span><span data-line="97">    <span class="k">def</span><span class="w"> </span><span class="nf">data2parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
-</span><span data-line="98">        <span class="n">mapping</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;index_mapping&quot;</span><span class="p">]</span>
-</span><span data-line="99">        <span class="n">interaction_types</span> <span class="o">=</span> <span class="p">[</span>
-</span><span data-line="100">            <span class="n">data</span><span class="o">.</span><span class="n">atom_types</span><span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="n">ii</span><span class="p">]]</span> <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="p">)</span>
-</span><span data-line="101">        <span class="p">]</span>
-</span><span data-line="102">        <span class="c1"># the parameters have shape n_features x n_degs</span>
-</span><span data-line="103">        <span class="n">k1s</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span>
-</span><span data-line="104">            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">k1s</span><span class="p">[</span><span class="n">ii</span><span class="p">][</span><span class="n">interaction_types</span><span class="p">]</span> <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_degs</span><span class="p">)]</span>
-</span><span data-line="105">        <span class="p">)</span><span class="o">.</span><span class="n">t</span><span class="p">()</span>
-</span><span data-line="106">        <span class="n">k2s</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span>
-</span><span data-line="107">            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">k2s</span><span class="p">[</span><span class="n">ii</span><span class="p">][</span><span class="n">interaction_types</span><span class="p">]</span> <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_degs</span><span class="p">)]</span>
-</span><span data-line="108">        <span class="p">)</span><span class="o">.</span><span class="n">t</span><span class="p">()</span>
-</span><span data-line="109">        <span class="n">v_0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">v_0</span><span class="p">[</span><span class="n">interaction_types</span><span class="p">]</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-</span><span data-line="110">        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;k1s&quot;</span><span class="p">:</span> <span class="n">k1s</span><span class="p">,</span> <span class="s2">&quot;k2s&quot;</span><span class="p">:</span> <span class="n">k2s</span><span class="p">,</span> <span class="s2">&quot;v_0&quot;</span><span class="p">:</span> <span class="n">v_0</span><span class="p">}</span>
-</span><span data-line="111">
-</span><span data-line="112">    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AtomicData</span><span class="p">:</span>
-</span><span data-line="113"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Forward pass through the dihedral interaction.</span>
-</span><span data-line="114"><span class="sd">        Parameters</span>
-</span><span data-line="115"><span class="sd">        ----------</span>
-</span><span data-line="116"><span class="sd">        data:</span>
-</span><span data-line="117"><span class="sd">            Input AtomicData instance that possesses an appropriate</span>
-</span><span data-line="118"><span class="sd">            neighbor list containing both an &#39;index_mapping&#39;</span>
-</span><span data-line="119"><span class="sd">            field and a &#39;mapping_batch&#39; field for accessing</span>
-</span><span data-line="120"><span class="sd">            beads relevant to the interaction and scattering</span>
-</span><span data-line="121"><span class="sd">            the interaction energies onto the correct example/structure</span>
-</span><span data-line="122"><span class="sd">            respectively.</span>
-</span><span data-line="123"><span class="sd">        Returns</span>
-</span><span data-line="124"><span class="sd">        -------</span>
-</span><span data-line="125"><span class="sd">        AtomicData:</span>
-</span><span data-line="126"><span class="sd">            Updated AtomicData instance with the &#39;out&#39; field</span>
-</span><span data-line="127"><span class="sd">            populated with the predicted energies for each</span>
-</span><span data-line="128"><span class="sd">            example/structure</span>
-</span><span data-line="129"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="130">
-</span><span data-line="131">        <span class="n">mapping_batch</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;mapping_batch&quot;</span><span class="p">]</span>
-</span><span data-line="132">
-</span><span data-line="133">        <span class="n">features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data2features</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
-</span><span data-line="134">        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data2parameters</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-</span><span data-line="135">        <span class="n">y</span> <span class="o">=</span> <span class="n">FourierSeries</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">)</span>
-</span><span data-line="136">        <span class="n">y</span> <span class="o">=</span> <span class="n">scatter</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">mapping_batch</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">reduce</span><span class="o">=</span><span class="s2">&quot;sum&quot;</span><span class="p">)</span>
-</span><span data-line="137">        <span class="n">data</span><span class="o">.</span><span class="n">out</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;energy&quot;</span><span class="p">:</span> <span class="n">y</span><span class="p">}</span>
-</span><span data-line="138">        <span class="k">return</span> <span class="n">data</span>
-</span><span data-line="139">
-</span><span data-line="140">    <span class="nd">@staticmethod</span>
-</span><span data-line="141">    <span class="k">def</span><span class="w"> </span><span class="nf">wrapper_fit_func</span><span class="p">(</span><span class="n">theta</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-</span><span data-line="142">        <span class="n">args</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-</span><span data-line="143">        <span class="n">v_0</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-</span><span data-line="144">        <span class="n">k_args</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
-</span><span data-line="145">        <span class="n">num_ks</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">k_args</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
-</span><span data-line="146">        <span class="n">k1s</span><span class="p">,</span> <span class="n">k2s</span> <span class="o">=</span> <span class="n">k_args</span><span class="p">[:</span><span class="n">num_ks</span><span class="p">],</span> <span class="n">k_args</span><span class="p">[</span><span class="n">num_ks</span><span class="p">:]</span>
-</span><span data-line="147">        <span class="n">k1s</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">k1s</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_ks</span><span class="p">)</span>
-</span><span data-line="148">        <span class="n">k2s</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">k2s</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_ks</span><span class="p">)</span>
-</span><span data-line="149">        <span class="k">return</span> <span class="n">FourierSeries</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">v_0</span><span class="p">,</span> <span class="n">k1s</span><span class="p">,</span> <span class="n">k2s</span><span class="p">)</span>
-</span><span data-line="150">
-</span><span data-line="151">    <span class="nd">@staticmethod</span>
-</span><span data-line="152">    <span class="k">def</span><span class="w"> </span><span class="nf">compute</span><span class="p">(</span>
-</span><span data-line="153">        <span class="n">theta</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-</span><span data-line="154">        <span class="n">v_0</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-</span><span data-line="155">        <span class="n">k1s</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-</span><span data-line="156">        <span class="n">k2s</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-</span><span data-line="157">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-</span><span data-line="158"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the dihedral interaction for a list of angles and models</span>
-</span><span data-line="159"><span class="sd">        parameters. The ineraction is computed as a sin/cos basis expansion up</span>
-</span><span data-line="160"><span class="sd">        to N basis functions.</span>
-</span><span data-line="161">
-</span><span data-line="162"><span class="sd">        Parameters</span>
-</span><span data-line="163"><span class="sd">        ----------</span>
-</span><span data-line="164"><span class="sd">        theta :</span>
-</span><span data-line="165"><span class="sd">            angles to compute the value of the dihedral interaction on</span>
-</span><span data-line="166"><span class="sd">        v_0 :</span>
-</span><span data-line="167"><span class="sd">            constant offset</span>
-</span><span data-line="168"><span class="sd">        k1s :</span>
-</span><span data-line="169"><span class="sd">            list of sin parameters</span>
-</span><span data-line="170"><span class="sd">        k2s :</span>
-</span><span data-line="171"><span class="sd">            list of cos parameters</span>
-</span><span data-line="172"><span class="sd">        Returns</span>
-</span><span data-line="173"><span class="sd">        -------</span>
-</span><span data-line="174"><span class="sd">        torch.Tensor:</span>
-</span><span data-line="175"><span class="sd">            FourierSeries interaction energy</span>
-</span><span data-line="176"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="177">        <span class="n">_</span><span class="p">,</span> <span class="n">n_k</span> <span class="o">=</span> <span class="n">k1s</span><span class="o">.</span><span class="n">shape</span>
-</span><span data-line="178">        <span class="n">n_degs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span>
-</span><span data-line="179">            <span class="mi">1</span><span class="p">,</span> <span class="n">n_k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">theta</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">theta</span><span class="o">.</span><span class="n">device</span>
-</span><span data-line="180">        <span class="p">)</span>
-</span><span data-line="181">        <span class="c1"># expand the features w.r.t the mult integer so that it has the</span>
-</span><span data-line="182">        <span class="c1"># shape of k1s and k2s</span>
-</span><span data-line="183">        <span class="n">angles</span> <span class="o">=</span> <span class="n">theta</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">n_degs</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-</span><span data-line="184">        <span class="n">V</span> <span class="o">=</span> <span class="n">k1s</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angles</span><span class="p">)</span> <span class="o">+</span> <span class="n">k2s</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angles</span><span class="p">)</span>
-</span><span data-line="185">        <span class="c1"># HOTFIX to avoid shape mismatch when using specialized priors</span>
-</span><span data-line="186">        <span class="c1"># TODO: think of a better fix</span>
-</span><span data-line="187">        <span class="k">if</span> <span class="n">v_0</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-</span><span data-line="188">            <span class="n">v_0</span> <span class="o">=</span> <span class="n">v_0</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
-</span><span data-line="189">
-</span><span data-line="190">        <span class="k">return</span> <span class="n">V</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">v_0</span>
-</span><span data-line="191">
-</span><span data-line="192">    <span class="nd">@staticmethod</span>
-</span><span data-line="193">    <span class="k">def</span><span class="w"> </span><span class="nf">neg_log_likelihood</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">yhat</span><span class="p">):</span>
-</span><span data-line="194"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span data-line="195"><span class="sd">        Convert dG to probability and use KL divergence to get difference between</span>
-</span><span data-line="196"><span class="sd">        predicted and actual</span>
-</span><span data-line="197"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="198">        <span class="n">L</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">y</span><span class="p">)</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">yhat</span><span class="p">)))</span>
-</span><span data-line="199">        <span class="k">return</span> <span class="o">-</span><span class="n">L</span>
-</span><span data-line="200">
-</span><span data-line="201">    <span class="nd">@staticmethod</span>
-</span><span data-line="202">    <span class="k">def</span><span class="w"> </span><span class="nf">_init_parameters</span><span class="p">(</span><span class="n">n_degs</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
-</span><span data-line="203"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Helper method for guessing initial parameter values&quot;&quot;&quot;</span>
-</span><span data-line="204">        <span class="n">p0</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.00</span><span class="p">]</span>  <span class="c1"># start with constant offset</span>
-</span><span data-line="205">        <span class="n">k1s_0</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_degs</span><span class="p">)]</span>
-</span><span data-line="206">        <span class="n">k2s_0</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_degs</span><span class="p">)]</span>
-</span><span data-line="207">        <span class="n">p0</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">k1s_0</span><span class="p">)</span>
-</span><span data-line="208">        <span class="n">p0</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">k2s_0</span><span class="p">)</span>
-</span><span data-line="209">        <span class="k">return</span> <span class="n">p0</span>
-</span><span data-line="210">
-</span><span data-line="211">    <span class="nd">@staticmethod</span>
-</span><span data-line="212">    <span class="k">def</span><span class="w"> </span><span class="nf">_init_parameter_dict</span><span class="p">(</span><span class="n">n_degs</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
-</span><span data-line="213"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Helper method for initializing the parameter dictionary&quot;&quot;&quot;</span>
-</span><span data-line="214">        <span class="n">stat</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;k1s&quot;</span><span class="p">:</span> <span class="p">{},</span> <span class="s2">&quot;k2s&quot;</span><span class="p">:</span> <span class="p">{},</span> <span class="s2">&quot;v_0&quot;</span><span class="p">:</span> <span class="mf">0.00</span><span class="p">}</span>
-</span><span data-line="215">        <span class="n">k1_names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;k1_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span> <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_degs</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
-</span><span data-line="216">        <span class="n">k2_names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;k2_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span> <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_degs</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
-</span><span data-line="217">        <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_degs</span><span class="p">):</span>
-</span><span data-line="218">            <span class="n">k1_name</span> <span class="o">=</span> <span class="n">k1_names</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>
-</span><span data-line="219">            <span class="n">k2_name</span> <span class="o">=</span> <span class="n">k2_names</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>
-</span><span data-line="220">            <span class="n">stat</span><span class="p">[</span><span class="s2">&quot;k1s&quot;</span><span class="p">][</span><span class="n">k1_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-</span><span data-line="221">            <span class="n">stat</span><span class="p">[</span><span class="s2">&quot;k2s&quot;</span><span class="p">][</span><span class="n">k2_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-</span><span data-line="222">        <span class="k">return</span> <span class="n">stat</span>
-</span><span data-line="223">
-</span><span data-line="224">    <span class="nd">@staticmethod</span>
-</span><span data-line="225">    <span class="k">def</span><span class="w"> </span><span class="nf">_make_parameter_dict</span><span class="p">(</span><span class="n">stat</span><span class="p">,</span> <span class="n">popt</span><span class="p">,</span> <span class="n">n_degs</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
-</span><span data-line="226"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Helper method for constructing a fitted parameter dictionary&quot;&quot;&quot;</span>
-</span><span data-line="227">        <span class="n">v_0</span> <span class="o">=</span> <span class="n">popt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-</span><span data-line="228">        <span class="n">k_popt</span> <span class="o">=</span> <span class="n">popt</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
-</span><span data-line="229">        <span class="n">num_k1s</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">k_popt</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
-</span><span data-line="230">        <span class="n">k1_names</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">stat</span><span class="p">[</span><span class="s2">&quot;k1s&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
-</span><span data-line="231">        <span class="n">k2_names</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">stat</span><span class="p">[</span><span class="s2">&quot;k2s&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
-</span><span data-line="232">        <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_degs</span><span class="p">):</span>
-</span><span data-line="233">            <span class="n">k1_name</span> <span class="o">=</span> <span class="n">k1_names</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>
-</span><span data-line="234">            <span class="n">k2_name</span> <span class="o">=</span> <span class="n">k2_names</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>
-</span><span data-line="235">            <span class="n">stat</span><span class="p">[</span><span class="s2">&quot;k1s&quot;</span><span class="p">][</span><span class="n">k1_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-</span><span data-line="236">            <span class="n">stat</span><span class="p">[</span><span class="s2">&quot;k2s&quot;</span><span class="p">][</span><span class="n">k2_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-</span><span data-line="237">            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">k_popt</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">ii</span><span class="p">:</span>
-</span><span data-line="238">                <span class="n">stat</span><span class="p">[</span><span class="s2">&quot;k1s&quot;</span><span class="p">][</span><span class="n">k1_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">k_popt</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>
-</span><span data-line="239">                <span class="n">stat</span><span class="p">[</span><span class="s2">&quot;k2s&quot;</span><span class="p">][</span><span class="n">k2_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">k_popt</span><span class="p">[</span><span class="n">num_k1s</span> <span class="o">+</span> <span class="n">ii</span><span class="p">]</span>
-</span><span data-line="240">            <span class="k">else</span><span class="p">:</span>
-</span><span data-line="241">                <span class="n">stat</span><span class="p">[</span><span class="s2">&quot;k1s&quot;</span><span class="p">][</span><span class="n">k1_name</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-</span><span data-line="242">                <span class="n">stat</span><span class="p">[</span><span class="s2">&quot;k2s&quot;</span><span class="p">][</span><span class="n">k2_name</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-</span><span data-line="243">        <span class="n">stat</span><span class="p">[</span><span class="s2">&quot;v_0&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">v_0</span>
-</span><span data-line="244">        <span class="k">return</span> <span class="n">stat</span>
-</span><span data-line="245">
-</span><span data-line="246">    <span class="nd">@staticmethod</span>
-</span><span data-line="247">    <span class="k">def</span><span class="w"> </span><span class="nf">_compute_adjusted_R2</span><span class="p">(</span>
-</span><span data-line="248">        <span class="n">bin_centers_nz</span><span class="p">,</span> <span class="n">dG_nz</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">popt</span><span class="p">,</span> <span class="n">free_parameters</span>
-</span><span data-line="249">    <span class="p">):</span>
-</span><span data-line="250"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span data-line="251"><span class="sd">        Method for model selection using adjusted R2</span>
-</span><span data-line="252"><span class="sd">        Higher values imply better model selection</span>
-</span><span data-line="253"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="254">        <span class="n">dG_fit</span> <span class="o">=</span> <span class="n">FourierSeries</span><span class="o">.</span><span class="n">wrapper_fit_func</span><span class="p">(</span><span class="n">bin_centers_nz</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span> <span class="o">*</span><span class="p">[</span><span class="n">popt</span><span class="p">])</span>
-</span><span data-line="255">        <span class="n">SSres</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">dG_nz</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">-</span> <span class="n">dG_fit</span><span class="p">))</span>
-</span><span data-line="256">        <span class="n">SStot</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">dG_nz</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">-</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">dG_nz</span><span class="p">[</span><span class="n">mask</span><span class="p">])))</span>
-</span><span data-line="257">        <span class="n">n_samples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dG_nz</span><span class="p">[</span><span class="n">mask</span><span class="p">])</span>
-</span><span data-line="258">        <span class="n">R2</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="p">(</span><span class="n">SSres</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_samples</span> <span class="o">-</span> <span class="n">free_parameters</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span>
-</span><span data-line="259">            <span class="n">SStot</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_samples</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
-</span><span data-line="260">        <span class="p">)</span>
-</span><span data-line="261">        <span class="k">return</span> <span class="n">R2</span>
-</span><span data-line="262">
-</span><span data-line="263">    <span class="nd">@staticmethod</span>
-</span><span data-line="264">    <span class="k">def</span><span class="w"> </span><span class="nf">_compute_aic</span><span class="p">(</span><span class="n">bin_centers_nz</span><span class="p">,</span> <span class="n">dG_nz</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">popt</span><span class="p">,</span> <span class="n">free_parameters</span><span class="p">):</span>
-</span><span data-line="265"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Method for computing the AIC&quot;&quot;&quot;</span>
-</span><span data-line="266">        <span class="n">aic</span> <span class="o">=</span> <span class="p">(</span>
-</span><span data-line="267">            <span class="mi">2</span>
-</span><span data-line="268">            <span class="o">*</span> <span class="n">FourierSeries</span><span class="o">.</span><span class="n">neg_log_likelihood</span><span class="p">(</span>
-</span><span data-line="269">                <span class="n">dG_nz</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span>
-</span><span data-line="270">                <span class="n">FourierSeries</span><span class="o">.</span><span class="n">wrapper_fit_func</span><span class="p">(</span><span class="n">bin_centers_nz</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span> <span class="o">*</span><span class="p">[</span><span class="n">popt</span><span class="p">]),</span>
-</span><span data-line="271">            <span class="p">)</span>
-</span><span data-line="272">            <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">free_parameters</span>
-</span><span data-line="273">        <span class="p">)</span>
-</span><span data-line="274">        <span class="k">return</span> <span class="n">aic</span>
-</span><span data-line="275">
-</span><span data-line="276">    <span class="nd">@staticmethod</span>
-</span><span data-line="277">    <span class="k">def</span><span class="w"> </span><span class="nf">_linear_regression</span><span class="p">(</span><span class="n">bin_centers</span><span class="p">,</span> <span class="n">targets</span><span class="p">,</span> <span class="n">n_degs</span><span class="p">):</span>
-</span><span data-line="278"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Vanilla linear regression&quot;&quot;&quot;</span>
-</span><span data-line="279">        <span class="n">features</span> <span class="o">=</span> <span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">bin_centers</span><span class="p">)]</span>
-</span><span data-line="280">        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_degs</span><span class="p">):</span>
-</span><span data-line="281">            <span class="n">features</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">sin</span><span class="p">((</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">bin_centers</span><span class="p">))</span>
-</span><span data-line="282">        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_degs</span><span class="p">):</span>
-</span><span data-line="283">            <span class="n">features</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cos</span><span class="p">((</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">bin_centers</span><span class="p">))</span>
-</span><span data-line="284">        <span class="n">features</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">features</span><span class="p">)</span><span class="o">.</span><span class="n">t</span><span class="p">()</span>
-</span><span data-line="285">        <span class="n">targets</span> <span class="o">=</span> <span class="n">targets</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">features</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
-</span><span data-line="286">        <span class="n">sol</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">lstsq</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">targets</span><span class="o">.</span><span class="n">t</span><span class="p">())</span>
-</span><span data-line="287">        <span class="k">return</span> <span class="n">sol</span>
-</span><span data-line="288">
-</span><span data-line="289">    <span class="nd">@staticmethod</span>
-</span><span data-line="290">    <span class="k">def</span><span class="w"> </span><span class="nf">fit_from_potential_estimates</span><span class="p">(</span>
-</span><span data-line="291">        <span class="n">bin_centers_nz</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-</span><span data-line="292">        <span class="n">dG_nz</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-</span><span data-line="293">        <span class="n">n_degs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">6</span><span class="p">,</span>
-</span><span data-line="294">        <span class="n">constrain_deg</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="295">        <span class="n">regression_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;linear&quot;</span><span class="p">,</span>
-</span><span data-line="296">        <span class="n">metric</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;aic&quot;</span><span class="p">,</span>
-</span><span data-line="297">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
-</span><span data-line="298"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span data-line="299"><span class="sd">        Loop over n_degs basins and use either the AIC criterion</span>
-</span><span data-line="300"><span class="sd">        or a prechosen degree to select best fit. Parameter fitting</span>
-</span><span data-line="301"><span class="sd">        occurs over unmaksed regions of the free energy only.</span>
-</span><span data-line="302"><span class="sd">        Parameters</span>
-</span><span data-line="303"><span class="sd">        ----------</span>
-</span><span data-line="304"><span class="sd">        bin_centers_nz:</span>
-</span><span data-line="305"><span class="sd">            Bin centers over which the fit is carried out</span>
-</span><span data-line="306"><span class="sd">        dG_nz:</span>
-</span><span data-line="307"><span class="sd">            The emperical free energy correspinding to the bin centers</span>
-</span><span data-line="308"><span class="sd">        n_degs:</span>
-</span><span data-line="309"><span class="sd">            The maximum number of degrees to attempt to fit if using the AIC</span>
-</span><span data-line="310"><span class="sd">            criterion for prior model selection</span>
-</span><span data-line="311"><span class="sd">        constrain_deg:</span>
-</span><span data-line="312"><span class="sd">            If not None, a single fit is produced for the specified integer</span>
-</span><span data-line="313"><span class="sd">            degree instead of using the AIC criterion for fit selection between</span>
-</span><span data-line="314"><span class="sd">            multiple degrees</span>
-</span><span data-line="315"><span class="sd">        regression_method:</span>
-</span><span data-line="316"><span class="sd">            String specifying which regression method to use. If &quot;nonlinear&quot;,</span>
-</span><span data-line="317"><span class="sd">            the default `scipy.optimize.curve_fit` method is used. If &#39;linear&#39;,</span>
-</span><span data-line="318"><span class="sd">            linear regression via `torch.linalg.lstsq` is used</span>
-</span><span data-line="319"><span class="sd">        metric:</span>
-</span><span data-line="320"><span class="sd">            If a constrain deg is not specified, this string specifies whether to</span>
-</span><span data-line="321"><span class="sd">            use either AIC (&#39;aic&#39;) or adjusted R squared (&#39;r2&#39;) for automated degree</span>
-</span><span data-line="322"><span class="sd">            selection. If the automatic degree determination fails, users should</span>
-</span><span data-line="323"><span class="sd">            consider searching for a proper constrained degree.</span>
-</span><span data-line="324">
-</span><span data-line="325"><span class="sd">        Returns</span>
-</span><span data-line="326"><span class="sd">        -------</span>
-</span><span data-line="327"><span class="sd">        Dict:</span>
-</span><span data-line="328"><span class="sd">            Statistics dictionary with fitted interaction parameters</span>
-</span><span data-line="329"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="330">
-</span><span data-line="331">        <span class="n">integral</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
-</span><span data-line="332">            <span class="nb">float</span><span class="p">(</span><span class="n">trapezoid</span><span class="p">(</span><span class="n">dG_nz</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">bin_centers_nz</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()))</span>
-</span><span data-line="333">        <span class="p">)</span>
-</span><span data-line="334">
-</span><span data-line="335">        <span class="n">mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">dG_nz</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">1e-4</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">integral</span><span class="p">)</span>
-</span><span data-line="336">
-</span><span data-line="337">        <span class="k">if</span> <span class="n">constrain_deg</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="338">            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">constrain_deg</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
-</span><span data-line="339">            <span class="n">stat</span> <span class="o">=</span> <span class="n">FourierSeries</span><span class="o">.</span><span class="n">_init_parameter_dict</span><span class="p">(</span><span class="n">constrain_deg</span><span class="p">)</span>
-</span><span data-line="340">            <span class="k">if</span> <span class="n">regression_method</span> <span class="o">==</span> <span class="s2">&quot;linear&quot;</span><span class="p">:</span>
-</span><span data-line="341">                <span class="n">popt</span> <span class="o">=</span> <span class="p">(</span>
-</span><span data-line="342">                    <span class="n">FourierSeries</span><span class="o">.</span><span class="n">_linear_regression</span><span class="p">(</span>
-</span><span data-line="343">                        <span class="n">bin_centers_nz</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span> <span class="n">dG_nz</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span> <span class="n">constrain_deg</span>
-</span><span data-line="344">                    <span class="p">)</span>
-</span><span data-line="345">                    <span class="o">.</span><span class="n">solution</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
-</span><span data-line="346">                    <span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-</span><span data-line="347">                <span class="p">)</span>
-</span><span data-line="348">            <span class="k">elif</span> <span class="n">regression_method</span> <span class="o">==</span> <span class="s2">&quot;nonlinear&quot;</span><span class="p">:</span>
-</span><span data-line="349">                <span class="n">p0</span> <span class="o">=</span> <span class="n">FourierSeries</span><span class="o">.</span><span class="n">_init_parameters</span><span class="p">(</span><span class="n">constrain_deg</span><span class="p">)</span>
-</span><span data-line="350">                <span class="n">popt</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">curve_fit</span><span class="p">(</span>
-</span><span data-line="351">                    <span class="k">lambda</span> <span class="n">theta</span><span class="p">,</span> <span class="o">*</span><span class="n">p0</span><span class="p">:</span> <span class="n">FourierSeries</span><span class="o">.</span><span class="n">wrapper_fit_func</span><span class="p">(</span>
-</span><span data-line="352">                        <span class="n">theta</span><span class="p">,</span> <span class="n">p0</span>
-</span><span data-line="353">                    <span class="p">),</span>
-</span><span data-line="354">                    <span class="n">bin_centers_nz</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span>
-</span><span data-line="355">                    <span class="n">dG_nz</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span>
-</span><span data-line="356">                    <span class="n">p0</span><span class="o">=</span><span class="n">p0</span><span class="p">,</span>
-</span><span data-line="357">                <span class="p">)</span>
-</span><span data-line="358">            <span class="k">else</span><span class="p">:</span>
-</span><span data-line="359">                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-</span><span data-line="360">                    <span class="s2">&quot;regression method </span><span class="si">{}</span><span class="s2"> is neither &#39;linear&#39; nor &#39;nonlinear&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-</span><span data-line="361">                        <span class="n">regression_method</span>
-</span><span data-line="362">                    <span class="p">)</span>
-</span><span data-line="363">                <span class="p">)</span>
-</span><span data-line="364">            <span class="n">stat</span> <span class="o">=</span> <span class="n">FourierSeries</span><span class="o">.</span><span class="n">_make_parameter_dict</span><span class="p">(</span><span class="n">stat</span><span class="p">,</span> <span class="n">popt</span><span class="p">,</span> <span class="n">constrain_deg</span><span class="p">)</span>
-</span><span data-line="365">
-</span><span data-line="366">        <span class="k">else</span><span class="p">:</span>
-</span><span data-line="367">            <span class="k">if</span> <span class="n">metric</span> <span class="o">==</span> <span class="s2">&quot;aic&quot;</span><span class="p">:</span>
-</span><span data-line="368">                <span class="n">metric_func</span> <span class="o">=</span> <span class="n">FourierSeries</span><span class="o">.</span><span class="n">_compute_aic</span>
-</span><span data-line="369">                <span class="n">best_func</span> <span class="o">=</span> <span class="nb">min</span>
-</span><span data-line="370">            <span class="k">elif</span> <span class="n">metric</span> <span class="o">==</span> <span class="s2">&quot;r2&quot;</span><span class="p">:</span>
-</span><span data-line="371">                <span class="n">metric_func</span> <span class="o">=</span> <span class="n">FourierSeries</span><span class="o">.</span><span class="n">_compute_adjusted_R2</span>
-</span><span data-line="372">                <span class="n">best_func</span> <span class="o">=</span> <span class="nb">max</span>
-</span><span data-line="373">            <span class="k">else</span><span class="p">:</span>
-</span><span data-line="374">                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-</span><span data-line="375">                    <span class="s2">&quot;metric </span><span class="si">{}</span><span class="s2"> is neither &#39;aic&#39; nor &#39;r2&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">metric</span><span class="p">)</span>
-</span><span data-line="376">                <span class="p">)</span>
-</span><span data-line="377">
-</span><span data-line="378">            <span class="c1"># Determine best fit for unknown # of parameters</span>
-</span><span data-line="379">            <span class="n">stat</span> <span class="o">=</span> <span class="n">FourierSeries</span><span class="o">.</span><span class="n">_init_parameter_dict</span><span class="p">(</span><span class="n">n_degs</span><span class="p">)</span>
-</span><span data-line="380">            <span class="n">popts</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span data-line="381">            <span class="n">metric_vals</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span data-line="382">
-</span><span data-line="383">            <span class="k">try</span><span class="p">:</span>
-</span><span data-line="384">                <span class="k">for</span> <span class="n">deg</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_degs</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
-</span><span data-line="385">                    <span class="n">free_parameters</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">deg</span><span class="p">)</span>
-</span><span data-line="386">                    <span class="k">if</span> <span class="n">regression_method</span> <span class="o">==</span> <span class="s2">&quot;linear&quot;</span><span class="p">:</span>
-</span><span data-line="387">                        <span class="n">popt</span> <span class="o">=</span> <span class="p">(</span>
-</span><span data-line="388">                            <span class="n">FourierSeries</span><span class="o">.</span><span class="n">_linear_regression</span><span class="p">(</span>
-</span><span data-line="389">                                <span class="n">bin_centers_nz</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span> <span class="n">dG_nz</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span> <span class="n">deg</span>
-</span><span data-line="390">                            <span class="p">)</span>
-</span><span data-line="391">                            <span class="o">.</span><span class="n">solution</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
-</span><span data-line="392">                            <span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-</span><span data-line="393">                        <span class="p">)</span>
-</span><span data-line="394">                    <span class="k">elif</span> <span class="n">regression_method</span> <span class="o">==</span> <span class="s2">&quot;nonlinear&quot;</span><span class="p">:</span>
-</span><span data-line="395">                        <span class="n">p0</span> <span class="o">=</span> <span class="n">FourierSeries</span><span class="o">.</span><span class="n">_init_parameters</span><span class="p">(</span><span class="n">deg</span><span class="p">)</span>
-</span><span data-line="396">                        <span class="n">popt</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">curve_fit</span><span class="p">(</span>
-</span><span data-line="397">                            <span class="k">lambda</span> <span class="n">theta</span><span class="p">,</span> <span class="o">*</span><span class="n">p0</span><span class="p">:</span> <span class="n">FourierSeries</span><span class="o">.</span><span class="n">wrapper_fit_func</span><span class="p">(</span>
-</span><span data-line="398">                                <span class="n">theta</span><span class="p">,</span> <span class="n">p0</span>
-</span><span data-line="399">                            <span class="p">),</span>
-</span><span data-line="400">                            <span class="n">bin_centers_nz</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span>
-</span><span data-line="401">                            <span class="n">dG_nz</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span>
-</span><span data-line="402">                            <span class="n">p0</span><span class="o">=</span><span class="n">p0</span><span class="p">,</span>
-</span><span data-line="403">                        <span class="p">)</span>
-</span><span data-line="404">                    <span class="k">else</span><span class="p">:</span>
-</span><span data-line="405">                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-</span><span data-line="406">                            <span class="s2">&quot;regression method </span><span class="si">{}</span><span class="s2"> is neither &#39;linear&#39; nor &#39;nonlinear&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-</span><span data-line="407">                                <span class="n">regression_method</span>
-</span><span data-line="408">                            <span class="p">)</span>
-</span><span data-line="409">                        <span class="p">)</span>
-</span><span data-line="410">                    <span class="n">metric_val</span> <span class="o">=</span> <span class="n">metric_func</span><span class="p">(</span>
-</span><span data-line="411">                        <span class="n">bin_centers_nz</span><span class="p">,</span> <span class="n">dG_nz</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">popt</span><span class="p">,</span> <span class="n">free_parameters</span>
-</span><span data-line="412">                    <span class="p">)</span>
-</span><span data-line="413">                    <span class="n">popts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">popt</span><span class="p">)</span>
-</span><span data-line="414">                    <span class="n">metric_vals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">metric_val</span><span class="p">)</span>
-</span><span data-line="415">                <span class="n">best_val</span> <span class="o">=</span> <span class="n">best_func</span><span class="p">(</span><span class="n">metric_vals</span><span class="p">)</span>
-</span><span data-line="416">                <span class="n">best_i_val</span> <span class="o">=</span> <span class="n">metric_vals</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">best_val</span><span class="p">)</span>
-</span><span data-line="417">                <span class="n">popt</span> <span class="o">=</span> <span class="n">popts</span><span class="p">[</span><span class="n">best_i_val</span><span class="p">]</span>
-</span><span data-line="418">                <span class="n">stat</span> <span class="o">=</span> <span class="n">FourierSeries</span><span class="o">.</span><span class="n">_make_parameter_dict</span><span class="p">(</span><span class="n">stat</span><span class="p">,</span> <span class="n">popt</span><span class="p">,</span> <span class="n">n_degs</span><span class="p">)</span>
-</span><span data-line="419">            <span class="k">except</span><span class="p">:</span>
-</span><span data-line="420">                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;failed to fit potential estimate for FourierSeries&quot;</span><span class="p">)</span>
-</span><span data-line="421">                <span class="n">stat</span> <span class="o">=</span> <span class="n">FourierSeries</span><span class="o">.</span><span class="n">_init_parameter_dict</span><span class="p">(</span><span class="n">n_degs</span><span class="p">)</span>
-</span><span data-line="422">                <span class="n">k1_names</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">stat</span><span class="p">[</span><span class="s2">&quot;k1s&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
-</span><span data-line="423">                <span class="n">k2_names</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">stat</span><span class="p">[</span><span class="s2">&quot;k2s&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
-</span><span data-line="424">                <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_degs</span><span class="p">):</span>
-</span><span data-line="425">                    <span class="n">k1_name</span> <span class="o">=</span> <span class="n">k1_names</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>
-</span><span data-line="426">                    <span class="n">k2_name</span> <span class="o">=</span> <span class="n">k2_names</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>
-</span><span data-line="427">                    <span class="n">stat</span><span class="p">[</span><span class="s2">&quot;k1s&quot;</span><span class="p">][</span><span class="n">k1_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">))</span>
-</span><span data-line="428">                    <span class="n">stat</span><span class="p">[</span><span class="s2">&quot;k2s&quot;</span><span class="p">][</span><span class="n">k2_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">))</span>
-</span><span data-line="429">        <span class="k">return</span> <span class="n">stat</span>
-</span><span data-line="430">
-</span><span data-line="431">    <span class="k">def</span><span class="w"> </span><span class="nf">from_user</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
-</span><span data-line="432"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span data-line="433"><span class="sd">        Direct input of parameters from user. Leave empty for now</span>
-</span><span data-line="434"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="435">        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+</span><span data-line="95">        <span class="n">pbc</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;pbc&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</span><span data-line="96">        <span class="n">cell</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;cell&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</span><span data-line="97">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_features</span><span class="p">(</span>
+</span><span data-line="98">            <span class="n">pos</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span>
+</span><span data-line="99">            <span class="n">mapping</span><span class="o">=</span><span class="n">mapping</span><span class="p">,</span>
+</span><span data-line="100">            <span class="n">pbc</span><span class="o">=</span><span class="n">pbc</span><span class="p">,</span>
+</span><span data-line="101">            <span class="n">cell</span><span class="o">=</span><span class="n">cell</span><span class="p">,</span>
+</span><span data-line="102">            <span class="n">batch</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">batch</span><span class="p">,</span>
+</span><span data-line="103">        <span class="p">)</span>
+</span><span data-line="104">
+</span><span data-line="105">    <span class="k">def</span><span class="w"> </span><span class="nf">data2parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+</span><span data-line="106">        <span class="n">mapping</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;index_mapping&quot;</span><span class="p">]</span>
+</span><span data-line="107">        <span class="n">interaction_types</span> <span class="o">=</span> <span class="p">[</span>
+</span><span data-line="108">            <span class="n">data</span><span class="o">.</span><span class="n">atom_types</span><span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="n">ii</span><span class="p">]]</span> <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="p">)</span>
+</span><span data-line="109">        <span class="p">]</span>
+</span><span data-line="110">        <span class="c1"># the parameters have shape n_features x n_degs</span>
+</span><span data-line="111">        <span class="n">k1s</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span>
+</span><span data-line="112">            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">k1s</span><span class="p">[</span><span class="n">ii</span><span class="p">][</span><span class="n">interaction_types</span><span class="p">]</span> <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_degs</span><span class="p">)]</span>
+</span><span data-line="113">        <span class="p">)</span><span class="o">.</span><span class="n">t</span><span class="p">()</span>
+</span><span data-line="114">        <span class="n">k2s</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span>
+</span><span data-line="115">            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">k2s</span><span class="p">[</span><span class="n">ii</span><span class="p">][</span><span class="n">interaction_types</span><span class="p">]</span> <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_degs</span><span class="p">)]</span>
+</span><span data-line="116">        <span class="p">)</span><span class="o">.</span><span class="n">t</span><span class="p">()</span>
+</span><span data-line="117">        <span class="n">v_0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">v_0</span><span class="p">[</span><span class="n">interaction_types</span><span class="p">]</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</span><span data-line="118">        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;k1s&quot;</span><span class="p">:</span> <span class="n">k1s</span><span class="p">,</span> <span class="s2">&quot;k2s&quot;</span><span class="p">:</span> <span class="n">k2s</span><span class="p">,</span> <span class="s2">&quot;v_0&quot;</span><span class="p">:</span> <span class="n">v_0</span><span class="p">}</span>
+</span><span data-line="119">
+</span><span data-line="120">    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AtomicData</span><span class="p">:</span>
+</span><span data-line="121"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Forward pass through the dihedral interaction.</span>
+</span><span data-line="122"><span class="sd">        Parameters</span>
+</span><span data-line="123"><span class="sd">        ----------</span>
+</span><span data-line="124"><span class="sd">        data:</span>
+</span><span data-line="125"><span class="sd">            Input AtomicData instance that possesses an appropriate</span>
+</span><span data-line="126"><span class="sd">            neighbor list containing both an &#39;index_mapping&#39;</span>
+</span><span data-line="127"><span class="sd">            field and a &#39;mapping_batch&#39; field for accessing</span>
+</span><span data-line="128"><span class="sd">            beads relevant to the interaction and scattering</span>
+</span><span data-line="129"><span class="sd">            the interaction energies onto the correct example/structure</span>
+</span><span data-line="130"><span class="sd">            respectively.</span>
+</span><span data-line="131"><span class="sd">        Returns</span>
+</span><span data-line="132"><span class="sd">        -------</span>
+</span><span data-line="133"><span class="sd">        AtomicData:</span>
+</span><span data-line="134"><span class="sd">            Updated AtomicData instance with the &#39;out&#39; field</span>
+</span><span data-line="135"><span class="sd">            populated with the predicted energies for each</span>
+</span><span data-line="136"><span class="sd">            example/structure</span>
+</span><span data-line="137"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="138">
+</span><span data-line="139">        <span class="n">mapping_batch</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;mapping_batch&quot;</span><span class="p">]</span>
+</span><span data-line="140">
+</span><span data-line="141">        <span class="n">features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data2features</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+</span><span data-line="142">        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data2parameters</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</span><span data-line="143">        <span class="n">y</span> <span class="o">=</span> <span class="n">FourierSeries</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">)</span>
+</span><span data-line="144">        <span class="n">y</span> <span class="o">=</span> <span class="n">scatter</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">mapping_batch</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">reduce</span><span class="o">=</span><span class="s2">&quot;sum&quot;</span><span class="p">)</span>
+</span><span data-line="145">        <span class="n">data</span><span class="o">.</span><span class="n">out</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;energy&quot;</span><span class="p">:</span> <span class="n">y</span><span class="p">}</span>
+</span><span data-line="146">        <span class="k">return</span> <span class="n">data</span>
+</span><span data-line="147">
+</span><span data-line="148">    <span class="nd">@staticmethod</span>
+</span><span data-line="149">    <span class="k">def</span><span class="w"> </span><span class="nf">wrapper_fit_func</span><span class="p">(</span><span class="n">theta</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+</span><span data-line="150">        <span class="n">args</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</span><span data-line="151">        <span class="n">v_0</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+</span><span data-line="152">        <span class="n">k_args</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+</span><span data-line="153">        <span class="n">num_ks</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">k_args</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+</span><span data-line="154">        <span class="n">k1s</span><span class="p">,</span> <span class="n">k2s</span> <span class="o">=</span> <span class="n">k_args</span><span class="p">[:</span><span class="n">num_ks</span><span class="p">],</span> <span class="n">k_args</span><span class="p">[</span><span class="n">num_ks</span><span class="p">:]</span>
+</span><span data-line="155">        <span class="n">k1s</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">k1s</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_ks</span><span class="p">)</span>
+</span><span data-line="156">        <span class="n">k2s</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">k2s</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_ks</span><span class="p">)</span>
+</span><span data-line="157">        <span class="k">return</span> <span class="n">FourierSeries</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">v_0</span><span class="p">,</span> <span class="n">k1s</span><span class="p">,</span> <span class="n">k2s</span><span class="p">)</span>
+</span><span data-line="158">
+</span><span data-line="159">    <span class="nd">@staticmethod</span>
+</span><span data-line="160">    <span class="k">def</span><span class="w"> </span><span class="nf">compute</span><span class="p">(</span>
+</span><span data-line="161">        <span class="n">theta</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+</span><span data-line="162">        <span class="n">v_0</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+</span><span data-line="163">        <span class="n">k1s</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+</span><span data-line="164">        <span class="n">k2s</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+</span><span data-line="165">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+</span><span data-line="166"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the dihedral interaction for a list of angles and models</span>
+</span><span data-line="167"><span class="sd">        parameters. The ineraction is computed as a sin/cos basis expansion up</span>
+</span><span data-line="168"><span class="sd">        to N basis functions.</span>
+</span><span data-line="169">
+</span><span data-line="170"><span class="sd">        Parameters</span>
+</span><span data-line="171"><span class="sd">        ----------</span>
+</span><span data-line="172"><span class="sd">        theta :</span>
+</span><span data-line="173"><span class="sd">            angles to compute the value of the dihedral interaction on</span>
+</span><span data-line="174"><span class="sd">        v_0 :</span>
+</span><span data-line="175"><span class="sd">            constant offset</span>
+</span><span data-line="176"><span class="sd">        k1s :</span>
+</span><span data-line="177"><span class="sd">            list of sin parameters</span>
+</span><span data-line="178"><span class="sd">        k2s :</span>
+</span><span data-line="179"><span class="sd">            list of cos parameters</span>
+</span><span data-line="180"><span class="sd">        Returns</span>
+</span><span data-line="181"><span class="sd">        -------</span>
+</span><span data-line="182"><span class="sd">        torch.Tensor:</span>
+</span><span data-line="183"><span class="sd">            FourierSeries interaction energy</span>
+</span><span data-line="184"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="185">        <span class="n">_</span><span class="p">,</span> <span class="n">n_k</span> <span class="o">=</span> <span class="n">k1s</span><span class="o">.</span><span class="n">shape</span>
+</span><span data-line="186">        <span class="n">n_degs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span>
+</span><span data-line="187">            <span class="mi">1</span><span class="p">,</span> <span class="n">n_k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">theta</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">theta</span><span class="o">.</span><span class="n">device</span>
+</span><span data-line="188">        <span class="p">)</span>
+</span><span data-line="189">        <span class="c1"># expand the features w.r.t the mult integer so that it has the</span>
+</span><span data-line="190">        <span class="c1"># shape of k1s and k2s</span>
+</span><span data-line="191">        <span class="n">angles</span> <span class="o">=</span> <span class="n">theta</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">n_degs</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</span><span data-line="192">        <span class="n">V</span> <span class="o">=</span> <span class="n">k1s</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angles</span><span class="p">)</span> <span class="o">+</span> <span class="n">k2s</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angles</span><span class="p">)</span>
+</span><span data-line="193">        <span class="c1"># HOTFIX to avoid shape mismatch when using specialized priors</span>
+</span><span data-line="194">        <span class="c1"># TODO: think of a better fix</span>
+</span><span data-line="195">        <span class="k">if</span> <span class="n">v_0</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+</span><span data-line="196">            <span class="n">v_0</span> <span class="o">=</span> <span class="n">v_0</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+</span><span data-line="197">
+</span><span data-line="198">        <span class="k">return</span> <span class="n">V</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">v_0</span>
+</span><span data-line="199">
+</span><span data-line="200">    <span class="nd">@staticmethod</span>
+</span><span data-line="201">    <span class="k">def</span><span class="w"> </span><span class="nf">neg_log_likelihood</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">yhat</span><span class="p">):</span>
+</span><span data-line="202"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="203"><span class="sd">        Convert dG to probability and use KL divergence to get difference between</span>
+</span><span data-line="204"><span class="sd">        predicted and actual</span>
+</span><span data-line="205"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="206">        <span class="n">L</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">y</span><span class="p">)</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">yhat</span><span class="p">)))</span>
+</span><span data-line="207">        <span class="k">return</span> <span class="o">-</span><span class="n">L</span>
+</span><span data-line="208">
+</span><span data-line="209">    <span class="nd">@staticmethod</span>
+</span><span data-line="210">    <span class="k">def</span><span class="w"> </span><span class="nf">_init_parameters</span><span class="p">(</span><span class="n">n_degs</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+</span><span data-line="211"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Helper method for guessing initial parameter values&quot;&quot;&quot;</span>
+</span><span data-line="212">        <span class="n">p0</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.00</span><span class="p">]</span>  <span class="c1"># start with constant offset</span>
+</span><span data-line="213">        <span class="n">k1s_0</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_degs</span><span class="p">)]</span>
+</span><span data-line="214">        <span class="n">k2s_0</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_degs</span><span class="p">)]</span>
+</span><span data-line="215">        <span class="n">p0</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">k1s_0</span><span class="p">)</span>
+</span><span data-line="216">        <span class="n">p0</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">k2s_0</span><span class="p">)</span>
+</span><span data-line="217">        <span class="k">return</span> <span class="n">p0</span>
+</span><span data-line="218">
+</span><span data-line="219">    <span class="nd">@staticmethod</span>
+</span><span data-line="220">    <span class="k">def</span><span class="w"> </span><span class="nf">_init_parameter_dict</span><span class="p">(</span><span class="n">n_degs</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+</span><span data-line="221"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Helper method for initializing the parameter dictionary&quot;&quot;&quot;</span>
+</span><span data-line="222">        <span class="n">stat</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;k1s&quot;</span><span class="p">:</span> <span class="p">{},</span> <span class="s2">&quot;k2s&quot;</span><span class="p">:</span> <span class="p">{},</span> <span class="s2">&quot;v_0&quot;</span><span class="p">:</span> <span class="mf">0.00</span><span class="p">}</span>
+</span><span data-line="223">        <span class="n">k1_names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;k1_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span> <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_degs</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+</span><span data-line="224">        <span class="n">k2_names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;k2_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span> <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_degs</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+</span><span data-line="225">        <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_degs</span><span class="p">):</span>
+</span><span data-line="226">            <span class="n">k1_name</span> <span class="o">=</span> <span class="n">k1_names</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>
+</span><span data-line="227">            <span class="n">k2_name</span> <span class="o">=</span> <span class="n">k2_names</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>
+</span><span data-line="228">            <span class="n">stat</span><span class="p">[</span><span class="s2">&quot;k1s&quot;</span><span class="p">][</span><span class="n">k1_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span data-line="229">            <span class="n">stat</span><span class="p">[</span><span class="s2">&quot;k2s&quot;</span><span class="p">][</span><span class="n">k2_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span data-line="230">        <span class="k">return</span> <span class="n">stat</span>
+</span><span data-line="231">
+</span><span data-line="232">    <span class="nd">@staticmethod</span>
+</span><span data-line="233">    <span class="k">def</span><span class="w"> </span><span class="nf">_make_parameter_dict</span><span class="p">(</span><span class="n">stat</span><span class="p">,</span> <span class="n">popt</span><span class="p">,</span> <span class="n">n_degs</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+</span><span data-line="234"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Helper method for constructing a fitted parameter dictionary&quot;&quot;&quot;</span>
+</span><span data-line="235">        <span class="n">v_0</span> <span class="o">=</span> <span class="n">popt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</span><span data-line="236">        <span class="n">k_popt</span> <span class="o">=</span> <span class="n">popt</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+</span><span data-line="237">        <span class="n">num_k1s</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">k_popt</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+</span><span data-line="238">        <span class="n">k1_names</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">stat</span><span class="p">[</span><span class="s2">&quot;k1s&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+</span><span data-line="239">        <span class="n">k2_names</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">stat</span><span class="p">[</span><span class="s2">&quot;k2s&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+</span><span data-line="240">        <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_degs</span><span class="p">):</span>
+</span><span data-line="241">            <span class="n">k1_name</span> <span class="o">=</span> <span class="n">k1_names</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>
+</span><span data-line="242">            <span class="n">k2_name</span> <span class="o">=</span> <span class="n">k2_names</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>
+</span><span data-line="243">            <span class="n">stat</span><span class="p">[</span><span class="s2">&quot;k1s&quot;</span><span class="p">][</span><span class="n">k1_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span data-line="244">            <span class="n">stat</span><span class="p">[</span><span class="s2">&quot;k2s&quot;</span><span class="p">][</span><span class="n">k2_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span data-line="245">            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">k_popt</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">ii</span><span class="p">:</span>
+</span><span data-line="246">                <span class="n">stat</span><span class="p">[</span><span class="s2">&quot;k1s&quot;</span><span class="p">][</span><span class="n">k1_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">k_popt</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>
+</span><span data-line="247">                <span class="n">stat</span><span class="p">[</span><span class="s2">&quot;k2s&quot;</span><span class="p">][</span><span class="n">k2_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">k_popt</span><span class="p">[</span><span class="n">num_k1s</span> <span class="o">+</span> <span class="n">ii</span><span class="p">]</span>
+</span><span data-line="248">            <span class="k">else</span><span class="p">:</span>
+</span><span data-line="249">                <span class="n">stat</span><span class="p">[</span><span class="s2">&quot;k1s&quot;</span><span class="p">][</span><span class="n">k1_name</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span data-line="250">                <span class="n">stat</span><span class="p">[</span><span class="s2">&quot;k2s&quot;</span><span class="p">][</span><span class="n">k2_name</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span data-line="251">        <span class="n">stat</span><span class="p">[</span><span class="s2">&quot;v_0&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">v_0</span>
+</span><span data-line="252">        <span class="k">return</span> <span class="n">stat</span>
+</span><span data-line="253">
+</span><span data-line="254">    <span class="nd">@staticmethod</span>
+</span><span data-line="255">    <span class="k">def</span><span class="w"> </span><span class="nf">_compute_adjusted_R2</span><span class="p">(</span>
+</span><span data-line="256">        <span class="n">bin_centers_nz</span><span class="p">,</span> <span class="n">dG_nz</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">popt</span><span class="p">,</span> <span class="n">free_parameters</span>
+</span><span data-line="257">    <span class="p">):</span>
+</span><span data-line="258"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="259"><span class="sd">        Method for model selection using adjusted R2</span>
+</span><span data-line="260"><span class="sd">        Higher values imply better model selection</span>
+</span><span data-line="261"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="262">        <span class="n">dG_fit</span> <span class="o">=</span> <span class="n">FourierSeries</span><span class="o">.</span><span class="n">wrapper_fit_func</span><span class="p">(</span><span class="n">bin_centers_nz</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span> <span class="o">*</span><span class="p">[</span><span class="n">popt</span><span class="p">])</span>
+</span><span data-line="263">        <span class="n">SSres</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">dG_nz</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">-</span> <span class="n">dG_fit</span><span class="p">))</span>
+</span><span data-line="264">        <span class="n">SStot</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">dG_nz</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">-</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">dG_nz</span><span class="p">[</span><span class="n">mask</span><span class="p">])))</span>
+</span><span data-line="265">        <span class="n">n_samples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dG_nz</span><span class="p">[</span><span class="n">mask</span><span class="p">])</span>
+</span><span data-line="266">        <span class="n">R2</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="p">(</span><span class="n">SSres</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_samples</span> <span class="o">-</span> <span class="n">free_parameters</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span>
+</span><span data-line="267">            <span class="n">SStot</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_samples</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+</span><span data-line="268">        <span class="p">)</span>
+</span><span data-line="269">        <span class="k">return</span> <span class="n">R2</span>
+</span><span data-line="270">
+</span><span data-line="271">    <span class="nd">@staticmethod</span>
+</span><span data-line="272">    <span class="k">def</span><span class="w"> </span><span class="nf">_compute_aic</span><span class="p">(</span><span class="n">bin_centers_nz</span><span class="p">,</span> <span class="n">dG_nz</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">popt</span><span class="p">,</span> <span class="n">free_parameters</span><span class="p">):</span>
+</span><span data-line="273"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Method for computing the AIC&quot;&quot;&quot;</span>
+</span><span data-line="274">        <span class="n">aic</span> <span class="o">=</span> <span class="p">(</span>
+</span><span data-line="275">            <span class="mi">2</span>
+</span><span data-line="276">            <span class="o">*</span> <span class="n">FourierSeries</span><span class="o">.</span><span class="n">neg_log_likelihood</span><span class="p">(</span>
+</span><span data-line="277">                <span class="n">dG_nz</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span>
+</span><span data-line="278">                <span class="n">FourierSeries</span><span class="o">.</span><span class="n">wrapper_fit_func</span><span class="p">(</span><span class="n">bin_centers_nz</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span> <span class="o">*</span><span class="p">[</span><span class="n">popt</span><span class="p">]),</span>
+</span><span data-line="279">            <span class="p">)</span>
+</span><span data-line="280">            <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">free_parameters</span>
+</span><span data-line="281">        <span class="p">)</span>
+</span><span data-line="282">        <span class="k">return</span> <span class="n">aic</span>
+</span><span data-line="283">
+</span><span data-line="284">    <span class="nd">@staticmethod</span>
+</span><span data-line="285">    <span class="k">def</span><span class="w"> </span><span class="nf">_linear_regression</span><span class="p">(</span><span class="n">bin_centers</span><span class="p">,</span> <span class="n">targets</span><span class="p">,</span> <span class="n">n_degs</span><span class="p">):</span>
+</span><span data-line="286"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Vanilla linear regression&quot;&quot;&quot;</span>
+</span><span data-line="287">        <span class="n">features</span> <span class="o">=</span> <span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">bin_centers</span><span class="p">)]</span>
+</span><span data-line="288">        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_degs</span><span class="p">):</span>
+</span><span data-line="289">            <span class="n">features</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">sin</span><span class="p">((</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">bin_centers</span><span class="p">))</span>
+</span><span data-line="290">        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_degs</span><span class="p">):</span>
+</span><span data-line="291">            <span class="n">features</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cos</span><span class="p">((</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">bin_centers</span><span class="p">))</span>
+</span><span data-line="292">        <span class="n">features</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">features</span><span class="p">)</span><span class="o">.</span><span class="n">t</span><span class="p">()</span>
+</span><span data-line="293">        <span class="n">targets</span> <span class="o">=</span> <span class="n">targets</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">features</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+</span><span data-line="294">        <span class="n">sol</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">lstsq</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">targets</span><span class="o">.</span><span class="n">t</span><span class="p">())</span>
+</span><span data-line="295">        <span class="k">return</span> <span class="n">sol</span>
+</span><span data-line="296">
+</span><span data-line="297">    <span class="nd">@staticmethod</span>
+</span><span data-line="298">    <span class="k">def</span><span class="w"> </span><span class="nf">fit_from_potential_estimates</span><span class="p">(</span>
+</span><span data-line="299">        <span class="n">bin_centers_nz</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+</span><span data-line="300">        <span class="n">dG_nz</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+</span><span data-line="301">        <span class="n">n_degs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">6</span><span class="p">,</span>
+</span><span data-line="302">        <span class="n">constrain_deg</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="303">        <span class="n">regression_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;linear&quot;</span><span class="p">,</span>
+</span><span data-line="304">        <span class="n">metric</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;aic&quot;</span><span class="p">,</span>
+</span><span data-line="305">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+</span><span data-line="306"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="307"><span class="sd">        Loop over n_degs basins and use either the AIC criterion</span>
+</span><span data-line="308"><span class="sd">        or a prechosen degree to select best fit. Parameter fitting</span>
+</span><span data-line="309"><span class="sd">        occurs over unmaksed regions of the free energy only.</span>
+</span><span data-line="310"><span class="sd">        Parameters</span>
+</span><span data-line="311"><span class="sd">        ----------</span>
+</span><span data-line="312"><span class="sd">        bin_centers_nz:</span>
+</span><span data-line="313"><span class="sd">            Bin centers over which the fit is carried out</span>
+</span><span data-line="314"><span class="sd">        dG_nz:</span>
+</span><span data-line="315"><span class="sd">            The emperical free energy correspinding to the bin centers</span>
+</span><span data-line="316"><span class="sd">        n_degs:</span>
+</span><span data-line="317"><span class="sd">            The maximum number of degrees to attempt to fit if using the AIC</span>
+</span><span data-line="318"><span class="sd">            criterion for prior model selection</span>
+</span><span data-line="319"><span class="sd">        constrain_deg:</span>
+</span><span data-line="320"><span class="sd">            If not None, a single fit is produced for the specified integer</span>
+</span><span data-line="321"><span class="sd">            degree instead of using the AIC criterion for fit selection between</span>
+</span><span data-line="322"><span class="sd">            multiple degrees</span>
+</span><span data-line="323"><span class="sd">        regression_method:</span>
+</span><span data-line="324"><span class="sd">            String specifying which regression method to use. If &quot;nonlinear&quot;,</span>
+</span><span data-line="325"><span class="sd">            the default `scipy.optimize.curve_fit` method is used. If &#39;linear&#39;,</span>
+</span><span data-line="326"><span class="sd">            linear regression via `torch.linalg.lstsq` is used</span>
+</span><span data-line="327"><span class="sd">        metric:</span>
+</span><span data-line="328"><span class="sd">            If a constrain deg is not specified, this string specifies whether to</span>
+</span><span data-line="329"><span class="sd">            use either AIC (&#39;aic&#39;) or adjusted R squared (&#39;r2&#39;) for automated degree</span>
+</span><span data-line="330"><span class="sd">            selection. If the automatic degree determination fails, users should</span>
+</span><span data-line="331"><span class="sd">            consider searching for a proper constrained degree.</span>
+</span><span data-line="332">
+</span><span data-line="333"><span class="sd">        Returns</span>
+</span><span data-line="334"><span class="sd">        -------</span>
+</span><span data-line="335"><span class="sd">        Dict:</span>
+</span><span data-line="336"><span class="sd">            Statistics dictionary with fitted interaction parameters</span>
+</span><span data-line="337"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="338">
+</span><span data-line="339">        <span class="n">integral</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
+</span><span data-line="340">            <span class="nb">float</span><span class="p">(</span><span class="n">trapezoid</span><span class="p">(</span><span class="n">dG_nz</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">bin_centers_nz</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()))</span>
+</span><span data-line="341">        <span class="p">)</span>
+</span><span data-line="342">
+</span><span data-line="343">        <span class="n">mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">dG_nz</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">1e-4</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">integral</span><span class="p">)</span>
+</span><span data-line="344">
+</span><span data-line="345">        <span class="k">if</span> <span class="n">constrain_deg</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="346">            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">constrain_deg</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+</span><span data-line="347">            <span class="n">stat</span> <span class="o">=</span> <span class="n">FourierSeries</span><span class="o">.</span><span class="n">_init_parameter_dict</span><span class="p">(</span><span class="n">constrain_deg</span><span class="p">)</span>
+</span><span data-line="348">            <span class="k">if</span> <span class="n">regression_method</span> <span class="o">==</span> <span class="s2">&quot;linear&quot;</span><span class="p">:</span>
+</span><span data-line="349">                <span class="n">popt</span> <span class="o">=</span> <span class="p">(</span>
+</span><span data-line="350">                    <span class="n">FourierSeries</span><span class="o">.</span><span class="n">_linear_regression</span><span class="p">(</span>
+</span><span data-line="351">                        <span class="n">bin_centers_nz</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span> <span class="n">dG_nz</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span> <span class="n">constrain_deg</span>
+</span><span data-line="352">                    <span class="p">)</span>
+</span><span data-line="353">                    <span class="o">.</span><span class="n">solution</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+</span><span data-line="354">                    <span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+</span><span data-line="355">                <span class="p">)</span>
+</span><span data-line="356">            <span class="k">elif</span> <span class="n">regression_method</span> <span class="o">==</span> <span class="s2">&quot;nonlinear&quot;</span><span class="p">:</span>
+</span><span data-line="357">                <span class="n">p0</span> <span class="o">=</span> <span class="n">FourierSeries</span><span class="o">.</span><span class="n">_init_parameters</span><span class="p">(</span><span class="n">constrain_deg</span><span class="p">)</span>
+</span><span data-line="358">                <span class="n">popt</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">curve_fit</span><span class="p">(</span>
+</span><span data-line="359">                    <span class="k">lambda</span> <span class="n">theta</span><span class="p">,</span> <span class="o">*</span><span class="n">p0</span><span class="p">:</span> <span class="n">FourierSeries</span><span class="o">.</span><span class="n">wrapper_fit_func</span><span class="p">(</span>
+</span><span data-line="360">                        <span class="n">theta</span><span class="p">,</span> <span class="n">p0</span>
+</span><span data-line="361">                    <span class="p">),</span>
+</span><span data-line="362">                    <span class="n">bin_centers_nz</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span>
+</span><span data-line="363">                    <span class="n">dG_nz</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span>
+</span><span data-line="364">                    <span class="n">p0</span><span class="o">=</span><span class="n">p0</span><span class="p">,</span>
+</span><span data-line="365">                <span class="p">)</span>
+</span><span data-line="366">            <span class="k">else</span><span class="p">:</span>
+</span><span data-line="367">                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+</span><span data-line="368">                    <span class="s2">&quot;regression method </span><span class="si">{}</span><span class="s2"> is neither &#39;linear&#39; nor &#39;nonlinear&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+</span><span data-line="369">                        <span class="n">regression_method</span>
+</span><span data-line="370">                    <span class="p">)</span>
+</span><span data-line="371">                <span class="p">)</span>
+</span><span data-line="372">            <span class="n">stat</span> <span class="o">=</span> <span class="n">FourierSeries</span><span class="o">.</span><span class="n">_make_parameter_dict</span><span class="p">(</span><span class="n">stat</span><span class="p">,</span> <span class="n">popt</span><span class="p">,</span> <span class="n">constrain_deg</span><span class="p">)</span>
+</span><span data-line="373">
+</span><span data-line="374">        <span class="k">else</span><span class="p">:</span>
+</span><span data-line="375">            <span class="k">if</span> <span class="n">metric</span> <span class="o">==</span> <span class="s2">&quot;aic&quot;</span><span class="p">:</span>
+</span><span data-line="376">                <span class="n">metric_func</span> <span class="o">=</span> <span class="n">FourierSeries</span><span class="o">.</span><span class="n">_compute_aic</span>
+</span><span data-line="377">                <span class="n">best_func</span> <span class="o">=</span> <span class="nb">min</span>
+</span><span data-line="378">            <span class="k">elif</span> <span class="n">metric</span> <span class="o">==</span> <span class="s2">&quot;r2&quot;</span><span class="p">:</span>
+</span><span data-line="379">                <span class="n">metric_func</span> <span class="o">=</span> <span class="n">FourierSeries</span><span class="o">.</span><span class="n">_compute_adjusted_R2</span>
+</span><span data-line="380">                <span class="n">best_func</span> <span class="o">=</span> <span class="nb">max</span>
+</span><span data-line="381">            <span class="k">else</span><span class="p">:</span>
+</span><span data-line="382">                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+</span><span data-line="383">                    <span class="s2">&quot;metric </span><span class="si">{}</span><span class="s2"> is neither &#39;aic&#39; nor &#39;r2&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">metric</span><span class="p">)</span>
+</span><span data-line="384">                <span class="p">)</span>
+</span><span data-line="385">
+</span><span data-line="386">            <span class="c1"># Determine best fit for unknown # of parameters</span>
+</span><span data-line="387">            <span class="n">stat</span> <span class="o">=</span> <span class="n">FourierSeries</span><span class="o">.</span><span class="n">_init_parameter_dict</span><span class="p">(</span><span class="n">n_degs</span><span class="p">)</span>
+</span><span data-line="388">            <span class="n">popts</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span data-line="389">            <span class="n">metric_vals</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span data-line="390">
+</span><span data-line="391">            <span class="k">try</span><span class="p">:</span>
+</span><span data-line="392">                <span class="k">for</span> <span class="n">deg</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_degs</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+</span><span data-line="393">                    <span class="n">free_parameters</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">deg</span><span class="p">)</span>
+</span><span data-line="394">                    <span class="k">if</span> <span class="n">regression_method</span> <span class="o">==</span> <span class="s2">&quot;linear&quot;</span><span class="p">:</span>
+</span><span data-line="395">                        <span class="n">popt</span> <span class="o">=</span> <span class="p">(</span>
+</span><span data-line="396">                            <span class="n">FourierSeries</span><span class="o">.</span><span class="n">_linear_regression</span><span class="p">(</span>
+</span><span data-line="397">                                <span class="n">bin_centers_nz</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span> <span class="n">dG_nz</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span> <span class="n">deg</span>
+</span><span data-line="398">                            <span class="p">)</span>
+</span><span data-line="399">                            <span class="o">.</span><span class="n">solution</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+</span><span data-line="400">                            <span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+</span><span data-line="401">                        <span class="p">)</span>
+</span><span data-line="402">                    <span class="k">elif</span> <span class="n">regression_method</span> <span class="o">==</span> <span class="s2">&quot;nonlinear&quot;</span><span class="p">:</span>
+</span><span data-line="403">                        <span class="n">p0</span> <span class="o">=</span> <span class="n">FourierSeries</span><span class="o">.</span><span class="n">_init_parameters</span><span class="p">(</span><span class="n">deg</span><span class="p">)</span>
+</span><span data-line="404">                        <span class="n">popt</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">curve_fit</span><span class="p">(</span>
+</span><span data-line="405">                            <span class="k">lambda</span> <span class="n">theta</span><span class="p">,</span> <span class="o">*</span><span class="n">p0</span><span class="p">:</span> <span class="n">FourierSeries</span><span class="o">.</span><span class="n">wrapper_fit_func</span><span class="p">(</span>
+</span><span data-line="406">                                <span class="n">theta</span><span class="p">,</span> <span class="n">p0</span>
+</span><span data-line="407">                            <span class="p">),</span>
+</span><span data-line="408">                            <span class="n">bin_centers_nz</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span>
+</span><span data-line="409">                            <span class="n">dG_nz</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span>
+</span><span data-line="410">                            <span class="n">p0</span><span class="o">=</span><span class="n">p0</span><span class="p">,</span>
+</span><span data-line="411">                        <span class="p">)</span>
+</span><span data-line="412">                    <span class="k">else</span><span class="p">:</span>
+</span><span data-line="413">                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+</span><span data-line="414">                            <span class="s2">&quot;regression method </span><span class="si">{}</span><span class="s2"> is neither &#39;linear&#39; nor &#39;nonlinear&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+</span><span data-line="415">                                <span class="n">regression_method</span>
+</span><span data-line="416">                            <span class="p">)</span>
+</span><span data-line="417">                        <span class="p">)</span>
+</span><span data-line="418">                    <span class="n">metric_val</span> <span class="o">=</span> <span class="n">metric_func</span><span class="p">(</span>
+</span><span data-line="419">                        <span class="n">bin_centers_nz</span><span class="p">,</span> <span class="n">dG_nz</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">popt</span><span class="p">,</span> <span class="n">free_parameters</span>
+</span><span data-line="420">                    <span class="p">)</span>
+</span><span data-line="421">                    <span class="n">popts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">popt</span><span class="p">)</span>
+</span><span data-line="422">                    <span class="n">metric_vals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">metric_val</span><span class="p">)</span>
+</span><span data-line="423">                <span class="n">best_val</span> <span class="o">=</span> <span class="n">best_func</span><span class="p">(</span><span class="n">metric_vals</span><span class="p">)</span>
+</span><span data-line="424">                <span class="n">best_i_val</span> <span class="o">=</span> <span class="n">metric_vals</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">best_val</span><span class="p">)</span>
+</span><span data-line="425">                <span class="n">popt</span> <span class="o">=</span> <span class="n">popts</span><span class="p">[</span><span class="n">best_i_val</span><span class="p">]</span>
+</span><span data-line="426">                <span class="n">stat</span> <span class="o">=</span> <span class="n">FourierSeries</span><span class="o">.</span><span class="n">_make_parameter_dict</span><span class="p">(</span><span class="n">stat</span><span class="p">,</span> <span class="n">popt</span><span class="p">,</span> <span class="n">n_degs</span><span class="p">)</span>
+</span><span data-line="427">            <span class="k">except</span><span class="p">:</span>
+</span><span data-line="428">                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;failed to fit potential estimate for FourierSeries&quot;</span><span class="p">)</span>
+</span><span data-line="429">                <span class="n">stat</span> <span class="o">=</span> <span class="n">FourierSeries</span><span class="o">.</span><span class="n">_init_parameter_dict</span><span class="p">(</span><span class="n">n_degs</span><span class="p">)</span>
+</span><span data-line="430">                <span class="n">k1_names</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">stat</span><span class="p">[</span><span class="s2">&quot;k1s&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+</span><span data-line="431">                <span class="n">k2_names</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">stat</span><span class="p">[</span><span class="s2">&quot;k2s&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+</span><span data-line="432">                <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_degs</span><span class="p">):</span>
+</span><span data-line="433">                    <span class="n">k1_name</span> <span class="o">=</span> <span class="n">k1_names</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>
+</span><span data-line="434">                    <span class="n">k2_name</span> <span class="o">=</span> <span class="n">k2_names</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>
+</span><span data-line="435">                    <span class="n">stat</span><span class="p">[</span><span class="s2">&quot;k1s&quot;</span><span class="p">][</span><span class="n">k1_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">))</span>
+</span><span data-line="436">                    <span class="n">stat</span><span class="p">[</span><span class="s2">&quot;k2s&quot;</span><span class="p">][</span><span class="n">k2_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">))</span>
+</span><span data-line="437">        <span class="k">return</span> <span class="n">stat</span>
+</span><span data-line="438">
+</span><span data-line="439">    <span class="k">def</span><span class="w"> </span><span class="nf">from_user</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+</span><span data-line="440"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="441"><span class="sd">        Direct input of parameters from user. Leave empty for now</span>
+</span><span data-line="442"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="443">        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-</span><span data-line="436">
-</span><span data-line="437">
+</span><span data-line="444">
+</span><span data-line="445">
 <div class="viewcode-block" id="Dihedral">
 <a class="viewcode-back" href="../../../../models/priors.html#mlcg.nn.prior.Dihedral">[docs]</a>
-</span><span data-line="438"><span class="k">class</span><span class="w"> </span><span class="nc">Dihedral</span><span class="p">(</span><span class="n">FourierSeries</span><span class="p">):</span>
-</span><span data-line="439"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
-</span><span data-line="440"><span class="sd">    Class to represent a Dihedral potential using a fourier series</span>
-</span><span data-line="441"><span class="sd">    &quot;&quot;&quot;</span>
-</span><span data-line="442">
-</span><span data-line="443">    <span class="n">name</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;dihedrals&quot;</span>
-</span><span data-line="444">    <span class="n">_order</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4</span>
-</span><span data-line="445">
-</span><span data-line="446">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-</span><span data-line="447">        <span class="bp">self</span><span class="p">,</span>
-</span><span data-line="448">        <span class="n">statistics</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span>
-</span><span data-line="449">        <span class="n">n_degs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
-</span><span data-line="450">        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;dihedrals&quot;</span><span class="p">,</span>
-</span><span data-line="451">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="452">        <span class="nb">super</span><span class="p">(</span><span class="n">Dihedral</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-</span><span data-line="453">            <span class="n">statistics</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">n_degs</span><span class="o">=</span><span class="n">n_degs</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_order</span>
-</span><span data-line="454">        <span class="p">)</span>
-</span><span data-line="455">
-</span><span data-line="456">    <span class="nd">@staticmethod</span>
-</span><span data-line="457">    <span class="k">def</span><span class="w"> </span><span class="nf">neighbor_list</span><span class="p">(</span><span class="n">topology</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="458">        <span class="n">nl</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">(</span><span class="n">Dihedral</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-</span><span data-line="459">        <span class="k">return</span> <span class="p">{</span><span class="n">Dihedral</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">nl</span><span class="p">}</span>
-</span><span data-line="460">
-</span><span data-line="461">    <span class="nd">@staticmethod</span>
-</span><span data-line="462">    <span class="k">def</span><span class="w"> </span><span class="nf">compute_features</span><span class="p">(</span>
-</span><span data-line="463">        <span class="n">pos</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">mapping</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
-</span><span data-line="464">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-</span><span data-line="465">        <span class="k">return</span> <span class="n">compute_torsions</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">mapping</span><span class="p">)</span></div>
+</span><span data-line="446"><span class="k">class</span><span class="w"> </span><span class="nc">Dihedral</span><span class="p">(</span><span class="n">FourierSeries</span><span class="p">):</span>
+</span><span data-line="447"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="448"><span class="sd">    Class to represent a Dihedral potential using a fourier series</span>
+</span><span data-line="449"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="450">
+</span><span data-line="451">    <span class="n">name</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;dihedrals&quot;</span>
+</span><span data-line="452">    <span class="n">_order</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4</span>
+</span><span data-line="453">
+</span><span data-line="454">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+</span><span data-line="455">        <span class="bp">self</span><span class="p">,</span>
+</span><span data-line="456">        <span class="n">statistics</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span>
+</span><span data-line="457">        <span class="n">n_degs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+</span><span data-line="458">        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;dihedrals&quot;</span><span class="p">,</span>
+</span><span data-line="459">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="460">        <span class="nb">super</span><span class="p">(</span><span class="n">Dihedral</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+</span><span data-line="461">            <span class="n">statistics</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">n_degs</span><span class="o">=</span><span class="n">n_degs</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_order</span>
+</span><span data-line="462">        <span class="p">)</span>
+</span><span data-line="463">
+</span><span data-line="464">    <span class="nd">@staticmethod</span>
+</span><span data-line="465">    <span class="k">def</span><span class="w"> </span><span class="nf">neighbor_list</span><span class="p">(</span><span class="n">topology</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="466">        <span class="n">nl</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">(</span><span class="n">Dihedral</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+</span><span data-line="467">        <span class="k">return</span> <span class="p">{</span><span class="n">Dihedral</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">nl</span><span class="p">}</span>
+</span><span data-line="468">
+</span><span data-line="469">    <span class="nd">@staticmethod</span>
+</span><span data-line="470">    <span class="k">def</span><span class="w"> </span><span class="nf">compute_features</span><span class="p">(</span>
+</span><span data-line="471">        <span class="n">pos</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+</span><span data-line="472">        <span class="n">mapping</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+</span><span data-line="473">        <span class="n">pbc</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="474">        <span class="n">cell</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="475">        <span class="n">batch</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="476">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+</span><span data-line="477">        <span class="k">if</span> <span class="nb">all</span><span class="p">([</span><span class="n">feat</span> <span class="o">!=</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">feat</span> <span class="ow">in</span> <span class="p">[</span><span class="n">pbc</span><span class="p">,</span> <span class="n">cell</span><span class="p">]]):</span>
+</span><span data-line="478">            <span class="n">cell_shifts</span> <span class="o">=</span> <span class="n">_Prior</span><span class="o">.</span><span class="n">_get_cell_shifts</span><span class="p">(</span>
+</span><span data-line="479">                <span class="n">pos</span><span class="p">,</span> <span class="n">mapping</span><span class="p">,</span> <span class="n">pbc</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">batch</span>
+</span><span data-line="480">            <span class="p">)</span>
+</span><span data-line="481">        <span class="k">else</span><span class="p">:</span>
+</span><span data-line="482">            <span class="n">cell_shifts</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span data-line="483">        <span class="k">return</span> <span class="n">compute_torsions</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">mapping</span><span class="p">,</span> <span class="n">cell_shifts</span><span class="p">)</span></div>
 
 </span></pre></div>
         </article><button class="back-to-top" type="button">

@@ -223,147 +223,167 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="75"><span class="sd">        &quot;&quot;&quot;</span>
 </span><span data-line="76">
 </span><span data-line="77">        <span class="n">mapping</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;index_mapping&quot;</span><span class="p">]</span>
-</span><span data-line="78">        <span class="k">return</span> <span class="n">Repulsion</span><span class="o">.</span><span class="n">compute_features</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span> <span class="n">mapping</span><span class="p">)</span>
-</span><span data-line="79">
-</span><span data-line="80">    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AtomicData</span><span class="p">:</span>
-</span><span data-line="81"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Forward pass through the repulsion interaction.</span>
-</span><span data-line="82">
-</span><span data-line="83"><span class="sd">        Parameters</span>
-</span><span data-line="84"><span class="sd">        ----------</span>
-</span><span data-line="85"><span class="sd">        data:</span>
-</span><span data-line="86"><span class="sd">            Input AtomicData instance that possesses an appropriate</span>
-</span><span data-line="87"><span class="sd">            neighbor list containing both an &#39;index_mapping&#39;</span>
-</span><span data-line="88"><span class="sd">            field and a &#39;mapping_batch&#39; field for accessing</span>
-</span><span data-line="89"><span class="sd">            beads relevant to the interaction and scattering</span>
-</span><span data-line="90"><span class="sd">            the interaction energies onto the correct example/structure</span>
-</span><span data-line="91"><span class="sd">            respectively.</span>
-</span><span data-line="92">
-</span><span data-line="93"><span class="sd">        Returns</span>
-</span><span data-line="94"><span class="sd">        -------</span>
-</span><span data-line="95"><span class="sd">        AtomicData:</span>
-</span><span data-line="96"><span class="sd">            Updated AtomicData instance with the &#39;out&#39; field</span>
-</span><span data-line="97"><span class="sd">            populated with the predicted energies for each</span>
-</span><span data-line="98"><span class="sd">            example/structure</span>
-</span><span data-line="99"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="78">        <span class="n">pbc</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;pbc&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</span><span data-line="79">        <span class="n">cell</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;cell&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</span><span data-line="80">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_features</span><span class="p">(</span>
+</span><span data-line="81">            <span class="n">pos</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span>
+</span><span data-line="82">            <span class="n">mapping</span><span class="o">=</span><span class="n">mapping</span><span class="p">,</span>
+</span><span data-line="83">            <span class="n">pbc</span><span class="o">=</span><span class="n">pbc</span><span class="p">,</span>
+</span><span data-line="84">            <span class="n">cell</span><span class="o">=</span><span class="n">cell</span><span class="p">,</span>
+</span><span data-line="85">            <span class="n">batch</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">batch</span><span class="p">,</span>
+</span><span data-line="86">        <span class="p">)</span>
+</span><span data-line="87">
+</span><span data-line="88">    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AtomicData</span><span class="p">:</span>
+</span><span data-line="89"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Forward pass through the repulsion interaction.</span>
+</span><span data-line="90">
+</span><span data-line="91"><span class="sd">        Parameters</span>
+</span><span data-line="92"><span class="sd">        ----------</span>
+</span><span data-line="93"><span class="sd">        data:</span>
+</span><span data-line="94"><span class="sd">            Input AtomicData instance that possesses an appropriate</span>
+</span><span data-line="95"><span class="sd">            neighbor list containing both an &#39;index_mapping&#39;</span>
+</span><span data-line="96"><span class="sd">            field and a &#39;mapping_batch&#39; field for accessing</span>
+</span><span data-line="97"><span class="sd">            beads relevant to the interaction and scattering</span>
+</span><span data-line="98"><span class="sd">            the interaction energies onto the correct example/structure</span>
+</span><span data-line="99"><span class="sd">            respectively.</span>
 </span><span data-line="100">
-</span><span data-line="101">        <span class="n">mapping</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;index_mapping&quot;</span><span class="p">]</span>
-</span><span data-line="102">        <span class="n">mapping_batch</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;mapping_batch&quot;</span><span class="p">]</span>
-</span><span data-line="103">        <span class="n">interaction_types</span> <span class="o">=</span> <span class="p">[</span>
-</span><span data-line="104">            <span class="n">data</span><span class="o">.</span><span class="n">atom_types</span><span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="n">ii</span><span class="p">]]</span> <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="p">)</span>
-</span><span data-line="105">        <span class="p">]</span>
-</span><span data-line="106">        <span class="n">features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data2features</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-</span><span data-line="107">        <span class="n">y</span> <span class="o">=</span> <span class="n">Repulsion</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="p">[</span><span class="n">interaction_types</span><span class="p">])</span>
-</span><span data-line="108">        <span class="n">y</span> <span class="o">=</span> <span class="n">scatter</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">mapping_batch</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">reduce</span><span class="o">=</span><span class="s2">&quot;sum&quot;</span><span class="p">)</span>
-</span><span data-line="109">        <span class="n">data</span><span class="o">.</span><span class="n">out</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;energy&quot;</span><span class="p">:</span> <span class="n">y</span><span class="p">}</span>
-</span><span data-line="110">        <span class="k">return</span> <span class="n">data</span>
-</span><span data-line="111">
-</span><span data-line="112">    <span class="nd">@staticmethod</span>
-</span><span data-line="113">    <span class="k">def</span><span class="w"> </span><span class="nf">compute_features</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">mapping</span><span class="p">):</span>
-</span><span data-line="114">        <span class="k">return</span> <span class="n">compute_distances</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">mapping</span><span class="p">)</span>
-</span><span data-line="115">
-</span><span data-line="116">    <span class="nd">@staticmethod</span>
-</span><span data-line="117">    <span class="k">def</span><span class="w"> </span><span class="nf">compute</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">sigma</span><span class="p">):</span>
-</span><span data-line="118"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Method defining the repulsion interaction&quot;&quot;&quot;</span>
-</span><span data-line="119">        <span class="n">rr</span> <span class="o">=</span> <span class="p">(</span><span class="n">sigma</span> <span class="o">/</span> <span class="n">x</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">sigma</span> <span class="o">/</span> <span class="n">x</span><span class="p">)</span>
-</span><span data-line="120">        <span class="k">return</span> <span class="n">rr</span> <span class="o">*</span> <span class="n">rr</span> <span class="o">*</span> <span class="n">rr</span>
-</span><span data-line="121">
-</span><span data-line="122">    <span class="nd">@staticmethod</span>
-</span><span data-line="123">    <span class="k">def</span><span class="w"> </span><span class="nf">fit_from_values</span><span class="p">(</span>
-</span><span data-line="124">        <span class="n">values</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-</span><span data-line="125">        <span class="n">percentile</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-</span><span data-line="126">        <span class="n">cutoff</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="127">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
-</span><span data-line="128"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Method for fitting interaction parameters directly from input features</span>
-</span><span data-line="129">
-</span><span data-line="130"><span class="sd">        Parameters</span>
-</span><span data-line="131"><span class="sd">        ----------</span>
-</span><span data-line="132"><span class="sd">        values:</span>
-</span><span data-line="133"><span class="sd">            Input features as a tensor of shape (n_frames)</span>
-</span><span data-line="134"><span class="sd">        percentile:</span>
-</span><span data-line="135"><span class="sd">            If specified, the sigma value is calculated using the specified</span>
-</span><span data-line="136"><span class="sd">            distance percentile (eg, percentile = 1) sets the sigma value</span>
-</span><span data-line="137"><span class="sd">            at the location of the 1th percentile of pairwise distances. This</span>
-</span><span data-line="138"><span class="sd">            option is useful for estimating repulsions for distance distribtions</span>
-</span><span data-line="139"><span class="sd">            with long lower tails or lower distance outliers. Must be a number from</span>
-</span><span data-line="140"><span class="sd">            0 to 1</span>
-</span><span data-line="141"><span class="sd">        cutoff:</span>
-</span><span data-line="142"><span class="sd">            If specified, only those input values below this cutoff will be used in</span>
-</span><span data-line="143"><span class="sd">            evaluating the percentile</span>
-</span><span data-line="144">
-</span><span data-line="145"><span class="sd">        Returns</span>
-</span><span data-line="146"><span class="sd">        -------</span>
-</span><span data-line="147"><span class="sd">        Dict:</span>
-</span><span data-line="148"><span class="sd">            Dictionary of interaction parameters as retrived through</span>
-</span><span data-line="149"><span class="sd">            `scipy.optimize.curve_fit`</span>
-</span><span data-line="150"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="151">        <span class="n">values</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
-</span><span data-line="152">        <span class="k">if</span> <span class="n">cutoff</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="153">            <span class="n">values</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="n">values</span> <span class="o">&lt;</span> <span class="n">cutoff</span><span class="p">]</span>
-</span><span data-line="154">        <span class="n">sigma</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">percentile</span><span class="p">))</span>
-</span><span data-line="155">        <span class="n">stat</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;sigma&quot;</span><span class="p">:</span> <span class="n">sigma</span><span class="p">}</span>
-</span><span data-line="156">        <span class="k">return</span> <span class="n">stat</span>
-</span><span data-line="157">
-</span><span data-line="158">    <span class="nd">@staticmethod</span>
-</span><span data-line="159">    <span class="k">def</span><span class="w"> </span><span class="nf">fit_from_potential_estimates</span><span class="p">(</span>
-</span><span data-line="160">        <span class="n">bin_centers_nz</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-</span><span data-line="161">        <span class="n">dG_nz</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-</span><span data-line="162">        <span class="n">percentile</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="163">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
-</span><span data-line="164"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Method for fitting interaction parameters from data</span>
-</span><span data-line="165">
-</span><span data-line="166"><span class="sd">        Parameters</span>
-</span><span data-line="167"><span class="sd">        ----------</span>
-</span><span data-line="168"><span class="sd">        bin_centers:</span>
-</span><span data-line="169"><span class="sd">            Bin centers from a discrete histgram used to estimate the energy</span>
-</span><span data-line="170"><span class="sd">            through logarithmic inversion of the associated Boltzmann factor</span>
-</span><span data-line="171"><span class="sd">        dG_nz:</span>
-</span><span data-line="172"><span class="sd">            The value of the energy :math:`U` as a function of the bin</span>
-</span><span data-line="173"><span class="sd">            centers, as retrived via:</span>
-</span><span data-line="174">
-</span><span data-line="175"><span class="sd">            ..math::</span>
-</span><span data-line="176">
-</span><span data-line="177"><span class="sd">                U(x) = -\frac{1}{\beta}\log{ \left( p(x)\right)}</span>
-</span><span data-line="178">
-</span><span data-line="179"><span class="sd">            where :math:`\beta` is the inverse thermodynamic temperature and</span>
-</span><span data-line="180"><span class="sd">            :math:`p(x)` is the normalized probability distribution of</span>
-</span><span data-line="181"><span class="sd">            :math:`x`.</span>
-</span><span data-line="182">
-</span><span data-line="183">
-</span><span data-line="184"><span class="sd">        Returns</span>
-</span><span data-line="185"><span class="sd">        -------</span>
-</span><span data-line="186"><span class="sd">        Dict:</span>
-</span><span data-line="187"><span class="sd">            Dictionary of interaction parameters as retrived through</span>
-</span><span data-line="188"><span class="sd">            `scipy.optimize.curve_fit`</span>
-</span><span data-line="189"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="190">
-</span><span data-line="191">        <span class="n">delta</span> <span class="o">=</span> <span class="n">bin_centers_nz</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">bin_centers_nz</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-</span><span data-line="192">        <span class="n">sigma</span> <span class="o">=</span> <span class="n">bin_centers_nz</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">delta</span>
-</span><span data-line="193">        <span class="n">stat</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;sigma&quot;</span><span class="p">:</span> <span class="n">sigma</span><span class="p">}</span>
-</span><span data-line="194">        <span class="k">return</span> <span class="n">stat</span>
-</span><span data-line="195">
-</span><span data-line="196">    <span class="nd">@staticmethod</span>
-</span><span data-line="197">    <span class="k">def</span><span class="w"> </span><span class="nf">neighbor_list</span><span class="p">(</span><span class="n">topology</span><span class="p">:</span> <span class="n">Topology</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
-</span><span data-line="198"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Method for computing a neighbor list from a topology</span>
-</span><span data-line="199"><span class="sd">        and a chosen feature type.</span>
-</span><span data-line="200">
-</span><span data-line="201"><span class="sd">        Parameters</span>
-</span><span data-line="202"><span class="sd">        ----------</span>
-</span><span data-line="203"><span class="sd">        topology:</span>
-</span><span data-line="204"><span class="sd">            A Topology instance with a defined fully-connected</span>
-</span><span data-line="205"><span class="sd">            set of edges.</span>
-</span><span data-line="206">
-</span><span data-line="207"><span class="sd">        Returns</span>
-</span><span data-line="208"><span class="sd">        -------</span>
-</span><span data-line="209"><span class="sd">        Dict:</span>
-</span><span data-line="210"><span class="sd">            Neighborlist of the fully-connected distances</span>
-</span><span data-line="211"><span class="sd">            according to the supplied topology</span>
-</span><span data-line="212"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="213">
-</span><span data-line="214">        <span class="k">return</span> <span class="p">{</span>
-</span><span data-line="215">            <span class="n">Repulsion</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">topology</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">(</span>
-</span><span data-line="216">                <span class="n">Repulsion</span><span class="o">.</span><span class="n">_neighbor_list_name</span>
-</span><span data-line="217">            <span class="p">)</span>
-</span><span data-line="218">        <span class="p">}</span></div>
+</span><span data-line="101"><span class="sd">        Returns</span>
+</span><span data-line="102"><span class="sd">        -------</span>
+</span><span data-line="103"><span class="sd">        AtomicData:</span>
+</span><span data-line="104"><span class="sd">            Updated AtomicData instance with the &#39;out&#39; field</span>
+</span><span data-line="105"><span class="sd">            populated with the predicted energies for each</span>
+</span><span data-line="106"><span class="sd">            example/structure</span>
+</span><span data-line="107"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="108">
+</span><span data-line="109">        <span class="n">mapping</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;index_mapping&quot;</span><span class="p">]</span>
+</span><span data-line="110">        <span class="n">mapping_batch</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;mapping_batch&quot;</span><span class="p">]</span>
+</span><span data-line="111">        <span class="n">interaction_types</span> <span class="o">=</span> <span class="p">[</span>
+</span><span data-line="112">            <span class="n">data</span><span class="o">.</span><span class="n">atom_types</span><span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="n">ii</span><span class="p">]]</span> <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="p">)</span>
+</span><span data-line="113">        <span class="p">]</span>
+</span><span data-line="114">        <span class="n">features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data2features</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</span><span data-line="115">        <span class="n">y</span> <span class="o">=</span> <span class="n">Repulsion</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="p">[</span><span class="n">interaction_types</span><span class="p">])</span>
+</span><span data-line="116">        <span class="n">y</span> <span class="o">=</span> <span class="n">scatter</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">mapping_batch</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">reduce</span><span class="o">=</span><span class="s2">&quot;sum&quot;</span><span class="p">)</span>
+</span><span data-line="117">        <span class="n">data</span><span class="o">.</span><span class="n">out</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;energy&quot;</span><span class="p">:</span> <span class="n">y</span><span class="p">}</span>
+</span><span data-line="118">        <span class="k">return</span> <span class="n">data</span>
+</span><span data-line="119">
+</span><span data-line="120">    <span class="nd">@staticmethod</span>
+</span><span data-line="121">    <span class="k">def</span><span class="w"> </span><span class="nf">compute_features</span><span class="p">(</span>
+</span><span data-line="122">        <span class="n">pos</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+</span><span data-line="123">        <span class="n">mapping</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+</span><span data-line="124">        <span class="n">pbc</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="125">        <span class="n">cell</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="126">        <span class="n">batch</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="127">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+</span><span data-line="128">        <span class="k">if</span> <span class="nb">all</span><span class="p">([</span><span class="n">feat</span> <span class="o">!=</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">feat</span> <span class="ow">in</span> <span class="p">[</span><span class="n">pbc</span><span class="p">,</span> <span class="n">cell</span><span class="p">]]):</span>
+</span><span data-line="129">            <span class="n">cell_shifts</span> <span class="o">=</span> <span class="n">_Prior</span><span class="o">.</span><span class="n">_get_cell_shifts</span><span class="p">(</span>
+</span><span data-line="130">                <span class="n">pos</span><span class="p">,</span> <span class="n">mapping</span><span class="p">,</span> <span class="n">pbc</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">batch</span>
+</span><span data-line="131">            <span class="p">)</span>
+</span><span data-line="132">        <span class="k">else</span><span class="p">:</span>
+</span><span data-line="133">            <span class="n">cell_shifts</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span data-line="134">        <span class="k">return</span> <span class="n">compute_distances</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">mapping</span><span class="p">,</span> <span class="n">cell_shifts</span><span class="p">)</span>
+</span><span data-line="135">
+</span><span data-line="136">    <span class="nd">@staticmethod</span>
+</span><span data-line="137">    <span class="k">def</span><span class="w"> </span><span class="nf">compute</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">sigma</span><span class="p">):</span>
+</span><span data-line="138"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Method defining the repulsion interaction&quot;&quot;&quot;</span>
+</span><span data-line="139">        <span class="n">rr</span> <span class="o">=</span> <span class="p">(</span><span class="n">sigma</span> <span class="o">/</span> <span class="n">x</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">sigma</span> <span class="o">/</span> <span class="n">x</span><span class="p">)</span>
+</span><span data-line="140">        <span class="k">return</span> <span class="n">rr</span> <span class="o">*</span> <span class="n">rr</span> <span class="o">*</span> <span class="n">rr</span>
+</span><span data-line="141">
+</span><span data-line="142">    <span class="nd">@staticmethod</span>
+</span><span data-line="143">    <span class="k">def</span><span class="w"> </span><span class="nf">fit_from_values</span><span class="p">(</span>
+</span><span data-line="144">        <span class="n">values</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+</span><span data-line="145">        <span class="n">percentile</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+</span><span data-line="146">        <span class="n">cutoff</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="147">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+</span><span data-line="148"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Method for fitting interaction parameters directly from input features</span>
+</span><span data-line="149">
+</span><span data-line="150"><span class="sd">        Parameters</span>
+</span><span data-line="151"><span class="sd">        ----------</span>
+</span><span data-line="152"><span class="sd">        values:</span>
+</span><span data-line="153"><span class="sd">            Input features as a tensor of shape (n_frames)</span>
+</span><span data-line="154"><span class="sd">        percentile:</span>
+</span><span data-line="155"><span class="sd">            If specified, the sigma value is calculated using the specified</span>
+</span><span data-line="156"><span class="sd">            distance percentile (eg, percentile = 1) sets the sigma value</span>
+</span><span data-line="157"><span class="sd">            at the location of the 1th percentile of pairwise distances. This</span>
+</span><span data-line="158"><span class="sd">            option is useful for estimating repulsions for distance distribtions</span>
+</span><span data-line="159"><span class="sd">            with long lower tails or lower distance outliers. Must be a number from</span>
+</span><span data-line="160"><span class="sd">            0 to 1</span>
+</span><span data-line="161"><span class="sd">        cutoff:</span>
+</span><span data-line="162"><span class="sd">            If specified, only those input values below this cutoff will be used in</span>
+</span><span data-line="163"><span class="sd">            evaluating the percentile</span>
+</span><span data-line="164">
+</span><span data-line="165"><span class="sd">        Returns</span>
+</span><span data-line="166"><span class="sd">        -------</span>
+</span><span data-line="167"><span class="sd">        Dict:</span>
+</span><span data-line="168"><span class="sd">            Dictionary of interaction parameters as retrived through</span>
+</span><span data-line="169"><span class="sd">            `scipy.optimize.curve_fit`</span>
+</span><span data-line="170"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="171">        <span class="n">values</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+</span><span data-line="172">        <span class="k">if</span> <span class="n">cutoff</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="173">            <span class="n">values</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="n">values</span> <span class="o">&lt;</span> <span class="n">cutoff</span><span class="p">]</span>
+</span><span data-line="174">        <span class="n">sigma</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">percentile</span><span class="p">))</span>
+</span><span data-line="175">        <span class="n">stat</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;sigma&quot;</span><span class="p">:</span> <span class="n">sigma</span><span class="p">}</span>
+</span><span data-line="176">        <span class="k">return</span> <span class="n">stat</span>
+</span><span data-line="177">
+</span><span data-line="178">    <span class="nd">@staticmethod</span>
+</span><span data-line="179">    <span class="k">def</span><span class="w"> </span><span class="nf">fit_from_potential_estimates</span><span class="p">(</span>
+</span><span data-line="180">        <span class="n">bin_centers_nz</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+</span><span data-line="181">        <span class="n">dG_nz</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+</span><span data-line="182">        <span class="n">percentile</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="183">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+</span><span data-line="184"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Method for fitting interaction parameters from data</span>
+</span><span data-line="185">
+</span><span data-line="186"><span class="sd">        Parameters</span>
+</span><span data-line="187"><span class="sd">        ----------</span>
+</span><span data-line="188"><span class="sd">        bin_centers:</span>
+</span><span data-line="189"><span class="sd">            Bin centers from a discrete histgram used to estimate the energy</span>
+</span><span data-line="190"><span class="sd">            through logarithmic inversion of the associated Boltzmann factor</span>
+</span><span data-line="191"><span class="sd">        dG_nz:</span>
+</span><span data-line="192"><span class="sd">            The value of the energy :math:`U` as a function of the bin</span>
+</span><span data-line="193"><span class="sd">            centers, as retrived via:</span>
+</span><span data-line="194">
+</span><span data-line="195"><span class="sd">            ..math::</span>
+</span><span data-line="196">
+</span><span data-line="197"><span class="sd">                U(x) = -\frac{1}{\beta}\log{ \left( p(x)\right)}</span>
+</span><span data-line="198">
+</span><span data-line="199"><span class="sd">            where :math:`\beta` is the inverse thermodynamic temperature and</span>
+</span><span data-line="200"><span class="sd">            :math:`p(x)` is the normalized probability distribution of</span>
+</span><span data-line="201"><span class="sd">            :math:`x`.</span>
+</span><span data-line="202">
+</span><span data-line="203">
+</span><span data-line="204"><span class="sd">        Returns</span>
+</span><span data-line="205"><span class="sd">        -------</span>
+</span><span data-line="206"><span class="sd">        Dict:</span>
+</span><span data-line="207"><span class="sd">            Dictionary of interaction parameters as retrived through</span>
+</span><span data-line="208"><span class="sd">            `scipy.optimize.curve_fit`</span>
+</span><span data-line="209"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="210">
+</span><span data-line="211">        <span class="n">delta</span> <span class="o">=</span> <span class="n">bin_centers_nz</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">bin_centers_nz</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</span><span data-line="212">        <span class="n">sigma</span> <span class="o">=</span> <span class="n">bin_centers_nz</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">delta</span>
+</span><span data-line="213">        <span class="n">stat</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;sigma&quot;</span><span class="p">:</span> <span class="n">sigma</span><span class="p">}</span>
+</span><span data-line="214">        <span class="k">return</span> <span class="n">stat</span>
+</span><span data-line="215">
+</span><span data-line="216">    <span class="nd">@staticmethod</span>
+</span><span data-line="217">    <span class="k">def</span><span class="w"> </span><span class="nf">neighbor_list</span><span class="p">(</span><span class="n">topology</span><span class="p">:</span> <span class="n">Topology</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+</span><span data-line="218"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Method for computing a neighbor list from a topology</span>
+</span><span data-line="219"><span class="sd">        and a chosen feature type.</span>
+</span><span data-line="220">
+</span><span data-line="221"><span class="sd">        Parameters</span>
+</span><span data-line="222"><span class="sd">        ----------</span>
+</span><span data-line="223"><span class="sd">        topology:</span>
+</span><span data-line="224"><span class="sd">            A Topology instance with a defined fully-connected</span>
+</span><span data-line="225"><span class="sd">            set of edges.</span>
+</span><span data-line="226">
+</span><span data-line="227"><span class="sd">        Returns</span>
+</span><span data-line="228"><span class="sd">        -------</span>
+</span><span data-line="229"><span class="sd">        Dict:</span>
+</span><span data-line="230"><span class="sd">            Neighborlist of the fully-connected distances</span>
+</span><span data-line="231"><span class="sd">            according to the supplied topology</span>
+</span><span data-line="232"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="233">
+</span><span data-line="234">        <span class="k">return</span> <span class="p">{</span>
+</span><span data-line="235">            <span class="n">Repulsion</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">topology</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">(</span>
+</span><span data-line="236">                <span class="n">Repulsion</span><span class="o">.</span><span class="n">_neighbor_list_name</span>
+</span><span data-line="237">            <span class="p">)</span>
+</span><span data-line="238">        <span class="p">}</span></div>
 
 </span></pre></div>
         </article><button class="back-to-top" type="button">

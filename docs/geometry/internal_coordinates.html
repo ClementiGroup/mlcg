@@ -277,7 +277,7 @@ cell.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="mlcg.geometry.internal_coordinates.compute_torsions">
-<span class="sig-prename descclassname"><span class="pre">mlcg.geometry.internal_coordinates.</span></span><span class="sig-name descname"><span class="pre">compute_torsions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mapping</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/geometry/internal_coordinates.html#compute_torsions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.geometry.internal_coordinates.compute_torsions" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">mlcg.geometry.internal_coordinates.</span></span><span class="sig-name descname"><span class="pre">compute_torsions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mapping</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cell_shifts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/geometry/internal_coordinates.html#compute_torsions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.geometry.internal_coordinates.compute_torsions" title="Link to this definition">¶</a></dt>
 <dd><p>Compute the angle between two planes from positions in :obj:’pos’ following the
 <code class="xref py py-obj docutils literal notranslate"><span class="pre">mapping</span></code>:</p>
 <p>For dihedrals: the angle w.r.t. position of i&amp;l is positive if l i rotated clockwise
@@ -289,7 +289,7 @@ when staring down bond jk:</p>
 </div>
 <p>For impropers: the angle is positive if when looking in plane ikj, l is rotated clockwise:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">k</span>
-</span><span data-line="2"> \\
+</span><span data-line="2"> \
 </span><span data-line="3">  <span class="n">l</span><span class="o">--</span><span class="n">j</span>
 </span><span data-line="4"> <span class="o">/</span>
 </span><span data-line="5"><span class="n">i</span>
@@ -298,10 +298,10 @@ when staring down bond jk:</p>
 <p>The angle is computed using the formula:</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
-\[\begin{split}\phi_{ijkl} &amp;= \text{atan2}(-\mathbf{m} \cdot \mathbf{n}_2, \mathbf{n}_2 \cdot \mathbf{n}_1) \\
-\mathbf{n}_1 &amp;= \mathbf{\hat{r}}_{ji} \times \mathbf{\hat{r}}_{kj} \\
-\mathbf{n}_2 &amp;= \mathbf{\hat{r}}_{kj} \times \mathbf{\hat{r}}_{jl} \\
-\mathbf{m} &amp;= \mathbf{n}_{1} \times \mathbf{\hat{r}}_{kj}\end{split}\]</div>
+\[\phi_{ijkl} &amp;=  ext{atan2}(-\mathbf{m} \cdot \mathbf{n}_2, \mathbf{n}_2 \cdot \mathbf{n}_1) \
+\mathbf{n}_1 &amp;= \mathbf{\hat{r}}_{ji}   imes \mathbf{\hat{r}}_{kj} \
+\mathbf{n}_2 &amp;= \mathbf{\hat{r}}_{kj}   imes \mathbf{\hat{r}}_{jl} \
+\mathbf{m} &amp;= \mathbf{n}_{1}    imes \mathbf{\hat{r}}_{kj}\]</div>
 </div>
 <p>Where the <span class="math notranslate nohighlight">\(\hat{u}\)</span> indicates a normalized vector in direction of <span class="math notranslate nohighlight">\(u\)</span>.
 The order and signs in the atan2 arguments are needed to obtain values consistent
