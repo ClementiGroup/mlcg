@@ -264,7 +264,7 @@ class _Simulation(object):
         """
         self.model = model.eval().to(device=self.device, dtype=self.dtype)
         for param in self.model.parameters():
-            param.requires_grad = False
+            param.requires_grad_(False)
 
     def _attach_configurations(
         self,
