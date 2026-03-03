@@ -100,9 +100,9 @@ class Repulsion(_Prior):
 
         mapping = data.neighbor_list[self.name]["index_mapping"]
         mapping_batch = data.neighbor_list[self.name]["mapping_batch"]
-        interaction_types = [
+        interaction_types = tuple(
             data.atom_types[mapping[ii]] for ii in range(self.order)
-        ]
+        )
         features = self.data2features(data)
         y = Repulsion.compute(features, self.sigma[interaction_types])
         y = scatter(y, mapping_batch, dim=0, reduce="sum")

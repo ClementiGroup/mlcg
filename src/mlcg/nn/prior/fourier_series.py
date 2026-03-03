@@ -96,9 +96,9 @@ class FourierSeries(_Prior):
 
     def data2parameters(self, data: AtomicData) -> Dict:
         mapping = data.neighbor_list[self.name]["index_mapping"]
-        interaction_types = [
+        interaction_types = tuple(
             data.atom_types[mapping[ii]] for ii in range(self.order)
-        ]
+        )
         # the parameters have shape n_features x n_degs
         k1s = torch.vstack(
             [self.k1s[ii][interaction_types] for ii in range(self.n_degs)]
