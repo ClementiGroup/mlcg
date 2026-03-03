@@ -1,7 +1,12 @@
+import warnings
+
 import numpy as np
 import torch
 from torch_geometric.data import Data
 from typing import Optional, Dict, Any
+
+# mlcg CG mass unit: kcal·ps²/(mol·Å²).  Multiply by this factor to get amu.
+MLCG_MASS_TO_AMU = 418.4
 
 from ._keys import (
     validate_keys,
@@ -160,14 +165,19 @@ class AtomicData(Data):
             stress=stress,
         )
 
-    def to_ase(self, energy_tag: str = ENERGY_KEY, force_tag: str = FORCE_KEY, stress_tag: str = STRESS_KEY):
+    def to_ase(
+        self,
+        energy_tag: str = ENERGY_KEY,
+        force_tag: str = FORCE_KEY,
+        stress_tag: str = STRESS_KEY,
+        convert_cg_masses: bool = None,
+    ):
         r"""Convert this AtomicData instance to an ASE Atoms object.
 
-        Atom types are mapped to atomic numbers. For CG models where
-        atom types are bead-type indices (0, 1, 2, ...) rather than
+        Atom types are mapped to atomic numbers.  For CG models where
+        atom types are bead-type indices (0, 1, 2, …) rather than
         real element numbers, the resulting ASE Atoms will have
-        placeholder element symbols — set masses explicitly via
-        ``atoms.set_masses(...)`` if needed for dynamics.
+        placeholder element symbols.
 
         Parameters
         ----------
@@ -176,7 +186,20 @@ class AtomicData(Data):
         force_tag:
             Key under which to store forces in ``atoms.arrays``
         stress_tag:
-            Key under which to store stress in ``atoms.arrays`` (if model outputs stress)
+            Key under which to store stress in ``atoms.arrays``
+            (if model outputs stress)
+        convert_cg_masses : bool or None
+            How to handle the mlcg → amu mass conversion:
+
+            * ``None`` (default) — **auto-detect**.  If every mass on
+              this object is < 1.0, they are assumed to be in mlcg CG
+              units (kcal·ps²/mol/Å²) and are multiplied by
+              ``MLCG_MASS_TO_AMU`` (418.4) to give amu.  A
+              ``UserWarning`` is emitted when auto-conversion fires.
+              Atomistic masses (H ≈ 1.008, C ≈ 12, …) are always
+              ≥ 1.0 amu so the heuristic never triggers for them.
+            * ``True``  — always multiply by ``MLCG_MASS_TO_AMU``.
+            * ``False`` — never convert (raw values are kept).
 
         Returns
         -------
@@ -220,7 +243,26 @@ class AtomicData(Data):
 
         # Masses — use CG masses, not periodic-table defaults
         if hasattr(self, MASS_KEY) and self.masses is not None:
-            atoms.set_masses(self.masses.detach().cpu().numpy())
+            masses = self.masses.detach().cpu().numpy()
+            do_convert = convert_cg_masses
+            if do_convert is None:
+                # Auto-detect: if ALL masses < 1.0 they are almost
+                # certainly in mlcg CG units (kcal·ps²/mol/Å²) rather
+                # than amu.  The lightest real element (hydrogen) is
+                # ≈ 1.008 amu, so genuine atomic masses are always ≥ 1.
+                do_convert = bool(len(masses) > 0 and np.all(masses < 1.0))
+                if do_convert:
+                    warnings.warn(
+                        f"to_ase(): all masses < 1.0 "
+                        f"(range {masses.min():.4f}–{masses.max():.4f}). "
+                        f"Assuming mlcg CG units and converting to amu "
+                        f"(× {MLCG_MASS_TO_AMU:.1f}).  Pass "
+                        f"convert_cg_masses=False to suppress.",
+                        stacklevel=2,
+                    )
+            if do_convert:
+                masses = masses * MLCG_MASS_TO_AMU
+            atoms.set_masses(masses)
 
         # Energy
         if hasattr(self, ENERGY_KEY) and self[ENERGY_KEY] is not None:
