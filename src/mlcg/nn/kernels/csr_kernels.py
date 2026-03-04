@@ -923,7 +923,7 @@ class FusedCSRCFConvFunction(torch.autograd.Function):
                 )
             else:
                 # === Atomic scatter path (fallback) ===
-                from flashmd.kernels.cfconv_kernels import (
+                from .cfconv_kernels import (
                     fused_cutoff_gather_multiply_scatter,
                 )
 
@@ -940,7 +940,7 @@ class FusedCSRCFConvFunction(torch.autograd.Function):
         if ctx.needs_input_grad[1]:
             # grad_filter_out[e] = x[src[e]] * grad_output[dst[e]] * C[e]
             # Output dtype matches filter_out dtype (FP32 or FP16)
-            from flashmd.kernels.cfconv_kernels import fused_grad_filter_out
+            from .cfconv_kernels import fused_grad_filter_out
 
             grad_filter_out = fused_grad_filter_out(
                 x,
