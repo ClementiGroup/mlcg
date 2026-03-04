@@ -4,7 +4,7 @@ import triton
 import triton.language as tl
 from torch.library import triton_op, wrap_triton
 
-pi = tl.constexpr(3.141592653589793)
+triton_pi = tl.constexpr(3.141592653589793)
 
 
 @triton.autotune(
@@ -95,7 +95,7 @@ def fused_distance_exp_norm_rbf_cosinecutoff_kernel(
 
     # TODO: this only works assuming cutoff lower is 0, need to be expanded to consider also other case
     # Compute cosine cutoff: 0.5 * (cos(d * pi / cutoff) + 1) * (d < cutoff)
-    cos_val = tl.cos(dist * pi / cutoff_upper)
+    cos_val = tl.cos(dist * triton_pi / cutoff_upper)
     cutoff_val = 0.5 * (cos_val + 1.0)
     dist_in_range = dist < cutoff_upper
     cutoff_val = tl.where(dist_in_range, cutoff_val, 0.0)
