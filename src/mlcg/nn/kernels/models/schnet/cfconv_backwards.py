@@ -13,6 +13,7 @@ triton_pi = tl.constexpr(3.141592653589793)
 # Fused Backward Kernel for grad_filter_out
 # ============================================================================
 
+
 @triton.jit
 def fused_grad_filter_out_kernel(
     # Input pointers
@@ -94,9 +95,8 @@ def fused_grad_filter_out_kernel(
             mask=f_mask,
         )
 
-@triton_op(
-    "mlcg_kernels::fused_grad_filter_out", mutates_args={}
-)
+
+@triton_op("mlcg_kernels::fused_grad_filter_out", mutates_args={})
 def fused_grad_filter_out(
     x: torch.Tensor,
     grad_output: torch.Tensor,
@@ -180,6 +180,7 @@ def fused_grad_filter_out(
 
     return grad_filter_out
 
+
 @fused_grad_filter_out.register_kernel("cpu")
 def cpu_fused_grad_filter_out(
     x: torch.Tensor,
@@ -193,11 +194,13 @@ def cpu_fused_grad_filter_out(
     """
     CPU fallback for fused_grad_filter_out
     """
-    raise NotImplementedError #FIXME: implement CPU compatilbe fallback
+    raise NotImplementedError  # FIXME: implement CPU compatilbe fallback
+
 
 # ============================================================================
 # Fused Backward Kernel for src_csr_grad_x
 # ============================================================================
+
 
 @triton.jit
 def fused_src_csr_grad_x_kernel(
@@ -293,9 +296,8 @@ def fused_src_csr_grad_x_kernel(
         mask=f_mask,
     )
 
-@triton_op(
-    "mlcg_kernels::fused_src_csr_grad_x", mutates_args={}
-)
+
+@triton_op("mlcg_kernels::fused_src_csr_grad_x", mutates_args={})
 def fused_src_csr_grad_x(
     grad_output: torch.Tensor,
     filter_out: torch.Tensor,
@@ -389,6 +391,7 @@ def fused_src_csr_grad_x(
 
     return grad_x
 
+
 @fused_src_csr_grad_x.register_kernel("cpu")
 def cpu_fused_src_csr_grad_x(
     grad_output: torch.Tensor,
@@ -403,4 +406,4 @@ def cpu_fused_src_csr_grad_x(
     """
     CPU fallback for fused_src_csr_grad_x
     """
-    raise NotImplementedError #FIXME: implement cpu fallback
+    raise NotImplementedError  # FIXME: implement cpu fallback

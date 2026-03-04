@@ -2,6 +2,7 @@
 Fused Triton kernels for CFConv operations adopting csr representation
 for more efficient scatter operations.
 """
+
 import torch
 import triton
 import triton.language as tl
@@ -59,7 +60,6 @@ def fused_cfconv_kernel(
     seg_start = tl.load(dst_ptr_ptr + node_idx)
     seg_end = tl.load(dst_ptr_ptr + node_idx + 1)
 
-
     # Process features in blocks
     for f_start in range(0, feature_dim, BLOCK_F):
         f_offsets = f_start + tl.arange(0, BLOCK_F)
@@ -111,9 +111,8 @@ def fused_cfconv_kernel(
             mask=f_mask,
         )
 
-@triton_op(
-    "mlcg_kernels::fused_cfconv", mutates_args={}
-)
+
+@triton_op("mlcg_kernels::fused_cfconv", mutates_args={})
 def fused_cfconv(
     x: torch.Tensor,
     filter_out: torch.Tensor,
@@ -215,6 +214,7 @@ def fused_cfconv(
 
     return output
 
+
 def setup_context(ctx, inputs, output):
     (
         x,
@@ -243,6 +243,7 @@ def setup_context(ctx, inputs, output):
     ctx.num_nodes = num_nodes
     ctx.cutoff_upper = cutoff_upper
     ctx.filter_out_dtype = filter_out.dtype
+
 
 def backward(ctx, grad_output):
     (
@@ -277,7 +278,7 @@ def backward(ctx, grad_output):
             num_nodes,
             cutoff_upper,
         )
-        
+
     if ctx.needs_input_grad[1]:
         # grad_filter_out[e] = x[src[e]] * grad_output[dst[e]] * C[e]
         # Output dtype matches filter_out dtype (FP32 or FP16)
@@ -292,7 +293,7 @@ def backward(ctx, grad_output):
         )
 
     if ctx.needs_input_grad[2]:
-        raise NotImplementedError #FIXME: add grad for edge_weight
+        raise NotImplementedError  # FIXME: add grad for edge_weight
 
     return (
         grad_x,
@@ -308,9 +309,9 @@ def backward(ctx, grad_output):
         None,
     )
 
-fused_cfconv.register_autograd(
-    backward, setup_context=setup_context
-)
+
+fused_cfconv.register_autograd(backward, setup_context=setup_context)
+
 
 @fused_cfconv.register_kernel("cpu")
 def cpu_fused_cfconv(
@@ -329,4 +330,4 @@ def cpu_fused_cfconv(
     """
     CPU fallback for fused_cfconv
     """
-    raise NotImplementedError #FIXME: add cpu fallback
+    raise NotImplementedError  # FIXME: add cpu fallback

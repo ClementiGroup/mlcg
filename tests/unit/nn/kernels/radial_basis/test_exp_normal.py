@@ -6,7 +6,6 @@ from mlcg.nn.kernels import fused_distance_exp_norm_rbf_cosinecutoff
 from mlcg.nn import ExpNormalBasis, CosineCutoff
 from mlcg.geometry.internal_coordinates import compute_distances
 
-
 DEVICES = ["cpu"] + (["cuda"] if torch.cuda.is_available() else [])
 SENDERS = torch.tensor([0, 1, 0, 2, 2, 1, 3, 4, 3, 5])
 RECEIVERS = torch.tensor([1, 0, 2, 0, 1, 2, 4, 3, 5, 3])

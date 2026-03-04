@@ -132,9 +132,8 @@ def fused_tanh_linear_kernel(
     y_mask = (offs_m[:, None] < M) & (offs_n[None, :] < N)
     tl.store(y_ptrs, acc.to(y_ptr.dtype.element_ty), mask=y_mask)
 
-@triton_op(
-    "mlcg_kernels::fused_tanh_linear", mutates_args={}
-)
+
+@triton_op("mlcg_kernels::fused_tanh_linear", mutates_args={})
 def fused_tanh_linear(
     x: torch.Tensor, weight: torch.Tensor, bias: torch.Tensor = None
 ) -> torch.Tensor:
@@ -166,7 +165,7 @@ def fused_tanh_linear(
 
     M, K = x.shape
     K2, N = weight.shape
-    assert ( #FIXME: change this assert to something compiler friendly
+    assert (  # FIXME: change this assert to something compiler friendly
         K == K2
     ), f"Dimension mismatch: x has {K} columns but weight has {K2} rows"
 
@@ -200,10 +199,12 @@ def fused_tanh_linear(
 
     return y
 
+
 def setup_context(ctx, inputs, output):
     x, weight, bias = inputs
     tanh_x = torch.tanh(x)
     ctx.save_for_backward(tanh_x, weight, bias)
+
 
 def backward(ctx, grad_output):
     tanh_x, weight, bias = ctx.saved_tensors
@@ -228,15 +229,15 @@ def backward(ctx, grad_output):
 
     return grad_x, grad_weight, grad_bias
 
-fused_tanh_linear.register_autograd(
-    backward, setup_context=setup_context
-)
+
+fused_tanh_linear.register_autograd(backward, setup_context=setup_context)
+
 
 @fused_tanh_linear.register_kernel("cpu")
 def cpu_fused_tanh_linear(
     x: torch.Tensor, weight: torch.Tensor, bias: torch.Tensor = None
 ) -> torch.Tensor:
-    out = torch.tanh(x) @ weight #FIXME: check if matrix has to be transpose
+    out = torch.tanh(x) @ weight  # FIXME: check if matrix has to be transpose
     if bias is not None:
         out = out + bias
     return out

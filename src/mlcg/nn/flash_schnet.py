@@ -17,6 +17,7 @@ from .kernels.models.linear import fused_tanh_linear #FIXME: remove to avoid num
 
 
 
+FUSED_RBF_EDGE_THRESHOLD = 100
 
 
 FUSED_RBF_EDGE_THRESHOLD = 100
@@ -150,7 +151,7 @@ class FlashSchNet(torch.nn.Module):
 
         cutoff_upper = self.rbf_layer.cutoff.cutoff_upper
 
-        #FIXME: add check on minimum number of edges for fused kernel or 
+        # FIXME: add check on minimum number of edges for fused kernel or
         # non fused one
         distances, rbf_expansion = fused_distance_exp_norm_rbf_cosinecutoff(
             pos_contiguous,
@@ -164,9 +165,7 @@ class FlashSchNet(torch.nn.Module):
 
         num_batch = data.batch[-1] + 1
 
-        csr_data = build_csr_representation_from_edges(
-            edge_index, x.shape[0]
-        )
+        csr_data = build_csr_representation_from_edges(edge_index, x.shape[0])
 
         for i, block in enumerate(self.interaction_blocks):
 
