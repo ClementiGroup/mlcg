@@ -11,14 +11,12 @@ from ..data.atomic_data import AtomicData, ENERGY_KEY
 from .mlp import MLP
 from ._module_init import init_xavier_uniform
 from .kernels.radial_basis import fused_distance_exp_norm_rbf_cosinecutoff
+from .kernels.csr import build_csr_representation_from_edges
+from .kernels.models.schnet import fused_cfconv
 from .kernels.cfconv_kernels import (
     fused_tanh_linear_autograd,
 )
-from .kernels.csr_kernels import (
-    build_csr_index,
-    build_src_csr_index,
-    fused_csr_cfconv_autograd,
-)
+
 
 
 FUSED_RBF_EDGE_THRESHOLD = 100
@@ -152,6 +150,8 @@ class FlashSchNet(torch.nn.Module):
 
         cutoff_upper = self.rbf_layer.cutoff.cutoff_upper
 
+        #FIXME: add check on minimum number of edges for fused kernel or 
+        # non fused one
         distances, rbf_expansion = fused_distance_exp_norm_rbf_cosinecutoff(
             pos_contiguous,
             edge_src,
@@ -164,22 +164,9 @@ class FlashSchNet(torch.nn.Module):
 
         num_batch = data.batch[-1] + 1
 
-        edge_src = edge_index[0].contiguous()
-        edge_dst = edge_index[1].contiguous()
-        num_nodes = x.shape[0]
-
-        csr_data = {
-            "edge_src": edge_src,
-            "edge_dst": edge_dst,
-        }
-
-        dst_ptr, csr_perm = build_csr_index(edge_dst, num_nodes)
-        csr_data["dst_ptr"] = dst_ptr
-        csr_data["csr_perm"] = csr_perm
-
-        src_ptr, src_perm = build_src_csr_index(edge_src, num_nodes)
-        csr_data["src_ptr"] = src_ptr
-        csr_data["src_perm"] = src_perm
+        csr_data = build_csr_representation_from_edges(
+            edge_index, x.shape[0]
+        )
 
         for i, block in enumerate(self.interaction_blocks):
 
@@ -414,7 +401,12 @@ class CFConv(MessagePassing):
         # Get src-CSR for backward if available (USE_SRC_CSR_GRAD_X=1)
         src_ptr = csr_data.get("src_ptr")
         src_perm = csr_data.get("src_perm")
+<<<<<<< HEAD
         x = fused_csr_cfconv_autograd(
+=======
+
+        x = fused_cfconv(
+>>>>>>> 9fe97f8 (added base cfconv kernel: no cpu fallback implemented yet)
             x.contiguous(),
             filter_out.contiguous(),
             edge_weight.contiguous(),
