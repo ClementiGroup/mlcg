@@ -1,4 +1,3 @@
-import logging
 import warnings
 from typing import Optional, List, Final
 import torch
@@ -20,8 +19,6 @@ from .kernels.csr_kernels import (
     build_src_csr_index,
     fused_csr_cfconv_autograd,
 )
-
-logger = logging.getLogger(__name__)
 
 
 FUSED_RBF_EDGE_THRESHOLD = 100

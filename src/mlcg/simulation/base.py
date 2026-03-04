@@ -12,7 +12,11 @@ import time
 from copy import deepcopy
 from jsonargparse.typing import Path_fr
 import logging
-
+from ..nn.quantization import (
+    apply_gptq_w16a16_to_model,
+    validate_gptq_w16a16,
+    GPTQW16A16FilterNetwork,
+)
 from ..utils import tqdm
 
 from ..data.atomic_data import AtomicData
@@ -168,8 +172,14 @@ class _Simulation(object):
         compile: bool = False,
         compile_mode: str = "default",
         force_compile: bool = False,
+        gptq: Optional[str] = "w16a16",
     ):
         self.model = None
+        self.gptq = gptq
+        if gptq is not None and gptq not in ["w16a16"]:
+            raise ValueError(
+                f"Unsupported GPTQ mode: {gptq}. Supported: 'w16a16'"
+            )
         self.initial_data = None
         self.specialize_priors = specialize_priors
         self.save_forces = save_forces
@@ -265,8 +275,55 @@ class _Simulation(object):
         self.model = model.eval().to(device=self.device, dtype=self.dtype)
         for param in self.model.parameters():
             param.requires_grad_(False)
-
+        if self.gptq is not None:
+            print("Applying quantization")
+            self._apply_gptq_quantization()
         self.model = torch.compile(self.model, mode="default", dynamic=True)
+
+    def _apply_gptq_quantization(self):
+        """Apply GPTQ quantization to the model's filter networks."""
+        if self.gptq == "w16a16":
+
+            self.model = apply_gptq_w16a16_to_model(self.model)
+
+            # Validate that quantization was applied correctly (no fallback!)
+            validate_gptq_w16a16(self.model)
+
+            # Warm up Triton kernels (autotuning takes ~10s on first call)
+            self._warmup_gptq_kernels()
+
+    def _warmup_gptq_kernels(self):
+        """Warm up Triton kernels to trigger autotuning before simulation."""
+
+        # Find a GPTQ filter network to warm up
+
+        gptq_filter = None
+        for module in self.model.modules():
+            if isinstance(module, GPTQW16A16FilterNetwork):
+                gptq_filter = module
+                break
+
+        if gptq_filter is None:
+            return
+
+        # Create dummy input with typical simulation size
+        # Use a range of M values to trigger autotuning for all configurations
+        K = gptq_filter.in_features
+        device = gptq_filter.weight0.device
+
+        # Warmup with a few different M values to cover autotuning
+        for M in [100_000, 500_000, 900_000]:
+            x = torch.randn(
+                M, K, device=device, dtype=torch.float32, requires_grad=True
+            )
+            try:
+                y = gptq_filter(x)
+                # Also trigger backward (for force computation)
+                torch.autograd.grad(y.sum(), x)[0]
+            except Exception as e:
+                warnings.warn(f"GPTQ Warmup failed for M={M}: {e}")
+
+        torch.cuda.synchronize()
 
     def _attach_configurations(
         self,
