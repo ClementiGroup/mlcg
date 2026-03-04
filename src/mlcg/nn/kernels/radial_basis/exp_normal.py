@@ -258,7 +258,9 @@ def backward(ctx, grads):
         # d(cutoff)/d(dist) = -0.5 * pi/cutoff_upper * sin(dist * pi / cutoff_upper)
         dist_in_range = (distances < cutoff_upper).float()
         sin_val = torch.sin(distances * torch.pi / cutoff_upper)
-        d_cutoff_d_dist = -0.5 * (torch.pi / cutoff_upper) * sin_val * dist_in_range
+        d_cutoff_d_dist = (
+            -0.5 * (torch.pi / cutoff_upper) * sin_val * dist_in_range
+        )
 
         # drbf_d(dist) = d(cutoff)/d(dist) * exp(-beta*(exp(-alpha*d)-means)^2) + 2 * rbf * beta * (exp(-alpha * d)-means)*exp(-alpha*d)*alpha
         raw_gaussian = torch.exp(
@@ -266,7 +268,12 @@ def backward(ctx, grads):
         )  # [num_edges, num_rbf]
         d_rbf_d_dist = (
             d_cutoff_d_dist.unsqueeze(-1) * raw_gaussian
-            + 2 * rbf * beta * shifted_inner_exp * inner_exp.unsqueeze(-1) * alpha
+            + 2
+            * rbf
+            * beta
+            * shifted_inner_exp
+            * inner_exp.unsqueeze(-1)
+            * alpha
         )
 
         # Aggregate gradient from all RBF channels
