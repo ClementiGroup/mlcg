@@ -308,7 +308,7 @@ def backward(ctx, grad_output):
         None,
     )
 
-@fused_cfconv.register_autograd(
+fused_cfconv.register_autograd(
     backward, setup_context=setup_context
 )
 

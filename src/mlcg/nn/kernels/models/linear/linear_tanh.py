@@ -228,7 +228,7 @@ def backward(ctx, grad_output):
 
     return grad_x, grad_weight, grad_bias
 
-@fused_tanh_linear.register_autograd(
+fused_tanh_linear.register_autograd(
     backward, setup_context=setup_context
 )
 
