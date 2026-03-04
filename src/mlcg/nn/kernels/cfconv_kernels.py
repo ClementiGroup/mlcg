@@ -397,7 +397,7 @@ class FusedCutoffGatherMultiplyScatterFunction(torch.autograd.Function):
             # grad_x[src] += grad_output[dst] * W
             if src_ptr is not None and src_perm is not None:
                 # === Src-CSR Path (no atomics!) ===
-                from flashmd.kernels.csr_kernels import fused_src_csr_grad_x
+                from .kernels.csr_kernels import fused_src_csr_grad_x
 
                 grad_x = fused_src_csr_grad_x(
                     grad_output,

@@ -682,7 +682,6 @@ def fused_csr_cfconv_kernel(
 
     if node_idx >= num_nodes:
         return
-
     # Get segment bounds from CSR row pointers
     seg_start = tl.load(dst_ptr_ptr + node_idx)
     seg_end = tl.load(dst_ptr_ptr + node_idx + 1)

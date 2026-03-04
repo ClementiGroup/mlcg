@@ -11,7 +11,7 @@ from ..neighbor_list.neighbor_list import (
 from ..data.atomic_data import AtomicData, ENERGY_KEY
 from .mlp import MLP
 from ._module_init import init_xavier_uniform
-from.kernels.radial_basis import fused_distance_exp_norm_rbf_cosinecutoff
+from .kernels.radial_basis import fused_distance_exp_norm_rbf_cosinecutoff
 from .kernels.cfconv_kernels import (
     fused_tanh_linear_autograd,
 )
@@ -21,13 +21,11 @@ from .kernels.csr_kernels import (
     fused_csr_cfconv_autograd,
 )
 
-
 logger = logging.getLogger(__name__)
 
 
+FUSED_RBF_EDGE_THRESHOLD = 100
 
-
-FUSED_RBF_EDGE_THRESHOLD=100
 
 class FlashSchNet(torch.nn.Module):
     r"""PyTorch Geometric implementation of SchNet
@@ -178,7 +176,6 @@ class FlashSchNet(torch.nn.Module):
             "edge_dst": edge_dst,
         }
 
-
         dst_ptr, csr_perm = build_csr_index(edge_dst, num_nodes)
         csr_data["dst_ptr"] = dst_ptr
         csr_data["csr_perm"] = csr_perm
@@ -209,7 +206,6 @@ class FlashSchNet(torch.nn.Module):
 
         data.out[self.name] = {ENERGY_KEY: energy}
 
-
         return data
 
     def is_nl_compatible(self, nl):
@@ -222,7 +218,6 @@ class FlashSchNet(torch.nn.Module):
             ):
                 is_compatible = True
         return is_compatible
-    
 
     @staticmethod
     def neighbor_list(
@@ -306,9 +301,7 @@ class InteractionBlock(torch.nn.Module):
             hidden_channels)
         """
 
-        x = self.conv(
-            x, edge_index, edge_weight, edge_attr, csr_data=csr_data
-        )
+        x = self.conv(x, edge_index, edge_weight, edge_attr, csr_data=csr_data)
         # Linear layer weight is [out_features, in_features], need to transpose
         weight = self.lin.weight.t().contiguous()
         bias = self.lin.bias
@@ -410,7 +403,7 @@ class CFConv(MessagePassing):
         x = self.lin1(x)  # [num_nodes, num_filters]
 
         # Step 2-5: Message passing (propagate_type: x: Tensor, W: Tensor)
-    
+
         # === CSR Segment Reduce Path ===
         # Uses CSR format to avoid atomics in scatter-add
         num_nodes = x.shape[0]
@@ -424,7 +417,6 @@ class CFConv(MessagePassing):
         # Get src-CSR for backward if available (USE_SRC_CSR_GRAD_X=1)
         src_ptr = csr_data.get("src_ptr")
         src_perm = csr_data.get("src_perm")
-
         x = fused_csr_cfconv_autograd(
             x.contiguous(),
             filter_out.contiguous(),
@@ -441,7 +433,7 @@ class CFConv(MessagePassing):
 
         x = self.lin2(x)  # [num_nodes, out_channels]
         return x
-    
+
     def message(self, x_j: torch.Tensor, W: torch.Tensor) -> torch.Tensor:
         r"""Message passing operation to perform the continuous filter
         convolution through element-wise multiplcation of embedded
