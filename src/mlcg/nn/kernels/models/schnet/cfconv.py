@@ -215,7 +215,7 @@ def fused_cfconv(
 
     return output
 
-def setup_context(ctx, inputs, outputs):
+def setup_context(ctx, inputs, output):
     (
         x,
         filter_out,
@@ -329,4 +329,4 @@ def cpu_fused_cfconv(
     """
     CPU fallback for fused_cfconv
     """
-    raise NotImplementedError
+    raise NotImplementedError #FIXME: add cpu fallback

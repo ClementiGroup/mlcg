@@ -2090,260 +2090,260 @@ def fused_distance_gaussian_rbf_cutoff_autograd(
     )
 
 
-# ============================================================================
-# Fused Tanh + Linear Kernel for InteractionBlock
-# Computes: Y = (tanh(X) @ W) + b  (tanh applied FIRST, then matmul)
-# ============================================================================
+# # ============================================================================
+# # Fused Tanh + Linear Kernel for InteractionBlock
+# # Computes: Y = (tanh(X) @ W) + b  (tanh applied FIRST, then matmul)
+# # ============================================================================
 
 
-@triton.autotune(
-    configs=[
-        triton.Config(
-            {"BLOCK_M": 32, "BLOCK_N": 64, "BLOCK_K": 32},
-            num_stages=2,
-            num_warps=4,
-        ),
-        triton.Config(
-            {"BLOCK_M": 64, "BLOCK_N": 64, "BLOCK_K": 32},
-            num_stages=2,
-            num_warps=4,
-        ),
-        triton.Config(
-            {"BLOCK_M": 32, "BLOCK_N": 128, "BLOCK_K": 32},
-            num_stages=2,
-            num_warps=4,
-        ),
-        triton.Config(
-            {"BLOCK_M": 64, "BLOCK_N": 128, "BLOCK_K": 32},
-            num_stages=2,
-            num_warps=4,
-        ),
-        triton.Config(
-            {"BLOCK_M": 128, "BLOCK_N": 64, "BLOCK_K": 32},
-            num_stages=2,
-            num_warps=4,
-        ),
-        triton.Config(
-            {"BLOCK_M": 128, "BLOCK_N": 128, "BLOCK_K": 32},
-            num_stages=2,
-            num_warps=4,
-        ),
-    ],
-    key=[
-        "N",
-        "K",
-    ],  # NOT M! M varies per step, would trigger autotune ~1500ms each
-)
-@triton.jit
-def fused_tanh_linear_kernel(
-    # Pointers
-    x_ptr,  # Input [M, K]
-    w_ptr,  # Weight [K, N]
-    b_ptr,  # Bias [N] or None
-    y_ptr,  # Output [M, N]
-    # Dimensions
-    M,
-    N,
-    K,
-    # Strides
-    stride_xm,
-    stride_xk,
-    stride_wk,
-    stride_wn,
-    stride_ym,
-    stride_yn,
-    # Meta-parameters
-    HAS_BIAS: tl.constexpr,
-    BLOCK_M: tl.constexpr,
-    BLOCK_N: tl.constexpr,
-    BLOCK_K: tl.constexpr,
-):
-    """
-    Fused kernel: Y = tanh(X) @ W + b
+# @triton.autotune(
+#     configs=[
+#         triton.Config(
+#             {"BLOCK_M": 32, "BLOCK_N": 64, "BLOCK_K": 32},
+#             num_stages=2,
+#             num_warps=4,
+#         ),
+#         triton.Config(
+#             {"BLOCK_M": 64, "BLOCK_N": 64, "BLOCK_K": 32},
+#             num_stages=2,
+#             num_warps=4,
+#         ),
+#         triton.Config(
+#             {"BLOCK_M": 32, "BLOCK_N": 128, "BLOCK_K": 32},
+#             num_stages=2,
+#             num_warps=4,
+#         ),
+#         triton.Config(
+#             {"BLOCK_M": 64, "BLOCK_N": 128, "BLOCK_K": 32},
+#             num_stages=2,
+#             num_warps=4,
+#         ),
+#         triton.Config(
+#             {"BLOCK_M": 128, "BLOCK_N": 64, "BLOCK_K": 32},
+#             num_stages=2,
+#             num_warps=4,
+#         ),
+#         triton.Config(
+#             {"BLOCK_M": 128, "BLOCK_N": 128, "BLOCK_K": 32},
+#             num_stages=2,
+#             num_warps=4,
+#         ),
+#     ],
+#     key=[
+#         "N",
+#         "K",
+#     ],  # NOT M! M varies per step, would trigger autotune ~1500ms each
+# )
+# @triton.jit
+# def fused_tanh_linear_kernel(
+#     # Pointers
+#     x_ptr,  # Input [M, K]
+#     w_ptr,  # Weight [K, N]
+#     b_ptr,  # Bias [N] or None
+#     y_ptr,  # Output [M, N]
+#     # Dimensions
+#     M,
+#     N,
+#     K,
+#     # Strides
+#     stride_xm,
+#     stride_xk,
+#     stride_wk,
+#     stride_wn,
+#     stride_ym,
+#     stride_yn,
+#     # Meta-parameters
+#     HAS_BIAS: tl.constexpr,
+#     BLOCK_M: tl.constexpr,
+#     BLOCK_N: tl.constexpr,
+#     BLOCK_K: tl.constexpr,
+# ):
+#     """
+#     Fused kernel: Y = tanh(X) @ W + b
 
-    This kernel applies tanh to the input FIRST, then computes matrix
-    multiplication, avoiding intermediate tensor allocation.
+#     This kernel applies tanh to the input FIRST, then computes matrix
+#     multiplication, avoiding intermediate tensor allocation.
 
-    Used in InteractionBlock where the order is: tanh(x) followed by linear(x).
+#     Used in InteractionBlock where the order is: tanh(x) followed by linear(x).
 
-    Optimized for InteractionBlock dimensions:
-    - M = num_nodes (varies: 1k-100k+)
-    - K = hidden_channels (typically ~128)
-    - N = hidden_channels (typically ~128)
-    """
-    # Program ID
-    pid_m = tl.program_id(0)
-    pid_n = tl.program_id(1)
+#     Optimized for InteractionBlock dimensions:
+#     - M = num_nodes (varies: 1k-100k+)
+#     - K = hidden_channels (typically ~128)
+#     - N = hidden_channels (typically ~128)
+#     """
+#     # Program ID
+#     pid_m = tl.program_id(0)
+#     pid_n = tl.program_id(1)
 
-    # block start indices
-    m_start = pid_m * BLOCK_M
-    n_start = pid_n * BLOCK_N
+#     # block start indices
+#     m_start = pid_m * BLOCK_M
+#     n_start = pid_n * BLOCK_N
 
-    # offset for this block
-    offs_m = m_start + tl.arange(0, BLOCK_M)
-    offs_n = n_start + tl.arange(0, BLOCK_N)
-    offs_k = tl.arange(0, BLOCK_K)
+#     # offset for this block
+#     offs_m = m_start + tl.arange(0, BLOCK_M)
+#     offs_n = n_start + tl.arange(0, BLOCK_N)
+#     offs_k = tl.arange(0, BLOCK_K)
 
-    acc = tl.zeros((BLOCK_M, BLOCK_N), dtype=tl.float32)
+#     acc = tl.zeros((BLOCK_M, BLOCK_N), dtype=tl.float32)
 
-    for k_start in range(0, K, BLOCK_K):
-        k_offs = k_start + offs_k
+#     for k_start in range(0, K, BLOCK_K):
+#         k_offs = k_start + offs_k
 
-        # load X block [BLOCK_M, BLOCK_K]
-        x_ptrs = (
-            x_ptr + offs_m[:, None] * stride_xm + k_offs[None, :] * stride_xk
-        )
-        x_mask = (offs_m[:, None] < M) & (k_offs[None, :] < K)
-        x_block = tl.load(x_ptrs, mask=x_mask, other=0.0)
+#         # load X block [BLOCK_M, BLOCK_K]
+#         x_ptrs = (
+#             x_ptr + offs_m[:, None] * stride_xm + k_offs[None, :] * stride_xk
+#         )
+#         x_mask = (offs_m[:, None] < M) & (k_offs[None, :] < K)
+#         x_block = tl.load(x_ptrs, mask=x_mask, other=0.0)
 
-        # apply tanh to input (fused!)
-        x_block = _triton_tanh(x_block)
+#         # apply tanh to input (fused!)
+#         x_block = _triton_tanh(x_block)
 
-        # load W block [BLOCK_K, BLOCK_N]
-        w_ptrs = (
-            w_ptr + k_offs[:, None] * stride_wk + offs_n[None, :] * stride_wn
-        )
-        w_mask = (k_offs[:, None] < K) & (offs_n[None, :] < N)
-        w_block = tl.load(w_ptrs, mask=w_mask, other=0.0)
+#         # load W block [BLOCK_K, BLOCK_N]
+#         w_ptrs = (
+#             w_ptr + k_offs[:, None] * stride_wk + offs_n[None, :] * stride_wn
+#         )
+#         w_mask = (k_offs[:, None] < K) & (offs_n[None, :] < N)
+#         w_block = tl.load(w_ptrs, mask=w_mask, other=0.0)
 
-        # accumulate matmul
-        acc += tl.dot(x_block, w_block)
+#         # accumulate matmul
+#         acc += tl.dot(x_block, w_block)
 
-    # add bias if present
-    if HAS_BIAS:
-        bias = tl.load(b_ptr + offs_n, mask=offs_n < N, other=0.0)
-        acc = acc + bias[None, :]
+#     # add bias if present
+#     if HAS_BIAS:
+#         bias = tl.load(b_ptr + offs_n, mask=offs_n < N, other=0.0)
+#         acc = acc + bias[None, :]
 
-    # store output
-    y_ptrs = y_ptr + offs_m[:, None] * stride_ym + offs_n[None, :] * stride_yn
-    y_mask = (offs_m[:, None] < M) & (offs_n[None, :] < N)
-    tl.store(y_ptrs, acc.to(y_ptr.dtype.element_ty), mask=y_mask)
-
-
-def fused_tanh_linear(
-    x: torch.Tensor, weight: torch.Tensor, bias: torch.Tensor = None
-) -> torch.Tensor:
-    """
-    Compute Y = tanh(X) @ W + b using fused Triton kernel.
-
-    This applies tanh to input FIRST, then matrix multiplication.
-
-    Parameters
-    ----------
-    x : torch.Tensor
-        Input tensor [M, K] where M = num_nodes, K = hidden_channels
-    weight : torch.Tensor
-        Weight matrix [K, N] where N = hidden_channels
-    bias : torch.Tensor, optional
-        Bias vector [N]
-
-    Returns
-    -------
-    torch.Tensor
-        Output [M, N]
-    """
-    assert x.is_cuda and x.is_contiguous()
-    assert weight.is_cuda and weight.is_contiguous()
-
-    M, K = x.shape
-    K2, N = weight.shape
-    assert (
-        K == K2
-    ), f"Dimension mismatch: x has {K} columns but weight has {K2} rows"
-
-    # allocate output
-    y = torch.empty((M, N), device=x.device, dtype=x.dtype)
-
-    # grid
-    def grid(META):
-        return (
-            triton.cdiv(M, META["BLOCK_M"]),
-            triton.cdiv(N, META["BLOCK_N"]),
-        )
-
-    # launch kernel
-    fused_tanh_linear_kernel[grid](
-        x,
-        weight,
-        bias if bias is not None else x,
-        y,
-        M,
-        N,
-        K,
-        x.stride(0),
-        x.stride(1),
-        weight.stride(0),
-        weight.stride(1),
-        y.stride(0),
-        y.stride(1),
-        HAS_BIAS=(bias is not None),
-    )
-
-    return y
+#     # store output
+#     y_ptrs = y_ptr + offs_m[:, None] * stride_ym + offs_n[None, :] * stride_yn
+#     y_mask = (offs_m[:, None] < M) & (offs_n[None, :] < N)
+#     tl.store(y_ptrs, acc.to(y_ptr.dtype.element_ty), mask=y_mask)
 
 
-class FusedTanhLinearFunction(torch.autograd.Function):
-    """Autograd function for fused tanh + linear.
+# def fused_tanh_linear(
+#     x: torch.Tensor, weight: torch.Tensor, bias: torch.Tensor = None
+# ) -> torch.Tensor:
+#     """
+#     Compute Y = tanh(X) @ W + b using fused Triton kernel.
 
-    Forward: y = tanh(x) @ W + b
-    Backward:
-        - grad_x = (1 - tanh(x)^2) * (grad_y @ W.T)
-        - grad_W = tanh(x).T @ grad_y
-        - grad_b = grad_y.sum(dim=0)
-    """
+#     This applies tanh to input FIRST, then matrix multiplication.
 
-    @staticmethod
-    def forward(ctx, x, weight, bias):
-        y = fused_tanh_linear(x, weight, bias)
-        # Save tanh(x) for backward - we need it for both grad_x and grad_W
-        tanh_x = torch.tanh(x)
-        ctx.save_for_backward(tanh_x, weight, bias)
-        return y
+#     Parameters
+#     ----------
+#     x : torch.Tensor
+#         Input tensor [M, K] where M = num_nodes, K = hidden_channels
+#     weight : torch.Tensor
+#         Weight matrix [K, N] where N = hidden_channels
+#     bias : torch.Tensor, optional
+#         Bias vector [N]
 
-    @staticmethod
-    def backward(ctx, grad_output):
-        tanh_x, weight, bias = ctx.saved_tensors
+#     Returns
+#     -------
+#     torch.Tensor
+#         Output [M, N]
+#     """
+#     assert x.is_cuda and x.is_contiguous()
+#     assert weight.is_cuda and weight.is_contiguous()
 
-        grad_x = None
-        grad_weight = None
-        grad_bias = None
+#     M, K = x.shape
+#     K2, N = weight.shape
+#     assert (
+#         K == K2
+#     ), f"Dimension mismatch: x has {K} columns but weight has {K2} rows"
 
-        if ctx.needs_input_grad[0]:
-            # grad_x = (1 - tanh(x)^2) * (grad_y @ W.T)
-            # tanh derivative: d(tanh(x))/dx = 1 - tanh(x)^2
-            grad_linear = grad_output @ weight.t()
-            grad_x = (1.0 - tanh_x * tanh_x) * grad_linear
+#     # allocate output
+#     y = torch.empty((M, N), device=x.device, dtype=x.dtype)
 
-        if ctx.needs_input_grad[1]:
-            # grad_W = tanh(x).T @ grad_y
-            grad_weight = tanh_x.t() @ grad_output
+#     # grid
+#     def grid(META):
+#         return (
+#             triton.cdiv(M, META["BLOCK_M"]),
+#             triton.cdiv(N, META["BLOCK_N"]),
+#         )
 
-        if bias is not None and ctx.needs_input_grad[2]:
-            # grad_b = sum(grad_y, dim=0)
-            grad_bias = grad_output.sum(dim=0)
+#     # launch kernel
+#     fused_tanh_linear_kernel[grid](
+#         x,
+#         weight,
+#         bias if bias is not None else x,
+#         y,
+#         M,
+#         N,
+#         K,
+#         x.stride(0),
+#         x.stride(1),
+#         weight.stride(0),
+#         weight.stride(1),
+#         y.stride(0),
+#         y.stride(1),
+#         HAS_BIAS=(bias is not None),
+#     )
 
-        return grad_x, grad_weight, grad_bias
+#     return y
 
 
-def fused_tanh_linear_autograd(
-    x: torch.Tensor, weight: torch.Tensor, bias: torch.Tensor = None
-) -> torch.Tensor:
-    """Autograd-compatible fused tanh + linear.
+# class FusedTanhLinearFunction(torch.autograd.Function):
+#     """Autograd function for fused tanh + linear.
 
-    Computes: y = tanh(x) @ W + b
+#     Forward: y = tanh(x) @ W + b
+#     Backward:
+#         - grad_x = (1 - tanh(x)^2) * (grad_y @ W.T)
+#         - grad_W = tanh(x).T @ grad_y
+#         - grad_b = grad_y.sum(dim=0)
+#     """
 
-    Parameters
-    ----------
-    x : torch.Tensor
-        Input tensor [M, K]
-    weight : torch.Tensor
-        Weight matrix [K, N]
-    bias : torch.Tensor, optional
-        Bias vector [N]
+#     @staticmethod
+#     def forward(ctx, x, weight, bias):
+#         y = fused_tanh_linear(x, weight, bias)
+#         # Save tanh(x) for backward - we need it for both grad_x and grad_W
+#         tanh_x = torch.tanh(x)
+#         ctx.save_for_backward(tanh_x, weight, bias)
+#         return y
 
-    Returns
-    -------
-    torch.Tensor
-        Output [M, N]
-    """
-    return FusedTanhLinearFunction.apply(x, weight, bias)
+#     @staticmethod
+#     def backward(ctx, grad_output):
+#         tanh_x, weight, bias = ctx.saved_tensors
+
+#         grad_x = None
+#         grad_weight = None
+#         grad_bias = None
+
+#         if ctx.needs_input_grad[0]:
+#             # grad_x = (1 - tanh(x)^2) * (grad_y @ W.T)
+#             # tanh derivative: d(tanh(x))/dx = 1 - tanh(x)^2
+#             grad_linear = grad_output @ weight.t()
+#             grad_x = (1.0 - tanh_x * tanh_x) * grad_linear
+
+#         if ctx.needs_input_grad[1]:
+#             # grad_W = tanh(x).T @ grad_y
+#             grad_weight = tanh_x.t() @ grad_output
+
+#         if bias is not None and ctx.needs_input_grad[2]:
+#             # grad_b = sum(grad_y, dim=0)
+#             grad_bias = grad_output.sum(dim=0)
+
+#         return grad_x, grad_weight, grad_bias
+
+
+# def fused_tanh_linear_autograd(
+#     x: torch.Tensor, weight: torch.Tensor, bias: torch.Tensor = None
+# ) -> torch.Tensor:
+#     """Autograd-compatible fused tanh + linear.
+
+#     Computes: y = tanh(x) @ W + b
+
+#     Parameters
+#     ----------
+#     x : torch.Tensor
+#         Input tensor [M, K]
+#     weight : torch.Tensor
+#         Weight matrix [K, N]
+#     bias : torch.Tensor, optional
+#         Bias vector [N]
+
+#     Returns
+#     -------
+#     torch.Tensor
+#         Output [M, N]
+#     """
+#     return FusedTanhLinearFunction.apply(x, weight, bias)

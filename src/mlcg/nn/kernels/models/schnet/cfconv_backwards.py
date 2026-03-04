@@ -193,7 +193,7 @@ def cpu_fused_grad_filter_out(
     """
     CPU fallback for fused_grad_filter_out
     """
-    raise NotImplementedError #TODO: implement CPU compatilbe fallback
+    raise NotImplementedError #FIXME: implement CPU compatilbe fallback
 
 # ============================================================================
 # Fused Backward Kernel for src_csr_grad_x
@@ -403,4 +403,4 @@ def cpu_fused_src_csr_grad_x(
     """
     CPU fallback for fused_src_csr_grad_x
     """
-    raise NotImplementedError #TODO: implement cpu fallback
+    raise NotImplementedError #FIXME: implement cpu fallback
