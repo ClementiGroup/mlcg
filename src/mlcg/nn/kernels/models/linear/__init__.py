@@ -1,0 +1,1 @@
+from .linear_tanh import fused_tanh_linear

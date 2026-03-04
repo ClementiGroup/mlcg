@@ -13,9 +13,9 @@ from ._module_init import init_xavier_uniform
 from .kernels.radial_basis import fused_distance_exp_norm_rbf_cosinecutoff
 from .kernels.csr import build_csr_representation_from_edges
 from .kernels.models.schnet import fused_cfconv
-from .kernels.cfconv_kernels import (
-    fused_tanh_linear_autograd,
-)
+from .kernels.models.linear import fused_tanh_linear #FIXME: remove to avoid numerical problems
+
+
 
 
 
@@ -289,7 +289,7 @@ class InteractionBlock(torch.nn.Module):
         # Linear layer weight is [out_features, in_features], need to transpose
         weight = self.lin.weight.t().contiguous()
         bias = self.lin.bias
-        x = fused_tanh_linear_autograd(x.contiguous(), weight, bias)
+        x = fused_tanh_linear(x.contiguous(), weight, bias)#FIXME: remove to avoid numerical problems
         return x
 
 
@@ -401,12 +401,8 @@ class CFConv(MessagePassing):
         # Get src-CSR for backward if available (USE_SRC_CSR_GRAD_X=1)
         src_ptr = csr_data.get("src_ptr")
         src_perm = csr_data.get("src_perm")
-<<<<<<< HEAD
-        x = fused_csr_cfconv_autograd(
-=======
 
         x = fused_cfconv(
->>>>>>> 9fe97f8 (added base cfconv kernel: no cpu fallback implemented yet)
             x.contiguous(),
             filter_out.contiguous(),
             edge_weight.contiguous(),
