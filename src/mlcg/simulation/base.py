@@ -266,6 +266,8 @@ class _Simulation(object):
         for param in self.model.parameters():
             param.requires_grad_(False)
 
+        self.model = torch.compile(self.model, mode="default", dynamic=True)
+
     def _attach_configurations(
         self,
         configurations: List[AtomicData],
@@ -293,11 +295,12 @@ class _Simulation(object):
         self.n_sims = len(configurations)
         self.n_atoms = len(configurations[0].atom_types)
         self.n_dims = configurations[0].pos.shape[1]
+        # Keep initial_pos_spread on GPU for faster comparison in save()
         self.initial_pos_spread = (
             torch.cat([data.pos.std(dim=1) for data in configurations])
             .max()
             .detach()
-            .cpu()
+            .to(self.device)
         )
 
         # Load in checkpointed data values and then wipe to conserve space

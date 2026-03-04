@@ -126,12 +126,9 @@ class LangevinSimulation(_Simulation):
         x_new = x_old + v_new * self.dt * 0.5
 
         # O (noise)
-        noise = self.beta_mass_ratio * torch.randn(
-            size=x_new.size(),
-            dtype=x_new.dtype,
-            generator=self.rng,
-            device=self.device,
-        )
+        # Use pre-allocated buffer and fill in-place to avoid allocation
+        self._noise_buffer.normal_(generator=self.rng)
+        noise = self.beta_mass_ratio * self._noise_buffer
         v_new = v_new * self.vscale + self.noisescale * noise
         # A
         x_new = x_new + v_new * self.dt * 0.5
@@ -189,6 +186,12 @@ class LangevinSimulation(_Simulation):
             )
         else:
             self.simulated_kinetic_energies = None
+
+        # Pre-allocate noise buffer to avoid allocation every timestep
+        noise_shape = (self.n_sims * self.n_atoms, self.n_dims)
+        self._noise_buffer = torch.empty(
+            noise_shape, dtype=self.dtype, device=self.device
+        )
 
     def save(
         self,
