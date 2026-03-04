@@ -142,6 +142,8 @@ class _Simulation(object):
         simulations. This should be used with extreme caution since it may
         expose known issues with scatter operations and may produce invalid
         outputs or NaN gradients.
+    gptq:
+        Quantization method parameter. Current accepted values are "w16a16"
     """
 
     def __init__(
@@ -172,7 +174,7 @@ class _Simulation(object):
         compile: bool = False,
         compile_mode: str = "default",
         force_compile: bool = False,
-        gptq: Optional[str] = "w16a16",
+        gptq: Optional[str] = None,
     ):
         self.model = None
         self.gptq = gptq
