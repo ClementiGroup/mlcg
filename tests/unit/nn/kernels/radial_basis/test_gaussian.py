@@ -13,7 +13,6 @@ RECEIVERS = torch.tensor([1, 0, 2, 0, 1, 2, 4, 3, 5, 3])
 compiled_fused = torch.compile(fused_distance_gaussian_rbf_cosinecutoff)
 
 
-
 @pytest.mark.parametrize("device", DEVICES)
 @pytest.mark.parametrize("trainable", [True, False])
 def test_fused_kernel_forward(device, trainable):
@@ -39,12 +38,8 @@ def test_fused_kernel_forward(device, trainable):
         basis.cutoff.cutoff_upper,
     )
 
-    assert torch.allclose(
-        distances, kernel_distances, atol=1e-6
-    ), f"Distances mismatch: max diff {(distances - kernel_distances).abs().max()}"
-    assert torch.allclose(
-        rbf, kernel_rbf, atol=1e-6
-    ), f"RBF mismatch: max diff {(rbf - kernel_rbf).abs().max()}"
+    torch.testing.assert_close(distances, kernel_distances)
+    torch.testing.assert_close(rbf, kernel_rbf)
 
 
 @pytest.mark.parametrize("device", DEVICES)
@@ -83,9 +78,7 @@ def test_fused_kernel_gradients(device, trainable):
     grad_fused = grad(kernel_rbf.sum(), grad_inputs_fused)
 
     for i, (g_ref, g_fused) in enumerate(zip(grad_ref, grad_fused)):
-        assert torch.allclose(
-            g_ref, g_fused, atol=1e-6
-        ), f"Gradient mismatch at input {i}: max diff {(g_ref - g_fused).abs().max()}"
+        torch.testing.assert_close(g_ref, g_fused)
 
 
 @pytest.mark.skipif(
@@ -121,12 +114,8 @@ def test_fused_kernel_compiled_forward(device, trainable):
         basis.cutoff.cutoff_upper,
     )
 
-    assert torch.allclose(
-        kernel_distances, compiled_distances, atol=1e-6
-    ), f"Compiled distances mismatch: max diff {(kernel_distances - compiled_distances).abs().max()}"
-    assert torch.allclose(
-        kernel_rbf, compiled_rbf, atol=1e-6
-    ), f"Compiled RBF mismatch: max diff {(kernel_rbf - compiled_rbf).abs().max()}"
+    torch.testing.assert_close(kernel_distances, compiled_distances)
+    torch.testing.assert_close(kernel_rbf, compiled_rbf)
 
 
 @pytest.mark.skipif(
@@ -174,6 +163,4 @@ def test_fused_kernel_compiled_gradients(device, trainable):
     grad_compiled = grad(compiled_rbf.sum(), grad_inputs_compiled)
 
     for i, (g_eager, g_comp) in enumerate(zip(grad_eager, grad_compiled)):
-        assert torch.allclose(
-            g_eager, g_comp, atol=1e-6
-        ), f"Compiled gradient mismatch at input {i}: max diff {(g_eager - g_comp).abs().max()}"
+        torch.testing.assert_close(g_eager, g_comp)
