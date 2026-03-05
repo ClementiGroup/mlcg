@@ -460,19 +460,13 @@ class MetaSet:
                         hdf5_group[mol_name], keys["weights"]
                     )[selection]
                 if "cell" in hdf_key_mapping:
-                    try:
-                        cell = MetaSet.retrieve_hdf(
-                            hdf5_group[mol_name], keys["cell"]
-                        )[selection]
-                    except Exception:
-                        pass
+                    cell = MetaSet.retrieve_hdf(
+                        hdf5_group[mol_name], keys["cell"]
+                    )[selection]
                 if "pbc" in hdf_key_mapping:
-                    try:
-                        pbc = MetaSet.retrieve_hdf(
-                            hdf5_group[mol_name], keys["pbc"]
-                        )[selection]
-                    except Exception:
-                        pass
+                    pbc = MetaSet.retrieve_hdf(
+                        hdf5_group[mol_name], keys["pbc"]
+                    )[selection]
             else:
                 # For large dataset it is usually quicker to first load everything
                 # and then perform indexing in memory
@@ -494,19 +488,13 @@ class MetaSet:
                         hdf5_group[mol_name], keys["weights"]
                     )[:][selection]
                 if "cell" in hdf_key_mapping:
-                    try:
-                        cell = MetaSet.retrieve_hdf(
-                            hdf5_group[mol_name], keys["cell"]
-                        )[selection]
-                    except Exception:
-                        pass
+                    cell = MetaSet.retrieve_hdf(
+                        hdf5_group[mol_name], keys["cell"]
+                    )[:][selection]
                 if "pbc" in hdf_key_mapping:
-                    try:
-                        pbc = MetaSet.retrieve_hdf(
-                            hdf5_group[mol_name], keys["pbc"]
-                        )[selection]
-                    except Exception:
-                        pass
+                    pbc = MetaSet.retrieve_hdf(
+                        hdf5_group[mol_name], keys["pbc"]
+                    )[:][selection]
             neighbor_list = None
             if mol_neighbor_lists is not None:
                 if mol_name in mol_neighbor_lists:
