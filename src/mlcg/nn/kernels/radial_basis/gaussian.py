@@ -282,6 +282,7 @@ fused_distance_gaussian_rbf_cosinecutoff.register_autograd(
     bacward, setup_context=setup_context
 )
 
+
 ## Adding CPU fallback for the fused kernel
 @fused_distance_gaussian_rbf_cosinecutoff.register_kernel("cpu")
 def _(

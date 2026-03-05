@@ -16,10 +16,6 @@ from .kernels.models.schnet import fused_cfconv
 from .kernels.models.linear import fused_tanh_linear #FIXME: remove to avoid numerical problems
 
 
-
-FUSED_RBF_EDGE_THRESHOLD = 100
-
-
 FUSED_RBF_EDGE_THRESHOLD = 100
 
 
@@ -288,7 +284,7 @@ class InteractionBlock(torch.nn.Module):
         # Linear layer weight is [out_features, in_features], need to transpose
         weight = self.lin.weight.t().contiguous()
         bias = self.lin.bias
-        x = fused_tanh_linear(x.contiguous(), weight, bias)#FIXME: remove to avoid numerical problems
+        x = fused_tanh_linear(x.contiguous(), weight, bias) #FIXME: remove to match numerical results in forwar
         return x
 
 
