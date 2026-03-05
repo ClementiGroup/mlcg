@@ -116,7 +116,6 @@ def compute_images(
     n_atoms: torch.Tensor,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     """TODO: add doc"""
-
     cell = cell.view((-1, 3, 3))
     pbc = pbc.view((-1, 3))
     reciprocal_cell = torch.linalg.inv(cell).transpose(2, 1)

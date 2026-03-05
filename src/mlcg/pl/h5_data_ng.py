@@ -61,6 +61,7 @@ class H5DataModule(pl.LightningDataModule):
         decoy_options: Optional[list[dict]] = None,
         remove_neighbor_list: bool = True,
         exclude_listed_pairs: bool = False,
+        with_pbc: bool = False,
         # collater_fn: CythonCollater = None,
         # batch_transform: Optional[BaseTransform] = None,
     ):
@@ -69,6 +70,7 @@ class H5DataModule(pl.LightningDataModule):
         self._h5_file_path = h5_file_path
         self._subsample_using_weights = subsample_using_weights
         self._exclude_listed_pairs = exclude_listed_pairs
+        self._with_pbc = with_pbc
 
         def get_options(options_or_path):
             if isinstance(options_or_path, Mapping):
@@ -95,6 +97,7 @@ class H5DataModule(pl.LightningDataModule):
             baseline_models=baseline_models,
             decoy_options=decoy_options,
             remove_neighbor_list=remove_neighbor_list,
+            with_pbc = self._with_pbc,
             exclude_listed_pairs=self._exclude_listed_pairs,
         )
         # if self._collater_fn is None:
