@@ -407,3 +407,200 @@ def cpu_fused_src_csr_grad_x(
     CPU fallback for fused_src_csr_grad_x
     """
     raise NotImplementedError  # FIXME: implement cpu fallback
+
+
+@triton.jit
+def fused_grad_edge_weight_kernel(
+    # Input pointers
+    x_ptr,  # [num_nodes, feature_dim]
+    grad_output_ptr,  # [num_nodes, feature_dim]
+    filter_out_ptr,  # [num_edges, feature_dim] - filter outputs (FP32 or FP16)
+    edge_weight_ptr,  # [num_edges]
+    edge_src_ptr,  # [num_edges]
+    edge_dst_ptr,  # [num_edges]
+    grad_edge_out_ptr,  # [num_edges, feature_dim] - OUTPUT (FP32 or FP16)
+    # Cutoff parameters
+    cutoff_upper,
+    # Sizes
+    num_edges,
+    feature_dim,
+    # Block size
+    BLOCK_SIZE_F: tl.constexpr,
+    OUTPUT_FP16: tl.constexpr,  # Whether to output FP16
+):
+    """
+    Fused kernel for grad_filter_out computation in CFConv backward pass.
+
+    Computes:
+        grad_filter_out[e] = x[src[e]] * grad_output[dst[e]] * cutoff(dist[e])
+
+    Fuses:
+        1. Gather x[edge_src]
+        2. Gather grad_output[edge_dst]
+        3. Cutoff computation
+        4. Elementwise multiply
+
+    Memory savings: Eliminates two intermediate tensors (x_gathered, grad_gathered)
+
+    Supports FP16 output when OUTPUT_FP16=True (matches filter_out dtype).
+    Computation is always done in FP32 for numerical stability.
+    """
+    edge_idx = tl.program_id(axis=0)
+
+    if edge_idx >= num_edges:
+        return
+
+    # Load edge info
+    src_node = tl.load(edge_src_ptr + edge_idx)
+    dst_node = tl.load(edge_dst_ptr + edge_idx)
+    distances = tl.load(edge_weight_ptr + edge_idx)
+
+
+    # d(cutoff)/d(dist) = -0.5 * pi/cutoff_upper * sin(dist * pi / cutoff_upper)
+    dist_in_range = distances < cutoff_upper
+    sin_val = tl.sin(distances * triton_pi / cutoff_upper)
+    d_cutoff_d_dist = (
+        -0.5 * (triton_pi / cutoff_upper) * sin_val
+    )
+    d_cutoff_d_dist = tl.where(dist_in_range, d_cutoff_d_dist, 0.0)
+
+
+    # Process features in blocks
+    for f_start in range(0, feature_dim, BLOCK_SIZE_F):
+        f_offsets = f_start + tl.arange(0, BLOCK_SIZE_F)
+        f_mask = f_offsets < feature_dim
+
+        # Gather x[src]
+        x_j = tl.load(
+            x_ptr + src_node * feature_dim + f_offsets, mask=f_mask, other=0.0
+        )
+
+        # Gather filter output
+        filter_val = tl.load(
+            filter_out_ptr + edge_idx * feature_dim + f_offsets,
+            mask=f_mask,
+            other=0.0,
+        )
+
+        # Gather grad_output[dst]
+        grad_j = tl.load(
+            grad_output_ptr + dst_node * feature_dim + f_offsets,
+            mask=f_mask,
+            other=0.0,
+        )
+        
+        # Fused multiply: x * grad * C (in FP32)
+        grad_edge = x_j * filter_val * grad_j * d_cutoff_d_dist
+
+        # Store result (convert to FP16 if needed)
+        if OUTPUT_FP16:
+            grad_edge = grad_edge.to(tl.float16)
+        tl.store(
+            grad_edge_out_ptr + edge_idx * feature_dim + f_offsets,
+            grad_edge,
+            mask=f_mask,
+        )
+
+
+@triton_op("mlcg_kernels::fused_grad_edge_weight", mutates_args={})
+def fused_grad_edge_weight(
+    x: torch.Tensor,
+    grad_output: torch.Tensor,
+    filter_out: torch.Tensor,
+    edge_weight: torch.Tensor,
+    edge_src: torch.Tensor,
+    edge_dst: torch.Tensor,
+    cutoff_upper: float,
+    out_dtype: torch.dtype = None,
+) -> torch.Tensor:
+    """
+    Compute grad_filter_out in a single fused kernel.
+
+    fused_grad_edge_weight[e] = x[src[e]] * grad_output[dst[e]] * cutoff(dist[e])
+
+    Parameters
+    ----------
+    x : torch.Tensor
+        Node features [num_nodes, feature_dim]
+    grad_output : torch.Tensor
+        Gradient of output [num_nodes, feature_dim]
+    edge_weight : torch.Tensor
+        Edge weights (distances) [num_edges]
+    edge_src : torch.Tensor
+        Source node indices [num_edges]
+    edge_dst : torch.Tensor
+        Destination node indices [num_edges]
+    cutoff_upper : float
+        Upper cutoff distance
+    out_dtype : torch.dtype, optional
+        Output dtype. If None, uses x.dtype. Supports FP32 or FP16.
+
+    Returns
+    -------
+    torch.Tensor
+        grad_filter_out [num_edges, feature_dim]
+    """
+    if not x.is_contiguous():
+        x = x.contiguous()
+    if not grad_output.is_contiguous():
+        grad_output = grad_output.contiguous()
+    if not filter_out.is_contiguous():
+        filter_out = filter_out.contiguous()
+    if not edge_weight.is_contiguous():
+        edge_weight = edge_weight.contiguous()
+    if not edge_src.is_contiguous():
+        edge_src = edge_src.contiguous()
+    if not edge_dst.is_contiguous():
+        edge_dst = edge_dst.contiguous()
+
+    feature_dim = x.shape[1]
+    num_edges = edge_src.shape[0]
+
+    # Default output dtype is x.dtype
+    if out_dtype is None:
+        out_dtype = x.dtype
+
+    grad_edge_out = torch.empty(
+        num_edges, device=x.device, dtype=out_dtype
+    )
+
+    if num_edges == 0:
+        return grad_edge_out
+
+    BLOCK_SIZE_F = min(128, triton.next_power_of_2(feature_dim))
+    grid = (num_edges,)
+
+    # Determine if output should be FP16
+    output_fp16 = out_dtype == torch.float16
+    wrap_triton(fused_grad_edge_weight_kernel)[grid](
+        x,
+        grad_output,
+        filter_out,
+        edge_weight,
+        edge_src,
+        edge_dst,
+        grad_edge_out,
+        cutoff_upper,
+        num_edges,
+        feature_dim,
+        BLOCK_SIZE_F=BLOCK_SIZE_F,
+        OUTPUT_FP16=output_fp16,
+    )
+
+    return grad_edge_out
+
+
+@fused_grad_edge_weight.register_kernel("cpu")
+def cpu_fused_grad_edge_weight(
+    x: torch.Tensor,
+    grad_output: torch.Tensor,
+    edge_weight: torch.Tensor,
+    edge_src: torch.Tensor,
+    edge_dst: torch.Tensor,
+    cutoff_upper: float,
+    out_dtype: torch.dtype = None,
+) -> torch.Tensor:
+    """
+    CPU fallback for fused_grad_filter_out
+    """
+    raise NotImplementedError  # FIXME: implement CPU compatilbe fallback
