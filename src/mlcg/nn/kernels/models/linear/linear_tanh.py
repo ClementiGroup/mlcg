@@ -145,7 +145,7 @@ def fused_tanh_linear_kernel(
         w_block = tl.load(w_ptrs, mask=w_mask, other=0.0)
 
         # accumulate matmul
-        acc += tl.dot(x_block, w_block, input_precision="tf32") #"tf32" "ieee"
+        acc += tl.dot(x_block, w_block, input_precision="tf32")  # "tf32" "ieee"
 
     # add bias if present
     if HAS_BIAS:

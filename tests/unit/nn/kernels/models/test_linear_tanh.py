@@ -8,9 +8,10 @@ DEVICES = ["cpu"] + (["cuda"] if torch.cuda.is_available() else [])
 
 # Clear triton cache
 import os, shutil
+
 shutil.rmtree(os.path.expanduser("~/.triton/cache"), ignore_errors=True)
 
-# Clear torch.compile cache  
+# Clear torch.compile cache
 torch._dynamo.reset()
 
 # compiled version for fast-path comparison (only exercised on CUDA to avoid
