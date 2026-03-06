@@ -13,8 +13,9 @@ import torch
 import torch.nn as nn
 
 from .kernels.models.linear import (
-    fused_linear_tanh_fp16_autograd,
-    linear_fp16_autograd,
+    fused_linear_tanh_fp16,
+    linear_fp16_to_fp16,
+    linear_fp16,
 )
 
 TRITON_FP16_AVAILABLE = True
@@ -114,11 +115,11 @@ class GPTQW16A16FilterNetwork(nn.Module):
         x = x.contiguous()
 
         # Layer 0: FP32 input x FP16 weight -> FP16 output (with tanh)
-        x = fused_linear_tanh_fp16_autograd(x, self.weight0, self.bias0)
+        x = fused_linear_tanh_fp16(x, self.weight0, self.bias0)
 
         # Layer 1: FP16 input x FP16 weight -> FP16 output
         # (FP32 accumulation internally for numerical stability)
-        x = linear_fp16_autograd(x, self.weight1, out_dtype=torch.float16)
+        x = linear_fp16_to_fp16(x, self.weight1)
 
         return x
 
@@ -288,13 +289,13 @@ class GPTQW16A16OutputNetwork(nn.Module):
         x = x.contiguous()
 
         # Layer 0: FP32 input x FP16 weight -> FP16 output (with tanh)
-        x = fused_linear_tanh_fp16_autograd(x, self.weight0, self.bias0)
+        x = fused_linear_tanh_fp16(x, self.weight0, self.bias0)
 
         # Layer 1: FP16 input x FP16 weight -> FP16 output (with tanh)
-        x = fused_linear_tanh_fp16_autograd(x, self.weight1, self.bias1)
+        x = fused_linear_tanh_fp16(x, self.weight1, self.bias1)
 
         # Layer 2: FP16 input x FP16 weight -> FP32 output
-        x = linear_fp16_autograd(x, self.weight2)
+        x = linear_fp16(x, self.weight2)
 
         return x
 
