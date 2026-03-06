@@ -198,7 +198,7 @@ class RestrictedQuartic(_Prior):
         k: torch.Tensor,
         v_0: torch.Tensor,
     ) -> torch.Tensor:
-        """Computes the double angle potential energy.
+        r"""Computes the double angle potential energy.
 
         .. math::
 
