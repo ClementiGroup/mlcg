@@ -159,7 +159,7 @@ class FlashSchNet(torch.nn.Module):
             cutoff_upper,
         )
 
-        num_batch = data.batch[-1] + 1
+        num_graphs = data.ptr.numel() - 1 if hasattr(data, "ptr") else None
 
         csr_data = build_csr_representation_from_edges(edge_index, x.shape[0])
 
@@ -170,14 +170,13 @@ class FlashSchNet(torch.nn.Module):
                 edge_index,
                 distances,
                 rbf_expansion,
-                num_batch,
+                num_graphs,
                 data.batch,
                 csr_data=csr_data,
             )
 
             energy = self.output_network(x, data)
 
-        num_graphs = data.ptr.numel() - 1 if hasattr(data, "ptr") else None
         energy = scatter(
             energy, data.batch, dim=0, reduce="sum", dim_size=num_graphs
         )

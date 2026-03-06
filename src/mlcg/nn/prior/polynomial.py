@@ -126,7 +126,8 @@ class Polynomial(_Prior):
             ks,
             V0s,
         )
-        y = scatter(y, mapping_batch, dim=0, reduce="sum")
+        num_graphs = data.ptr.numel() - 1 if hasattr(data, 'ptr') else None
+        y = scatter(y, mapping_batch, dim=0, reduce="sum", dim_size=num_graphs)
         data.out[self.name] = {"energy": y}
         return data
 

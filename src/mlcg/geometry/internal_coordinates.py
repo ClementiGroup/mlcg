@@ -163,9 +163,10 @@ def compute_angles_cos(
 
     dr1 = pos[mapping[0]] - pos[mapping[1]]
     dr2 = pos[mapping[2]] - pos[mapping[1]]
-    cos_theta = (
-        (dr1 * dr2).sum(dim=1) / dr1.norm(p=2, dim=1) / dr2.norm(p=2, dim=1)
-    )
+    # Compute dot product and norms together for better fusion
+    dot_product = (dr1 * dr2).sum(dim=1)
+    norm_product = dr1.norm(p=2, dim=1) * dr2.norm(p=2, dim=1)
+    cos_theta = dot_product / norm_product
     return cos_theta
 
 
