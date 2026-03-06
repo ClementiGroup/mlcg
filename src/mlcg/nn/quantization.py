@@ -12,7 +12,7 @@ to ensure bugs from missed kernel usage are caught immediately.
 import torch
 import torch.nn as nn
 
-from .kernels import (
+from .kernels.models.linear import (
     fused_linear_tanh_fp16_autograd,
     linear_fp16_autograd,
 )
