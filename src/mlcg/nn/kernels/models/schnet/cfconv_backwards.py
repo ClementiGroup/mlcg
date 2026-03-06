@@ -194,7 +194,11 @@ def cpu_fused_grad_filter_out(
     """
     CPU fallback for fused_grad_filter_out
     """
-    raise NotImplementedError  # FIXME: implement CPU compatilbe fallback
+    C = 0.5 * (torch.cos(edge_weight * torch.pi / cutoff_upper) + 1)
+    C = C * (edge_weight < cutoff_upper).float()
+    grad_filter = grad_output[edge_dst] * x[edge_src] * C.unsqueeze(-1)
+
+    return grad_filter
 
 
 # ============================================================================
@@ -303,6 +307,7 @@ def fused_src_csr_grad_x(
     grad_output: torch.Tensor,
     filter_out: torch.Tensor,
     edge_weight: torch.Tensor,
+    edge_src: torch.Tensor,
     edge_dst: torch.Tensor,
     src_ptr: torch.Tensor,
     src_perm: torch.Tensor,
@@ -325,6 +330,8 @@ def fused_src_csr_grad_x(
         Filter network output [num_edges, feature_dim], FP32 or FP16
     edge_weight : torch.Tensor
         Edge weights (distances) [num_edges]
+    edge_src: torch.Tensor
+        Source node indices [num_edges]
     edge_dst : torch.Tensor
         Destination node indices [num_edges]
     src_ptr : torch.Tensor
@@ -398,6 +405,7 @@ def cpu_fused_src_csr_grad_x(
     grad_output: torch.Tensor,
     filter_out: torch.Tensor,
     edge_weight: torch.Tensor,
+    edge_src: torch.Tensor,
     edge_dst: torch.Tensor,
     src_ptr: torch.Tensor,
     src_perm: torch.Tensor,
@@ -407,7 +415,13 @@ def cpu_fused_src_csr_grad_x(
     """
     CPU fallback for fused_src_csr_grad_x
     """
-    raise NotImplementedError  # FIXME: implement cpu fallback
+    C = 0.5 * (torch.cos(edge_weight * torch.pi / cutoff_upper) + 1)
+    C = C * (edge_weight < cutoff_upper).float()
+    grad_x = torch.zeros_like(grad_output)
+    grad_x.index_add_(
+        0, edge_src, grad_output[edge_dst] * filter_out * C.unsqueeze(-1)
+    )
+    return grad_x
 
 
 @triton.jit
@@ -596,6 +610,7 @@ def fused_grad_edge_weight(
 def cpu_fused_grad_edge_weight(
     x: torch.Tensor,
     grad_output: torch.Tensor,
+    filter_out: torch.Tensor,
     edge_weight: torch.Tensor,
     edge_src: torch.Tensor,
     edge_dst: torch.Tensor,
@@ -605,4 +620,16 @@ def cpu_fused_grad_edge_weight(
     """
     CPU fallback for fused_grad_filter_out
     """
-    raise NotImplementedError  # FIXME: implement CPU compatilbe fallback
+    dC_dd = (
+        -0.5
+        * torch.sin(edge_weight * torch.pi / cutoff_upper)
+        * torch.pi
+        / cutoff_upper
+    )
+    dC_dd = dC_dd * (edge_weight < cutoff_upper).float()
+
+    grad_edge_weight = (grad_output[edge_dst] * x[edge_src] * filter_out).sum(
+        -1
+    ) * dC_dd
+
+    return grad_edge_weight

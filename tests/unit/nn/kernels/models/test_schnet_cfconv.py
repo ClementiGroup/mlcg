@@ -10,8 +10,7 @@ from mlcg.nn.flash_schnet import CFConv as FlashCFConv
 from mlcg.nn.mlp import MLP
 from mlcg.nn.cutoff import CosineCutoff
 
-# DEVICES = ["cpu"] + (["cuda"] if torch.cuda.is_available() else [])
-DEVICES = ["cuda"] if torch.cuda.is_available() else []
+DEVICES = ["cpu"] + (["cuda"] if torch.cuda.is_available() else [])
 
 # Clear triton cache
 import os, shutil

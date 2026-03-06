@@ -13,6 +13,8 @@ from .cfconv_backwards import (
     fused_grad_edge_weight,
 )
 
+from torch_geometric.utils import scatter
+
 triton_pi = tl.constexpr(3.141592653589793)
 
 
@@ -276,6 +278,7 @@ def backward(ctx, grad_output):
             grad_output,
             filter_out,
             edge_weight,
+            edge_src,
             edge_dst,
             src_ptr,
             src_perm,
@@ -343,4 +346,11 @@ def cpu_fused_cfconv(
     """
     CPU fallback for fused_cfconv
     """
-    raise NotImplementedError  # FIXME: add cpu fallback
+
+    C = 0.5 * (torch.cos(edge_weight * torch.pi / cutoff_upper) + 1)
+    C = C * (edge_weight < cutoff_upper).float()
+    messages = x[edge_src] * filter_out * C.unsqueeze(-1)
+    out = torch.zeros_like(x)
+    out.index_add_(0, edge_dst, messages)
+    # out = scatter(messages, edge_dst, dim=0, reduce='sum')
+    return out
