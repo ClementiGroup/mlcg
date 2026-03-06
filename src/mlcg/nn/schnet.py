@@ -152,8 +152,10 @@ class SchNet(torch.nn.Module):
             )
 
         energy = self.output_network(x, data)
-        num_graphs = data.ptr.numel() - 1 if hasattr(data, 'ptr') else None
-        energy = scatter(energy, data.batch, dim=0, reduce="sum", dim_size=num_graphs)
+        num_graphs = data.ptr.numel() - 1 if hasattr(data, "ptr") else None
+        energy = scatter(
+            energy, data.batch, dim=0, reduce="sum", dim_size=num_graphs
+        )
         energy = energy.flatten()
         data.out[self.name] = {ENERGY_KEY: energy}
 

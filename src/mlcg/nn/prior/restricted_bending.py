@@ -162,7 +162,7 @@ class RestrictedQuartic(_Prior):
         params = self.data2parameters(data)
 
         y = self.compute(features, **params)
-        num_graphs = data.ptr.numel() - 1 if hasattr(data, 'ptr') else None
+        num_graphs = data.ptr.numel() - 1 if hasattr(data, "ptr") else None
         y = scatter(y, mapping_batch, dim=0, reduce="sum", dim_size=num_graphs)
 
         data.out[self.name] = {"energy": y}
