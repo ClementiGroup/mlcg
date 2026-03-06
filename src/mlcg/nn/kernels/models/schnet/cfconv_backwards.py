@@ -29,7 +29,7 @@ def fused_grad_filter_out_kernel(
     num_edges,
     feature_dim,
     # Block size
-    BLOCK_SIZE_F: tl.constexpr,
+    BLOCK_F: tl.constexpr,
     OUTPUT_FP16: tl.constexpr,  # Whether to output FP16
 ):
     """
@@ -67,8 +67,8 @@ def fused_grad_filter_out_kernel(
     C = tl.where(mask_dist, C, 0.0)
 
     # Process features in blocks
-    for f_start in range(0, feature_dim, BLOCK_SIZE_F):
-        f_offsets = f_start + tl.arange(0, BLOCK_SIZE_F)
+    for f_start in range(0, feature_dim, BLOCK_F):
+        f_offsets = f_start + tl.arange(0, BLOCK_F)
         f_mask = f_offsets < feature_dim
 
         # Gather x[src]
@@ -158,7 +158,7 @@ def fused_grad_filter_out(
     if num_edges == 0:
         return grad_filter_out
 
-    BLOCK_SIZE_F = min(128, triton.next_power_of_2(feature_dim))
+    BLOCK_F = min(128, triton.next_power_of_2(feature_dim))
     grid = (num_edges,)
 
     # Determine if output should be FP16
@@ -174,7 +174,7 @@ def fused_grad_filter_out(
         cutoff_upper,
         num_edges,
         feature_dim,
-        BLOCK_SIZE_F=BLOCK_SIZE_F,
+        BLOCK_F=BLOCK_F,
         OUTPUT_FP16=output_fp16,
     )
 
@@ -244,57 +244,58 @@ def fused_src_csr_grad_x_kernel(
     seg_start = tl.load(src_ptr_ptr + src_node)
     seg_end = tl.load(src_ptr_ptr + src_node + 1)
 
-    # Process all features in one block (BLOCK_F=128 covers all 128 features)
-    f_offsets = tl.arange(0, BLOCK_F)
-    f_mask = f_offsets < feature_dim
+    # Process features in blocks
+    for f_start in range(0, feature_dim, BLOCK_F):
+        f_offsets = f_start + tl.arange(0, BLOCK_F)
+        f_mask = f_offsets < feature_dim
 
-    # Accumulate in FP32 registers (no atomics!)
-    acc = tl.zeros([BLOCK_F], dtype=tl.float32)
+        # Accumulate in FP32 registers (no atomics!)
+        acc = tl.zeros([BLOCK_F], dtype=tl.float32)
 
-    # Loop over all edges originating from this source node
-    for e_csr in range(seg_start, seg_end):
-        # Get original edge index via src-CSR permutation
-        edge_idx = tl.load(src_perm_ptr + e_csr)
+        # Loop over all edges originating from this source node
+        for e_csr in range(seg_start, seg_end):
+            # Get original edge index via src-CSR permutation
+            edge_idx = tl.load(src_perm_ptr + e_csr)
 
-        # Load destination node index
-        dst_node = tl.load(edge_dst_ptr + edge_idx)
+            # Load destination node index
+            dst_node = tl.load(edge_dst_ptr + edge_idx)
 
-        # Load distance and compute cutoff
-        dist = tl.load(edge_weight_ptr + edge_idx)
-        cos_val = tl.cos(dist * triton_pi / cutoff_upper)
-        C = 0.5 * (cos_val + 1.0)
-        mask_dist = dist < cutoff_upper
-        C = tl.where(mask_dist, C, 0.0)
+            # Load distance and compute cutoff
+            dist = tl.load(edge_weight_ptr + edge_idx)
+            cos_val = tl.cos(dist * triton_pi / cutoff_upper)
+            C = 0.5 * (cos_val + 1.0)
+            mask_dist = dist < cutoff_upper
+            C = tl.where(mask_dist, C, 0.0)
 
-        # Load filter output (FP16 or FP32)
-        filter_val = tl.load(
-            filter_out_ptr + edge_idx * feature_dim + f_offsets,
+            # Load filter output (FP16 or FP32)
+            filter_val = tl.load(
+                filter_out_ptr + edge_idx * feature_dim + f_offsets,
+                mask=f_mask,
+                other=0.0,
+            )
+            # Promote FP16 to FP32 for computation
+            if FILTER_FP16:
+                filter_val = filter_val.to(tl.float32)
+
+            # Apply cutoff: W = filter_out * cutoff
+            W = filter_val * C
+
+            # Gather grad_output[dst]
+            grad_dst = tl.load(
+                grad_output_ptr + dst_node * feature_dim + f_offsets,
+                mask=f_mask,
+                other=0.0,
+            )
+
+            # Accumulate: grad_x[src] += grad_output[dst] * W
+            acc += grad_dst * W
+
+        # Single store per source node - no atomic needed!
+        tl.store(
+            grad_x_ptr + src_node * feature_dim + f_offsets,
+            acc,
             mask=f_mask,
-            other=0.0,
         )
-        # Promote FP16 to FP32 for computation
-        if FILTER_FP16:
-            filter_val = filter_val.to(tl.float32)
-
-        # Apply cutoff: W = filter_out * cutoff
-        W = filter_val * C
-
-        # Gather grad_output[dst]
-        grad_dst = tl.load(
-            grad_output_ptr + dst_node * feature_dim + f_offsets,
-            mask=f_mask,
-            other=0.0,
-        )
-
-        # Accumulate: grad_x[src] += grad_output[dst] * W
-        acc += grad_dst * W
-
-    # Single store per source node - no atomic needed!
-    tl.store(
-        grad_x_ptr + src_node * feature_dim + f_offsets,
-        acc,
-        mask=f_mask,
-    )
 
 
 @triton_op("mlcg_kernels::fused_src_csr_grad_x", mutates_args={})
@@ -425,20 +426,21 @@ def fused_grad_edge_weight_kernel(
     num_edges,
     feature_dim,
     # Block size
-    BLOCK_SIZE_F: tl.constexpr,
+    BLOCK_F: tl.constexpr,
     OUTPUT_FP16: tl.constexpr,  # Whether to output FP16
 ):
     """
     Fused kernel for grad_filter_out computation in CFConv backward pass.
 
     Computes:
-        grad_filter_out[e] = x[src[e]] * grad_output[dst[e]] * cutoff(dist[e])
+        grad_filter_out[e] = grad_output[dst[e]] * x[src[e]] * filter_out[e] * dcutoff_ddist(dist[e])
 
     Fuses:
         1. Gather x[edge_src]
         2. Gather grad_output[edge_dst]
-        3. Cutoff computation
-        4. Elementwise multiply
+        3. Gather filter_out
+        4. Cutoff derivative computation
+        5. Elementwise multiply
 
     Memory savings: Eliminates two intermediate tensors (x_gathered, grad_gathered)
 
@@ -455,19 +457,18 @@ def fused_grad_edge_weight_kernel(
     dst_node = tl.load(edge_dst_ptr + edge_idx)
     distances = tl.load(edge_weight_ptr + edge_idx)
 
-
     # d(cutoff)/d(dist) = -0.5 * pi/cutoff_upper * sin(dist * pi / cutoff_upper)
     dist_in_range = distances < cutoff_upper
     sin_val = tl.sin(distances * triton_pi / cutoff_upper)
-    d_cutoff_d_dist = (
-        -0.5 * (triton_pi / cutoff_upper) * sin_val
-    )
+    d_cutoff_d_dist = -0.5 * (triton_pi / cutoff_upper) * sin_val
     d_cutoff_d_dist = tl.where(dist_in_range, d_cutoff_d_dist, 0.0)
 
-
     # Process features in blocks
-    for f_start in range(0, feature_dim, BLOCK_SIZE_F):
-        f_offsets = f_start + tl.arange(0, BLOCK_SIZE_F)
+
+    acc = tl.zeros_like(d_cutoff_d_dist)
+
+    for f_start in range(0, feature_dim, BLOCK_F):
+        f_offsets = f_start + tl.arange(0, BLOCK_F)
         f_mask = f_offsets < feature_dim
 
         # Gather x[src]
@@ -488,18 +489,21 @@ def fused_grad_edge_weight_kernel(
             mask=f_mask,
             other=0.0,
         )
-        
-        # Fused multiply: x * grad * C (in FP32)
-        grad_edge = x_j * filter_val * grad_j * d_cutoff_d_dist
 
-        # Store result (convert to FP16 if needed)
-        if OUTPUT_FP16:
-            grad_edge = grad_edge.to(tl.float16)
-        tl.store(
-            grad_edge_out_ptr + edge_idx * feature_dim + f_offsets,
-            grad_edge,
-            mask=f_mask,
-        )
+        # Fused multiply: x * grad * C (in FP32)
+        # grad_edge = x_j * filter_val * grad_j * d_cutoff_d_dist
+        acc += tl.sum(x_j * filter_val * grad_j, axis=-1)
+
+    grad_edge = acc * d_cutoff_d_dist
+    # Store result (convert to FP16 if needed)
+    if OUTPUT_FP16:
+        grad_edge = grad_edge.to(tl.float16)
+
+    tl.store(
+        grad_edge_out_ptr + edge_idx,
+        grad_edge,
+        # mask=f_mask,
+    )
 
 
 @triton_op("mlcg_kernels::fused_grad_edge_weight", mutates_args={})
@@ -560,14 +564,12 @@ def fused_grad_edge_weight(
     if out_dtype is None:
         out_dtype = x.dtype
 
-    grad_edge_out = torch.empty(
-        num_edges, device=x.device, dtype=out_dtype
-    )
+    grad_edge_out = torch.empty(num_edges, device=x.device, dtype=out_dtype)
 
     if num_edges == 0:
         return grad_edge_out
 
-    BLOCK_SIZE_F = min(128, triton.next_power_of_2(feature_dim))
+    BLOCK_F = min(128, triton.next_power_of_2(feature_dim))
     grid = (num_edges,)
 
     # Determine if output should be FP16
@@ -583,7 +585,7 @@ def fused_grad_edge_weight(
         cutoff_upper,
         num_edges,
         feature_dim,
-        BLOCK_SIZE_F=BLOCK_SIZE_F,
+        BLOCK_F=BLOCK_F,
         OUTPUT_FP16=output_fp16,
     )
 

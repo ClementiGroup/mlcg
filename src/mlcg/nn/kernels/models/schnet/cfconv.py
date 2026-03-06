@@ -7,7 +7,11 @@ import torch
 import triton
 import triton.language as tl
 from torch.library import triton_op, wrap_triton
-from .cfconv_backwards import fused_src_csr_grad_x, fused_grad_filter_out, fused_grad_edge_weight
+from .cfconv_backwards import (
+    fused_src_csr_grad_x,
+    fused_grad_filter_out,
+    fused_grad_edge_weight,
+)
 
 triton_pi = tl.constexpr(3.141592653589793)
 
@@ -303,13 +307,11 @@ def backward(ctx, grad_output):
             cutoff_upper,
             out_dtype=filter_out_dtype,
         )
-        
+
     return (
         grad_x,
         grad_filter_out,
         grad_edge_weight,
-        None,
-        None,
         None,
         None,
         None,
