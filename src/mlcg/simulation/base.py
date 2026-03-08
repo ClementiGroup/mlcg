@@ -280,8 +280,7 @@ class _Simulation(object):
         if self.gptq is not None:
             print("Applying quantization")
             self._apply_gptq_quantization()
-        self.model = torch.compile(self.model, mode="default", dynamic=True)
-
+        
     def _apply_gptq_quantization(self):
         """Apply GPTQ quantization to the model's filter networks."""
         if self.gptq == "w16a16":
