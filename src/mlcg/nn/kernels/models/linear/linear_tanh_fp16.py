@@ -497,3 +497,13 @@ def backward(ctx, grad_output):
 
 
 fused_linear_tanh_fp16.register_autograd(backward, setup_context=setup_context)
+
+@fused_linear_tanh_fp16.register_kernel("cpu")
+def fused_linear_tanh_fp16(
+    x: torch.Tensor, weight: torch.Tensor, bias: torch.Tensor = None
+) -> torch.Tensor:
+    lienear_layer = x @ weight
+    if bias is not None:
+        lienear_layer += bias
+    out = torch.tanh(lienear_layer)
+    return out

@@ -387,6 +387,14 @@ linear_fp16.register_autograd(
     backward_linear_fp16, setup_context=setup_context_linear_fp16
 )
 
+@linear_fp16.register_kernel("cpu")
+def cpu_linear_to_fp16(
+    x: torch.Tensor,
+    weight: torch.Tensor,
+) -> torch.Tensor:
+
+    out = x @ weight  # FIXME: check if matrix has to be transpose
+    return out
 
 @triton.autotune(
     configs=[
@@ -571,6 +579,15 @@ linear_fp16_to_fp16.register_autograd(
     backward_linear_fp16_to_linear_fp16,
     setup_context=setup_context_linear_fp16_to_linear_fp16,
 )
+
+@linear_fp16_to_fp16.register_kernel("cpu")
+def cpu_linear_fp16_to_fp16(
+    x: torch.Tensor,
+    weight: torch.Tensor,
+) -> torch.Tensor:
+
+    out = x @ weight  # FIXME: check if matrix has to be transpose
+    return out
 
 
 def wrapper_linear_fp16(x, weight, out_dtype=torch.float32):
