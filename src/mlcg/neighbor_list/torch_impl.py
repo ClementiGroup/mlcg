@@ -329,40 +329,40 @@ def torch_neighbor_list_pbc(
     return idx_i, idx_j, cell_shifts, self_interaction_mask
 
 
-def wrap_positions(data: Data, eps: float = 1e-7) -> None:
-    """Wrap positions to unit cell.
-
+def wrap_positions(data: AtomicData, device: str, eps: float = 1e-7) -> None:
+    """Vectorized version of position wrapping to unit cell.
     Returns positions changed by a multiple of the unit cell vectors to
     fit inside the space spanned by these vectors.
-
     Parameters
     ----------
-    data:
-        torch_geometric.Data instance
+    data: AtomicData
+        torch_geometric.Data instance with pos, cell, pbc, batch attributes
+    device: str
+        Device to perform computations on
     eps: float
-        Small number to prevent slightly negative coordinates from being
-        wrapped.
+        Small number to prevent slightly negative coordinates from being wrapped
+
+    Returns
+    -------
+    AtomicData:
+        torch_geometric.Data instance with positions wrapped in unit cell
     """
+    pos = data.pos
+    cell = data.cell.to(pos.dtype)
+    pbc = data.pbc
+    batch_ids = data.batch
 
-    center = torch.tensor((0.5, 0.5, 0.5)).view(1, 3)
-    assert (
-        data.n_atoms.shape[0] == 1
-    ), f"There should be only one structure, found: {data.n_atoms.shape[0]}"
+    cell_batch = cell[batch_ids]  # [n_atoms, 3, 3]
+    fractional = torch.linalg.solve(cell_batch, pos.unsqueeze(-1)).squeeze(-1)
 
-    pbc = data.pbc.view(1, 3)
-    shift = center - 0.5 - eps
+    pbc_mask = pbc[batch_ids]  # [n_atoms, 3]
 
-    # Don't change coordinates when pbc is False
-    shift[torch.logical_not(pbc)] = 0.0
+    shift = -eps
 
-    cell = data.cell
-    positions = data.pos
+    fractional = torch.where(
+        pbc_mask, (fractional - shift) % 1.0 + shift, fractional
+    )
+    # Convert back to cartesian coordinates
+    data.pos = torch.einsum("ni,nij->nj", fractional, cell_batch)
 
-    fractional = torch.linalg.solve(cell.t(), positions.t()).t() - shift
-
-    for i, periodic in enumerate(pbc.view(-1)):
-        if periodic:
-            fractional[:, i] = torch.remainder(fractional[:, i], 1.0)
-            fractional[:, i] += shift[0, i]
-
-    data.pos = torch.matmul(fractional, cell)
+    return data

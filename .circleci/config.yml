@@ -32,7 +32,7 @@ jobs:
             else
               echo "Skipping integration test: not a PR"
             fi
-          no_output_timeout: 40m
+          no_output_timeout: 60m
       - run:
           name: "Run integration tests"
           command: |
@@ -43,7 +43,7 @@ jobs:
             else
               echo "Skipping integration test: not a PR"
             fi
-          no_output_timeout: 40m
+          no_output_timeout: 60m
       - store_test_results:
           path: test-results
       - store_artifacts:

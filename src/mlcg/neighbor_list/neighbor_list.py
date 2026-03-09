@@ -6,6 +6,7 @@ try:
     from .nvalchemi_impl import (
         nvalchemi_naive_neighbor_list,
         nvalchemi_cell_neighbor_list,
+        nvalchemi_cell_neighbor_list_raw,
     )
 except ImportError:
     print(
@@ -54,18 +55,21 @@ def atomic_data2neighbor_list(
         Neighborlist dictionary
     """
     rcut = float(rcut)
-    if nls_distance_method == "torch":
-        met = torch_neighbor_list
-    elif nls_distance_method == "nvalchemi_naive":
-        met = nvalchemi_naive_neighbor_list
-    elif nls_distance_method == "nvalchemi_cell":
-        met = nvalchemi_cell_neighbor_list
-    elif nls_distance_method == "custom_kernel":
-        met = torch_neighbor_list
-    else:
-        raise ValueError(
-            f"Method {nls_distance_method} not supported for nls-distance computation "
-        )
+    match nls_distance_method:
+        case "torch":
+            met = torch_neighbor_list
+        case "nvalchemi_naive":
+            met = nvalchemi_naive_neighbor_list
+        case "nvalchemi_cell":
+            met = nvalchemi_cell_neighbor_list
+        case "custom_kernel":
+            met = torch_neighbor_list
+        case "nvalchemi_raw":
+            met = nvalchemi_cell_neighbor_list_raw
+        case _:
+            raise ValueError(
+                f"Method {nls_distance_method} not supported for nls-distance computation "
+            )
     idx_i, idx_j, cell_shifts, _ = met(
         data,
         rcut,
