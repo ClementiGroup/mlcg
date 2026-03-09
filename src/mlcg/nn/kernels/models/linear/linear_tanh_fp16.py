@@ -10,24 +10,37 @@ from torch.library import triton_op, wrap_triton
 from .tanh_linear import _triton_tanh
 
 
-
-
 # ============================================================================
 # Mixed Precision Kernels for GPTQ W16A16 Quantization
 # Input: FP32, Weights: FP16, Intermediate: FP16, Output: FP32
 # ============================================================================
 
 
-
 @triton.autotune(
     configs=[
         # Tall-skinny configs: large BLOCK_M, full K coverage
-        triton.Config({'BLOCK_M': 128, 'BLOCK_N': 64, 'BLOCK_K': 128}, num_stages=2, num_warps=4),
-        triton.Config({'BLOCK_M': 256, 'BLOCK_N': 64, 'BLOCK_K': 128}, num_stages=2, num_warps=4),
-        triton.Config({'BLOCK_M': 128, 'BLOCK_N': 64, 'BLOCK_K': 64}, num_stages=3, num_warps=4),
-        triton.Config({'BLOCK_M': 256, 'BLOCK_N': 64, 'BLOCK_K': 64}, num_stages=3, num_warps=8),
+        triton.Config(
+            {"BLOCK_M": 128, "BLOCK_N": 64, "BLOCK_K": 128},
+            num_stages=2,
+            num_warps=4,
+        ),
+        triton.Config(
+            {"BLOCK_M": 256, "BLOCK_N": 64, "BLOCK_K": 128},
+            num_stages=2,
+            num_warps=4,
+        ),
+        triton.Config(
+            {"BLOCK_M": 128, "BLOCK_N": 64, "BLOCK_K": 64},
+            num_stages=3,
+            num_warps=4,
+        ),
+        triton.Config(
+            {"BLOCK_M": 256, "BLOCK_N": 64, "BLOCK_K": 64},
+            num_stages=3,
+            num_warps=8,
+        ),
     ],
-    key=['N', 'K'],
+    key=["N", "K"],
 )
 @triton.jit
 def fused_tanh_backward_grad_x_kernel(
@@ -113,8 +126,11 @@ def fused_tanh_backward_grad_x_kernel(
     x_mask = (offs_m[:, None] < M) & (offs_n[None, :] < N)
     tl.store(x_ptrs, acc, mask=x_mask)
 
+
 @triton_op("mlcg_kernels::fused_tanh_backward_grad_x", mutates_args={})
-def fused_tanh_backward_grad_x(grad_out:torch.Tensor, y:torch.Tensor, weight_t:torch.Tensor) -> torch.Tensor:
+def fused_tanh_backward_grad_x(
+    grad_out: torch.Tensor, y: torch.Tensor, weight_t: torch.Tensor
+) -> torch.Tensor:
     """
     V2: grad_x = (grad_out * (1 - y^2)) @ weight_t
 
@@ -236,8 +252,15 @@ def fused_tanh_backward_grad_weight_kernel(
     w_mask = (offs_k[:, None] < K) & (offs_n[None, :] < N)
     tl.store(w_ptrs, acc, mask=w_mask)
 
+
 @triton_op("mlcg_kernels::fused_tanh_backward_grad_weight", mutates_args={})
-def fused_tanh_backward_grad_weight(x:torch.Tensor, grad_out:torch.Tensor, y:torch.Tensor, K_out:torch.Tensor, N_out:torch.Tensor) -> torch.Tensor:
+def fused_tanh_backward_grad_weight(
+    x: torch.Tensor,
+    grad_out: torch.Tensor,
+    y: torch.Tensor,
+    K_out: torch.Tensor,
+    N_out: torch.Tensor,
+) -> torch.Tensor:
     """V2: Persistent reduction for grad_weight (no atomics)."""
     M, K = x.shape
 
@@ -276,19 +299,30 @@ def fused_tanh_backward_grad_weight(x:torch.Tensor, grad_out:torch.Tensor, y:tor
     return grad_weight.half()
 
 
-
 @triton.autotune(
     configs=[
         # For large M (simulation workload: M ~ 500k-1M), use large blocks
         # BLOCK_M=128 works well for tall matrices
-        triton.Config({'BLOCK_M': 128, 'BLOCK_N': 128, 'BLOCK_K': 64}, num_stages=2, num_warps=4),
-        triton.Config({'BLOCK_M': 64, 'BLOCK_N': 128, 'BLOCK_K': 64}, num_stages=2, num_warps=4),
-        triton.Config({'BLOCK_M': 128, 'BLOCK_N': 64, 'BLOCK_K': 64}, num_stages=2, num_warps=4),
+        triton.Config(
+            {"BLOCK_M": 128, "BLOCK_N": 128, "BLOCK_K": 64},
+            num_stages=2,
+            num_warps=4,
+        ),
+        triton.Config(
+            {"BLOCK_M": 64, "BLOCK_N": 128, "BLOCK_K": 64},
+            num_stages=2,
+            num_warps=4,
+        ),
+        triton.Config(
+            {"BLOCK_M": 128, "BLOCK_N": 64, "BLOCK_K": 64},
+            num_stages=2,
+            num_warps=4,
+        ),
     ],
     # CRITICAL: Only key on N and K, NOT M!
     # M (num_edges) varies every simulation step, keying on M causes
     # autotune to run for every unique M value (1500ms per call!)
-    key=['N', 'K'],
+    key=["N", "K"],
 )
 @triton.jit
 def fused_linear_tanh_fp16_kernel(
@@ -364,6 +398,7 @@ def fused_linear_tanh_fp16_kernel(
     y_mask = (offs_m[:, None] < M) & (offs_n[None, :] < N)
     tl.store(y_ptrs, acc.to(tl.float16), mask=y_mask)
 
+
 @triton_op("mlcg_kernels::fused_tanh_linear_fp16", mutates_args={})
 def fused_linear_tanh_fp16(
     x: torch.Tensor, weight: torch.Tensor, bias: torch.Tensor = None
@@ -417,9 +452,6 @@ def fused_linear_tanh_fp16(
     return y
 
 
-
-
-
 def setup_context(ctx, inputs, output):
     x, weight, bias = inputs
     y_fp16 = fused_linear_tanh_fp16(x, weight, bias)
@@ -430,7 +462,7 @@ def setup_context(ctx, inputs, output):
     ctx.input_dtype = x.dtype
 
 
-def backward(ctx,grad_output):
+def backward(ctx, grad_output):
     x, weight_t, y_fp16 = ctx.saved_tensors
     # weight_t is [N, K] = original weight.T
 
@@ -443,9 +475,7 @@ def backward(ctx,grad_output):
     if ctx.needs_input_grad[0]:
         # V2: Fused tanh backward + grad_x matmul (no intermediate tensor)
         # grad_x = (grad_out * (1-y^2)) @ weight_t
-        grad_x = fused_tanh_backward_grad_x(
-            grad_output, y_fp16, weight_t
-        )
+        grad_x = fused_tanh_backward_grad_x(grad_output, y_fp16, weight_t)
         # Match input dtype (kernel returns FP32)
         if ctx.input_dtype == torch.float16:
             grad_x = grad_x.half()
@@ -464,5 +494,6 @@ def backward(ctx,grad_output):
         grad_bias = grad_z.sum(dim=0).half()
 
     return grad_x, grad_weight, grad_bias
+
 
 fused_linear_tanh_fp16.register_autograd(backward, setup_context=setup_context)

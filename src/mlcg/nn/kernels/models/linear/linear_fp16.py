@@ -60,8 +60,11 @@ def matmul_fp32_fp16_to_fp16_kernel(
     c_mask = (offs_m[:, None] < M) & (offs_n[None, :] < N)
     tl.store(c_ptrs, acc.to(tl.float16), mask=c_mask)
 
+
 @triton_op("mlcg_kernels::matmul_fp32_fp16_to_fp16", mutates_args={})
-def matmul_fp32_fp16_to_fp16(a: torch.Tensor, b_t: torch.Tensor) -> torch.Tensor:
+def matmul_fp32_fp16_to_fp16(
+    a: torch.Tensor, b_t: torch.Tensor
+) -> torch.Tensor:
     """C = A @ B_t where B_t is pre-transposed [K, N]"""
     M, K = a.shape
     K2, N = b_t.shape
@@ -150,7 +153,9 @@ def grad_weight_persistent_kernel(
 
 
 @triton_op("mlcg_kernels::grad_weight_persistent", mutates_args={})
-def grad_weight_persistent(x:torch.Tensor, grad_out:torch.Tensor) -> torch.Tensor:
+def grad_weight_persistent(
+    x: torch.Tensor, grad_out: torch.Tensor
+) -> torch.Tensor:
     """V2: Persistent reduction for Layer 1 grad_weight (no atomics)."""
     M, K = x.shape
     M2, N = grad_out.shape
@@ -185,18 +190,46 @@ def grad_weight_persistent(x:torch.Tensor, grad_out:torch.Tensor) -> torch.Tenso
 
     return grad_weight.half()
 
+
 @triton.autotune(
     configs=[
         # Small matrix configs (M < 10k, K=128, N=128)
-        triton.Config({'BLOCK_M': 16, 'BLOCK_N': 64, 'BLOCK_K': 64}, num_stages=1, num_warps=2),
-        triton.Config({'BLOCK_M': 16, 'BLOCK_N': 128, 'BLOCK_K': 64}, num_stages=1, num_warps=2),
-        triton.Config({'BLOCK_M': 32, 'BLOCK_N': 64, 'BLOCK_K': 64}, num_stages=1, num_warps=4),
-        triton.Config({'BLOCK_M': 32, 'BLOCK_N': 128, 'BLOCK_K': 128}, num_stages=1, num_warps=4),
+        triton.Config(
+            {"BLOCK_M": 16, "BLOCK_N": 64, "BLOCK_K": 64},
+            num_stages=1,
+            num_warps=2,
+        ),
+        triton.Config(
+            {"BLOCK_M": 16, "BLOCK_N": 128, "BLOCK_K": 64},
+            num_stages=1,
+            num_warps=2,
+        ),
+        triton.Config(
+            {"BLOCK_M": 32, "BLOCK_N": 64, "BLOCK_K": 64},
+            num_stages=1,
+            num_warps=4,
+        ),
+        triton.Config(
+            {"BLOCK_M": 32, "BLOCK_N": 128, "BLOCK_K": 128},
+            num_stages=1,
+            num_warps=4,
+        ),
         # Medium/Large matrix configs
-        triton.Config({'BLOCK_M': 64, 'BLOCK_N': 128, 'BLOCK_K': 32}, num_stages=2, num_warps=4),
-        triton.Config({'BLOCK_M': 128, 'BLOCK_N': 128, 'BLOCK_K': 32}, num_stages=2, num_warps=4),
+        triton.Config(
+            {"BLOCK_M": 64, "BLOCK_N": 128, "BLOCK_K": 32},
+            num_stages=2,
+            num_warps=4,
+        ),
+        triton.Config(
+            {"BLOCK_M": 128, "BLOCK_N": 128, "BLOCK_K": 32},
+            num_stages=2,
+            num_warps=4,
+        ),
     ],
-    key=['N', 'K']  # NOT M! M varies per step, would trigger autotune ~1500ms each,
+    key=[
+        "N",
+        "K",
+    ],  # NOT M! M varies per step, would trigger autotune ~1500ms each,
 )
 @triton.jit
 def linear_fp16_kernel(
@@ -263,7 +296,6 @@ def linear_fp16_kernel(
     tl.store(y_ptrs, acc, mask=y_mask)
 
 
-
 @triton_op("mlcg_kernels::linear_fp16", mutates_args={})
 def linear_fp16(
     x: torch.Tensor,
@@ -272,7 +304,7 @@ def linear_fp16(
     """
     Layer 1: Y = X_fp16 @ W_fp16
 
-    Input: FP16, Weight: FP16, Output: FP32  
+    Input: FP16, Weight: FP16, Output: FP32
 
     Parameters
     ----------
@@ -305,6 +337,7 @@ def linear_fp16(
             triton.cdiv(M, META["BLOCK_M"]),
             triton.cdiv(N, META["BLOCK_N"]),
         )
+
     wrap_triton(linear_fp16_kernel)[grid](
         x,
         weight,
@@ -321,13 +354,14 @@ def linear_fp16(
     )
 
 
-def setup_context_linear_fp16(ctx,inputs,output):
+def setup_context_linear_fp16(ctx, inputs, output):
     # x: FP16, weight: FP16, output: FP32
     x, weight = inputs
-    #y = linear_fp16(x, weight)
+    # y = linear_fp16(x, weight)
     # Pre-transpose weight for backward: weight is [K, N], weight_t is [N, K]
     weight_t = weight.t().contiguous()
     ctx.save_for_backward(x, weight_t)
+
 
 def backward_linear_fp16(ctx, grad_output):
     x, weight_t = ctx.saved_tensors
@@ -349,21 +383,45 @@ def backward_linear_fp16(ctx, grad_output):
     return grad_x, grad_weight
 
 
-linear_fp16.register_autograd(backward_linear_fp16, setup_context=setup_context_linear_fp16)
-
-
+linear_fp16.register_autograd(
+    backward_linear_fp16, setup_context=setup_context_linear_fp16
+)
 
 
 @triton.autotune(
     configs=[
-        triton.Config({'BLOCK_M': 16, 'BLOCK_N': 64, 'BLOCK_K': 64}, num_stages=1, num_warps=2),
-        triton.Config({'BLOCK_M': 16, 'BLOCK_N': 128, 'BLOCK_K': 64}, num_stages=1, num_warps=2),
-        triton.Config({'BLOCK_M': 32, 'BLOCK_N': 64, 'BLOCK_K': 64}, num_stages=1, num_warps=4),
-        triton.Config({'BLOCK_M': 32, 'BLOCK_N': 128, 'BLOCK_K': 128}, num_stages=1, num_warps=4),
-        triton.Config({'BLOCK_M': 64, 'BLOCK_N': 128, 'BLOCK_K': 32}, num_stages=2, num_warps=4),
-        triton.Config({'BLOCK_M': 128, 'BLOCK_N': 128, 'BLOCK_K': 32}, num_stages=2, num_warps=4),
+        triton.Config(
+            {"BLOCK_M": 16, "BLOCK_N": 64, "BLOCK_K": 64},
+            num_stages=1,
+            num_warps=2,
+        ),
+        triton.Config(
+            {"BLOCK_M": 16, "BLOCK_N": 128, "BLOCK_K": 64},
+            num_stages=1,
+            num_warps=2,
+        ),
+        triton.Config(
+            {"BLOCK_M": 32, "BLOCK_N": 64, "BLOCK_K": 64},
+            num_stages=1,
+            num_warps=4,
+        ),
+        triton.Config(
+            {"BLOCK_M": 32, "BLOCK_N": 128, "BLOCK_K": 128},
+            num_stages=1,
+            num_warps=4,
+        ),
+        triton.Config(
+            {"BLOCK_M": 64, "BLOCK_N": 128, "BLOCK_K": 32},
+            num_stages=2,
+            num_warps=4,
+        ),
+        triton.Config(
+            {"BLOCK_M": 128, "BLOCK_N": 128, "BLOCK_K": 32},
+            num_stages=2,
+            num_warps=4,
+        ),
     ],
-    key=['N', 'K'],
+    key=["N", "K"],
 )
 @triton.jit
 def linear_fp16_to_fp16_kernel(
@@ -424,7 +482,6 @@ def linear_fp16_to_fp16_kernel(
     tl.store(y_ptrs, acc.to(tl.float16), mask=y_mask)
 
 
-
 @triton_op("mlcg_kernels::linear_fp16_to_fp16", mutates_args={})
 def linear_fp16_to_fp16(
     x: torch.Tensor,
@@ -467,7 +524,6 @@ def linear_fp16_to_fp16(
             triton.cdiv(N, META["BLOCK_N"]),
         )
 
-
     wrap_triton(linear_fp16_to_fp16_kernel)[grid](
         x,
         weight,
@@ -485,15 +541,14 @@ def linear_fp16_to_fp16(
     return y
 
 
-
-
 def setup_context_linear_fp16_to_linear_fp16(ctx, inputs, output):
     x, weight = inputs
     # x: FP16, weight: FP16, output: FP16
     # Pre-transpose weight for backward
     weight_t = weight.t().contiguous()
     ctx.save_for_backward(x, weight_t)
-    
+
+
 def backward_linear_fp16_to_linear_fp16(ctx, grad_output):
     x, weight_t = ctx.saved_tensors
     grad_x = None
@@ -511,7 +566,12 @@ def backward_linear_fp16_to_linear_fp16(ctx, grad_output):
 
     return grad_x, grad_weight
 
-linear_fp16_to_fp16.register_autograd(backward_linear_fp16_to_linear_fp16, setup_context=setup_context_linear_fp16_to_linear_fp16)
+
+linear_fp16_to_fp16.register_autograd(
+    backward_linear_fp16_to_linear_fp16,
+    setup_context=setup_context_linear_fp16_to_linear_fp16,
+)
+
 
 def wrapper_linear_fp16(x, weight, out_dtype=torch.float32):
     """Layer 1: FP16 -> FP32 or FP16 (with Triton backward)
