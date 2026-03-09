@@ -5,6 +5,7 @@ from typing import List
 import warnings
 
 from mlcg.nn.flash_schnet import StandardFlashSchNet
+from mlcg.nn.schnet import StandardSchNet
 from mlcg.nn.radial_basis import ExpNormalBasis
 from mlcg.nn.gradients import GradientsOut
 from mlcg.nn.cutoff import IdentityCutoff, CosineCutoff
@@ -125,16 +126,42 @@ def test_minimum_interaction_block():
         )
     ],
 )
+
 def test_prediction(collated_data, out_keys, expected_shapes):
     """Test to make sure that the output dictionary is properly populated
     and that the correspdonding shapes of the outputs are correct given the
     requested gradient targets.
     """
-    test_schnet = StandardFlashSchNet(standard_basis, standard_cutoff, [128, 128])
-    model = GradientsOut(test_schnet, targets=FORCE_KEY).float()
+    test_flash_schnet = StandardFlashSchNet(standard_basis, standard_cutoff, [128, 128])
+    model = GradientsOut(test_flash_schnet, targets=FORCE_KEY).float()
     collated_data = model(collated_data)
     assert len(collated_data.out) != 0
     assert "SchNet" in collated_data.out.keys()
     for key, shape in zip(out_keys, expected_shapes):
         assert key in collated_data.out[model.name].keys()
         assert collated_data.out[model.name][key].shape == shape
+
+@pytest.mark.parametrize(
+    "collated_data, out_keys",
+    [
+        (
+            database.collated_data,
+            [ENERGY_KEY, FORCE_KEY],
+        )
+    ],
+)
+
+def test_flash_vs_normal(collated_data, out_keys):
+    """Test to make sure that the standard schnet and the flash version 
+    output the same values up to a tolerance
+    """
+    test_flash_schnet = StandardFlashSchNet(standard_basis, standard_cutoff, [128, 128])
+    flash_model = GradientsOut(test_flash_schnet, targets=FORCE_KEY).float()
+    test_schnet = StandardSchNet(standard_basis, standard_cutoff, [128, 128])
+    # make them have the same parameters
+    test_schnet.load_state_dict(flash_model.model.state_dict())
+    normal_model = GradientsOut(test_schnet, targets=FORCE_KEY).float()
+    out_flash = flash_model(collated_data)
+    out_normal = normal_model(collated_data)
+    for key in out_keys:
+            assert torch.all(torch.isclose(out_flash.out[flash_model.name][key],out_normal.out[normal_model.name][key]))
