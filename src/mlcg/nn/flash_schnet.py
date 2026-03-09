@@ -1,7 +1,6 @@
 import warnings
 from typing import Optional, List, Final
 import torch
-from torch_geometric.nn import MessagePassing
 from torch_geometric.utils import scatter
 from ..neighbor_list.neighbor_list import (
     atomic_data2neighbor_list,
@@ -290,7 +289,7 @@ class InteractionBlock(torch.nn.Module):
         return x
 
 
-class CFConv(MessagePassing):
+class CFConv(torch.nn.Module):
     r"""Continuous filter convolutions for `SchNet`.
 
     Parameters
@@ -306,8 +305,8 @@ class CFConv(MessagePassing):
     num_filters:
         Number of filters
     aggr:
-        Aggregation scheme for continuous filter output. For all options,
-        see `here <https://pytorch-geometric.readthedocs.io/en/latest/notes/create_gnn.html?highlight=MessagePassing#the-messagepassing-base-class>`.
+        Aggregation for continous filter convolution. This argument is not used 
+        as the aggregation is hardcoded to "add", its only left for API compatibility
     use_triton:
         Whether to use the fused Triton kernel for message passing (default: True).
     """
@@ -319,10 +318,10 @@ class CFConv(MessagePassing):
         in_channels: int = 128,
         out_channels: int = 128,
         num_filters: int = 128,
-        aggr: str = "add",
+        aggr="add",
         use_triton: bool = True,
     ):
-        super(CFConv, self).__init__(aggr=aggr)
+        super(CFConv, self).__init__()
         self.lin1 = torch.nn.Linear(in_channels, num_filters, bias=False)
         self.lin2 = torch.nn.Linear(num_filters, out_channels)
         self.filter_network = filter_network
@@ -416,27 +415,6 @@ class CFConv(MessagePassing):
         x = self.lin2(x)  # [num_nodes, out_channels]
         return x
 
-    def message(self, x_j: torch.Tensor, W: torch.Tensor) -> torch.Tensor:
-        r"""Message passing operation to perform the continuous filter
-        convolution through element-wise multiplcation of embedded
-        features with the output of the filter network.
-
-        Parameters
-        ----------
-        x_j:
-            Tensor of embedded features of shape (total_num_edges,
-            hidden_channels)
-        W:
-            Tensor of filter values of shape (total_num_edges, num_filters)
-
-        Returns
-        -------
-        x_j * W:
-            Elementwise multiplication of the filters with embedded features.
-        """
-        return x_j * W
-
-
 class StandardFlashSchNet(FlashSchNet):
     """Small wrapper class for :ref:`SchNet` to simplify the definition of the
     SchNet model through an input file. The upper distance cutoff attribute
@@ -519,7 +497,6 @@ class StandardFlashSchNet(FlashSchNet):
                 num_filters=num_filters,
                 in_channels=hidden_channels,
                 out_channels=hidden_channels,
-                aggr=aggr,
             )
             block = InteractionBlock(cfconv, hidden_channels, activation)
             interaction_blocks.append(block)

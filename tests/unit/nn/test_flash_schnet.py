@@ -164,4 +164,4 @@ def test_flash_vs_normal(collated_data, out_keys):
     out_flash = flash_model(collated_data)
     out_normal = normal_model(collated_data)
     for key in out_keys:
-            assert torch.all(torch.isclose(out_flash.out[flash_model.name][key],out_normal.out[normal_model.name][key]))
+            torch.testing.assert_close(out_flash.out[flash_model.name][key],out_normal.out[normal_model.name][key])
