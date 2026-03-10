@@ -7,6 +7,7 @@ import triton
 import triton.language as tl
 from torch.library import triton_op, wrap_triton
 
+from ...utils import ensure_contiguous
 
 @triton.autotune(
     configs=[
@@ -80,7 +81,7 @@ def matmul_fp32_fp16_to_fp16_kernel(
 
 
 @triton_op("mlcg_kernels::matmul_fp32_fp16_to_fp16", mutates_args={})
-
+@ensure_contiguous
 def matmul_fp32_fp16_to_fp16(
     a: torch.Tensor, b_t: torch.Tensor
 ) -> torch.Tensor:
@@ -89,7 +90,7 @@ def matmul_fp32_fp16_to_fp16(
     K2, N = b_t.shape
     assert K == K2
 
-    c = torch.empty((M, N), device=a.device, dtype=torch.float16)
+    c = torch.empty((M, N), device=a.device, dtype=torch.float16).contiguous()
     grid = lambda META: (
         triton.cdiv(M, META["BLOCK_M"]),
         triton.cdiv(N, META["BLOCK_N"]),
@@ -194,6 +195,7 @@ def grad_weight_persistent_kernel(
 
 
 @triton_op("mlcg_kernels::grad_weight_persistent", mutates_args={})
+@ensure_contiguous
 def grad_weight_persistent(
     x: torch.Tensor, grad_out: torch.Tensor
 ) -> torch.Tensor:
@@ -202,7 +204,7 @@ def grad_weight_persistent(
     M2, N = grad_out.shape
     assert M == M2
 
-    grad_weight = torch.empty((K, N), device=x.device, dtype=torch.float32)
+    grad_weight = torch.empty((K, N), device=x.device, dtype=torch.float32).contiguous()
 
     grid = lambda meta: (
         triton.cdiv(K, meta["BLOCK_K"]),
@@ -333,6 +335,7 @@ def linear_fp16_kernel(
 
 
 @triton_op("mlcg_kernels::linear_fp16", mutates_args={})
+@ensure_contiguous
 def linear_fp16(
     x: torch.Tensor,
     weight: torch.Tensor,
@@ -358,15 +361,12 @@ def linear_fp16(
     assert (
         weight.dtype == torch.float16
     ), f"Weight must be FP16, got {weight.dtype}"
-    assert x.is_cuda and x.is_contiguous()
-    assert weight.is_cuda and weight.is_contiguous()
-
     M, K = x.shape
     K2, N = weight.shape
     assert K == K2
 
     # Output dtype controlled by parameter
-    y = torch.empty((M, N), device=x.device, dtype=torch.float32)
+    y = torch.empty((M, N), device=x.device, dtype=torch.float32).contiguous()
 
     def grid(META):
         return (
@@ -530,6 +530,7 @@ def linear_fp16_to_fp16_kernel(
 
 
 @triton_op("mlcg_kernels::linear_fp16_to_fp16", mutates_args={})
+@ensure_contiguous
 def linear_fp16_to_fp16(
     x: torch.Tensor,
     weight: torch.Tensor,
@@ -555,15 +556,13 @@ def linear_fp16_to_fp16(
     assert (
         weight.dtype == torch.float16
     ), f"Weight must be FP16, got {weight.dtype}"
-    assert x.is_cuda and x.is_contiguous()
-    assert weight.is_cuda and weight.is_contiguous()
 
     M, K = x.shape
     K2, N = weight.shape
     assert K == K2
 
     # Output dtype controlled by parameter
-    y = torch.empty((M, N), device=x.device, dtype=torch.float16)
+    y = torch.empty((M, N), device=x.device, dtype=torch.float16).contiguous()
 
     def grid(META):
         return (

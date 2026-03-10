@@ -8,7 +8,7 @@ import triton.language as tl
 from torch.library import triton_op, wrap_triton
 
 from .tanh_linear import _triton_tanh
-
+from ...utils import ensure_contiguous
 # ============================================================================
 # Mixed Precision Kernels for GPTQ W16A16 Quantization
 # Input: FP32, Weights: FP16, Intermediate: FP16, Output: FP32
@@ -139,7 +139,7 @@ def fused_tanh_backward_grad_x(
     K_out2, N = weight_t.shape
     assert K_out == K_out2
 
-    grad_x = torch.empty((M, N), device=grad_out.device, dtype=torch.float32)
+    grad_x = torch.empty((M, N), device=grad_out.device, dtype=torch.float32).contiguous()
 
     grid = lambda META: (
         triton.cdiv(M, META["BLOCK_M"]),
@@ -263,7 +263,7 @@ def fused_tanh_backward_grad_weight(
     """V2: Persistent reduction for grad_weight (no atomics)."""
     M, K = x.shape
 
-    grad_weight = torch.empty((K, N_out), device=x.device, dtype=torch.float32)
+    grad_weight = torch.empty((K, N_out), device=x.device, dtype=torch.float32).contiguous()
 
     # BLOCK_M tuned to fit in shared memory (max ~100KB)
     # Each iteration loads: x[BLOCK_M, BLOCK_K] + grad_out[BLOCK_M, BLOCK_N] + y[BLOCK_M, BLOCK_N]
@@ -399,6 +399,7 @@ def fused_linear_tanh_fp16_kernel(
 
 
 @triton_op("mlcg_kernels::fused_tanh_linear_fp16", mutates_args={})
+@ensure_contiguous
 def fused_linear_tanh_fp16(
     x: torch.Tensor, weight: torch.Tensor, bias: torch.Tensor = None
 ) -> torch.Tensor:
@@ -416,14 +417,13 @@ def fused_linear_tanh_fp16(
     assert (
         weight.dtype == torch.float16
     ), f"Weight must be FP16, got {weight.dtype}"
-    assert x.is_cuda and x.is_contiguous()
-    assert weight.is_cuda and weight.is_contiguous()
+
 
     M, K = x.shape
     K2, N = weight.shape
     assert K == K2
 
-    y = torch.empty((M, N), device=x.device, dtype=torch.float16)
+    y = torch.empty((M, N), device=x.device, dtype=torch.float16).contiguous()
 
     def grid(META):
         return (
