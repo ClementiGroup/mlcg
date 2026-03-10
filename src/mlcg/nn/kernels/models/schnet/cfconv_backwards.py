@@ -660,7 +660,7 @@ def backward_grad_edge_weight_fused_cfconv(ctx, grad_grad_edge_out):
         )
     
     if ctx.needs_input_grad[1]:
-        grad_grad_out = grad_grad_out_grad_edge_weight_fused_cfconv(
+        grad_grad_output = grad_grad_out_grad_edge_weight_fused_cfconv(
             x,
             filters,
             edge_weight,
