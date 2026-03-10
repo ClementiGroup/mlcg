@@ -190,7 +190,7 @@ def compute_torsions(
     mapping: torch.Tensor,
     cell_shifts: Optional[torch.Tensor] = None,
 ):
-    """
+    r"""
     Compute the angle between two planes from positions in :obj:'pos' following the
     :obj:`mapping`::
 
