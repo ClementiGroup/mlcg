@@ -106,11 +106,11 @@ class GPTQW16A16FilterNetwork(nn.Module):
         torch.Tensor
             Output tensor [num_edges, num_filters] in FP16
         """
-        if not x.is_cuda:
-            raise RuntimeError(
-                "GPTQ W16A16 filter network requires CUDA input. "
-                "No CPU fallback is provided to prevent silent bugs."
-            )
+        # if not x.is_cuda:
+        #    raise RuntimeError(
+        #        "GPTQ W16A16 filter network requires CUDA input. "
+        #        "No CPU fallback is provided to prevent silent bugs."
+        #    )
 
         x = x.contiguous()
 
@@ -280,11 +280,11 @@ class GPTQW16A16OutputNetwork(nn.Module):
         torch.Tensor
             Output tensor [num_atoms, 1] in FP32
         """
-        if not x.is_cuda:
-            raise RuntimeError(
-                "GPTQ W16A16 output network requires CUDA input. "
-                "No CPU fallback is provided to prevent silent bugs."
-            )
+        # if not x.is_cuda:
+        #    raise RuntimeError(
+        #        "GPTQ W16A16 output network requires CUDA input. "
+        #        "No CPU fallback is provided to prevent silent bugs."
+        #    )
 
         x = x.contiguous()
 
@@ -395,17 +395,6 @@ def apply_gptq_w16a16_to_model(model: nn.Module) -> nn.Module:
             "GPTQ W16A16 requires Triton FP16 kernels but they are not available. "
             "Please ensure triton is installed and CUDA is available."
         )
-
-    # Patch legacy models: add missing attributes
-    for name, module in model.named_modules():
-        if module.__class__.__name__ == "CFConv" and not hasattr(
-            module, "use_triton"
-        ):
-            module.use_triton = True
-        if module.__class__.__name__ == "InteractionBlock" and not hasattr(
-            module, "use_fused_tanh_linear"
-        ):
-            module.use_fused_tanh_linear = False
 
     filter_count = 0
     output_count = 0

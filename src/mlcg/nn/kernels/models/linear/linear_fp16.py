@@ -7,9 +7,27 @@ import triton
 import triton.language as tl
 from torch.library import triton_op, wrap_triton
 
-from .tanh_linear import _triton_tanh
 
-
+@triton.autotune(
+    configs=[
+        triton.Config(
+            {"BLOCK_M": 128, "BLOCK_N": 128, "BLOCK_K": 128},
+            num_stages=2,
+            num_warps=4,
+        ),
+        triton.Config(
+            {"BLOCK_M": 256, "BLOCK_N": 128, "BLOCK_K": 128},
+            num_stages=2,
+            num_warps=8,
+        ),
+        triton.Config(
+            {"BLOCK_M": 128, "BLOCK_N": 128, "BLOCK_K": 64},
+            num_stages=3,
+            num_warps=4,
+        ),
+    ],
+    key=["N", "K"],
+)
 @triton.jit
 def matmul_fp32_fp16_to_fp16_kernel(
     # A: [M, K] FP32, B: [K, N] FP16 (pre-transposed), C: [M, N] FP16
@@ -93,7 +111,29 @@ def matmul_fp32_fp16_to_fp16(
     return c
 
 
-# V2: Layer 1 persistent grad_weight
+@triton.autotune(
+    configs=[
+        # “Default” you had: BM=64, BK=64 (or smaller), BN=32 (or smaller).
+        # Triton configs must be compile-time constants, so we provide variants
+        # and let autotune pick.
+        triton.Config(
+            {"BLOCK_M": 64, "BLOCK_K": 64, "BLOCK_N": 32}, num_warps=4
+        ),
+        triton.Config(
+            {"BLOCK_M": 64, "BLOCK_K": 32, "BLOCK_N": 32}, num_warps=4
+        ),
+        triton.Config(
+            {"BLOCK_M": 64, "BLOCK_K": 16, "BLOCK_N": 32}, num_warps=2
+        ),
+        triton.Config(
+            {"BLOCK_M": 64, "BLOCK_K": 64, "BLOCK_N": 16}, num_warps=4
+        ),
+        triton.Config(
+            {"BLOCK_M": 64, "BLOCK_K": 32, "BLOCK_N": 16}, num_warps=2
+        ),
+    ],
+    key=["K", "N"],  # autotune will re-run when K or N changes
+)
 @triton.jit
 def grad_weight_persistent_kernel(
     x_ptr,
@@ -163,12 +203,10 @@ def grad_weight_persistent(
 
     grad_weight = torch.empty((K, N), device=x.device, dtype=torch.float32)
 
-    # BLOCK_M tuned to fit in shared memory
-    BLOCK_M = 64  # Reduced to fit shared memory
-    BLOCK_K = 64 if K >= 64 else K
-    BLOCK_N = 32 if N >= 32 else N
-
-    grid = (triton.cdiv(K, BLOCK_K), triton.cdiv(N, BLOCK_N))
+    grid = lambda meta: (
+        triton.cdiv(K, meta["BLOCK_K"]),
+        triton.cdiv(N, meta["BLOCK_N"]),
+    )
 
     wrap_triton(grad_weight_persistent_kernel)[grid](
         x,
@@ -183,9 +221,6 @@ def grad_weight_persistent(
         grad_out.stride(1),
         grad_weight.stride(0),
         grad_weight.stride(1),
-        BLOCK_M=BLOCK_M,
-        BLOCK_K=BLOCK_K,
-        BLOCK_N=BLOCK_N,
     )
 
     return grad_weight.half()
@@ -352,6 +387,7 @@ def linear_fp16(
         y.stride(0),
         y.stride(1),
     )
+    return y
 
 
 def setup_context_linear_fp16(ctx, inputs, output):
@@ -387,6 +423,7 @@ linear_fp16.register_autograd(
     backward_linear_fp16, setup_context=setup_context_linear_fp16
 )
 
+
 @linear_fp16.register_kernel("cpu")
 def cpu_linear_to_fp16(
     x: torch.Tensor,
@@ -395,6 +432,7 @@ def cpu_linear_to_fp16(
 
     out = x @ weight  # FIXME: check if matrix has to be transpose
     return out
+
 
 @triton.autotune(
     configs=[
@@ -580,6 +618,7 @@ linear_fp16_to_fp16.register_autograd(
     setup_context=setup_context_linear_fp16_to_linear_fp16,
 )
 
+
 @linear_fp16_to_fp16.register_kernel("cpu")
 def cpu_linear_fp16_to_fp16(
     x: torch.Tensor,
@@ -588,26 +627,3 @@ def cpu_linear_fp16_to_fp16(
 
     out = x @ weight  # FIXME: check if matrix has to be transpose
     return out
-
-
-def wrapper_linear_fp16(x, weight, out_dtype=torch.float32):
-    """Layer 1: FP16 -> FP32 or FP16 (with Triton backward)
-
-    Parameters
-    ----------
-    x : torch.Tensor
-        Input [M, K] in FP16
-    weight : torch.Tensor
-        Weight [K, N] in FP16
-    out_dtype : torch.dtype
-        Output dtype, either torch.float32 (default) or torch.float16
-
-    Returns
-    -------
-    torch.Tensor
-        Output [M, N] in specified dtype
-    """
-    if out_dtype == torch.float32:
-        return linear_fp16(x, weight)
-    else:
-        return linear_fp16_to_fp16(x, weight)

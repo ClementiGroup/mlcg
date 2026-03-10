@@ -180,6 +180,7 @@ class FlashSchNet(torch.nn.Module):
         energy = scatter(
             energy, data.batch, dim=0, reduce="sum", dim_size=num_graphs
         )
+
         energy = energy.flatten()
 
         data.out[self.name] = {ENERGY_KEY: energy}
@@ -305,7 +306,7 @@ class CFConv(torch.nn.Module):
     num_filters:
         Number of filters
     aggr:
-        Aggregation for continous filter convolution. This argument is not used 
+        Aggregation for continous filter convolution. This argument is not used
         as the aggregation is hardcoded to "add", its only left for API compatibility
     use_triton:
         Whether to use the fused Triton kernel for message passing (default: True).
@@ -414,6 +415,7 @@ class CFConv(torch.nn.Module):
 
         x = self.lin2(x)  # [num_nodes, out_channels]
         return x
+
 
 class StandardFlashSchNet(FlashSchNet):
     """Small wrapper class for :ref:`SchNet` to simplify the definition of the

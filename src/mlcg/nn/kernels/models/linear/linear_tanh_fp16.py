@@ -9,7 +9,6 @@ from torch.library import triton_op, wrap_triton
 
 from .tanh_linear import _triton_tanh
 
-
 # ============================================================================
 # Mixed Precision Kernels for GPTQ W16A16 Quantization
 # Input: FP32, Weights: FP16, Intermediate: FP16, Output: FP32
@@ -258,8 +257,8 @@ def fused_tanh_backward_grad_weight(
     x: torch.Tensor,
     grad_out: torch.Tensor,
     y: torch.Tensor,
-    K_out: torch.Tensor,
-    N_out: torch.Tensor,
+    K_out: int,
+    N_out: int,
 ) -> torch.Tensor:
     """V2: Persistent reduction for grad_weight (no atomics)."""
     M, K = x.shape
@@ -498,12 +497,13 @@ def backward(ctx, grad_output):
 
 fused_linear_tanh_fp16.register_autograd(backward, setup_context=setup_context)
 
+
 @fused_linear_tanh_fp16.register_kernel("cpu")
-def fused_linear_tanh_fp16(
+def cpu_fused_linear_tanh_fp16(
     x: torch.Tensor, weight: torch.Tensor, bias: torch.Tensor = None
 ) -> torch.Tensor:
-    lienear_layer = x @ weight
+    linear_layer = x.half() @ weight
     if bias is not None:
-        lienear_layer += bias
-    out = torch.tanh(lienear_layer)
+        linear_layer += bias
+    out = torch.tanh(linear_layer)
     return out

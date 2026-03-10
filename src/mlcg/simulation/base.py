@@ -17,6 +17,7 @@ from ..nn.quantization import (
     validate_gptq_w16a16,
     GPTQW16A16FilterNetwork,
 )
+from ..nn.gradients import SumOut
 from ..utils import tqdm
 
 from ..data.atomic_data import AtomicData
@@ -285,14 +286,16 @@ class _Simulation(object):
     def _apply_gptq_quantization(self):
         """Apply GPTQ quantization to the model's filter networks."""
         if self.gptq == "w16a16":
-
-            self.model = apply_gptq_w16a16_to_model(self.model)
-
-            # Validate that quantization was applied correctly (no fallback!)
-            validate_gptq_w16a16(self.model)
-
-            # Warm up Triton kernels (autotuning takes ~10s on first call)
-            self._warmup_gptq_kernels()
+            if isinstance(self.model, SumOut):
+                for name, sub_model in self.model.models.items():
+                    if name == "SchNet":
+                        print("Found SchNet candidate for quantization")
+                        sub_model = apply_gptq_w16a16_to_model(sub_model)
+                        # Validate that quantization was applied correctly (no fallback!)
+                        validate_gptq_w16a16(sub_model)
+                        self.model.models[name] = sub_model.to(self.device)
+                        # Warm up Triton kernels (autotuning takes ~10s on first call)
+                        self._warmup_gptq_kernels()
 
     def _warmup_gptq_kernels(self):
         """Warm up Triton kernels to trigger autotuning before simulation."""
@@ -321,7 +324,7 @@ class _Simulation(object):
             try:
                 y = gptq_filter(x)
                 # Also trigger backward (for force computation)
-                torch.autograd.grad(y.sum(), x)[0]
+                # torch.autograd.grad(y.sum(), x)[0]
             except Exception as e:
                 warnings.warn(f"GPTQ Warmup failed for M={M}: {e}")
 
