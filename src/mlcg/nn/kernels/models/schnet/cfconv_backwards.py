@@ -19,7 +19,7 @@ from .cfconv_double_backwards import (
 triton_pi = tl.constexpr(3.141592653589793)
 
 # ============================================================================
-# Fused Backward Kernel for grad_filters
+# grad_filters_fused_cfconv
 # ============================================================================
 
 
@@ -208,7 +208,7 @@ def grad_filters_fused_cfconv(
 
 
 # ============================================================================
-# Fused Backward Kernel for src_csr_grad_x
+# grad_x_fused_cfconv
 # ============================================================================
 
 
@@ -425,6 +425,10 @@ def cpu_grad_x_fused_cfconv(
     )
     return grad_x
 
+
+# ============================================================================
+# grad_edge_weight_fused_cfconv
+# ============================================================================
 
 @triton.jit
 def grad_edge_weight_fused_cfconv_kernel(
