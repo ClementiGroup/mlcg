@@ -304,6 +304,7 @@ class OverdampedSimulation(_Simulation):
         assert friction > 0
         self.friction = friction
 
+
     def _attach_configurations(
         self, configurations: List[AtomicData], beta: Union[float, List[float]]
     ):
@@ -326,9 +327,17 @@ class OverdampedSimulation(_Simulation):
                 "Masses were provided, but will not be used since "
                 "an overdamped Langevin scheme is being used for integration."
             )
+        self.n_sims = len(configurations)
+        self.n_atoms = len(configurations[0].atom_types)
+        self.n_dims = configurations[0].pos.shape[1]
         self.expanded_beta = self.beta.repeat_interleave(self.n_atoms)[:, None]
         self.diffusion = 1 / self.expanded_beta / self.friction
         self._dtau = self.diffusion * self.dt
+        # Pre-allocate noise buffer to avoid allocation every timestep
+        noise_shape = (self.n_sims * self.n_atoms, self.n_dims)
+        self._noise_buffer = torch.empty(
+            noise_shape, dtype=self.dtype, device=self.device
+        )
 
     def timestep(
         self, data: AtomicData, forces: torch.Tensor
@@ -350,13 +359,13 @@ class OverdampedSimulation(_Simulation):
             potential evaluated at t+1
         """
         x_old = data[POSITIONS_KEY]
-        noise = torch.randn(size=x_old.size(), generator=self.rng).to(
-            self.device
-        )
+
+        self._noise_buffer.normal_(generator=self.rng)
+        
         x_new = (
             x_old.detach()
             + forces * self._dtau
-            + np.sqrt(2 * self._dtau) * noise
+            + torch.sqrt(2 * self._dtau) * self._noise_buffer
         )
         data[POSITIONS_KEY] = x_new
         potential, forces = self.calculate_potential_and_forces(data)
