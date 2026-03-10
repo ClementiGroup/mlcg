@@ -7,6 +7,8 @@ import triton
 import triton.language as tl
 from torch.library import triton_op, wrap_triton
 
+from ...utils import ensure_contiguous
+
 triton_pi = tl.constexpr(3.141592653589793)
 
 # ============================================================================
@@ -97,6 +99,7 @@ def fused_grad_filter_out_kernel(
 
 
 @triton_op("mlcg_kernels::fused_grad_filter_out", mutates_args={})
+@ensure_contiguous
 def fused_grad_filter_out(
     x: torch.Tensor,
     grad_output: torch.Tensor,
@@ -133,17 +136,6 @@ def fused_grad_filter_out(
     torch.Tensor
         grad_filter_out [num_edges, feature_dim]
     """
-    if not x.is_contiguous():
-        x = x.contiguous()
-    if not grad_output.is_contiguous():
-        grad_output = grad_output.contiguous()
-    if not edge_weight.is_contiguous():
-        edge_weight = edge_weight.contiguous()
-    if not edge_src.is_contiguous():
-        edge_src = edge_src.contiguous()
-    if not edge_dst.is_contiguous():
-        edge_dst = edge_dst.contiguous()
-
     feature_dim = x.shape[1]
     num_edges = edge_src.shape[0]
 
@@ -303,6 +295,7 @@ def fused_src_csr_grad_x_kernel(
 
 
 @triton_op("mlcg_kernels::fused_src_csr_grad_x", mutates_args={})
+@ensure_contiguous
 def fused_src_csr_grad_x(
     grad_output: torch.Tensor,
     filter_out: torch.Tensor,
@@ -348,19 +341,6 @@ def fused_src_csr_grad_x(
     torch.Tensor
         grad_x [num_nodes, feature_dim] in FP32
     """
-    if not grad_output.is_contiguous():
-        grad_output = grad_output.contiguous()
-    if not filter_out.is_contiguous():
-        filter_out = filter_out.contiguous()
-    if not edge_weight.is_contiguous():
-        edge_weight = edge_weight.contiguous()
-    if not edge_dst.is_contiguous():
-        edge_dst = edge_dst.contiguous()
-    if not src_ptr.is_contiguous():
-        src_ptr = src_ptr.contiguous()
-    if not src_perm.is_contiguous():
-        src_perm = src_perm.contiguous()
-
     feature_dim = grad_output.shape[1]
 
     # Allocate output (zeros for nodes with no outgoing edges)
@@ -521,6 +501,7 @@ def fused_grad_edge_weight_kernel(
 
 
 @triton_op("mlcg_kernels::fused_grad_edge_weight", mutates_args={})
+@ensure_contiguous
 def fused_grad_edge_weight(
     x: torch.Tensor,
     grad_output: torch.Tensor,
@@ -558,19 +539,6 @@ def fused_grad_edge_weight(
     torch.Tensor
         grad_filter_out [num_edges, feature_dim]
     """
-    if not x.is_contiguous():
-        x = x.contiguous()
-    if not grad_output.is_contiguous():
-        grad_output = grad_output.contiguous()
-    if not filter_out.is_contiguous():
-        filter_out = filter_out.contiguous()
-    if not edge_weight.is_contiguous():
-        edge_weight = edge_weight.contiguous()
-    if not edge_src.is_contiguous():
-        edge_src = edge_src.contiguous()
-    if not edge_dst.is_contiguous():
-        edge_dst = edge_dst.contiguous()
-
     feature_dim = x.shape[1]
     num_edges = edge_src.shape[0]
 

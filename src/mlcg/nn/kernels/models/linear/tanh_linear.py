@@ -8,6 +8,8 @@ import triton
 import triton.language as tl
 from torch.library import triton_op, wrap_triton
 
+from ...utils import ensure_contiguous
+
 
 @triton.jit
 def _triton_tanh(x):
@@ -159,6 +161,7 @@ def fused_tanh_linear_kernel(
 
 
 @triton_op("mlcg_kernels::fused_tanh_linear", mutates_args={})
+@ensure_contiguous
 def fused_tanh_linear(
     x: torch.Tensor, weight: torch.Tensor, bias: torch.Tensor = None
 ) -> torch.Tensor:
@@ -200,13 +203,6 @@ def fused_tanh_linear(
     The current precision behavior may be subject to change pending
     performance vs. accuracy analysis and torch.compile() compatibility fixes.
     """
-    if not x.is_contiguous():
-        x = x.contiguous()
-    if not weight.is_contiguous():
-        weight = weight.contiguous()
-    if bias is not None and not bias.is_contiguous():
-        bias = bias.contiguous()
-
     M, K = x.shape
     K2, N = weight.shape
     assert (  # FIXME: change this assert to something compiler friendly

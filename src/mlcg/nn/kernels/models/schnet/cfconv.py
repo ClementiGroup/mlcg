@@ -13,7 +13,7 @@ from .cfconv_backwards import (
     fused_grad_edge_weight,
 )
 
-from torch_geometric.utils import scatter
+from ...utils import ensure_contiguous
 
 triton_pi = tl.constexpr(3.141592653589793)
 
@@ -119,6 +119,7 @@ def fused_cfconv_kernel(
 
 
 @triton_op("mlcg_kernels::fused_cfconv", mutates_args={})
+@ensure_contiguous
 def fused_cfconv(
     x: torch.Tensor,
     filter_out: torch.Tensor,
@@ -172,19 +173,6 @@ def fused_cfconv(
     torch.Tensor
         Output [num_nodes, feature_dim] in FP32
     """
-    if not x.is_contiguous():
-        x = x.contiguous()
-    if not filter_out.is_contiguous():
-        filter_out = filter_out.contiguous()
-    if not edge_weight.is_contiguous():
-        edge_weight = edge_weight.contiguous()
-    if not edge_src.is_contiguous():
-        edge_src = edge_src.contiguous()
-    if not dst_ptr.is_contiguous():
-        dst_ptr = dst_ptr.contiguous()
-    if not csr_perm.is_contiguous():
-        csr_perm = csr_perm.contiguous()
-
     feature_dim = x.shape[1]
 
     # Allocate output (zeros needed for nodes with no incoming edges)

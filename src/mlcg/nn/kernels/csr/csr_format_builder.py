@@ -23,6 +23,8 @@ import triton
 import triton.language as tl
 from torch.library import triton_op, wrap_triton
 
+from ..utils import ensure_contiguous
+
 
 @triton.jit
 def histogram_kernel(
@@ -72,6 +74,7 @@ def csr_fill_kernel(
 
 
 @triton_op("mlcg_kernels::build_csr_index", mutates_args={})
+@ensure_contiguous
 def build_csr_index(
     edge_dst: torch.Tensor,
     num_nodes: int,

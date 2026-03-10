@@ -4,6 +4,8 @@ import triton
 import triton.language as tl
 from torch.library import triton_op, wrap_triton
 
+from ..utils import ensure_contiguous
+
 triton_pi = tl.constexpr(3.141592653589793)
 
 
@@ -121,6 +123,7 @@ def fused_distance_exp_norm_rbf_cosinecutoff_kernel(
 @triton_op(
     "mlcg_kernels::fused_distance_exp_norm_rbf_cosinecutoff", mutates_args={}
 )
+@ensure_contiguous
 def fused_distance_exp_norm_rbf_cosinecutoff(
     pos: torch.Tensor,
     edge_src: torch.Tensor,
@@ -162,17 +165,6 @@ def fused_distance_exp_norm_rbf_cosinecutoff(
     rbf_expansion : torch.Tensor
         RBF expansion with cutoff applied [num_edges, num_rbf]
     """
-    if not pos.is_contiguous():
-        pos = pos.contiguous()
-    if not edge_src.is_contiguous():
-        edge_src = edge_src.contiguous()
-    if not edge_dst.is_contiguous():
-        edge_dst = edge_dst.contiguous()
-    if not means.is_contiguous():
-        means = means.contiguous()
-    if not betas.is_contiguous():
-        betas = betas.contiguous()
-
     num_edges = edge_src.shape[0]
     num_rbf = means.shape[0]
 

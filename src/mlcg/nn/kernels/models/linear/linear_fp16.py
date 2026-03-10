@@ -80,6 +80,7 @@ def matmul_fp32_fp16_to_fp16_kernel(
 
 
 @triton_op("mlcg_kernels::matmul_fp32_fp16_to_fp16", mutates_args={})
+
 def matmul_fp32_fp16_to_fp16(
     a: torch.Tensor, b_t: torch.Tensor
 ) -> torch.Tensor:
