@@ -210,7 +210,7 @@ def fused_tanh_linear(
     ), f"Dimension mismatch: x has {K} columns but weight has {K2} rows"
 
     # allocate output
-    y = torch.empty((M, N), device=x.device, dtype=x.dtype)
+    y = torch.empty((M, N), device=x.device, dtype=x.dtype).contiguous()
 
     # grid
     def grid(META):

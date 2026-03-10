@@ -182,7 +182,7 @@ def fused_gaussian_rbf_backward_kernel(
         tl.atomic_add(grad_pos_ptr + src_nodes * 3 + 2, -grad_z, mask=edge_mask)
 
     
-
+#TODO: register backward for this
 @triton_op("mlcg_kernels::fused_gaussian_rbf_backward", mutates_args={})
 @ensure_contiguous
 def fused_gaussian_rbf_backward(
