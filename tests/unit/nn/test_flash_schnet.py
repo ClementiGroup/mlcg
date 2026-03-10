@@ -126,13 +126,14 @@ def test_minimum_interaction_block():
         )
     ],
 )
-
 def test_prediction(collated_data, out_keys, expected_shapes):
     """Test to make sure that the output dictionary is properly populated
     and that the correspdonding shapes of the outputs are correct given the
     requested gradient targets.
     """
-    test_flash_schnet = StandardFlashSchNet(standard_basis, standard_cutoff, [128, 128])
+    test_flash_schnet = StandardFlashSchNet(
+        standard_basis, standard_cutoff, [128, 128]
+    )
     model = GradientsOut(test_flash_schnet, targets=FORCE_KEY).float()
     collated_data = model(collated_data)
     assert len(collated_data.out) != 0
@@ -140,6 +141,7 @@ def test_prediction(collated_data, out_keys, expected_shapes):
     for key, shape in zip(out_keys, expected_shapes):
         assert key in collated_data.out[model.name].keys()
         assert collated_data.out[model.name][key].shape == shape
+
 
 @pytest.mark.parametrize(
     "collated_data, out_keys",
@@ -150,12 +152,13 @@ def test_prediction(collated_data, out_keys, expected_shapes):
         )
     ],
 )
-
 def test_flash_vs_normal(collated_data, out_keys):
-    """Test to make sure that the standard schnet and the flash version 
+    """Test to make sure that the standard schnet and the flash version
     output the same values up to a tolerance
     """
-    test_flash_schnet = StandardFlashSchNet(standard_basis, standard_cutoff, [128, 128])
+    test_flash_schnet = StandardFlashSchNet(
+        standard_basis, standard_cutoff, [128, 128]
+    )
     flash_model = GradientsOut(test_flash_schnet, targets=FORCE_KEY).float()
     test_schnet = StandardSchNet(standard_basis, standard_cutoff, [128, 128])
     # make them have the same parameters
@@ -164,4 +167,7 @@ def test_flash_vs_normal(collated_data, out_keys):
     out_flash = flash_model(collated_data)
     out_normal = normal_model(collated_data)
     for key in out_keys:
-            torch.testing.assert_close(out_flash.out[flash_model.name][key],out_normal.out[normal_model.name][key])
+        torch.testing.assert_close(
+            out_flash.out[flash_model.name][key],
+            out_normal.out[normal_model.name][key],
+        )
