@@ -24,7 +24,7 @@ triton_pi = tl.constexpr(3.141592653589793)
 def grad_x_grad_edge_weight_fused_cfconv_kernel(
     # Input pointers
     grad_output_ptr,  # [num_nodes, feature_dim]
-    filter_ptr,  # [num_edges, feature_dim] - filter outputs (FP32 or FP16)
+    filters_ptr,  # [num_edges, feature_dim] - filters outputs (FP32 or FP16)
     edge_weight_ptr,  # [num_edges]
     edge_dst_ptr,  # [num_edges]
     grad_edge_out_ptr,  # [num_edges, feature_dim] - OUTPUT (FP32 or FP16)
@@ -39,14 +39,14 @@ def grad_x_grad_edge_weight_fused_cfconv_kernel(
     feature_dim,
     # Block size
     BLOCK_F: tl.constexpr,
-    FILTER_FP16: tl.constexpr,
+    filters_FP16: tl.constexpr,
     GRAD_EDGE_FP16: tl.constexpr,  # Whether to output FP16
 ):
     """
-    Fused kernel for grad_filter computation in CFConv backward pass.
+    Fused kernel for grad_filters computation in CFConv backward pass.
 
     Computes:
-        Computes: grad_x[src] = sum_{e: src[e]=src} grad_edge[e] * grad_output[dst[e]] * filter[e] * d_cutoff_dd[e]
+        Computes: grad_x[src] = sum_{e: src[e]=src} grad_edge[e] * grad_output[dst[e]] * filters[e] * d_cutoff_dd[e]
 
 
     """
@@ -75,13 +75,13 @@ def grad_x_grad_edge_weight_fused_cfconv_kernel(
                 mask=f_mask,
                 other=0.0,
             )
-            filter = tl.load(
-                filter_ptr + edge_idx * feature_dim + f_offsets,
+            filters = tl.load(
+                filters_ptr + edge_idx * feature_dim + f_offsets,
                 mask=f_mask,
                 other=0.0,
             )
-            if FILTER_FP16:
-                filter = filter.to(tl.float32)
+            if filters_FP16:
+                filters = filters.to(tl.float32)
             grad_edge = tl.load(
                 grad_edge_out_ptr + edge_idx * feature_dim + f_offsets,
                 mask=f_mask,
@@ -90,7 +90,7 @@ def grad_x_grad_edge_weight_fused_cfconv_kernel(
             if GRAD_EDGE_FP16:
                 grad_edge = grad_edge.to(tl.float32)
 
-            acc += grad_edge * filter * grad_output * C[:, None]
+            acc += grad_edge * filters * grad_output * C[:, None]
 
         tl.store(
             grad_x_ptr + target_node * feature_dim + f_offsets, acc, mask=f_mask
@@ -103,28 +103,29 @@ def grad_x_grad_edge_weight_fused_cfconv_kernel(
 @ensure_contiguous
 def grad_x_grad_edge_weight_fused_cfconv(
     grad_output: torch.Tensor,
-    filter: torch.Tensor,
+    filters: torch.Tensor,
     edge_weight: torch.Tensor,
     edge_dst: torch.Tensor,
     grad_edge_out: torch.Tensor,
     src_perm: torch.Tensor,
     src_ptr: torch.Tensor,
-    num_nodes: int,
     cutoff_upper: float,
     grad_edge_dtype: torch.dtype = None,
 ) -> torch.Tensor:
+    
+    num_nodes = grad_output.shape[0]
     feature_dim = grad_output.shape[1]
+    num_edges = edge_dst.shape[0]
 
     # Allocate output (zeros for nodes with no outgoing edges)
     grad_x = torch.zeros(
         num_nodes, feature_dim, device=grad_output.device, dtype=torch.float32
     ).contiguous()
 
-    num_edges = edge_dst.shape[0]
     if num_edges == 0:
         return grad_x
 
-    filter_fp16 = filter.dtype == torch.float16
+    filters_fp16 = filters.dtype == torch.float16
     grad_edge_fp16 = grad_edge_dtype == torch.float16
 
     BLOCK_F = 128
@@ -132,7 +133,7 @@ def grad_x_grad_edge_weight_fused_cfconv(
 
     wrap_triton(grad_x_grad_edge_weight_fused_cfconv_kernel)[grid](
         grad_output,
-        filter,
+        filters,
         edge_weight,
         edge_dst,
         grad_edge_out,
@@ -143,7 +144,7 @@ def grad_x_grad_edge_weight_fused_cfconv(
         num_nodes,
         feature_dim,
         BLOCK_F=BLOCK_F,
-        FILTER_FP16=filter_fp16,
+        filters_FP16=filters_fp16,
         GRAD_EDGE_FP16=grad_edge_fp16,
     )
 
@@ -167,13 +168,12 @@ grad_x_grad_edge_weight_fused_cfconv.register_autograd(
 @grad_x_grad_edge_weight_fused_cfconv.register_kernel("cpu")
 def cpu_grad_x_grad_edge_weight_fused_cfconv(
     grad_output: torch.Tensor,
-    filter: torch.Tensor,
+    filters: torch.Tensor,
     edge_weight: torch.Tensor,
     edge_dst: torch.Tensor,
     grad_edge_out: torch.Tensor,
     src_perm: torch.Tensor,
     src_ptr: torch.Tensor,
-    num_nodes: int,
     cutoff_upper: float,
     grad_edge_dtype: torch.dtype = None,
 ) -> torch.Tensor:
@@ -189,7 +189,7 @@ def cpu_grad_x_grad_edge_weight_fused_cfconv(
 def grad_grad_out_grad_edge_weight_fused_cfconv_kernel(
     # Input pointers
     x_ptr,  # [num_nodes, feature_dim]
-    filter_ptr,  # [num_edges, feature_dim] - filter outputs (FP32 or FP16)
+    filters_ptr,  # [num_edges, feature_dim] - filters outputs (FP32 or FP16)
     edge_weight_ptr,  # [num_edges]
     edge_src_ptr,  # [num_edges]
     grad_edge_out_ptr,  # [num_edges, feature_dim] - OUTPUT (FP32 or FP16)
@@ -204,14 +204,14 @@ def grad_grad_out_grad_edge_weight_fused_cfconv_kernel(
     feature_dim,
     # Block size
     BLOCK_F: tl.constexpr,
-    FILTER_FP16: tl.constexpr,
+    filters_FP16: tl.constexpr,
     GRAD_EDGE_FP16: tl.constexpr,  # Whether to output FP16
 ):
     """
-    Fused kernel for grad_filter computation in CFConv backward pass.
+    Fused kernel for grad_filters computation in CFConv backward pass.
 
     Computes:
-        Computes: grad_grad_out[dst] = sum_{e: dst[e]=dst} grad_edge[e] * x[src[e]] * filter[e] * d_cutoff_dd[e]
+        Computes: grad_grad_out[dst] = sum_{e: dst[e]=dst} grad_edge[e] * x[src[e]] * filters[e] * d_cutoff_dd[e]
 
 
     """
@@ -240,13 +240,13 @@ def grad_grad_out_grad_edge_weight_fused_cfconv_kernel(
                 mask=f_mask,
                 other=0.0,
             )
-            filter = tl.load(
-                filter_ptr + edge_idx * feature_dim + f_offsets,
+            filters = tl.load(
+                filters_ptr + edge_idx * feature_dim + f_offsets,
                 mask=f_mask,
                 other=0.0,
             )
-            if FILTER_FP16:
-                filter = filter.to(tl.float32)
+            if filters_FP16:
+                filters = filters.to(tl.float32)
             grad_edge = tl.load(
                 grad_edge_out_ptr + edge_idx * BLOCK_F + f_offsets,
                 mask=f_mask,
@@ -255,7 +255,7 @@ def grad_grad_out_grad_edge_weight_fused_cfconv_kernel(
             if GRAD_EDGE_FP16:
                 grad_edge = grad_edge.to(tl.float32)
 
-            acc += grad_edge * x * filter * C[:, None]
+            acc += grad_edge * x * filters * C[:, None]
 
         tl.store(
             grad_grad_out_ptr + target_node * feature_dim + f_offsets,
@@ -270,16 +270,18 @@ def grad_grad_out_grad_edge_weight_fused_cfconv_kernel(
 @ensure_contiguous
 def grad_grad_out_grad_edge_weight_fused_cfconv(
     x: torch.Tensor,
-    filter: torch.Tensor,
+    filters: torch.Tensor,
     edge_weight: torch.Tensor,
     edge_src: torch.Tensor,
     grad_edge_out: torch.Tensor,
     dst_perm: torch.Tensor,
     dst_ptr: torch.Tensor,
-    num_nodes: int,
     cutoff_upper: float,
     grad_edge_dtype: torch.dtype = None,
 ) -> torch.Tensor:
+    
+    num_nodes = x.shape[0]
+    num_edges = edge_src.shape[0]
     feature_dim = x.shape[1]
 
     # Allocate output (zeros for nodes with no outgoing edges)
@@ -287,19 +289,18 @@ def grad_grad_out_grad_edge_weight_fused_cfconv(
         num_nodes, feature_dim, device=x.device, dtype=torch.float32
     ).contiguous()
 
-    num_edges = edge_src.shape[0]
     if num_edges == 0:
         return grad_grad_out
 
-    filter_fp16 = filter.dtype == torch.float16
+    filters_fp16 = filters.dtype == torch.float16
     grad_edge_fp16 = grad_edge_dtype == torch.float16
 
     BLOCK_F = 128
     grid = (num_nodes,)
 
-    wrap_triton(grad_x_grad_edge_weight_fused_cfconv_kernel)[grid](
+    wrap_triton(grad_grad_out_grad_edge_weight_fused_cfconv_kernel)[grid](
         x,
-        filter,
+        filters,
         edge_weight,
         edge_src,
         grad_edge_out,
@@ -310,7 +311,7 @@ def grad_grad_out_grad_edge_weight_fused_cfconv(
         num_nodes,
         feature_dim,
         BLOCK_F=BLOCK_F,
-        FILTER_FP16=filter_fp16,
+        filters_FP16=filters_fp16,
         GRAD_EDGE_FP16=grad_edge_fp16,
     )
 
@@ -336,13 +337,12 @@ grad_grad_out_grad_edge_weight_fused_cfconv.register_autograd(
 @grad_grad_out_grad_edge_weight_fused_cfconv.register_kernel("cpu")
 def cpu_grad_grad_out_grad_edge_weight_fused_cfconv(
     x: torch.Tensor,
-    filter: torch.Tensor,
+    filters: torch.Tensor,
     edge_weight: torch.Tensor,
     edge_src: torch.Tensor,
     grad_edge_out: torch.Tensor,
     dst_perm: torch.Tensor,
     dst_ptr: torch.Tensor,
-    num_nodes: int,
     cutoff_upper: float,
     grad_edge_dtype: torch.dtype = None,
 ) -> torch.Tensor:
@@ -350,11 +350,309 @@ def cpu_grad_grad_out_grad_edge_weight_fused_cfconv(
 
 
 # ============================================================================
-# grad_filter_grad_edge_weight_fused_cfconv
+# grad_filters_grad_edge_weight_fused_cfconv
 # ============================================================================
 
+
+@triton.jit
+def grad_filters_grad_edge_weight_fused_cfconv_kernel(
+    # Input pointers
+    x_ptr,  # [num_nodes, feature_dim]
+    grad_output_ptr,  # [num_nodes, feature_dim]
+    edge_weight_ptr,  # [num_edges]
+    edge_src_ptr,  # [num_edges]
+    edge_dst_ptr,  # [num_edges]
+    grad_edge_out_ptr,  # [num_edges, feature_dim] - OUTPUT (FP32 or FP16)
+    # Output pointers
+    grad_filters_ptr,  # [num_nodes, feature_dim]
+    # Cutoff parameters
+    cutoff_upper,
+    # Sizes
+    num_edges,
+    feature_dim,
+    # Block size
+    BLOCK_F: tl.constexpr,
+    GRAD_EDGE_FP16: tl.constexpr,  # Whether to output FP16
+):
+    """
+    Fused kernel for grad_filters computation in CFConv backward pass.
+
+    Computes:
+        Computes: grad_filters[e] =  grad_edge[e] * grad_output[dst[e]] * x[src[e]] * d_cutoff_dd[e]
+
+    """
+    edge_idx = tl.program_id(axis=0)
+
+    if edge_idx >= num_edges:
+        return
+
+    src_node = tl.load(edge_src_ptr + edge_idx)
+    dst_node = tl.load(edge_dst_ptr + edge_idx)
+    dist = tl.load(edge_weight_ptr + edge_idx)
+    C = _d_cosine_cutoff_dd(dist, cutoff_upper)
+
+    for f_start in range(0, feature_dim, BLOCK_F):
+        f_offset = f_start + tl.arange(0, BLOCK_F)
+        f_mask = f_offset < feature_dim
+
+        grad_out = tl.load(
+            grad_output_ptr + dst_node * feature_dim + f_offset,
+            mask=f_mask,
+            other=0.0,
+        )
+        x = tl.load(
+            x_ptr + src_node * feature_dim + f_offset, mask=f_mask, other=0.0
+        )
+        grad_edge = tl.load(
+            grad_edge_out_ptr + edge_idx * feature_dim + f_offset,
+            mask=f_mask,
+            other=0.0,
+        )
+        if GRAD_EDGE_FP16:
+            grad_edge = grad_edge.to(tl.float32)
+        tl.store(
+            grad_filters_ptr + edge_idx * feature_dim + f_offset,
+            grad_edge * grad_out * x * C[:, None],
+        )
+
+
+@triton_op(
+    "mlcg_kernels::grad_filters_grad_edge_weight_fused_cfconv", mutates_args={}
+)
+@ensure_contiguous
+def grad_filters_grad_edge_weight_fused_cfconv(
+    x: torch.Tensor,
+    grad_output: torch.Tensor,
+    edge_weight: torch.Tensor,
+    edge_src: torch.Tensor,
+    edge_dst: torch.Tensor,
+    grad_edge_out: torch.Tensor,
+    cutoff_upper: float,
+    grad_edge_dtype: torch.dtype = None,
+) -> torch.Tensor:
+
+    feature_dim = x.shape[1]
+    num_edges = edge_src.shape[0]
+
+    # Allocate output (zeros for nodes with no outgoing edges)
+    grad_filters = torch.zeros(
+        num_edges, feature_dim, device=x.device, dtype=torch.float32
+    ).contiguous()
+
+    if num_edges == 0:
+        return grad_filters
+
+    grad_edge_fp16 = grad_edge_dtype == torch.float16
+
+    BLOCK_F = 128
+    grid = (num_edges,)
+
+    wrap_triton(grad_filters_grad_edge_weight_fused_cfconv_kernel)[grid](
+        x,
+        grad_output,
+        edge_weight,
+        edge_src,
+        edge_dst,
+        grad_edge_out,
+        grad_filters,
+        cutoff_upper,
+        num_edges,
+        feature_dim,
+        BLOCK_F=BLOCK_F,
+        GRAD_EDGE_FP16=grad_edge_fp16,
+    )
+
+    return grad_filters
+
+
+def setup_context_grad_filters_grad_edge_weight_fused_cfconv(
+    ctx, inputs, output
+):
+    raise NotImplementedError  # TODO: implment setup context grad_filters_grad_edge_weight_fused_cfconv
+
+
+def backward_grad_filters_grad_edge_weight_fused_cfconv(ctx, grad_output):
+    raise NotImplementedError  # TODO: implment backward grad_filters_grad_edge_weight_fused_cfconv
+
+
+grad_filters_grad_edge_weight_fused_cfconv.register_autograd(
+    backward_grad_filters_grad_edge_weight_fused_cfconv,
+    setup_context=setup_context_grad_filters_grad_edge_weight_fused_cfconv,
+)
+
+
+@grad_filters_grad_edge_weight_fused_cfconv.register_kernel("cpu")
+def cpu_grad_filters_grad_edge_weight_fused_cfconv(
+    x: torch.Tensor,
+    grad_output: torch.Tensor,
+    edge_weight: torch.Tensor,
+    edge_src: torch.Tensor,
+    edge_dst: torch.Tensor,
+    grad_edge_out: torch.Tensor,
+    cutoff_upper: float,
+    grad_edge_dtype: torch.dtype = None,
+) -> torch.Tensor:
+    raise NotImplementedError  # FIXME: implement cpu fallback for grad_filters_grad_edge_weight_fused_cfconv
 
 
 # ============================================================================
 # grad_edge_weight_grad_edge_weight_fused_cfconv
 # ============================================================================
+
+
+@triton.jit
+def grad_edge_weight_grad_edge_weight_fused_cfconv_kernel(
+    # Input pointers
+    x_ptr,  # [num_nodes, feature_dim]
+    grad_output_ptr,  # [num_nodes, feature_dim]
+    filters_ptr,  # [num_edges, feature_dim]
+    edge_weight_ptr,  # [num_edges]
+    edge_src_ptr,  # [num_edges]
+    edge_dst_ptr,  # [num_edges]
+    grad_edge_out_ptr,  # [num_edges, feature_dim] - OUTPUT (FP32 or FP16)
+    # Output pointers
+    grad_edge_weight_ptr,  # [num_nodes, feature_dim]
+    # Cutoff parameters
+    cutoff_upper,
+    # Sizes
+    num_edges,
+    feature_dim,
+    # Block size
+    BLOCK_F: tl.constexpr,
+    filters_FP16: tl.constexpr,
+    GRAD_EDGE_FP16: tl.constexpr,  # Whether to output FP16
+):
+    """
+    Fused kernel for grad_edge_weight computation in CFConv backward pass.
+
+    Computes:
+        Computes: grad_edge_weight[e] =  grad_edge[e] * grad_output[dst[e]] * x[src[e]] * filters[e] * d2_cutoff_dd2[e]
+
+    """
+    edge_idx = tl.program_id(axis=0)
+
+    if edge_idx >= num_edges:
+        return
+
+    src_node = tl.load(edge_src_ptr + edge_idx)
+    dst_node = tl.load(edge_dst_ptr + edge_idx)
+    dist = tl.load(edge_weight_ptr + edge_idx)
+    C = _d2_cosine_cutoff_dd2(dist, cutoff_upper)
+
+    acc = tl.zeros_like(C)
+
+    for f_start in range(0, feature_dim, BLOCK_F):
+        f_offset = f_start + tl.arange(0, BLOCK_F)
+        f_mask = f_offset < feature_dim
+
+        grad_out = tl.load(
+            grad_output_ptr + dst_node * feature_dim + f_offset,
+            mask=f_mask,
+            other=0.0,
+        )
+        x = tl.load(
+            x_ptr + src_node * feature_dim + f_offset, mask=f_mask, other=0.0
+        )
+        filters = tl.load(
+            filters_ptr + edge_idx * feature_dim + f_offset,
+            mask=f_mask,
+            other=0.0,
+        )
+        grad_edge = tl.load(
+            grad_edge_out_ptr + edge_idx * feature_dim + f_offset,
+            mask=f_mask,
+            other=0.0,
+        )
+        if filters_FP16:
+            filterss = filterss.to(tl.float32)
+        if GRAD_EDGE_FP16:
+            grad_edge = grad_edge.to(tl.float32)
+
+        acc += tl.sum(grad_edge * grad_out * x * filters, axis=-1)
+
+    tl.store(grad_edge_weight_ptr + edge_idx, acc * C)
+
+
+@triton_op(
+    "mlcg_kernels::grad_edge_weight_grad_edge_weight_fused_cfconv",
+    mutates_args={},
+)
+@ensure_contiguous
+def grad_edge_weight_grad_edge_weight_fused_cfconv(
+    x: torch.Tensor,
+    grad_output: torch.Tensor,
+    filters: torch.Tensor,
+    edge_weight: torch.Tensor,
+    edge_src: torch.Tensor,
+    edge_dst: torch.Tensor,
+    grad_edge_out: torch.Tensor,
+    cutoff_upper: float,
+    grad_edge_dtype: torch.dtype = None,
+) -> torch.Tensor:
+
+    feature_dim = x.shape[1]
+    num_edges = edge_src.shape[0]
+
+    # Allocate output (zeros for nodes with no outgoing edges)
+    grad_edge_weight = torch.zeros(
+        num_edges, device=x.device, dtype=torch.float32
+    ).contiguous()
+
+    if num_edges == 0:
+        return grad_edge_weight
+
+    filters_fp16 = filters.dtype == torch.float16
+    grad_edge_fp16 = grad_edge_dtype == torch.float16
+
+    BLOCK_F = 128
+    grid = (num_edges,)
+
+    wrap_triton(grad_edge_weight_grad_edge_weight_fused_cfconv_kernel)[grid](
+        x,
+        grad_output,
+        filters,
+        edge_weight,
+        edge_src,
+        edge_dst,
+        grad_edge_out,
+        grad_edge_weight,
+        cutoff_upper,
+        num_edges,
+        feature_dim,
+        BLOCK_F=BLOCK_F,
+        filters_FP16=filters_fp16,
+        GRAD_EDGE_FP16=grad_edge_fp16,
+    )
+
+    return grad_edge_weight
+
+
+def setup_context_grad_edge_weight_grad_edge_weight_fused_cfconv(
+    ctx, inputs, output
+):
+    raise NotImplementedError  # TODO: implment setup context grad_edge_weight_grad_edge_weight_fused_cfconv
+
+
+def backward_grad_edge_weight_grad_edge_weight_fused_cfconv(ctx, grad_output):
+    raise NotImplementedError  # TODO: implment backward grad_edge_weight_grad_edge_weight_fused_cfconv
+
+
+grad_edge_weight_grad_edge_weight_fused_cfconv.register_autograd(
+    backward_grad_edge_weight_grad_edge_weight_fused_cfconv,
+    setup_context=setup_context_grad_edge_weight_grad_edge_weight_fused_cfconv,
+)
+
+
+@grad_edge_weight_grad_edge_weight_fused_cfconv.register_kernel("cpu")
+def cpu_grad_edge_weight_grad_edge_weight_fused_cfconv(
+    x: torch.Tensor,
+    grad_output: torch.Tensor,
+    filters: torch.Tensor,
+    edge_weight: torch.Tensor,
+    edge_src: torch.Tensor,
+    edge_dst: torch.Tensor,
+    grad_edge_out: torch.Tensor,
+    cutoff_upper: float,
+    grad_edge_dtype: torch.dtype = None,
+) -> torch.Tensor:
+    raise NotImplementedError  # FIXME: implement cpu fallback for grad_filters_grad_edge_weight_fused_cfconv
