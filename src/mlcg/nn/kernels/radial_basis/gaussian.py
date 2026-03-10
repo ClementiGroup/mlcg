@@ -4,6 +4,9 @@ import triton
 import triton.language as tl
 from torch.library import triton_op, wrap_triton
 
+from .gaussian_backward import fused_gaussian_rbf_backward
+from ..utils import ensure_contiguous
+
 triton_pi = tl.constexpr(3.141592653589793)
 
 
@@ -117,6 +120,7 @@ def fused_distance_gaussian_rbf_cosinecutoff_kernel(
 @triton_op(
     "mlcg_kernels::fused_distance_gaussian_rbf_cosinecutoff", mutates_args={}
 )
+@ensure_contiguous
 def fused_distance_gaussian_rbf_cosinecutoff(
     pos: torch.Tensor,
     edge_src: torch.Tensor,
@@ -155,23 +159,14 @@ def fused_distance_gaussian_rbf_cosinecutoff(
     rbf_expansion : torch.Tensor
         RBF expansion with cutoff applied [num_edges, num_rbf]
     """
-    if not pos.is_contiguous():
-        pos = pos.contiguous()
-    if not edge_src.is_contiguous():
-        edge_src = edge_src.contiguous()
-    if not edge_dst.is_contiguous():
-        edge_dst = edge_dst.contiguous()
-    if not centers.is_contiguous():
-        centers = centers.contiguous()
-
     num_edges = edge_src.shape[0]
     num_rbf = centers.shape[0]
 
     # Allocate outputs
-    distances = torch.empty(num_edges, device=pos.device, dtype=pos.dtype)
+    distances = torch.empty(num_edges, device=pos.device, dtype=pos.dtype).contiguous()
     rbf_output = torch.empty(
         (num_edges, num_rbf), device=pos.device, dtype=pos.dtype
-    )
+    ).contiguous()
 
     if num_edges == 0:
         return distances, rbf_output
@@ -202,84 +197,56 @@ def fused_distance_gaussian_rbf_cosinecutoff(
 def setup_context(ctx, inputs, output):
     pos, edge_src, edge_dst, centers, gamma, cutoff_upper = inputs
 
-    distances, rbf_output = output[0], output[1]
+    distances = output[0]
 
     ctx.save_for_backward(
-        pos, edge_src, edge_dst, centers, distances, rbf_output
+        pos, edge_src, edge_dst, centers, gamma, distances
     )
-    ctx.gamma = gamma
+    # ctx.gamma = gamma
     ctx.cutoff_upper = cutoff_upper
     # FIXME: complete this to check if make sense to save
     # also rbf computed in forward for backward
 
 
-def bacward(ctx, grads):
+def backward(ctx, grads):
     grad_distances, grad_rbf = grads[0], grads[1]
 
-    pos, edge_src, edge_dst, centers, distances, rbf = ctx.saved_tensors
-    gamma = ctx.gamma
+    pos, edge_src, edge_dst, centers, gamma, distances = ctx.saved_tensors
+    # gamma = ctx.gamma
     cutoff_upper = ctx.cutoff_upper
 
-    grad_pos = None
-    grad_centers = None
-    grad_gamma = None
+    grad_pos = grad_centers = grad_gamma = None
 
     need_pos_grad = ctx.needs_input_grad[0]
     need_centers_grad = ctx.needs_input_grad[3]
     need_gamma_grad = ctx.needs_input_grad[4]
 
-    if need_pos_grad or need_centers_grad or need_gamma_grad:
-        diff = distances.unsqueeze(-1) - centers.unsqueeze(
-            0
-        )  # [num_edges, num_rbf]
-
+    computed_grad = fused_gaussian_rbf_backward(
+        pos,
+        edge_src,
+        edge_dst,
+        centers,
+        gamma,
+        distances,
+        cutoff_upper,
+        grad_distances,
+        grad_rbf,
+        need_pos_grad,
+        need_centers_grad,
+        need_gamma_grad
+    )
     if need_pos_grad:
-        # Direction vectors (normalized)
-        dr = pos[edge_dst] - pos[edge_src]  # [num_edges, 3]
-        dist_safe = distances.clamp(min=1e-8)
-        direction = dr / dist_safe.unsqueeze(-1)  # [num_edges, 3]
-
-        # d(cutoff)/d(dist) = -0.5 * pi/cutoff_upper * sin(dist * pi / cutoff_upper)
-        dist_in_range = (distances < cutoff_upper).float()
-        sin_val = torch.sin(distances * torch.pi / cutoff_upper)
-        d_cutoff_d_dist = (
-            -0.5 * (torch.pi / cutoff_upper) * sin_val * dist_in_range
-        )
-
-        # d(rbf)/d(dist) = [2*gamma*(dist-center)*exp(...)*cutoff + exp(...)*d_cutoff]
-        d_rbf_d_dist = 2 * gamma * diff * rbf + torch.exp(
-            gamma * diff**2
-        ) * d_cutoff_d_dist.unsqueeze(-1)
-
-        # Aggregate gradient from all RBF channels
-        grad_dist_from_rbf = (grad_rbf * d_rbf_d_dist).sum(
-            dim=-1
-        )  # [num_edges]
-
-        # Total gradient w.r.t. distance
-        total_grad_dist = grad_distances + grad_dist_from_rbf
-
-        # Convert to position gradients
-        grad_dr = total_grad_dist.unsqueeze(-1) * direction  # [num_edges, 3]
-
-        # Scatter gradients to positions
-        grad_pos = torch.zeros_like(pos)
-        grad_pos.index_add_(0, edge_dst, grad_dr)
-        grad_pos.index_add_(0, edge_src, -grad_dr)
-
+        grad_pos = computed_grad[0]
     if need_centers_grad:
-        drbf_dcenters = -rbf * 2 * gamma * diff
-        grad_centers = (grad_rbf * drbf_dcenters).sum(dim=0)
-
+        grad_centers = computed_grad[1]
     if need_gamma_grad:
-        drbf_dgamma = rbf * diff * diff
-        grad_gamma = (grad_rbf * drbf_dgamma).sum(dim=0)
+        grad_gamma = computed_grad[2]
 
     return grad_pos, None, None, grad_centers, grad_gamma, None
 
 
 fused_distance_gaussian_rbf_cosinecutoff.register_autograd(
-    bacward, setup_context=setup_context
+    backward, setup_context=setup_context
 )
 
 
@@ -308,3 +275,4 @@ def _(
         gamma * torch.pow(dist.unsqueeze(-1) - centers, 2)
     ) * cutoff_val.unsqueeze(-1)
     return [dist, expanded_distances]
+
