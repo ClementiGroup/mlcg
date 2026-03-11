@@ -5,7 +5,11 @@ from torch.library import triton_op, wrap_triton
 
 from ....utils import ensure_contiguous
 
-from ...cutoffs import _cosine_cutoff, _d_cosine_cutoff_dd, _d2_cosine_cutoff_dd2
+from ...cutoffs import (
+    _cosine_cutoff,
+    _d_cosine_cutoff_dd,
+    _d2_cosine_cutoff_dd2,
+)
 
 triton_pi = tl.constexpr(3.141592653589793)
 
@@ -278,7 +282,9 @@ def cpu_grad_x_grad_edge_weight_fused_cfconv(
     dC_dd = dC_dd * (edge_weight < cutoff_upper).to(edge_weight.dtype)
 
     grad_x = torch.zeros(grad_output.shape[0]).contiguous()
-    expanded = grad_edge_out * grad_output[edge_dst] * filters * dC_dd.unsqueeze(1)
+    expanded = (
+        grad_edge_out * grad_output[edge_dst] * filters * dC_dd.unsqueeze(1)
+    )
     grad_x.index_add_(0, edge_src, expanded)
     return grad_x  # FIXME: check dtype
 

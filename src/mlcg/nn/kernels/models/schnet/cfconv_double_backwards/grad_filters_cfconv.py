@@ -1,4 +1,3 @@
-
 import torch
 import triton
 import triton.language as tl
@@ -6,10 +5,13 @@ from torch.library import triton_op, wrap_triton
 
 from ....utils import ensure_contiguous
 
-from ...cutoffs import _cosine_cutoff, _d_cosine_cutoff_dd, _d2_cosine_cutoff_dd2
+from ...cutoffs import (
+    _cosine_cutoff,
+    _d_cosine_cutoff_dd,
+    _d2_cosine_cutoff_dd2,
+)
 
 triton_pi = tl.constexpr(3.141592653589793)
-
 
 
 # ============================================================================
@@ -57,10 +59,8 @@ def grad_x_grad_filters_fused_cfconv_kernel(
     seg_start_src = tl.load(src_ptr_ptr + target_node)
     seg_end_src = tl.load(src_ptr_ptr + target_node + 1)
 
-
-
     # Compute cutoff inline (CosineCutoff formula)
-    #C = _cosine_cutoff(dist, cutoff_upper)
+    # C = _cosine_cutoff(dist, cutoff_upper)
 
     for f_start in range(0, feature_dim, BLOCK_F):
         f_offsets = f_start + tl.arange(0, BLOCK_F)
@@ -71,14 +71,13 @@ def grad_x_grad_filters_fused_cfconv_kernel(
             edge_idx = tl.load(src_perm_ptr + e_csr)
 
             dst_node = tl.load(edge_dst_ptr + edge_idx)
-            
 
             distances = tl.load(edge_weight_ptr + edge_idx)
-            
-            # Get cutoff 
+
+            # Get cutoff
 
             C = _cosine_cutoff(distances, cutoff_upper)
-            
+
             # Gather grad_output[dst]
             grad_j = tl.load(
                 grad_output_ptr + dst_node * feature_dim + f_offsets,
@@ -92,8 +91,8 @@ def grad_x_grad_filters_fused_cfconv_kernel(
             # Store result (convert to FP16 if needed)
             if OUTPUT_FP16:
                 grad_filters = grad_filters.to(tl.float16)
-            
-            acc += grad_filters 
+
+            acc += grad_filters
 
         tl.store(
             grad_x_grad_filters_ptr + target_node * feature_dim + f_offsets,
@@ -279,10 +278,10 @@ def grad_grad_out_grad_filters_fused_cfconv_kernel(
                 other=0.0,
             )
             # Fused multiply: x * grad * C (in FP32)
-            acc += x  * C[:, None]
+            acc += x * C[:, None]
 
         # Store result (convert to FP16 if needed)
-        
+
         tl.store(
             grad_grad_out_grad_filters_ptr + edge_idx * feature_dim + f_offsets,
             acc,
@@ -597,4 +596,3 @@ def grad_edge_weights_grad_filters_fused_cfconv(
     grad_filters = grad_output[edge_dst] * x[edge_src] * dC.unsqueeze(-1)
 
     return grad_filters
-
