@@ -163,7 +163,9 @@ def fused_distance_gaussian_rbf_cosinecutoff(
     num_rbf = centers.shape[0]
 
     # Allocate outputs
-    distances = torch.empty(num_edges, device=pos.device, dtype=pos.dtype).contiguous()
+    distances = torch.empty(
+        num_edges, device=pos.device, dtype=pos.dtype
+    ).contiguous()
     rbf_output = torch.empty(
         (num_edges, num_rbf), device=pos.device, dtype=pos.dtype
     ).contiguous()
@@ -199,9 +201,7 @@ def setup_context(ctx, inputs, output):
 
     distances = output[0]
 
-    ctx.save_for_backward(
-        pos, edge_src, edge_dst, centers, gamma, distances
-    )
+    ctx.save_for_backward(pos, edge_src, edge_dst, centers, gamma, distances)
     # ctx.gamma = gamma
     ctx.cutoff_upper = cutoff_upper
     # FIXME: complete this to check if make sense to save
@@ -233,7 +233,7 @@ def backward(ctx, grads):
         grad_rbf,
         need_pos_grad,
         need_centers_grad,
-        need_gamma_grad
+        need_gamma_grad,
     )
     if need_pos_grad:
         grad_pos = computed_grad[0]
@@ -275,4 +275,3 @@ def _(
         gamma * torch.pow(dist.unsqueeze(-1) - centers, 2)
     ) * cutoff_val.unsqueeze(-1)
     return [dist, expanded_distances]
-

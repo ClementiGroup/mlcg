@@ -179,11 +179,14 @@ def grad_filters_fused_cfconv(
 def setup_context_grad_filters_fused_cfconv(ctx, inputs, output):
     raise NotImplementedError
 
+
 def backward_grad_filters_fused_cfconv(ctx, grad_output):
     raise NotImplementedError
 
+
 grad_filters_fused_cfconv.register_autograd(
-    backward_grad_filters_fused_cfconv, setup_context=setup_context_grad_filters_fused_cfconv
+    backward_grad_filters_fused_cfconv,
+    setup_context=setup_context_grad_filters_fused_cfconv,
 )
 
 
@@ -394,11 +397,14 @@ def grad_x_fused_cfconv(
 def setup_context_grad_x_fused_cfconv(ctx, inputs, output):
     raise NotImplementedError
 
+
 def backward_grad_x_fused_cfconv(ctx, grad_output):
     raise NotImplementedError
 
+
 grad_x_fused_cfconv.register_autograd(
-    backward_grad_x_fused_cfconv, setup_context=setup_context_grad_x_fused_cfconv
+    backward_grad_x_fused_cfconv,
+    setup_context=setup_context_grad_x_fused_cfconv,
 )
 
 
@@ -429,6 +435,7 @@ def cpu_grad_x_fused_cfconv(
 # ============================================================================
 # grad_edge_weight_fused_cfconv
 # ============================================================================
+
 
 @triton.jit
 def grad_edge_weight_fused_cfconv_kernel(
@@ -631,6 +638,7 @@ def setup_context_grad_edge_weight_fused_cfconv(ctx, inputs, output):
     ctx.cutoff_upper = cutoff_upper
     ctx.out_dtype = out_dtype
 
+
 def backward_grad_edge_weight_fused_cfconv(ctx, grad_grad_edge_out):
 
     (
@@ -649,7 +657,7 @@ def backward_grad_edge_weight_fused_cfconv(ctx, grad_grad_edge_out):
     cutoff_upper = ctx.cutoff_upper
     grad_edge_dtype = ctx.out_dtype
     grad_x = grad_grad_output = grad_filters = grad_edge_weight = None
-    
+
     if ctx.needs_input_grad[0]:
         grad_x = grad_x_grad_edge_weight_fused_cfconv(
             grad_output,
@@ -662,7 +670,7 @@ def backward_grad_edge_weight_fused_cfconv(ctx, grad_grad_edge_out):
             cutoff_upper,
             grad_edge_dtype,
         )
-    
+
     if ctx.needs_input_grad[1]:
         grad_grad_output = grad_grad_out_grad_edge_weight_fused_cfconv(
             x,
@@ -701,10 +709,21 @@ def backward_grad_edge_weight_fused_cfconv(ctx, grad_grad_edge_out):
             grad_edge_dtype,
         )
 
-    return grad_x, grad_grad_output, grad_filters, grad_edge_weight, None, None, None, None
+    return (
+        grad_x,
+        grad_grad_output,
+        grad_filters,
+        grad_edge_weight,
+        None,
+        None,
+        None,
+        None,
+    )
+
 
 grad_edge_weight_fused_cfconv.register_autograd(
-    backward_grad_edge_weight_fused_cfconv, setup_context=setup_context_grad_edge_weight_fused_cfconv
+    backward_grad_edge_weight_fused_cfconv,
+    setup_context=setup_context_grad_edge_weight_fused_cfconv,
 )
 
 

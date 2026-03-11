@@ -283,8 +283,10 @@ def flash_cgschnet_model():
     )
     return GradientsOut(test_flash_schnet, targets=[FORCE_KEY])
 
+
 @pytest.mark.skipif(
-    not torch.cuda.is_available(), reason="Quantization kernel tests require CUDA"
+    not torch.cuda.is_available(),
+    reason="Quantization kernel tests require CUDA",
 )
 @pytest.mark.parametrize(
     "ASE_prior_model, get_initial_data, add_masses, sim_class, sim_args, betas, sim_kwargs",

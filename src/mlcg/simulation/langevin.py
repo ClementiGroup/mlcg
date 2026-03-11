@@ -304,7 +304,6 @@ class OverdampedSimulation(_Simulation):
         assert friction > 0
         self.friction = friction
 
-
     def _attach_configurations(
         self, configurations: List[AtomicData], beta: Union[float, List[float]]
     ):
@@ -361,7 +360,7 @@ class OverdampedSimulation(_Simulation):
         x_old = data[POSITIONS_KEY]
 
         self._noise_buffer.normal_(generator=self.rng)
-        
+
         x_new = (
             x_old.detach()
             + forces * self._dtau

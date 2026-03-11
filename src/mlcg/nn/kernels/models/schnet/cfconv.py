@@ -174,7 +174,9 @@ def fused_cfconv(
     feature_dim = x.shape[1]
 
     # Allocate output (zeros needed for nodes with no incoming edges)
-    output = torch.zeros(num_nodes, feature_dim, device=x.device, dtype=x.dtype).contiguous()
+    output = torch.zeros(
+        num_nodes, feature_dim, device=x.device, dtype=x.dtype
+    ).contiguous()
 
     num_edges = edge_src.shape[0]
     if num_edges == 0:

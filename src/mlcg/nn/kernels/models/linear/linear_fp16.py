@@ -9,6 +9,7 @@ from torch.library import triton_op, wrap_triton
 
 from ...utils import ensure_contiguous
 
+
 @triton.autotune(
     configs=[
         triton.Config(
@@ -204,7 +205,9 @@ def grad_weight_persistent(
     M2, N = grad_out.shape
     assert M == M2
 
-    grad_weight = torch.empty((K, N), device=x.device, dtype=torch.float32).contiguous()
+    grad_weight = torch.empty(
+        (K, N), device=x.device, dtype=torch.float32
+    ).contiguous()
 
     grid = lambda meta: (
         triton.cdiv(K, meta["BLOCK_K"]),

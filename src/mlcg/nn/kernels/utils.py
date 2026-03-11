@@ -37,15 +37,25 @@ def ensure_contiguous(fn):
     >>> kernel(x).is_contiguous()
     True
     """
+
     @functools.wraps(fn)
     def wrapper(*args, **kwargs):
         args = tuple(
-            a.contiguous() if isinstance(a, torch.Tensor) and not a.is_contiguous() else a
+            (
+                a.contiguous()
+                if isinstance(a, torch.Tensor) and not a.is_contiguous()
+                else a
+            )
             for a in args
         )
         kwargs = {
-            k: v.contiguous() if isinstance(v, torch.Tensor) and not v.is_contiguous() else v
+            k: (
+                v.contiguous()
+                if isinstance(v, torch.Tensor) and not v.is_contiguous()
+                else v
+            )
             for k, v in kwargs.items()
         }
         return fn(*args, **kwargs)
+
     return wrapper

@@ -20,7 +20,6 @@ triton_pi = tl.constexpr(3.141592653589793)
     key=["num_rbf"],
     reset_to_zero=["grad_pos_ptr", "grad_centers_ptr", "grad_gamma_ptr"],
 )
-
 @triton.jit
 def fused_gaussian_rbf_backward_kernel(
     # Inputs
@@ -63,7 +62,7 @@ def fused_gaussian_rbf_backward_kernel(
     dist_in_range = dist < cutoff_upper
     cutoff_val = tl.where(dist_in_range, cutoff_val, 0.0)
 
-    acc_gamma_grad = 0.0 
+    acc_gamma_grad = 0.0
     acc_grad_dist_from_rbf = tl.zeros([BLOCK_EDGES], dtype=tl.float32)
 
     if NEED_POS_GRAD:
@@ -71,7 +70,6 @@ def fused_gaussian_rbf_backward_kernel(
         d_cutoff_d_dist = tl.where(
             dist_in_range, -0.5 * sin_val * triton_pi / cutoff_upper, 0.0
         )
-
 
     for rbf_start in range(0, num_rbf, BLOCK_RBF):
 
@@ -95,9 +93,13 @@ def fused_gaussian_rbf_backward_kernel(
 
         if NEED_CENTERS_GRAD:
             drbf_dcenters = -rbf_values * 2 * gamma * diff
-            grad_centers_update = tl.sum(grad_rbf * drbf_dcenters.to(tl.float32), axis=0)
+            grad_centers_update = tl.sum(
+                grad_rbf * drbf_dcenters.to(tl.float32), axis=0
+            )
             tl.atomic_add(
-                grad_centers_ptr + rbf_offsets, grad_centers_update, mask=rbf_mask
+                grad_centers_ptr + rbf_offsets,
+                grad_centers_update,
+                mask=rbf_mask,
             )
 
         if NEED_GAMMA_GRAD:
@@ -106,19 +108,14 @@ def fused_gaussian_rbf_backward_kernel(
 
         if NEED_POS_GRAD:
             d_rbf_d_dist = (
-                2
-                * gamma
-                * diff
-                * rbf_values
-                + tl.exp(gamma * diff * diff)
-                * d_cutoff_d_dist[:, None]
+                2 * gamma * diff * rbf_values
+                + tl.exp(gamma * diff * diff) * d_cutoff_d_dist[:, None]
             )
 
             grad_dist_from_rbf = tl.sum(grad_rbf * d_rbf_d_dist, axis=1)
 
             acc_grad_dist_from_rbf += grad_dist_from_rbf
 
-        
     if NEED_GAMMA_GRAD:
         tl.atomic_add(grad_gamma_ptr, acc_gamma_grad)
 
@@ -181,8 +178,8 @@ def fused_gaussian_rbf_backward_kernel(
         tl.atomic_add(grad_pos_ptr + src_nodes * 3 + 1, -grad_y, mask=edge_mask)
         tl.atomic_add(grad_pos_ptr + src_nodes * 3 + 2, -grad_z, mask=edge_mask)
 
-    
-#TODO: register backward for this
+
+# TODO: register backward for this
 @triton_op("mlcg_kernels::fused_gaussian_rbf_backward", mutates_args={})
 @ensure_contiguous
 def fused_gaussian_rbf_backward(
@@ -209,9 +206,7 @@ def fused_gaussian_rbf_backward(
     num_rbf = centers.shape[0]
 
     def grid(META):
-        return (
-            triton.cdiv(num_edges, META["BLOCK_EDGES"]),
-        )
+        return (triton.cdiv(num_edges, META["BLOCK_EDGES"]),)
 
     wrap_triton(fused_gaussian_rbf_backward_kernel)[grid](
         # Inputs
@@ -255,11 +250,11 @@ def _(
     need_centers_grad: bool,
     need_gamma_grad: bool,
 ) -> List[torch.Tensor]:
-    
+
     grad_pos = torch.zeros_like(pos)
     grad_centers = torch.zeros_like(centers)
     grad_gamma = torch.zeros(1, dtype=pos.dtype, device=pos.device)
-    
+
     cutoff_val = 0.5 * (torch.cos(distances * torch.pi / cutoff_upper) + 1.0)
     cutoff_val = torch.where(
         distances < cutoff_upper, cutoff_val, torch.zeros_like(cutoff_val)
@@ -269,9 +264,7 @@ def _(
         0
     )  # [num_edges, num_rbf]
 
-    rbf = torch.exp(
-        gamma * torch.pow(diff, 2)
-    ) * cutoff_val.unsqueeze(-1)
+    rbf = torch.exp(gamma * torch.pow(diff, 2)) * cutoff_val.unsqueeze(-1)
 
     if need_pos_grad:
         # Direction vectors (normalized)
