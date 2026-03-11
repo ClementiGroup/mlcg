@@ -637,6 +637,7 @@ def grad_grad_out_grad_x_fused_cfconv(
     filters: torch.Tensor,
     edge_weight: torch.Tensor,
     edge_src: torch.Tensor,
+    edge_dst: torch.Tensor,
     grad_grad_x: torch.Tensor,
     dst_perm: torch.Tensor,
     dst_ptr: torch.Tensor,
@@ -697,12 +698,21 @@ def cpu_grad_grad_out_grad_x_fused_cfconv(
     filters: torch.Tensor,
     edge_weight: torch.Tensor,
     edge_src: torch.Tensor,
+    edge_dst: torch.Tensor,
     grad_grad_x: torch.Tensor,
     dst_perm: torch.Tensor,
     dst_ptr: torch.Tensor,
     cutoff_upper: float,
 ) -> torch.Tensor:
-    raise NotImplementedError  # FIXME: implment cpu fallback for grad_grad_out_grad_x_fused_cfconv
+    
+    C = 0.5 * (torch.cos(edge_weight * torch.pi / cutoff_upper) + 1)
+    C = C * (edge_weight < cutoff_upper).to(edge_weight.dtype)
+    
+    grad_grad_out = torch.zeros_like(grad_grad_x)
+    expanded = grad_grad_x[edge_src] * filters * C.unsqueeze(1)
+    grad_grad_out.index_add_(0, edge_dst, expanded)
+
+    return grad_grad_out #FIXME: check dtype
 
 
 # ============================================================================
@@ -830,7 +840,13 @@ def cpu_grad_filters_grad_x_fused_cfconv(
     grad_grad_x: torch.Tensor,
     cutoff_upper: float,
 ) -> torch.Tensor:
-    raise NotImplementedError  # FIXME: implment cpu fallback for grad_filters_grad_x_fused_cfconv
+    
+    C = 0.5 * (torch.cos(edge_weight * torch.pi / cutoff_upper) + 1)
+    C = C * (edge_weight < cutoff_upper).to(edge_weight.dtype)
+    
+    grad_filters = grad_grad_x[edge_src] * grad_out[edge_dst] * C.unsqueeze(1)
+
+    return grad_filters #FIXME: check dtype
 
 
 # ============================================================================
@@ -862,7 +878,7 @@ def grad_edge_weight_grad_x_fused_cfconv_kernel(
     Fused kernel for grad_edge_weight computation in grad_x_fused_cfconv backward pass.
 
     Computes:
-        Computes: grad_edge_weight[e] =  (grad_grad_x[src[e]] * grad_out[dst[e]] * filters[e]).sum(axs=-1) * cutoff[e]
+        Computes: grad_edge_weight[e] =  (grad_grad_x[src[e]] * grad_out[dst[e]] * filters[e]).sum(axs=-1) * d_cutoff_dd[e]
 
     """
     edge_idx = tl.program_id(axis=0)
@@ -975,7 +991,13 @@ def cpu_grad_edge_weight_grad_x_fused_cfconv(
     grad_grad_x: torch.Tensor,
     cutoff_upper: float,
 ) -> torch.Tensor:
-    raise NotImplementedError  # FIXME: implment cpu fallback for grad_edge_weight_grad_x_fused_cfconv
+    
+    dC_dd = - 0.5 * torch.sin(edge_weight * torch.pi / cutoff_upper) * (torch.pi / cutoff_upper)
+    dC_dd = dC_dd * (edge_weight < cutoff_upper).to(edge_weight.dtype)
+    
+    grad_edge_weight = (grad_grad_x[edge_src] * grad_out[edge_dst] * filters).sum(dim=1) * dC_dd
+
+    return grad_edge_weight #FIXME: check dtype
 
 
 # ============================================================================
@@ -1068,6 +1090,7 @@ def grad_x_grad_edge_weight_fused_cfconv(
     grad_output: torch.Tensor,
     filters: torch.Tensor,
     edge_weight: torch.Tensor,
+    edge_src: torch.Tensor,
     edge_dst: torch.Tensor,
     grad_edge_out: torch.Tensor,
     src_perm: torch.Tensor,
@@ -1133,6 +1156,7 @@ def cpu_grad_x_grad_edge_weight_fused_cfconv(
     grad_output: torch.Tensor,
     filters: torch.Tensor,
     edge_weight: torch.Tensor,
+    edge_src: torch.Tensor,
     edge_dst: torch.Tensor,
     grad_edge_out: torch.Tensor,
     src_perm: torch.Tensor,
@@ -1140,7 +1164,14 @@ def cpu_grad_x_grad_edge_weight_fused_cfconv(
     cutoff_upper: float,
     grad_edge_dtype: torch.dtype = None,
 ) -> torch.Tensor:
-    raise NotImplementedError  # FIXME: implement cpu fallback for grad_x_grad_edge_weight_fused_cfconv
+    
+    dC_dd = - 0.5 * torch.sin(edge_weight * torch.pi / cutoff_upper) * (torch.pi / cutoff_upper)
+    dC_dd = dC_dd * (edge_weight < cutoff_upper).to(edge_weight.dtype)
+
+    grad_x = torch.zeros_like(x)
+    expanded = grad_edge_out * grad_output[edge_dst] * filters * dC_dd.unsqueeze(1)
+    grad_x.index_add_(0, edge_src, expanded)
+    return grad_x #FIXME: check dtype
 
 
 # ============================================================================
@@ -1236,6 +1267,7 @@ def grad_grad_out_grad_edge_weight_fused_cfconv(
     filters: torch.Tensor,
     edge_weight: torch.Tensor,
     edge_src: torch.Tensor,
+    edge_dst: torch.Tensor,
     grad_edge_out: torch.Tensor,
     dst_perm: torch.Tensor,
     dst_ptr: torch.Tensor,
@@ -1305,13 +1337,21 @@ def cpu_grad_grad_out_grad_edge_weight_fused_cfconv(
     filters: torch.Tensor,
     edge_weight: torch.Tensor,
     edge_src: torch.Tensor,
+    edge_dst: torch.Tensor,
     grad_edge_out: torch.Tensor,
     dst_perm: torch.Tensor,
     dst_ptr: torch.Tensor,
     cutoff_upper: float,
     grad_edge_dtype: torch.dtype = None,
 ) -> torch.Tensor:
-    raise NotImplementedError  # FIXME: implement cpu fallback for grad_grad_out_grad_edge_weight_fused_cfconv
+    
+    dC_dd = - 0.5 * torch.sin(edge_weight * torch.pi / cutoff_upper) * (torch.pi / cutoff_upper)
+    dC_dd = dC_dd * (edge_weight < cutoff_upper).to(edge_weight.dtype)
+
+    grad_grad_out = torch.zeros_like(x)
+    expanded = grad_edge_out * x[edge_src] * filters * dC_dd.unsqueeze(1)
+    grad_grad_out.index_add_(0, edge_dst, expanded)
+    return grad_grad_out #FIXME: check dtype
 
 
 # ============================================================================
@@ -1458,7 +1498,12 @@ def cpu_grad_filters_grad_edge_weight_fused_cfconv(
     cutoff_upper: float,
     grad_edge_dtype: torch.dtype = None,
 ) -> torch.Tensor:
-    raise NotImplementedError  # FIXME: implement cpu fallback for grad_filters_grad_edge_weight_fused_cfconv
+    dC_dd = - 0.5 * torch.sin(edge_weight * torch.pi / cutoff_upper) * (torch.pi / cutoff_upper)
+    dC_dd = dC_dd * (edge_weight < cutoff_upper).to(edge_weight.dtype)
+
+    grad_filters = (grad_edge_out * grad_output[edge_dst] * x[edge_src]) * dC_dd.unsqueeze(1)
+
+    return grad_filters #FIXME: check dtype
 
 
 # ============================================================================
@@ -1623,4 +1668,10 @@ def cpu_grad_edge_weight_grad_edge_weight_fused_cfconv(
     cutoff_upper: float,
     grad_edge_dtype: torch.dtype = None,
 ) -> torch.Tensor:
-    raise NotImplementedError  # FIXME: implement cpu fallback for grad_filters_grad_edge_weight_fused_cfconv
+    
+    d2C_dd2 = - 0.5 * torch.cos(edge_weight * torch.pi / cutoff_upper) * (torch.pi / cutoff_upper)**2
+    d2C_dd2 = d2C_dd2 * (edge_weight < cutoff_upper).to(edge_weight.dtype)
+
+    grad_edge_weight = (grad_edge_out * grad_output[edge_dst] * x[edge_src] * filters).sum(dim=-1) * d2C_dd2
+
+    return grad_edge_weight # FIXME: check dtype
