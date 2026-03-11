@@ -1165,11 +1165,104 @@ def grad_x_grad_edge_weight_fused_cfconv(
 
 
 def setup_context_grad_x_grad_edge_weight_fused_cfconv(ctx, inputs, output):
-    raise NotImplementedError  # TODO: implment setup context grad_x_grad_edge_weight_fused_cfconv
+    (
+        grad_output,
+        filters,
+        edge_weight,
+        edge_src,
+        edge_dst,
+        grad_edge_out,
+        src_perm,
+        src_ptr,
+        cutoff_upper,
+        grad_edge_dtype,
+    ) = inputs
+
+    ctx.save_for_backward(
+        grad_output,
+        filters,
+        edge_weight,
+        edge_src,
+        edge_dst,
+        grad_edge_out,
+    )
+
+    ctx.cutoff_upper = cutoff_upper
 
 
 def backward_grad_x_grad_edge_weight_fused_cfconv(ctx, grad_grad_x):
-    raise NotImplementedError  # TODO: implment backward grad_x_grad_edge_weight_fused_cfconv
+    (
+        grad_output,
+        filters,
+        edge_weight,
+        edge_src,
+        edge_dst,
+        grad_edge_out,
+    ) = ctx.saved_tensors
+
+    cutoff_upper = ctx.cutoff_upper
+
+    grad_grad_output = grad_filters = grad_edge_weight = grad_grad_edge_out = (
+        None
+    )
+
+    dC_dd = (
+        -0.5
+        * torch.sin(edge_weight * torch.pi / cutoff_upper)
+        * (torch.pi / cutoff_upper)
+    )
+    dC_dd = dC_dd * (edge_weight < cutoff_upper).to(edge_weight.dtype)
+
+    if ctx.needs_input_grad[0]:
+        grad_grad_output = torch.zeros_like(grad_output)
+        expanded = (
+            grad_grad_x[edge_src] * grad_edge_out * filters * dC_dd.unsqueeze(1)
+        )
+        grad_grad_output.index_add_(0, edge_dst, expanded)
+
+    if ctx.needs_input_grad[1]:
+        grad_filters = (
+            grad_grad_x[edge_src]
+            * grad_edge_out
+            * grad_output[edge_dst]
+            * dC_dd.unsqueeze(1)
+        )
+
+    if ctx.needs_input_grad[2]:
+        d2C_dd2 = (
+            -0.5
+            * torch.cos(edge_weight * torch.pi / cutoff_upper)
+            * (torch.pi / cutoff_upper) ** 2
+        )
+        d2C_dd2 = d2C_dd2 * (edge_weight < cutoff_upper).to(edge_weight.dtype)
+
+        grad_edge_weight = (
+            grad_grad_x[edge_src]
+            * grad_edge_out
+            * grad_output[edge_dst]
+            * filters
+        ).sum(dim=1) * d2C_dd2
+
+    if ctx.needs_input_grad[5]:
+        grad_grad_edge_out = (
+            grad_grad_x[edge_src]
+            * grad_output[edge_dst]
+            * filters
+            * dC_dd.unsqueeze(1)
+        )
+
+    return (
+        grad_grad_output,
+        grad_filters,
+        grad_edge_weight,
+        None,
+        None,
+        grad_grad_edge_out,
+        None,
+        None,
+        None,
+        None,
+    )
 
 
 grad_x_grad_edge_weight_fused_cfconv.register_autograd(
