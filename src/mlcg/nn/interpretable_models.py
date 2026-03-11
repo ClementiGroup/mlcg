@@ -1,11 +1,22 @@
-from mlcg.nn.schnet import SchNet, CFConv, InteractionBlock
+from mlcg.nn.schnet import SchNet, CFConv, InteractionBlock, StandardSchNet
 import warnings
 from typing import List
 import torch
-from torch_scatter import scatter
+from torch_geometric.utils import scatter
 from mlcg.data.atomic_data import AtomicData, ENERGY_KEY
 from mlcg.geometry.internal_coordinates import compute_distances
 from mlcg.nn.mlp import MLP
+
+from .radial_basis import RegularizedBasis
+
+try:
+    from mlcg_opt_radius.radius import radius_distance
+except ImportError:
+    print(
+        "`mlcg_opt_radius` not installed. Please check the"
+        + "`opt_radius` folder and follow the instructions."
+    )
+    radius_distance = None
 
 
 class EdgeAwareInteractionBlock(InteractionBlock):
@@ -58,14 +69,11 @@ class EdgeAwareCFConv(CFConv):
         return super().propagate(edge_index, size=size, **kwargs)
 
 
-
-class EdgeAwareSchNet(SchNet):
+class EdgeRBFRegularizedSchNet(StandardSchNet):
     """
-    This is a StandardSchNet model where the RBF components are weighted via Hadamard product with bead-couple-specific
-    vectors. Each tuple of bead types has its own vector. The models also adds the key `radial_filters' to the Atomic Data input to enable regularization
-    of those parameters. Also messages exchanged can be regularized via the key `edge_reg'
-
-    SCHNET PARAMETERS --------------------------------------------------------------------
+    This is a StandardSchNet model where the RBF components are weighted via Hadamard product with couple-specific
+    vectors. Each tuple of bead types has its own vector.
+    The models also adds the key radial_filters to the output dictionary, containing the regularization parameters.
 
     Parameters
     ----------
@@ -95,11 +103,12 @@ class EdgeAwareSchNet(SchNet):
         see `here <https://pytorch-geometric.readthedocs.io/en/latest/notes/create_gnn.html?highlight=MessagePassing#the-messagepassing-base-class>`_
         for more options.
 
-    CLASS SPECIFIC PARAMETERS ------------------------------------------------------------
-    
-    max_bead_type: int
-        The maximal value of the bead_type needed to calculate all possible couples in the system.
-        This considers that all bead_type couples to be tracked are in the range [0, max_bead_type-1].
+    CLASS SPECIFIC PARAMETERS -------------------------------------------------------------
+
+    independent_regularizations: bool
+        If True each interaction block has its own set of regularization parameters,
+        otherwise the regularization parameters are shared across all interaction blocks.
+
     """
 
     def __init__(
@@ -115,62 +124,43 @@ class EdgeAwareSchNet(SchNet):
         activation: torch.nn.Module = torch.nn.Tanh(),
         max_num_neighbors: int = 1000,
         aggr: str = "add",
+        independent_regularizations: bool = False,
     ):
-        if num_interactions < 1:
-            raise ValueError("At least one interaction block must be specified")
 
-        if cutoff.cutoff_lower != rbf_layer.cutoff.cutoff_lower:
-            warnings.warn(
-                "Cutoff function lower cutoff, {}, and radial basis function "
-                " lower cutoff, {}, do not match.".format(
-                    cutoff.cutoff_lower, rbf_layer.cutoff.cutoff_lower
-                )
-            )
-        if cutoff.cutoff_upper != rbf_layer.cutoff.cutoff_upper:
-            warnings.warn(
-                "Cutoff function upper cutoff, {}, and radial basis function "
-                " upper cutoff, {}, do not match.".format(
-                    cutoff.cutoff_upper, rbf_layer.cutoff.cutoff_upper
-                )
-            )
+        rbf_layer = RegularizedBasis(
+            basis_function=rbf_layer,
+            types=embedding_size,
+            n_basis_set=num_interactions,
+            independent_regularizations=independent_regularizations,
+        )
+        super(EdgeRBFRegularizedSchNet, self).__init__(
+            rbf_layer=rbf_layer,
+            cutoff=cutoff,
+            output_hidden_layer_widths=output_hidden_layer_widths,
+            hidden_channels=hidden_channels,
+            embedding_size=embedding_size,
+            num_filters=num_filters,
+            num_interactions=num_interactions,
+            activation=activation,
+            max_num_neighbors=max_num_neighbors,
+            aggr=aggr,
+        )
 
-        embedding_layer = torch.nn.Embedding(embedding_size, hidden_channels)
-
-        interaction_blocks = []
-
-        for _ in range(num_interactions):
-            filter_network = MLP(
-                layer_widths=[rbf_layer.num_rbf, num_filters, num_filters],
-                activation_func=activation,
-                last_bias=False,
-            )
-
+        # Replace standard interaction blocks with EdgeAware versions
+        edge_aware_blocks = []
+        for block in self.interaction_blocks:
             cfconv = EdgeAwareCFConv(
-                filter_network,
-                cutoff=cutoff,
+                block.conv.filter_network,
+                cutoff=block.conv.cutoff,
                 num_filters=num_filters,
                 in_channels=hidden_channels,
                 out_channels=hidden_channels,
                 aggr=aggr,
             )
-
-            block = EdgeAwareInteractionBlock(cfconv, hidden_channels, activation)
-
-            interaction_blocks.append(block)
-
-        output_layer_widths = [hidden_channels] + output_hidden_layer_widths + [1]
-
-        output_network = MLP(
-            output_layer_widths, activation_func=activation, last_bias=False
-        )
-
-        super(EdgeAwareSchNet, self).__init__(
-            embedding_layer,
-            interaction_blocks,
-            rbf_layer,
-            output_network,
-            max_num_neighbors=max_num_neighbors,
-        )
+            edge_aware_blocks.append(
+                EdgeAwareInteractionBlock(cfconv, hidden_channels, activation)
+            )
+        self.interaction_blocks = torch.nn.ModuleList(edge_aware_blocks)
 
         edge_modulation = torch.ones(
             num_interactions, max_bead_type, max_bead_type
@@ -186,20 +176,7 @@ class EdgeAwareSchNet(SchNet):
         )
 
     def forward(self, data: AtomicData) -> AtomicData:
-        r"""Forward pass through the SchNet architecture.
-        Parameters
-        ----------
-        data:
-            Input data object containing batch atom/bead positions
-            and atom/bead types.
-
-        Returns
-        -------
-        data:
-           Data dictionary, updated with predicted energy of shape
-           (num_examples * num_atoms, 1), as well as neighbor list
-           information.
-        """
+        r"""Forward pass through the SchNet architecture with independent regularizations."""
         x = self.embedding_layer(data.atom_types)
 
         neighbor_list = data.neighbor_list.get(self.name)
@@ -217,16 +194,13 @@ class EdgeAwareSchNet(SchNet):
                 if hasattr(data, "exc_pair_index"):
                     raise NotImplementedError(
                         "Excluding pairs requires `mlcg_opt_radius` "
-                        "to be available and model running with CUDA"   )   
-        
-
-                    
+                        "to be available and model running with CUDA."
+                    )
                 neighbor_list = self.neighbor_list(
                     data,
                     self.rbf_layer.cutoff.cutoff_upper,
                     self.max_num_neighbors,
                 )[self.name]
-
         if use_custom_kernel:
             distances, edge_index = radius_distance(
                 data.pos,
@@ -236,7 +210,6 @@ class EdgeAwareSchNet(SchNet):
                 self.max_num_neighbors,
                 exclude_pair_indices=data.get("exc_pair_index"),
             )
-
         else:
             edge_index = neighbor_list["index_mapping"]
             distances = compute_distances(
@@ -245,27 +218,32 @@ class EdgeAwareSchNet(SchNet):
                 neighbor_list["cell_shifts"],
             )
 
-        rbf_expansion = self.rbf_layer(distances)
-        senders = data.atom_types[edge_index[0]]
-        
-        receivers = data.atom_types[edge_index[1]]
-        
-        for i, block in enumerate(self.interaction_blocks):
-            x = x + block( 
+        rbf_expansion = self.rbf_layer(
+            distances,
+            data.atom_types[edge_index[0]],
+            data.atom_types[edge_index[1]],
+        )
+        types_i = data.atom_types[edge_index[0]]
+        types_j = data.atom_types[edge_index[1]]
+        senders = torch.min(types_i, types_j)
+        receivers = torch.max(types_i, types_j)
+
+        for block_id, block in enumerate(self.interaction_blocks):
+            x = x + block(
                 x,
                 edge_index,
                 distances,
-                rbf_expansion,
-                self.edge_params_all[i, senders, receivers],
+                rbf_expansion[block_id],
+                self.edge_parameters[block_id, senders, receivers],
             )
-
 
         energy = self.output_network(x, data)
         energy = scatter(energy, data.batch, dim=0, reduce="sum")
         energy = energy.flatten()
         data.out[self.name] = {
             ENERGY_KEY: energy,
-            "edge_parameters": self.edge_params_all
+            "radial_filters": self.rbf_layer.get_regularization_parameters(),
+            "edge_parameters": self.edge_parameters,
         }
 
         return data
