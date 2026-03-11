@@ -593,7 +593,7 @@ def grad_edge_weight_fused_cfconv(
 
     # Determine if output should be FP16
     output_fp16 = out_dtype == torch.float16
-    wrap_triton(grad_edge_weight_fused_cfconv)[grid](
+    wrap_triton(grad_edge_weight_fused_cfconv_kernel)[grid](
         x,
         grad_output,
         filters,
