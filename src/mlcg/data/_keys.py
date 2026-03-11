@@ -41,10 +41,11 @@ ATOM_TYPE_KEY: Final[str] = "atom_types"
 
 ENERGY_KEY: Final[str] = "energy"
 FORCE_KEY: Final[str] = "forces"
+VIRIALS_KEY: Final[str] = "virials"
 STRESS_KEY: Final[str] = "stress"
 VELOCITY_KEY: Final[str] = "velocities"
 
-PROPERTY_KEYS: Final[List[str]] = (ENERGY_KEY, FORCE_KEY, STRESS_KEY)
+PROPERTY_KEYS: Final[List[str]] = (ENERGY_KEY, FORCE_KEY, VIRIALS_KEY, STRESS_KEY)
 
 BATCH_KEY: Final[str] = "batch"
 

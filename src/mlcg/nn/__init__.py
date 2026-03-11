@@ -27,6 +27,11 @@ from .so3krates import So3krates, StandardSo3krates
 from .lr_scheduler import CustomStepLR
 from .utils import sparsify_prior_module, desparsify_prior_module
 from .allegro import StandardAllegro
+from .ase_calculator import (
+    MLCGCalculator,
+    BatchedMD,
+    TrajectoryWriter,
+)
 
 __all__ = [
     "GradientsOut",
@@ -46,12 +51,11 @@ __all__ = [
     "HarmonicAngles",
     "HarmonicBonds",
     "Repulsion",
+    "Dihedral",
+    "Polynomial",
+    "QuarticAngles",
     "MLP",
     "TypesMLP",
-    "Attention",
-    "Residual",
-    "Residual_MLP",
-    "ResidualStack",
     "ExactAttention",
     "FavorAttention",
     "Nonlocalinteractionblock",
@@ -64,10 +68,13 @@ __all__ = [
     "StandardPaiNN",
     "MACE",
     "StandardMACE",
-    "ScaleShiftMACE",
-    "StandardScaleShiftMACE",
     "So3krates",
     "StandardSo3krates",
     "CustomStepLR",
+    "sparsify_prior_module",
+    "desparsify_prior_module",
     "StandardAllegro",
+    "MLCGCalculator",
+    "BatchedMD",
+    "TrajectoryWriter",
 ]
