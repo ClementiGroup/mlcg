@@ -4,9 +4,9 @@ import triton
 import triton.language as tl
 from torch.library import triton_op, wrap_triton
 
-from ...utils import ensure_contiguous
+from ....utils import ensure_contiguous
 
-from ..cutoffs import _cosine_cutoff, _d_cosine_cutoff_dd, _d2_cosine_cutoff_dd2
+from ...cutoffs import _cosine_cutoff, _d_cosine_cutoff_dd, _d2_cosine_cutoff_dd2
 
 triton_pi = tl.constexpr(3.141592653589793)
 
