@@ -110,6 +110,10 @@ def grad_filters_fused_cfconv(
     edge_src: torch.Tensor,
     edge_dst: torch.Tensor,
     cutoff_upper: float,
+    src_ptr: torch.Tensor,
+    src_perm: torch.Tensor,
+    dst_ptr: torch.Tensor,
+    dst_perm: torch.Tensor,
     out_dtype: torch.dtype = None,
 ) -> torch.Tensor:
     """

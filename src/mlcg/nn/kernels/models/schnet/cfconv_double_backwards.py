@@ -23,12 +23,14 @@ def grad_x_grad_filters_fused_cfconv_kernel(
     # Input pointers
     grad_output_ptr,  # [num_nodes, feature_dim]
     edge_weight_ptr,  # [num_edges]
+    src_perm_ptr,  # [num_edges] - src-CSR permutation
+    src_ptr_ptr,  # [num_nodes + 1] - src-CSR row pointers
     edge_dst_ptr,  # [num_edges]
     grad_x_grad_filters_ptr,  # [num_edges, feature_dim] - OUTPUT (FP32 or FP16)
     # Cutoff parameters
     cutoff_upper,
     # Sizes
-    num_edges,
+    num_nodes,
     feature_dim,
     # Block size
     BLOCK_F: tl.constexpr,
@@ -48,40 +50,54 @@ def grad_x_grad_filters_fused_cfconv_kernel(
     Supports FP16 output when OUTPUT_FP16=True (matches filters dtype).
     Computation is always done in FP32 for numerical stability.
     """
-    edge_idx = tl.program_id(axis=0)
+    target_node = tl.program_id(axis=0)
 
-    if edge_idx >= num_edges:
+    if target_node >= num_nodes:
         return
 
-    # Load edge info
-    dst_node = tl.load(edge_dst_ptr + edge_idx)
-    dist = tl.load(edge_weight_ptr + edge_idx)
+    seg_start_src = tl.load(src_ptr_ptr + target_node)
+    seg_end_src = tl.load(src_ptr_ptr + target_node + 1)
+
+
 
     # Compute cutoff inline (CosineCutoff formula)
-    C = _cosine_cutoff(dist, cutoff_upper)
+    #C = _cosine_cutoff(dist, cutoff_upper)
 
-    # Process features in blocks
     for f_start in range(0, feature_dim, BLOCK_F):
         f_offsets = f_start + tl.arange(0, BLOCK_F)
         f_mask = f_offsets < feature_dim
 
+        acc = tl.zeros([BLOCK_F], dtype=tl.float32)
+        for e_csr in range(seg_start_src, seg_end_src):
+            edge_idx = tl.load(src_perm_ptr + e_csr)
 
+            dst_node = tl.load(edge_dst_ptr + edge_idx)
+            
 
-        # Gather grad_output[dst]
-        grad_j = tl.load(
-            grad_output_ptr + dst_node * feature_dim + f_offsets,
-            mask=f_mask,
-            other=0.0,
-        )
+            distances = tl.load(edge_weight_ptr + edge_idx)
+            
+            # Get cutoff 
 
-        # Fused multiply: grad * C (in FP32)
-        grad_filters = grad_j * C
+            C = _cosine_cutoff(distances, cutoff_upper)
+            
+            # Gather grad_output[dst]
+            grad_j = tl.load(
+                grad_output_ptr + dst_node * feature_dim + f_offsets,
+                mask=f_mask,
+                other=0.0,
+            )
 
-        # Store result (convert to FP16 if needed)
-        if OUTPUT_FP16:
-            grad_filters = grad_filters.to(tl.float16)
+            # Fused multiply: grad * C (in FP32)
+            grad_filters = grad_j * C[:, None]
+
+            # Store result (convert to FP16 if needed)
+            if OUTPUT_FP16:
+                grad_filters = grad_filters.to(tl.float16)
+            
+            acc += grad_filters 
+
         tl.store(
-            grad_x_grad_filters_ptr + edge_idx * feature_dim + f_offsets,
+            grad_x_grad_filters_ptr + target_node * feature_dim + f_offsets,
             grad_filters,
             mask=f_mask,
         )
@@ -96,6 +112,10 @@ def grad_x_grad_filters_fused_cfconv(
     edge_src: torch.Tensor,
     edge_dst: torch.Tensor,
     cutoff_upper: float,
+    src_ptr: torch.Tensor,
+    src_perm: torch.Tensor,
+    dst_ptr: torch.Tensor,
+    dst_perm: torch.Tensor,
     out_dtype: torch.dtype = None,
 ) -> torch.Tensor:
     """
@@ -125,8 +145,9 @@ def grad_x_grad_filters_fused_cfconv(
     torch.Tensor
         grad_filters [num_edges, feature_dim]
     """
-    feature_dim = x.shape[1]
-    num_edges = edge_src.shape[0]
+    num_nodes = grad_output.shape[0]
+    feature_dim = grad_output.shape[1]
+    num_edges = edge_dst.shape[0]
 
     # Default output dtype is x.dtype
     if out_dtype is None:
@@ -140,7 +161,7 @@ def grad_x_grad_filters_fused_cfconv(
         return grad_x_grad_filters
 
     BLOCK_F = min(128, triton.next_power_of_2(feature_dim))
-    grid = (num_edges,)
+    grid = (num_nodes,)
 
     # Determine if output should be FP16
     output_fp16 = out_dtype == torch.float16
@@ -148,10 +169,11 @@ def grad_x_grad_filters_fused_cfconv(
     wrap_triton(grad_x_grad_filters_fused_cfconv_kernel)[grid](
         grad_output,
         edge_weight,
-        edge_dst,
+        src_perm,
+        src_ptr,
         grad_x_grad_filters,
         cutoff_upper,
-        num_edges,
+        num_nodes,
         feature_dim,
         BLOCK_F=BLOCK_F,
         OUTPUT_FP16=output_fp16,
@@ -199,11 +221,13 @@ def grad_grad_out_grad_filters_fused_cfconv_kernel(
     x_ptr,  # [num_nodes, feature_dim]
     edge_weight_ptr,  # [num_edges]
     edge_src_ptr,  # [num_edges]
-    grad_filters_ptr,  # [num_edges, feature_dim] - OUTPUT (FP32 or FP16)
+    grad_grad_out_grad_filters_ptr,  # [num_edges, feature_dim] - OUTPUT (FP32 or FP16)
     # Cutoff parameters
+    dst_perm_ptr,  # [num_edges] - dst-CSR permutation
+    dst_ptr_ptr,  # [num_nodes + 1] - dst-CSR row pointers
     cutoff_upper,
     # Sizes
-    num_edges,
+    num_nodes,
     feature_dim,
     # Block size
     BLOCK_F: tl.constexpr,
@@ -223,38 +247,40 @@ def grad_grad_out_grad_filters_fused_cfconv_kernel(
     Supports FP16 output when OUTPUT_FP16=True (matches filters dtype).
     Computation is always done in FP32 for numerical stability.
     """
-    edge_idx = tl.program_id(axis=0)
+    target_node = tl.program_id(axis=0)
 
-    if edge_idx >= num_edges:
+    if target_node >= num_nodes:
         return
 
-    # Load edge info
-    src_node = tl.load(edge_src_ptr + edge_idx)
-    dist = tl.load(edge_weight_ptr + edge_idx)
+    seg_start_dst = tl.load(dst_ptr_ptr + target_node)
+    seg_end_dst = tl.load(dst_ptr_ptr + target_node + 1)
 
-    # Compute cutoff inline (CosineCutoff formula)
-    C = _cosine_cutoff(dist, cutoff_upper)
-
-    # Process features in blocks
     for f_start in range(0, feature_dim, BLOCK_F):
         f_offsets = f_start + tl.arange(0, BLOCK_F)
         f_mask = f_offsets < feature_dim
 
-        # Gather x[src]
-        x_j = tl.load(
-            x_ptr + src_node * feature_dim + f_offsets, mask=f_mask, other=0.0
-        )
+        acc = tl.zeros([BLOCK_F], dtype=tl.float32)
+        for e_csr in range(seg_start_dst, seg_end_dst):
+            edge_idx = tl.load(dst_perm_ptr + e_csr)
 
+            src_node = tl.load(edge_src_ptr + edge_idx)
 
-        # Fused multiply: x * grad * C (in FP32)
-        grad_filters = x_j  * C
+            distances = tl.load(edge_weight_ptr + edge_idx)
+
+            C = _d_cosine_cutoff_dd(distances, cutoff_upper)
+            x = tl.load(
+                x_ptr + src_node * feature_dim + f_offsets,
+                mask=f_mask,
+                other=0.0,
+            )
+            # Fused multiply: x * grad * C (in FP32)
+            acc += x  * C[:, None]
 
         # Store result (convert to FP16 if needed)
-        if OUTPUT_FP16:
-            grad_filters = grad_filters.to(tl.float16)
+        
         tl.store(
-            grad_filters_ptr + edge_idx * feature_dim + f_offsets,
-            grad_filters,
+            grad_grad_out_grad_filters_ptr + edge_idx * feature_dim + f_offsets,
+            acc,
             mask=f_mask,
         )
 
@@ -265,6 +291,8 @@ def grad_grad_out_grad_filters_fused_cfconv(
     x: torch.Tensor,
     edge_weight: torch.Tensor,
     edge_src: torch.Tensor,
+    dst_perm: torch.Tensor,
+    dst_ptr: torch.Tensor,
     cutoff_upper: float,
     out_dtype: torch.dtype = None,
 ) -> torch.Tensor:
@@ -295,6 +323,7 @@ def grad_grad_out_grad_filters_fused_cfconv(
     torch.Tensor
         grad_filters [num_edges, feature_dim]
     """
+    num_nodes = x.shape[0]
     feature_dim = x.shape[1]
     num_edges = edge_src.shape[0]
 
@@ -309,8 +338,8 @@ def grad_grad_out_grad_filters_fused_cfconv(
     if num_edges == 0:
         return grad_grad_out_grad_filters
 
-    BLOCK_F = min(128, triton.next_power_of_2(feature_dim))
-    grid = (num_edges,)
+    BLOCK_F = 128
+    grid = (num_nodes,)
 
     # Determine if output should be FP16
     output_fp16 = out_dtype == torch.float16
@@ -320,8 +349,10 @@ def grad_grad_out_grad_filters_fused_cfconv(
         edge_weight,
         edge_src,
         grad_grad_out_grad_filters,
+        dst_perm,
+        dst_ptr,
         cutoff_upper,
-        num_edges,
+        num_nodes,
         feature_dim,
         BLOCK_F=BLOCK_F,
         OUTPUT_FP16=output_fp16,
@@ -1168,7 +1199,7 @@ def cpu_grad_x_grad_edge_weight_fused_cfconv(
     dC_dd = - 0.5 * torch.sin(edge_weight * torch.pi / cutoff_upper) * (torch.pi / cutoff_upper)
     dC_dd = dC_dd * (edge_weight < cutoff_upper).to(edge_weight.dtype)
 
-    grad_x = torch.zeros_like(x)
+    grad_x = torch.zeros(grad_output.shape[0]).contiguous()
     expanded = grad_edge_out * grad_output[edge_dst] * filters * dC_dd.unsqueeze(1)
     grad_x.index_add_(0, edge_src, expanded)
     return grad_x #FIXME: check dtype
@@ -1575,7 +1606,7 @@ def grad_edge_weight_grad_edge_weight_fused_cfconv_kernel(
             other=0.0,
         )
         if filters_FP16:
-            filterss = filterss.to(tl.float32)
+            filters = filters.to(tl.float32)
         if GRAD_EDGE_FP16:
             grad_edge = grad_edge.to(tl.float32)
 
