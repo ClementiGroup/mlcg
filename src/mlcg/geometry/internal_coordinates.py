@@ -61,7 +61,7 @@ def compute_distance_vectors(
     if cell_shifts is None:
         dr = pos[mapping[1]] - pos[mapping[0]]
     else:
-        dr = pos[mapping[1]] - pos[mapping[0]] + cell_shifts
+        dr = (pos[mapping[1]] + cell_shifts.squeeze()) - pos[mapping[0]]
 
     distances = safe_norm(dr, dim=[1])
 
@@ -92,11 +92,10 @@ def compute_distances(
     """
     assert mapping.dim() == 2
     assert mapping.shape[0] == 2
-
     if cell_shifts is None:
         dr = pos[mapping[1]] - pos[mapping[0]]
     else:
-        dr = pos[mapping[1]] - pos[mapping[0]] + cell_shifts
+        dr = (pos[mapping[1]] + cell_shifts.squeeze()) - pos[mapping[0]]
 
     return dr.norm(p=2, dim=1)
 
@@ -125,8 +124,15 @@ def compute_angles_raw(
     assert mapping.dim() == 2
     assert mapping.shape[0] == 3
 
-    dr1 = pos[mapping[0]] - pos[mapping[1]]
-    dr2 = pos[mapping[2]] - pos[mapping[1]]
+    if cell_shifts is None:
+        dr1 = pos[mapping[0]] - pos[mapping[1]]
+        dr2 = pos[mapping[2]] - pos[mapping[1]]
+
+    else:
+        dr1 = pos[mapping[0]] - (pos[mapping[1]] + cell_shifts[:, :, 0])
+        dr2 = (pos[mapping[2]] + cell_shifts[:, :, 1]) - (
+            pos[mapping[1]] + cell_shifts[:, :, 0]
+        )
 
     n = torch.cross(dr1, dr2, dim=1)
     n = n.norm(p=2, dim=1)
@@ -161,8 +167,16 @@ def compute_angles_cos(
     assert mapping.dim() == 2
     assert mapping.shape[0] == 3
 
-    dr1 = pos[mapping[0]] - pos[mapping[1]]
-    dr2 = pos[mapping[2]] - pos[mapping[1]]
+    if cell_shifts is None:
+        dr1 = pos[mapping[0]] - pos[mapping[1]]
+        dr2 = pos[mapping[2]] - pos[mapping[1]]
+
+    else:
+        dr1 = pos[mapping[0]] - (pos[mapping[1]] + cell_shifts[:, :, 0])
+        dr2 = (pos[mapping[2]] + cell_shifts[:, :, 1]) - (
+            pos[mapping[1]] + cell_shifts[:, :, 0]
+        )
+
     cos_theta = (
         (dr1 * dr2).sum(dim=1) / dr1.norm(p=2, dim=1) / dr2.norm(p=2, dim=1)
     )
@@ -170,8 +184,12 @@ def compute_angles_cos(
 
 
 @torch.jit.script
-def compute_torsions(pos: torch.Tensor, mapping: torch.Tensor):
-    r"""
+def compute_torsions(
+    pos: torch.Tensor,
+    mapping: torch.Tensor,
+    cell_shifts: Optional[torch.Tensor] = None,
+):
+    """
     Compute the angle between two planes from positions in :obj:'pos' following the
     :obj:`mapping`::
 
@@ -207,11 +225,21 @@ def compute_torsions(pos: torch.Tensor, mapping: torch.Tensor):
     """
     assert mapping.dim() == 2
     assert mapping.shape[0] == 4
-    dr1 = pos[mapping[1]] - pos[mapping[0]]
+    if cell_shifts is None:
+        dr1 = pos[mapping[1]] - pos[mapping[0]]
+        dr2 = pos[mapping[2]] - pos[mapping[1]]
+        dr3 = pos[mapping[3]] - pos[mapping[2]]
+
+    else:
+        dr1 = (pos[mapping[1]] + cell_shifts[:, :, 0]) - pos[mapping[0]]
+        dr2 = (pos[mapping[2]] + cell_shifts[:, :, 1]) - (
+            pos[mapping[1]] + cell_shifts[:, :, 0]
+        )
+        dr3 = (pos[mapping[3]] + cell_shifts[:, :, 2]) - (
+            pos[mapping[2]] + cell_shifts[:, :, 1]
+        )
     dr1 = dr1 / dr1.norm(p=2, dim=1)[:, None]
-    dr2 = pos[mapping[2]] - pos[mapping[1]]
     dr2 = dr2 / dr2.norm(p=2, dim=1)[:, None]
-    dr3 = pos[mapping[3]] - pos[mapping[2]]
     dr3 = dr3 / dr3.norm(p=2, dim=1)[:, None]
 
     n1 = torch.cross(dr1, dr2, dim=1)

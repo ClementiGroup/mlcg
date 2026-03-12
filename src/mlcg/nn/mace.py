@@ -1,7 +1,8 @@
-from typing import Any, Callable, Dict, List, Optional, Union, Final
+from typing import Any, Callable, Dict, List, Optional, Union, Final, Tuple
 
 import torch
-from e3nn import o3
+from e3nn import nn, o3
+from e3nn.util.jit import compile_mode
 
 try:
     from mace.modules.radial import ZBLBasis
@@ -14,8 +15,18 @@ try:
         LinearReadoutBlock,
         NonLinearReadoutBlock,
         RadialEmbeddingBlock,
+        InteractionBlock,
     )
     from mace.modules.utils import get_edge_vectors_and_lengths
+    from mace.modules.wrapper_ops import (
+        Linear,
+        TensorProduct,
+        FullyConnectedTensorProduct,
+    )
+    from mace.modules.irreps_tools import (
+        reshape_irreps,
+        tp_out_irreps_with_instructions,
+    )
 
 except ImportError as e:
     print(e)
@@ -50,6 +61,113 @@ from ..neighbor_list.neighbor_list import (
 )
 
 from e3nn.util.jit import compile_mode
+
+
+# This is a copy of the residual RealAgnosticResidualInteractionBlock as it is in
+# mace v0.3.13
+# https://github.com/ACEsuit/mace/blob/b5faaa076c49778fc17493edfecebcabeb960155/mace/modules/blocks.py#L474
+@compile_mode("script")
+class CustomRealAgnosticResidualInteractionBlock(InteractionBlock):
+    r"""version of the mace.modules.blocks RealAgnosticResidualInteractionBlock
+    without a hardcoded tanh gate.
+
+    We avoid doing a general AgnosticResidualInteractionBlock as it would require
+    a larger rewritting of our MACE implementation
+    """
+
+    def _setup(self) -> None:
+        if not hasattr(self, "cueq_config"):
+            self.cueq_config = None
+        # First linear
+        self.linear_up = Linear(
+            self.node_feats_irreps,
+            self.node_feats_irreps,
+            internal_weights=True,
+            shared_weights=True,
+            cueq_config=self.cueq_config,
+        )
+        # TensorProduct
+        irreps_mid, instructions = tp_out_irreps_with_instructions(
+            self.node_feats_irreps,
+            self.edge_attrs_irreps,
+            self.target_irreps,
+        )
+        self.conv_tp = TensorProduct(
+            self.node_feats_irreps,
+            self.edge_attrs_irreps,
+            irreps_mid,
+            instructions=instructions,
+            shared_weights=False,
+            internal_weights=False,
+            cueq_config=self.cueq_config,
+        )
+
+        # Convolution weights
+        input_dim = self.edge_feats_irreps.num_irreps
+        self.conv_tp_weights = nn.FullyConnectedNet(
+            [input_dim] + self.radial_MLP + [self.conv_tp.weight_numel],
+            torch.nn.functional.tanh,  # gate
+        )
+
+        # Linear
+        self.irreps_out = self.target_irreps
+        self.linear = Linear(
+            irreps_mid,
+            self.irreps_out,
+            internal_weights=True,
+            shared_weights=True,
+            cueq_config=self.cueq_config,
+        )
+
+        # Selector TensorProduct
+        self.skip_tp = FullyConnectedTensorProduct(
+            self.node_feats_irreps,
+            self.node_attrs_irreps,
+            self.hidden_irreps,
+            cueq_config=self.cueq_config,
+        )
+        self.reshape = reshape_irreps(
+            self.irreps_out, cueq_config=self.cueq_config
+        )
+
+    def forward(
+        self,
+        node_attrs: torch.Tensor,
+        node_feats: torch.Tensor,
+        edge_attrs: torch.Tensor,
+        edge_feats: torch.Tensor,
+        edge_index: torch.Tensor,
+        lammps_class: Optional[Any] = None,
+        lammps_natoms: Tuple[int, int] = (0, 0),
+        first_layer: bool = False,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        sender = edge_index[0]
+        receiver = edge_index[1]
+        num_nodes = node_feats.shape[0]
+        n_real = lammps_natoms[0] if lammps_class is not None else None
+        sc = self.skip_tp(node_feats, node_attrs)
+        node_feats = self.linear_up(node_feats)
+        node_feats = self.handle_lammps(
+            node_feats,
+            lammps_class=lammps_class,
+            lammps_natoms=lammps_natoms,
+            first_layer=first_layer,
+        )
+        tp_weights = self.conv_tp_weights(edge_feats)
+        mji = self.conv_tp(
+            node_feats[sender], edge_attrs, tp_weights
+        )  # [n_edges, irreps]
+        message = scatter_sum(
+            src=mji, index=receiver, dim=0, dim_size=num_nodes
+        )  # [n_nodes, irreps]
+        message = self.truncate_ghosts(message, n_real)
+        node_attrs = self.truncate_ghosts(node_attrs, n_real)
+        sc = self.truncate_ghosts(sc, n_real)
+        message = self.linear(message) / self.avg_num_neighbors
+        return (
+            self.reshape(message),
+            sc,
+        )  # [n_nodes, channels, (lmax + 1)**2]
 
 
 @compile_mode("script")

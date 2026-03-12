@@ -106,8 +106,15 @@ class RestrictedQuartic(_Prior):
             Tensor of computed angle values (in radians)
         """
         mapping = data.neighbor_list[self.name]["index_mapping"]
-        features = self.compute_features(data.pos, mapping)
-        return features
+        pbc = getattr(data, "pbc", None)
+        cell = getattr(data, "cell", None)
+        return self.compute_features(
+            pos=data.pos,
+            mapping=mapping,
+            pbc=pbc,
+            cell=cell,
+            batch=data.batch,
+        )
 
     def data2parameters(self, data: AtomicData) -> Dict[str, torch.Tensor]:
         """Extracts interaction parameters based on atom types.
@@ -169,7 +176,11 @@ class RestrictedQuartic(_Prior):
 
     @staticmethod
     def compute_features(
-        pos: torch.Tensor, mapping: torch.Tensor
+        pos: torch.Tensor,
+        mapping: torch.Tensor,
+        pbc: torch.Tensor = None,
+        cell: torch.Tensor = None,
+        batch: torch.Tensor = None,
     ) -> torch.Tensor:
         """Computes angles from atomic positions.
 
@@ -179,13 +190,24 @@ class RestrictedQuartic(_Prior):
             Atomic positions with shape (n_atoms, 3)
         mapping : torch.Tensor
             Index mapping for angle triplets with shape (n_angles, 3)
-
+        pbc : torch.Tensor, optional
+            Periodic boundary conditions flags with shape (n_atoms, 3)
+        cell : torch.Tensor, optional
+            Cell vectors with shape (n_atoms, 3, 3)
+        batch : torch.Tensor, optional
+            Batch indices with shape (n_atoms,)
         Returns
         -------
         torch.Tensor
             Computed angle values in radians
         """
-        return compute_angles_raw(pos, mapping)
+        if all([feat != None for feat in [pbc, cell]]):
+            cell_shifts = _Prior._get_cell_shifts(
+                pos, mapping, pbc, cell, batch
+            )
+        else:
+            cell_shifts = None
+        return compute_angles_raw(pos, mapping, cell_shifts)
 
     @staticmethod
     def compute(

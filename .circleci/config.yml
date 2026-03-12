@@ -28,7 +28,7 @@ jobs:
               set -e
               mkdir -p test-results
               pytest -m "continuity" --verbose --junitxml=test-results/tests.xml --durations-path tests/.test_durations --splits $CIRCLE_NODE_TOTAL --group $((CIRCLE_NODE_INDEX + 1)) --splitting-algorithm least_duration
-          no_output_timeout: 40m
+          no_output_timeout: 60m
       - run:
           name: "Run integration tests"
           command: |
@@ -39,7 +39,7 @@ jobs:
             else
               echo "Skipping integration test: not a PR"
             fi
-          no_output_timeout: 40m
+          no_output_timeout: 60m
       - store_test_results:
           path: test-results
       - store_artifacts:
