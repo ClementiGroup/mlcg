@@ -1,6 +1,23 @@
 """
-Double backwards kernel for cfconv: useful in training when
-double graident is need in force matching
+Fused Triton kernels for double backward pass gradients in SchNet CFConv (Continuous Filter Convolution).
+
+This module implements optimized second-order backward operations for SchNet's continuous filter convolution
+layer, enabling double gradient computation needed for force matching in neural network training. It provides
+fused GPU kernels (Triton) and CPU fallback implementations for computing gradients with respect to filter
+outputs, edge weights, and node features.
+
+The kernels use sparse CSR format for efficient edge aggregation and support mixed precision computation (FP16/FP32).
+
+Main functions:
+    - grad_grad_out_grad_x_fused_cfconv: Compute second derivatives w.r.t. output features
+    - grad_filters_grad_x_fused_cfconv: Compute second derivatives w.r.t. filter outputs
+    - grad_edge_weight_grad_x_fused_cfconv: Compute second derivatives w.r.t. edge distances
+
+Each operation includes:
+    - Triton kernel for GPU computation
+    - PyTorch wrapper
+    - Autograd backward pass
+    - CPU fallback implementation
 """
 
 import torch
@@ -46,7 +63,11 @@ def grad_grad_out_grad_x_fused_cfconv_kernel(
     filters_FP16: tl.constexpr,
 ):
     """
-    Fused kernel for grad_grad_out computation in grad_x_fused_cfconv backward pass.
+    Triton kernel: Compute grad_grad_out by aggregating over edges using destination-CSR format.
+
+    Grid layout: One thread block per destination node
+    Computation: For each node, iterate through all its incoming edges and accumulate
+    second-order gradients by multiplying edge gradients, filter outputs, and cutoff values.
 
     Computes:
         Computes: grad_grad_out[dst] =  sum_{e: dst[e]=dst} grad_grad_x[src[e]] * filters[e] * cutoff[e]
@@ -112,6 +133,27 @@ def grad_grad_out_grad_x_fused_cfconv(
     dst_ptr: torch.Tensor,
     cutoff_upper: float,
 ) -> torch.Tensor:
+    """
+    Compute second derivatives w.r.t. output features in CFConv double backward pass.
+
+    Computes: grad_grad_out[dst] = sum_{e: dst[e]=dst} grad_grad_x[src[e]] * filters[e] * cutoff[e]
+
+    This operation aggregates second-order gradients from all edges contributing to each destination node,
+    weighted by filter outputs and the cosine cutoff function.
+
+    Args:
+        filters: Filter outputs from forward pass [num_edges, feature_dim], FP32 or FP16
+        edge_weight: Edge distances/weights [num_edges]
+        edge_src: Source node indices [num_edges]
+        edge_dst: Destination node indices [num_edges]
+        grad_grad_x: Second-order gradients w.r.t. source features [num_nodes, feature_dim]
+        dst_perm: Permutation array for destination CSR format [num_edges]
+        dst_ptr: Row pointers for destination CSR format [num_nodes + 1]
+        cutoff_upper: Upper bound for cosine cutoff function
+
+    Returns:
+        Second-order gradients w.r.t. output features [num_nodes, feature_dim]
+    """
     num_nodes = grad_grad_x.shape[0]
     num_edges = edge_src.shape[0]
     feature_dim = grad_grad_x.shape[1]
@@ -265,7 +307,11 @@ def grad_filters_grad_x_fused_cfconv_kernel(
     BLOCK_F: tl.constexpr,
 ):
     """
-    Fused kernel for grad_filters computation in grad_x_fused_cfconv backward pass.
+    Triton kernel: Compute grad_filters for each edge independently.
+
+    Grid layout: One thread block per edge
+    Computation: For each edge, multiply second-order source gradients with first-order destination gradients
+    weighted by the cosine cutoff function. No aggregation needed.
 
     Computes:
         Computes: grad_filters[e] =  grad_grad_x[src[e]] * grad_out[dst[e]] * cutoff[e]
@@ -316,6 +362,26 @@ def grad_filters_grad_x_fused_cfconv(
     grad_grad_x: torch.Tensor,
     cutoff_upper: float,
 ) -> torch.Tensor:
+    """
+    Compute second derivatives w.r.t. filter outputs in CFConv double backward pass.
+
+    Computes: grad_filters[e] = grad_grad_x[src[e]] * grad_out[dst[e]] * cutoff[e]
+
+    This operation computes second-order gradients for each edge directly by multiplying
+    the second-order gradients from the source with first-order gradients from the destination,
+    weighted by the cosine cutoff function.
+
+    Args:
+        grad_out: First-order output gradients [num_nodes, feature_dim]
+        edge_weight: Edge distances/weights [num_edges]
+        edge_src: Source node indices [num_edges]
+        edge_dst: Destination node indices [num_edges]
+        grad_grad_x: Second-order gradients w.r.t. source features [num_nodes, feature_dim]
+        cutoff_upper: Upper bound for cosine cutoff function
+
+    Returns:
+        Second-order gradients w.r.t. filter outputs [num_edges, feature_dim]
+    """
     num_edges = edge_src.shape[0]
     feature_dim = grad_out.shape[1]
 
@@ -454,7 +520,11 @@ def grad_edge_weight_grad_x_fused_cfconv_kernel(
     filters_FP16: tl.constexpr,
 ):
     """
-    Fused kernel for grad_edge_weight computation in grad_x_fused_cfconv backward pass.
+    Triton kernel: Compute grad_edge_weight for each edge independently.
+
+    Grid layout: One thread block per edge
+    Computation: For each edge, accumulate products of gradients and features across all dimensions,
+    then multiply by the first derivative of the cosine cutoff function.
 
     Computes:
         Computes: grad_edge_weight[e] =  (grad_grad_x[src[e]] * grad_out[dst[e]] * filters[e]).sum(axs=-1) * d_cutoff_dd[e]
@@ -513,6 +583,27 @@ def grad_edge_weight_grad_x_fused_cfconv(
     grad_grad_x: torch.Tensor,
     cutoff_upper: float,
 ) -> torch.Tensor:
+    """
+    Compute second derivatives w.r.t. edge distances in CFConv double backward pass.
+
+    Computes: grad_edge_weight[e] = (grad_grad_x[src[e]] * grad_out[dst[e]] * filters[e]).sum(axis=-1) * d_cutoff_dd[e]
+
+    This operation computes scalar second-order gradients for each edge by summing products across features
+    and multiplying by the first derivative of the cosine cutoff function. This enables gradient flow
+    for optimizing edge-specific properties in the graph.
+
+    Args:
+        grad_out: First-order output gradients [num_nodes, feature_dim]
+        filters: Filter outputs from forward pass [num_edges, feature_dim], FP32 or FP16
+        edge_weight: Edge distances/weights [num_edges]
+        edge_src: Source node indices [num_edges]
+        edge_dst: Destination node indices [num_edges]
+        grad_grad_x: Second-order gradients w.r.t. source features [num_nodes, feature_dim]
+        cutoff_upper: Upper bound for cosine cutoff function
+
+    Returns:
+        Second-order gradients w.r.t. edge distances [num_edges]
+    """
 
     num_edges = edge_src.shape[0]
     feature_dim = grad_out.shape[1]
