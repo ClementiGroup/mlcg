@@ -147,11 +147,76 @@ def grad_grad_out_grad_x_fused_cfconv(
 
 
 def setup_context_grad_grad_out_grad_x_fused_cfconv(ctx, inputs, output):
-    raise NotImplementedError  # TODO: implement setup_context for grad_grad_out_grad_x_fused_cfconv
+    (
+        filters,
+        edge_weight,
+        edge_src,
+        edge_dst,
+        grad_grad_x,
+        dst_perm,
+        dst_ptr,
+        cutoff_upper,
+    ) = inputs
+
+    ctx.save_for_backward(
+        filters,
+        edge_weight,
+        edge_src,
+        edge_dst,
+        grad_grad_x,
+    )
+    ctx.cutoff_upper = cutoff_upper
 
 
 def backward_grad_grad_out_grad_x_fused_cfconv(ctx, grad_grad_grad_out):
-    raise NotImplementedError  # TODO: implement backward for grad_grad_out_grad_x_fused_cfconv
+    (
+        filters,
+        edge_weight,
+        edge_src,
+        edge_dst,
+        grad_grad_x,
+    ) = ctx.saved_tensors
+
+    cutoff_upper = ctx.cutoff_upper
+
+    grad_filters = grad_edge_weight = grad_grad_grad_x = None
+
+    C = 0.5 * (torch.cos(edge_weight * torch.pi / cutoff_upper) + 1)
+    C = C * (edge_weight < cutoff_upper).to(edge_weight.dtype)
+
+    if ctx.needs_input_grad[0]:
+        grad_filters = (
+            grad_grad_grad_out[edge_dst]
+            * grad_grad_x[edge_src]
+            * C.unsqueeze(1)
+        )
+
+    if ctx.needs_input_grad[1]:
+        dC_dd = (
+            -0.5
+            * torch.sin(edge_weight * torch.pi / cutoff_upper)
+            * (torch.pi / cutoff_upper)
+        )
+        dC_dd = dC_dd * (edge_weight < cutoff_upper).to(edge_weight.dtype)
+        grad_edge_weight = (
+            grad_grad_grad_out[edge_dst] * grad_grad_x[edge_src] * filters
+        ).sum(dim=1) * dC_dd
+
+    if ctx.needs_input_grad[4]:
+        grad_grad_grad_x = torch.zeros_like(grad_grad_x)
+        expanded = grad_grad_grad_out[edge_src] * filters * C.unsqueeze(1)
+        grad_grad_grad_x.index_add_(0, edge_src, expanded)
+
+    return (
+        grad_filters,
+        grad_edge_weight,
+        None,
+        None,
+        grad_grad_grad_x,
+        None,
+        None,
+        None,
+    )
 
 
 grad_grad_out_grad_x_fused_cfconv.register_autograd(
@@ -305,8 +370,6 @@ def setup_context_grad_filters_grad_x_fused_cfconv(ctx, inputs, output):
     )
     ctx.cutoff_upper = cutoff_upper
 
-    raise NotImplementedError  # TODO: implement setup_context for grad_filters_grad_x_fused_cfconv
-
 
 def backward_grad_filters_grad_x_fused_cfconv(ctx, grad_grad_filters):
     (
@@ -336,7 +399,6 @@ def backward_grad_filters_grad_x_fused_cfconv(ctx, grad_grad_filters):
             * (torch.pi / cutoff_upper)
         )
         dC_dd = dC_dd * (edge_weight < cutoff_upper).to(edge_weight.dtype)
-
         grad_edge_weight = (
             grad_grad_filters * grad_grad_x[edge_src] * grad_out[edge_dst]
         ).sum(dim=1) * dC_dd
@@ -354,7 +416,6 @@ def backward_grad_filters_grad_x_fused_cfconv(ctx, grad_grad_filters):
         grad_grad_grad_x,
         None,
     )
-    raise NotImplementedError  # TODO: implement backward for grad_filters_grad_x_fused_cfconv
 
 
 grad_filters_grad_x_fused_cfconv.register_autograd(
