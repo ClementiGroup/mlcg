@@ -108,7 +108,7 @@ def grad_grad_out_grad_x_fused_cfconv_kernel(
                 filters = filters.to(tl.float32)
 
             acc += (
-                grad_grad_x * filters * C[:, None]
+                grad_grad_x * filters * C  # [:, None]
             )  # FIXME: check this broadcast, maybe just C
 
         tl.store(
@@ -169,7 +169,7 @@ def grad_grad_out_grad_x_fused_cfconv(
         return grad_grad_out
 
     filters_fp16 = filters.dtype == torch.float16
-    BLOCK_F = 128
+    BLOCK_F = min(128, triton.next_power_of_2(feature_dim))
     grid = (num_nodes,)
 
     wrap_triton(grad_grad_out_grad_x_fused_cfconv_kernel)[grid](
@@ -347,7 +347,7 @@ def grad_filters_grad_x_fused_cfconv_kernel(
             grad_filters_ptr + edge_idx * feature_dim + f_offset,
             grad_grad_x
             * grad_out
-            * C[:, None],  # FIXME: check this broadcast, maybe just C
+            * C,  # [:, None],  # FIXME: check this broadcast, maybe just C
             mask=f_mask,
         )
 
@@ -392,7 +392,7 @@ def grad_filters_grad_x_fused_cfconv(
     if num_edges == 0:
         return grad_filters
 
-    BLOCK_F = 128
+    BLOCK_F = min(128, triton.next_power_of_2(feature_dim))
     grid = (num_edges,)
 
     wrap_triton(grad_filters_grad_x_fused_cfconv_kernel)[grid](
@@ -617,7 +617,7 @@ def grad_edge_weight_grad_x_fused_cfconv(
 
     filters_fp16 = filters.dtype == torch.float16
 
-    BLOCK_F = 128
+    BLOCK_F = min(128, triton.next_power_of_2(feature_dim))
     grid = (num_edges,)
 
     wrap_triton(grad_edge_weight_grad_x_fused_cfconv_kernel)[grid](

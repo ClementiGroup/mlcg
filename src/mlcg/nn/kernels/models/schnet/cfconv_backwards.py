@@ -795,10 +795,10 @@ def grad_edge_weight_fused_cfconv(
     if out_dtype is None:
         out_dtype = x.dtype
 
-    grad_edge_out = torch.empty(num_edges, device=x.device, dtype=out_dtype)
+    grad_edge_weight = torch.empty(num_edges, device=x.device, dtype=out_dtype)
 
     if num_edges == 0:
-        return grad_edge_out
+        return grad_edge_weight
 
     BLOCK_F = min(128, triton.next_power_of_2(feature_dim))
     grid = (num_edges,)
@@ -812,7 +812,7 @@ def grad_edge_weight_fused_cfconv(
         edge_weight,
         edge_src,
         edge_dst,
-        grad_edge_out,
+        grad_edge_weight,
         cutoff_upper,
         num_edges,
         feature_dim,
@@ -820,7 +820,7 @@ def grad_edge_weight_fused_cfconv(
         OUTPUT_FP16=output_fp16,
     )
 
-    return grad_edge_out
+    return grad_edge_weight
 
 
 def setup_context_grad_edge_weight_fused_cfconv(ctx, inputs, output):
@@ -855,7 +855,7 @@ def setup_context_grad_edge_weight_fused_cfconv(ctx, inputs, output):
     ctx.out_dtype = out_dtype
 
 
-def backward_grad_edge_weight_fused_cfconv(ctx, grad_grad_edge_out):
+def backward_grad_edge_weight_fused_cfconv(ctx, grad_grad_edge_weight):
 
     (
         x,
@@ -881,7 +881,7 @@ def backward_grad_edge_weight_fused_cfconv(ctx, grad_grad_edge_out):
             edge_weight,
             edge_src,
             edge_dst,
-            grad_grad_edge_out,
+            grad_grad_edge_weight,
             src_perm,
             src_ptr,
             cutoff_upper,
@@ -895,7 +895,7 @@ def backward_grad_edge_weight_fused_cfconv(ctx, grad_grad_edge_out):
             edge_weight,
             edge_src,
             edge_dst,
-            grad_grad_edge_out,
+            grad_grad_edge_weight,
             dst_perm,
             dst_ptr,
             cutoff_upper,
@@ -909,7 +909,7 @@ def backward_grad_edge_weight_fused_cfconv(ctx, grad_grad_edge_out):
             edge_weight,
             edge_src,
             edge_dst,
-            grad_grad_edge_out,
+            grad_grad_edge_weight,
             cutoff_upper,
             grad_edge_dtype,
         )
@@ -922,7 +922,7 @@ def backward_grad_edge_weight_fused_cfconv(ctx, grad_grad_edge_out):
             edge_weight,
             edge_src,
             edge_dst,
-            grad_grad_edge_out,
+            grad_grad_edge_weight,
             cutoff_upper,
             grad_edge_dtype,
         )
