@@ -274,6 +274,8 @@ def backward(ctx, grad_output):
             edge_dst,
             src_ptr,
             src_perm,
+            dst_perm,
+            dst_ptr,
             num_nodes,
             cutoff_upper,
         )
