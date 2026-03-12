@@ -250,8 +250,7 @@ def backward_grad_filters_fused_cfconv(ctx, grad_grad_filters):
 
     if ctx.needs_input_grad[0]:
         grad_x = (
-            grad_x_grad_filters_fused_cfconv(  # FIXME: check after revision
-                x,
+            grad_x_grad_filters_fused_cfconv(
                 grad_output,
                 edge_weight,
                 edge_src,
@@ -259,17 +258,16 @@ def backward_grad_filters_fused_cfconv(ctx, grad_grad_filters):
                 cutoff_upper,
                 src_ptr,
                 src_perm,
-                dst_ptr,
-                dst_perm,
                 out_dtype,  # FIXME: check if this dtype is correct
             )
         )
 
     if ctx.needs_input_grad[1]:
-        grad_grad_output = grad_grad_out_grad_filters_fused_cfconv(  # FIXME: check after revision
+        grad_grad_output = grad_grad_out_grad_filters_fused_cfconv(
             x,
             edge_weight,
             edge_src,
+            edge_dst,
             dst_perm,
             dst_ptr,
             cutoff_upper,
@@ -277,7 +275,7 @@ def backward_grad_filters_fused_cfconv(ctx, grad_grad_filters):
         )
 
     if ctx.needs_input_grad[2]:
-        grad_edge_weight = grad_edge_weight_grad_filters_fused_cfconv(  # FIXME: check after revision
+        grad_edge_weight = grad_edge_weight_grad_filters_fused_cfconv(
             x,
             grad_output,
             edge_weight,
