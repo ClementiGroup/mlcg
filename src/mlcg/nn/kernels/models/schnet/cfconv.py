@@ -289,6 +289,10 @@ def backward(ctx, grad_output):
             edge_weight,
             edge_src,
             edge_dst,
+            src_ptr,
+            src_perm,
+            dst_ptr,
+            dst_perm,
             cutoff_upper,
             out_dtype=filters_dtype,
         )
@@ -301,11 +305,11 @@ def backward(ctx, grad_output):
             edge_weight,
             edge_src,
             edge_dst,
-            cutoff_upper,
             src_ptr,
             src_perm,
             dst_ptr,
             dst_perm,
+            cutoff_upper,
             out_dtype=filters_dtype,
         )
 

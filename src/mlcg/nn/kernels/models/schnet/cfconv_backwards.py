@@ -120,11 +120,11 @@ def grad_filters_fused_cfconv(
     edge_weight: torch.Tensor,
     edge_src: torch.Tensor,
     edge_dst: torch.Tensor,
-    cutoff_upper: float,
     src_ptr: torch.Tensor,
     src_perm: torch.Tensor,
     dst_ptr: torch.Tensor,
     dst_perm: torch.Tensor,
+    cutoff_upper: float,
     out_dtype: torch.dtype = None,
 ) -> torch.Tensor:
     """
@@ -144,6 +144,14 @@ def grad_filters_fused_cfconv(
         Source node indices [num_edges]
     edge_dst : torch.Tensor
         Destination node indices [num_edges]
+    src_ptr : torch.Tensor
+        Src-CSR row pointers [num_nodes + 1]
+    src_perm : torch.Tensor
+        Src-CSR permutation [num_edges]
+    dst_ptr : torch.Tensor
+        Dst-CSR row pointers [num_nodes + 1]
+    dst_perm : torch.Tensor
+        Dst-CSR permutation [num_edges]
     cutoff_upper : float
         Upper cutoff distance
     out_dtype : torch.dtype, optional
@@ -192,11 +200,106 @@ def grad_filters_fused_cfconv(
 
 
 def setup_context_grad_filters_fused_cfconv(ctx, inputs, output):
-    raise NotImplementedError
+    (
+        x,
+        grad_output,
+        edge_weight,
+        edge_src,
+        edge_dst,
+        src_ptr,
+        src_perm,
+        dst_ptr,
+        dst_perm,
+        cutoff_upper,
+        out_dtype,
+    ) = inputs
+
+    ctx.save_for_backward(
+        x,
+        grad_output,
+        edge_weight,
+        edge_src,
+        edge_dst,
+        src_ptr,
+        src_perm,
+        dst_ptr,
+        dst_perm,
+    )
+
+    ctx.out_dtype = out_dtype
+    ctx.cutoff_upper = cutoff_upper
 
 
-def backward_grad_filters_fused_cfconv(ctx, grad_output):
-    raise NotImplementedError
+def backward_grad_filters_fused_cfconv(ctx, grad_grad_filters):
+    (
+        x,
+        grad_output,
+        edge_weight,
+        edge_src,
+        edge_dst,
+        src_ptr,
+        src_perm,
+        dst_ptr,
+        dst_perm,
+    ) = ctx.saved_tensors
+
+    out_dtype = ctx.out_dtype
+    cutoff_upper = ctx.cutoff_upper
+
+    grad_x = grad_grad_output = grad_edge_weight = None
+
+    if ctx.needs_input_grad[0]:
+        grad_x = (
+            grad_x_grad_filters_fused_cfconv(  # FIXME: check after revision
+                x,
+                grad_output,
+                edge_weight,
+                edge_src,
+                edge_dst,
+                cutoff_upper,
+                src_ptr,
+                src_perm,
+                dst_ptr,
+                dst_perm,
+                out_dtype,  # FIXME: check if this dtype is correct
+            )
+        )
+
+    if ctx.needs_input_grad[1]:
+        grad_grad_output = grad_grad_out_grad_filters_fused_cfconv(  # FIXME: check after revision
+            x,
+            edge_weight,
+            edge_src,
+            dst_perm,
+            dst_ptr,
+            cutoff_upper,
+            out_dtype,  # FIXME: check if this dtype is correct
+        )
+
+    if ctx.needs_input_grad[2]:
+        grad_edge_weight = grad_edge_weight_grad_filters_fused_cfconv(  # FIXME: check after revision
+            x,
+            grad_output,
+            edge_weight,
+            edge_src,
+            edge_dst,
+            cutoff_upper,
+            out_dtype,
+        )
+
+    return (
+        grad_x,
+        grad_grad_output,
+        grad_edge_weight,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    )
 
 
 grad_filters_fused_cfconv.register_autograd(
@@ -212,6 +315,10 @@ def grad_filters_fused_cfconv(
     edge_weight: torch.Tensor,
     edge_src: torch.Tensor,
     edge_dst: torch.Tensor,
+    src_ptr: torch.Tensor,
+    src_perm: torch.Tensor,
+    dst_ptr: torch.Tensor,
+    dst_perm: torch.Tensor,
     cutoff_upper: float,
     out_dtype: torch.dtype = None,
 ) -> torch.Tensor:
@@ -333,8 +440,8 @@ def grad_x_fused_cfconv(
     edge_dst: torch.Tensor,
     src_ptr: torch.Tensor,
     src_perm: torch.Tensor,
-    dst_perm: torch.Tensor,  # FIXME: fix docs
-    dst_ptr: torch.Tensor,  # FIXME: fix docs
+    dst_perm: torch.Tensor,
+    dst_ptr: torch.Tensor,
     num_nodes: int,
     cutoff_upper: float,
 ) -> torch.Tensor:
@@ -639,11 +746,11 @@ def grad_edge_weight_fused_cfconv(
     edge_weight: torch.Tensor,
     edge_src: torch.Tensor,
     edge_dst: torch.Tensor,
-    cutoff_upper: float,
     src_ptr: torch.Tensor,
     src_perm: torch.Tensor,
     dst_ptr: torch.Tensor,
     dst_perm: torch.Tensor,
+    cutoff_upper: float,
     out_dtype: torch.dtype = None,
 ) -> torch.Tensor:
     """
@@ -663,6 +770,14 @@ def grad_edge_weight_fused_cfconv(
         Source node indices [num_edges]
     edge_dst : torch.Tensor
         Destination node indices [num_edges]
+    src_ptr : torch.Tensor
+        Src-CSR row pointers [num_nodes + 1]
+    src_perm : torch.Tensor
+        Src-CSR permutation [num_edges]
+    dst_ptr : torch.Tensor
+        Dst-CSR row pointers [num_nodes + 1]
+    dst_perm : torch.Tensor
+        Dst-CSR permutation [num_edges]
     cutoff_upper : float
         Upper cutoff distance
     out_dtype : torch.dtype, optional
@@ -716,11 +831,11 @@ def setup_context_grad_edge_weight_fused_cfconv(ctx, inputs, output):
         edge_weight,
         edge_src,
         edge_dst,
-        cutoff_upper,
         src_ptr,
         src_perm,
         dst_ptr,
         dst_perm,
+        cutoff_upper,
         out_dtype,
     ) = inputs
 
@@ -821,6 +936,10 @@ def backward_grad_edge_weight_fused_cfconv(ctx, grad_grad_edge_out):
         None,
         None,
         None,
+        None,
+        None,
+        None,
+        None,
     )
 
 
@@ -838,11 +957,11 @@ def cpu_fused_grad_edge_weight(
     edge_weight: torch.Tensor,
     edge_src: torch.Tensor,
     edge_dst: torch.Tensor,
-    cutoff_upper: float,
     src_ptr: torch.Tensor,
     src_perm: torch.Tensor,
     dst_ptr: torch.Tensor,
     dst_perm: torch.Tensor,
+    cutoff_upper: float,
     out_dtype: torch.dtype = None,
 ) -> torch.Tensor:
     """
