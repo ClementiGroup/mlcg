@@ -13,7 +13,9 @@ from ....utils import ensure_contiguous
 from ...cutoffs import (
     _cosine_cutoff,
     _d_cosine_cutoff_dd,
-    _d2_cosine_cutoff_dd2,
+    _torch_cosine_cutoff,
+    _torch_d_cosine_cutoff_dd,
+    _torch_d2_cosine_cutoff_dd2,
 )
 
 triton_pi = tl.constexpr(3.141592653589793)
@@ -181,8 +183,7 @@ def backward_grad_grad_out_grad_x_fused_cfconv(ctx, grad_grad_grad_out):
 
     grad_filters = grad_edge_weight = grad_grad_grad_x = None
 
-    C = 0.5 * (torch.cos(edge_weight * torch.pi / cutoff_upper) + 1)
-    C = C * (edge_weight < cutoff_upper).to(edge_weight.dtype)
+    C = _torch_cosine_cutoff(edge_weight, cutoff_upper)
 
     if ctx.needs_input_grad[0]:
         grad_filters = (
@@ -192,12 +193,7 @@ def backward_grad_grad_out_grad_x_fused_cfconv(ctx, grad_grad_grad_out):
         )
 
     if ctx.needs_input_grad[1]:
-        dC_dd = (
-            -0.5
-            * torch.sin(edge_weight * torch.pi / cutoff_upper)
-            * (torch.pi / cutoff_upper)
-        )
-        dC_dd = dC_dd * (edge_weight < cutoff_upper).to(edge_weight.dtype)
+        dC_dd = _torch_d_cosine_cutoff_dd(edge_weight, cutoff_upper)
         grad_edge_weight = (
             grad_grad_grad_out[edge_dst] * grad_grad_x[edge_src] * filters
         ).sum(dim=1) * dC_dd
@@ -237,9 +233,7 @@ def cpu_grad_grad_out_grad_x_fused_cfconv(
     cutoff_upper: float,
 ) -> torch.Tensor:
 
-    C = 0.5 * (torch.cos(edge_weight * torch.pi / cutoff_upper) + 1)
-    C = C * (edge_weight < cutoff_upper).to(edge_weight.dtype)
-
+    C = _torch_cosine_cutoff(edge_weight, cutoff_upper)
     grad_grad_out = torch.zeros_like(grad_grad_x)
     expanded = grad_grad_x[edge_src] * filters * C.unsqueeze(1)
     grad_grad_out.index_add_(0, edge_dst, expanded)
@@ -384,8 +378,7 @@ def backward_grad_filters_grad_x_fused_cfconv(ctx, grad_grad_filters):
 
     grad_grad_out = grad_edge_weight = grad_grad_grad_x = None
 
-    C = 0.5 * (torch.cos(edge_weight * torch.pi / cutoff_upper) + 1)
-    C = C * (edge_weight < cutoff_upper).to(edge_weight.dtype)
+    C = _torch_cosine_cutoff(edge_weight, cutoff_upper)
 
     if ctx.needs_input_grad[0]:
         grad_grad_out = torch.zeros_like(grad_out)
@@ -393,12 +386,7 @@ def backward_grad_filters_grad_x_fused_cfconv(ctx, grad_grad_filters):
         grad_grad_out.index_add_(0, edge_dst, expanded)
 
     if ctx.needs_input_grad[1]:
-        dC_dd = (
-            -0.5
-            * torch.sin(edge_weight * torch.pi / cutoff_upper)
-            * (torch.pi / cutoff_upper)
-        )
-        dC_dd = dC_dd * (edge_weight < cutoff_upper).to(edge_weight.dtype)
+        dC_dd = _torch_d_cosine_cutoff_dd(edge_weight, cutoff_upper)
         grad_edge_weight = (
             grad_grad_filters * grad_grad_x[edge_src] * grad_out[edge_dst]
         ).sum(dim=1) * dC_dd
@@ -434,9 +422,7 @@ def cpu_grad_filters_grad_x_fused_cfconv(
     cutoff_upper: float,
 ) -> torch.Tensor:
 
-    C = 0.5 * (torch.cos(edge_weight * torch.pi / cutoff_upper) + 1)
-    C = C * (edge_weight < cutoff_upper).to(edge_weight.dtype)
-
+    C = _torch_cosine_cutoff(edge_weight, cutoff_upper)
     grad_filters = grad_grad_x[edge_src] * grad_out[edge_dst] * C.unsqueeze(1)
 
     return grad_filters  # FIXME: check dtype
@@ -593,12 +579,7 @@ def backward_grad_edge_weight_grad_x_fused_cfconv(ctx, grad_grad_edge_weight):
 
     grad_grad_out = grad_filters = grad_edge_weight = grad_grad_grad_x = None
 
-    dC_dd = (
-        -0.5
-        * torch.sin(edge_weight * torch.pi / cutoff_upper)
-        * (torch.pi / cutoff_upper)
-    )
-    dC_dd = dC_dd * (edge_weight < cutoff_upper).to(edge_weight.dtype)
+    dC_dd = _torch_d_cosine_cutoff_dd(edge_weight, cutoff_upper)
 
     if ctx.needs_input_grad[0]:
         grad_grad_out = torch.zeros_like(grad_out)
@@ -619,13 +600,7 @@ def backward_grad_edge_weight_grad_x_fused_cfconv(ctx, grad_grad_edge_weight):
         )
 
     if ctx.needs_input_grad[2]:
-        d2C_dd2 = (
-            -0.5
-            * torch.cos(edge_weight * torch.pi / cutoff_upper)
-            * (torch.pi / cutoff_upper) ** 2
-        )
-        d2C_dd2 = d2C_dd2 * (edge_weight < cutoff_upper).to(edge_weight.dtype)
-
+        d2C_dd2 = _torch_d2_cosine_cutoff_dd2(edge_weight, cutoff_upper)
         grad_edge_weight = (
             grad_grad_edge_weight
             * (grad_grad_x[edge_src] * grad_out[edge_dst] * filters).sum(dim=1)
@@ -670,13 +645,7 @@ def cpu_grad_edge_weight_grad_x_fused_cfconv(
     cutoff_upper: float,
 ) -> torch.Tensor:
 
-    dC_dd = (
-        -0.5
-        * torch.sin(edge_weight * torch.pi / cutoff_upper)
-        * (torch.pi / cutoff_upper)
-    )
-    dC_dd = dC_dd * (edge_weight < cutoff_upper).to(edge_weight.dtype)
-
+    dC_dd = _torch_d_cosine_cutoff_dd(edge_weight, cutoff_upper)
     grad_edge_weight = (
         grad_grad_x[edge_src] * grad_out[edge_dst] * filters
     ).sum(dim=1) * dC_dd

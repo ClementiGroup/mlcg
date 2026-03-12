@@ -8,7 +8,12 @@ import triton.language as tl
 from torch.library import triton_op, wrap_triton
 
 from ...utils import ensure_contiguous
-from ..cutoffs import _cosine_cutoff, _d_cosine_cutoff_dd
+from ..cutoffs import (
+    _cosine_cutoff,
+    _d_cosine_cutoff_dd,
+    _torch_cosine_cutoff,
+    _torch_d_cosine_cutoff_dd,
+)
 from .cfconv_double_backwards import (
     grad_x_grad_edge_weight_fused_cfconv,
     grad_grad_out_grad_edge_weight_fused_cfconv,
@@ -207,8 +212,8 @@ def grad_filters_fused_cfconv(
     """
     CPU fallback for fused_grad_filters
     """
-    C = 0.5 * (torch.cos(edge_weight * torch.pi / cutoff_upper) + 1)
-    C = C * (edge_weight < cutoff_upper).float()
+
+    C = _torch_cosine_cutoff(edge_weight, cutoff_upper)
     grad_filters = grad_output[edge_dst] * x[edge_src] * C.unsqueeze(-1)
 
     return grad_filters
@@ -427,8 +432,7 @@ def cpu_grad_x_fused_cfconv(
     """
     CPU fallback for fused_src_csr_grad_x
     """
-    C = 0.5 * (torch.cos(edge_weight * torch.pi / cutoff_upper) + 1)
-    C = C * (edge_weight < cutoff_upper).float()
+    C = _torch_cosine_cutoff(edge_weight, cutoff_upper)
     grad_x = torch.zeros_like(grad_output)
     grad_x.index_add_(
         0, edge_src, grad_output[edge_dst] * filters * C.unsqueeze(-1)
@@ -751,14 +755,8 @@ def cpu_fused_grad_edge_weight(
     """
     CPU fallback for fused_grad_filters
     """
-    dC_dd = (
-        -0.5
-        * torch.sin(edge_weight * torch.pi / cutoff_upper)
-        * torch.pi
-        / cutoff_upper
-    )
-    dC_dd = dC_dd * (edge_weight < cutoff_upper).float()
 
+    dC_dd = _torch_d_cosine_cutoff_dd(edge_weight, cutoff_upper)
     grad_edge_weight = (grad_output[edge_dst] * x[edge_src] * filters).sum(
         -1
     ) * dC_dd
