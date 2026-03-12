@@ -407,7 +407,7 @@ def grad_grad_out_grad_filters_fused_cfconv(
 
 
 @triton.jit
-def grad_edge_weights_grad_filters_fused_cfconv_kernel(
+def grad_edge_weight_grad_filters_fused_cfconv_kernel(
     # Input pointers
     x_ptr,  # [num_nodes, feature_dim]
     grad_output_ptr,  # [num_nodes, feature_dim]
@@ -485,10 +485,10 @@ def grad_edge_weights_grad_filters_fused_cfconv_kernel(
 
 
 @triton_op(
-    "mlcg_kernels::grad_edge_weights_grad_filters_fused_cfconv", mutates_args={}
+    "mlcg_kernels::grad_edge_weight_grad_filters_fused_cfconv", mutates_args={}
 )
 @ensure_contiguous
-def grad_edge_weights_grad_filters_fused_cfconv(
+def grad_edge_weight_grad_filters_fused_cfconv(
     x: torch.Tensor,
     grad_output: torch.Tensor,
     edge_weight: torch.Tensor,
@@ -544,7 +544,7 @@ def grad_edge_weights_grad_filters_fused_cfconv(
     # Determine if output should be FP16
     output_fp16 = out_dtype == torch.float16
 
-    wrap_triton(grad_edge_weights_grad_filters_fused_cfconv_kernel)[grid](
+    wrap_triton(grad_edge_weight_grad_filters_fused_cfconv_kernel)[grid](
         x,
         grad_output,
         edge_weight,
@@ -561,24 +561,24 @@ def grad_edge_weights_grad_filters_fused_cfconv(
     return grad_filters
 
 
-def setup_context_grad_edge_weights_grad_filters_fused_cfconv(
+def setup_context_grad_edge_weight_grad_filters_fused_cfconv(
     ctx, inputs, output
 ):
     raise NotImplementedError
 
 
-def backward_grad_edge_weights_grad_filters_fused_cfconv(ctx, grad_output):
+def backward_grad_edge_weight_grad_filters_fused_cfconv(ctx, grad_output):
     raise NotImplementedError
 
 
-grad_edge_weights_grad_filters_fused_cfconv.register_autograd(
-    backward_grad_edge_weights_grad_filters_fused_cfconv,
-    setup_context=setup_context_grad_edge_weights_grad_filters_fused_cfconv,
+grad_edge_weight_grad_filters_fused_cfconv.register_autograd(
+    backward_grad_edge_weight_grad_filters_fused_cfconv,
+    setup_context=setup_context_grad_edge_weight_grad_filters_fused_cfconv,
 )
 
 
-@grad_edge_weights_grad_filters_fused_cfconv.register_kernel("cpu")
-def grad_edge_weights_grad_filters_fused_cfconv(
+@grad_edge_weight_grad_filters_fused_cfconv.register_kernel("cpu")
+def cpu_grad_edge_weight_grad_filters_fused_cfconv(
     x: torch.Tensor,
     grad_output: torch.Tensor,
     edge_weight: torch.Tensor,
