@@ -9,6 +9,9 @@ from ...cutoffs import (
     _cosine_cutoff,
     _d_cosine_cutoff_dd,
     _d2_cosine_cutoff_dd2,
+    _torch_cosine_cutoff,
+    _torch_d_cosine_cutoff_dd,
+    _torch_d2_cosine_cutoff_dd2,
 )
 
 triton_pi = tl.constexpr(3.141592653589793)
@@ -104,7 +107,6 @@ def grad_x_grad_filters_fused_cfconv_kernel(
 @triton_op("mlcg_kernels::grad_x_grad_filters_fused_cfconv", mutates_args={})
 @ensure_contiguous
 def grad_x_grad_filters_fused_cfconv(
-    x: torch.Tensor,
     grad_output: torch.Tensor,
     edge_weight: torch.Tensor,
     edge_src: torch.Tensor,
@@ -112,8 +114,6 @@ def grad_x_grad_filters_fused_cfconv(
     cutoff_upper: float,
     src_ptr: torch.Tensor,
     src_perm: torch.Tensor,
-    dst_ptr: torch.Tensor,
-    dst_perm: torch.Tensor,
     out_dtype: torch.dtype = None,
 ) -> torch.Tensor:
     """
@@ -123,8 +123,6 @@ def grad_x_grad_filters_fused_cfconv(
 
     Parameters
     ----------
-    x : torch.Tensor
-        Node features [num_nodes, feature_dim]
     grad_output : torch.Tensor
         Gradient of output [num_nodes, feature_dim]
     edge_weight : torch.Tensor
@@ -149,7 +147,7 @@ def grad_x_grad_filters_fused_cfconv(
 
     # Default output dtype is x.dtype
     if out_dtype is None:
-        out_dtype = x.dtype
+        out_dtype = grad_output.dtype
 
     grad_x_grad_filters = torch.empty(
         num_edges, feature_dim, device=x.device, dtype=out_dtype
@@ -181,11 +179,58 @@ def grad_x_grad_filters_fused_cfconv(
 
 
 def setup_context_grad_x_grad_filters_fused_cfconv(ctx, inputs, output):
-    raise NotImplementedError
+    (
+        grad_output, 
+        edge_weight, 
+        edge_src, 
+        edge_dst, 
+        cutoff_upper,
+        _,
+        _, 
+    ) = inputs
+
+    ctx.save_for_backward(
+        grad_output,
+        edge_weight,
+        edge_src,
+        edge_dst,
+    )
+    
+    ctx.cutoff_upper = cutoff_upper
 
 
-def backward_grad_x_grad_filters_fused_cfconv(ctx, grad_output):
-    raise NotImplementedError
+def backward_grad_x_grad_filters_fused_cfconv(ctx, grad_grad_x_grad_filters):
+    (
+        grad_output,
+        edge_weight,
+        edge_src,
+        edge_dst,
+    ) = ctx.saved_tensors
+    grad_grad_out = None
+    grad_edge_weight = None
+    dC_dd = _torch_d_cosine_cutoff_dd(edge_weight, ctx.cutoff_upper)
+    if ctx.needs_input_grad[0]:
+        C = _torch_cosine_cutoff(edge_weight, ctx.cutoff_upper)
+        grad_grad_out = grad_grad_x_grad_filters * C.unsqueeze(1)
+    if ctx.needs_input_grad[1]:
+        grad_edge_weight = torch.zeros_like()
+        dC_dd = _torch_d_cosine_cutoff_dd(edge_weight, ctx.cutoff_upper)
+        expanded = (
+            grad_grad_x_grad_filters
+            * grad_output[edge_dst]
+            * dC_dd.unsqueeze(1)
+        )
+        grad_edge_weight.index_add_(0,edge_src,expanded)
+    
+    return (
+        grad_grad_out, 
+        grad_edge_weight, 
+        None, 
+        None, 
+        None, 
+        None, 
+        None
+    )
 
 
 grad_x_grad_filters_fused_cfconv.register_autograd(
@@ -195,23 +240,23 @@ grad_x_grad_filters_fused_cfconv.register_autograd(
 
 
 @grad_x_grad_filters_fused_cfconv.register_kernel("cpu")
-def grad_x_grad_filters_fused_cfconv(
-    x: torch.Tensor,
+def cpu_grad_x_grad_filters_fused_cfconv(
     grad_output: torch.Tensor,
     edge_weight: torch.Tensor,
     edge_src: torch.Tensor,
     edge_dst: torch.Tensor,
     cutoff_upper: float,
+    src_ptr: torch.Tensor,
+    src_perm: torch.Tensor,
     out_dtype: torch.dtype = None,
 ) -> torch.Tensor:
     """
     CPU fallback for fused_grad_filters
     """
-    C = 0.5 * (torch.cos(edge_weight * torch.pi / cutoff_upper) + 1)
-    C = C * (edge_weight < cutoff_upper).float()
-    grad_filters = grad_output[edge_dst] * C.unsqueeze(-1)
-
-    return grad_filters
+    C = _torch_cosine_cutoff(edge_weight, cutoff_upper)
+    grad_grad_x_grad_filters = torch.zeros_like(grad_output)
+    expanded = grad_output[edge_dst] * C.unsqueeze(-1)
+    return grad_grad_x_grad_filters.index_add_(0, edge_src, expanded)
 
 
 # ============================================================================
@@ -297,6 +342,7 @@ def grad_grad_out_grad_filters_fused_cfconv(
     x: torch.Tensor,
     edge_weight: torch.Tensor,
     edge_src: torch.Tensor,
+    edge_dst: torch.Tensor,
     dst_perm: torch.Tensor,
     dst_ptr: torch.Tensor,
     cutoff_upper: float,
@@ -368,11 +414,53 @@ def grad_grad_out_grad_filters_fused_cfconv(
 
 
 def setup_context_grad_grad_out_grad_filters_fused_cfconv(ctx, inputs, output):
-    raise NotImplementedError
+    (
+        x,
+        edge_weight,
+        edge_src,
+        edge_dst,
+        _,
+        _,
+        cutoff_upper,
+    ) = inputs
+    ctx.save_for_backwards(
+        x,
+        edge_weight,
+        edge_src,
+        edge_dst,
+    )
+    ctx.cutoff_upper = cutoff_upper
 
 
-def backward_grad_grad_out_grad_filters_fused_cfconv(ctx, grad_output):
-    raise NotImplementedError
+def backward_grad_grad_out_grad_filters_fused_cfconv(ctx, grad_grad_out_grad_filters):
+    (
+        x,
+        edge_weight,
+        edge_src,
+        edge_dst,
+    ) = ctx.saved_tensors
+    grad_x = None
+    grad_edge_weight = None
+    if ctx.needs_input_grad[0]:
+        C = _torch_cosine_cutoff(edge_weight, ctx.cutoff_upper)
+        grad_x = grad_grad_out_grad_filters * C.unsqueeze(1)
+    if ctx.needs_input_grad[1]:
+        grad_edge_weight = torch.zeros_like()
+        dC_dd = _torch_d_cosine_cutoff_dd(edge_weight, ctx.cutoff_upper)
+        expanded = (
+            grad_grad_out_grad_filters
+            * x[edge_src]
+            * dC_dd.unsqueeze(1)
+        )
+        grad_edge_weight.index_add_(0,edge_dst,expanded)
+    return (
+        grad_x,
+        grad_edge_weight,
+        None,
+        None,
+        None,
+        None,
+    )
 
 
 grad_grad_out_grad_filters_fused_cfconv.register_autograd(
@@ -382,23 +470,23 @@ grad_grad_out_grad_filters_fused_cfconv.register_autograd(
 
 
 @grad_grad_out_grad_filters_fused_cfconv.register_kernel("cpu")
-def grad_grad_out_grad_filters_fused_cfconv(
+def cpu_grad_grad_out_grad_filters_fused_cfconv(
     x: torch.Tensor,
-    grad_output: torch.Tensor,
     edge_weight: torch.Tensor,
     edge_src: torch.Tensor,
     edge_dst: torch.Tensor,
     cutoff_upper: float,
+    dst_perm: torch.Tensor,
+    dst_ptr: torch.Tensor,
     out_dtype: torch.dtype = None,
 ) -> torch.Tensor:
     """
     CPU fallback for fused_grad_filters
     """
-    C = 0.5 * (torch.cos(edge_weight * torch.pi / cutoff_upper) + 1)
-    C = C * (edge_weight < cutoff_upper).float()
-    grad_grad_out_grad_filters = x[edge_src] * C.unsqueeze(-1)
-
-    return grad_grad_out_grad_filters
+    C = _torch_cosine_cutoff(edge_weight, cutoff_upper)
+    grad_grad_out_grad_filters = torch.zeros_like(x)
+    expanded = x[edge_src] * C.unsqueeze(-1)
+    return grad_grad_out_grad_filters.index_add_(0, edge_dst, expanded)
 
 
 # ============================================================================
@@ -498,9 +586,9 @@ def grad_edge_weight_grad_filters_fused_cfconv(
     out_dtype: torch.dtype = None,
 ) -> torch.Tensor:
     """
-    Compute grad_filters in a single fused kernel.
+    Compute grad_edge_grad_filters in a single fused kernel.
 
-    grad_filters[e] = x[src[e]] * grad_output[dst[e]] * cutoff(dist[e])
+    grad_edge_grad_filters[e] = x[src[e]] * grad_output[dst[e]] * d_cutoff_dd(dist[e])
 
     Parameters
     ----------
@@ -564,11 +652,49 @@ def grad_edge_weight_grad_filters_fused_cfconv(
 def setup_context_grad_edge_weight_grad_filters_fused_cfconv(
     ctx, inputs, output
 ):
-    raise NotImplementedError
+    x, grad_output, edge_weight, edge_src, edge_dst, cutoff_upper = inputs
+    ctx.save_for_backward(x, grad_output, edge_weight, edge_src, edge_dst)
+    ctx.cutoff_upper = cutoff_upper
 
 
-def backward_grad_edge_weight_grad_filters_fused_cfconv(ctx, grad_output):
-    raise NotImplementedError
+def backward_grad_edge_weight_grad_filters_fused_cfconv(
+    ctx, grad_grad_edge_weight_grad_filters
+):
+    x, grad_output, edge_weight, edge_src, edge_dst = ctx.saved_tensors
+    dC_dd = _torch_d_cosine_cutoff_dd(edge_weight, ctx.cutoff_upper)
+    grad_grad_x = None
+    grad_grad_out = None
+    grad_grad_edge_weights = None
+    if ctx.needs_input_grad[0]:
+        # gradient respect to x
+        grad_grad_x = torch.zeros_like(x)
+        expanded = (
+            grad_grad_edge_weight_grad_filters * grad_output[edge_dst] * dC_dd
+        )
+        grad_grad_x.index_add(0, edge_src, expanded)
+    if ctx.needs_input_grad[1]:
+        # gradient respect to grad_out
+        grad_grad_out = torch.zeros_like(x)
+        expanded = grad_grad_edge_weight_grad_filters * x[edge_src] * dC_dd
+        grad_grad_out.index_add(0, edge_dst, expanded)
+    if ctx.needs_input_grad[2]:
+        # gradient respect to edge weights
+        d2C_dd2 = _torch_d2_cosine_cutoff_dd2(edge_weight, ctx.cutoff_upper)
+        grad_grad_edge_weights = (
+            grad_grad_edge_weight_grad_filters
+            * d2C_dd2
+            * x[edge_src]
+            * grad_output[edge_dst]
+        )
+    return (
+        grad_grad_x,
+        grad_grad_out,
+        grad_grad_edge_weights,
+        None,
+        None,
+        None,
+        None,
+    )
 
 
 grad_edge_weight_grad_filters_fused_cfconv.register_autograd(
@@ -584,15 +710,16 @@ def cpu_grad_edge_weight_grad_filters_fused_cfconv(
     edge_weight: torch.Tensor,
     edge_src: torch.Tensor,
     edge_dst: torch.Tensor,
+    dst_perm: torch.Tensor,
+    dst_ptr: torch.Tensor,
     cutoff_upper: float,
     out_dtype: torch.dtype = None,
 ) -> torch.Tensor:
     """
     CPU fallback for fused_grad_filters
     """
-    sin_val = torch.sin(edge_weight * torch.pi / cutoff_upper)
-    dC = -0.5 * (torch.pi / cutoff_upper) * sin_val
-    dC = dC * (edge_weight < cutoff_upper).float()
-    grad_filters = grad_output[edge_dst] * x[edge_src] * dC.unsqueeze(-1)
-
-    return grad_filters
+    dC = _torch_d_cosine_cutoff_dd(edge_weight, cutoff_upper)
+    grad_edge_grad_filters = (
+        grad_output[edge_dst] * x[edge_src] * dC.unsqueeze(-1)
+    )
+    return grad_edge_grad_filters
