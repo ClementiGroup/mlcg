@@ -255,6 +255,7 @@ def backward_grad_filters_fused_cfconv(ctx, grad_grad_filters):
                 edge_weight,
                 edge_src,
                 edge_dst,
+                grad_grad_filters,
                 cutoff_upper,
                 src_ptr,
                 src_perm,
@@ -268,6 +269,7 @@ def backward_grad_filters_fused_cfconv(ctx, grad_grad_filters):
             edge_weight,
             edge_src,
             edge_dst,
+            grad_grad_filters,
             dst_perm,
             dst_ptr,
             cutoff_upper,
@@ -281,6 +283,7 @@ def backward_grad_filters_fused_cfconv(ctx, grad_grad_filters):
             edge_weight,
             edge_src,
             edge_dst,
+            grad_grad_filters,
             cutoff_upper,
             out_dtype,
         )

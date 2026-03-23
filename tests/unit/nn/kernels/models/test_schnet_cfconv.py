@@ -161,7 +161,7 @@ def test_standard_vs_flash_cfconv_gradients(device, graph_type):
 
     # Standard gradients
     y_standard = standard_cfconv(x, edge_index, distances, edge_attr)
-    grad_standard = grad(y_standard.sum(), [x, distances, edge_attr])
+    grad_standard = grad(y_standard.sum(), [x, distances, edge_attr]+list(standard_cfconv.parameters()))
 
     x.grad = None
     distances.grad = None
@@ -169,9 +169,48 @@ def test_standard_vs_flash_cfconv_gradients(device, graph_type):
 
     # Flash gradients
     y_flash = flash_cfconv(x, edge_index, distances, edge_attr, csr_data)
-    grad_flash = grad(y_flash.sum(), [x, distances, edge_attr])
+    grad_flash = grad(y_flash.sum(), [x, distances, edge_attr]+list(flash_cfconv.parameters()))
 
     for g_std, g_flash in zip(grad_standard, grad_flash):
+        torch.testing.assert_close(g_std, g_flash)
+
+
+@pytest.mark.parametrize("device", DEVICES)
+@pytest.mark.parametrize("graph_type", ["fixed", "random", "full_coverage"])
+def test_standard_vs_flash_cfconv_double_triple_gradients(device, graph_type):
+    """Test standard CFConv vs flash CFConv gradient consistency."""
+    x, _, distances, edge_index = create_test_data(device, graph_type)
+    edge_attr = torch.randn(NUM_EDGES, FEATURES, device=device)
+
+    standard_cfconv, flash_cfconv = create_cfconv_layers(device)
+    csr_data = build_csr_representation_from_edges(edge_index, NUM_NODES)
+
+    x.requires_grad_(True)
+    distances.requires_grad_(True)
+    edge_attr.requires_grad_(True)
+
+    # standard_cfconv.train()
+    # Standard gradients
+    y_standard = standard_cfconv(x, edge_index, distances, edge_attr)
+    forces_standard = -grad(y_standard.sum(), [distances], create_graph=True)[0]
+    grad_standard = grad(forces_standard.sum(), [x, distances, edge_attr])
+    # grad_standard = grad(forces_standard.sum(), [x, distances, edge_attr]+list(standard_cfconv.parameters()))
+
+    x.grad = None
+    distances.grad = None
+    edge_attr.grad = None
+
+    # flash_cfconv.train()
+    # Flash gradients
+    y_flash = flash_cfconv(x, edge_index, distances, edge_attr, csr_data)
+    forces_flash = -grad(y_flash.sum(), [distances], create_graph=True)[0]
+    grad_flash = grad(forces_flash.sum(), [x, distances, edge_attr])
+    # grad_flash = grad(forces_flash.sum(), [x, distances, edge_attr]+list(flash_cfconv.parameters()))
+
+    index = 0
+    for g_std, g_flash in zip(grad_standard, grad_flash):
+        index += 1
+        print(index)
         torch.testing.assert_close(g_std, g_flash)
 
 

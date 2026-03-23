@@ -308,7 +308,7 @@ def cpu_grad_x_grad_edge_weight_fused_cfconv(
 ) -> torch.Tensor:
 
     dC_dd = _torch_d_cosine_cutoff_dd(edge_weight, cutoff_upper)
-    grad_x = torch.zeros(grad_output.shape[0]).contiguous()
+    grad_x = torch.zeros_like(grad_output)
     expanded = (
         grad_edge_weight.unsqueeze(1)
         * grad_output[edge_dst]
