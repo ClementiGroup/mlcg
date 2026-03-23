@@ -23,12 +23,12 @@ os.environ["PYTORCH_JIT"] = "0"
 
 # -- Project information -----------------------------------------------------
 
-project = "mlcg-tools"
+project = "mlcg"
 copyright = "2021, Felix Musil & Nick Charron"
 author = "Felix Musil & Nick Charron"
 
 # The full version, including alpha/beta/rc tags
-release = "1.0.0"
+release = "0.1.1"
 
 
 # -- General configuration ---------------------------------------------------

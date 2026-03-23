@@ -1,7 +1,0 @@
-0. Finish Tests
-    ... test 3 against each other: basic tests
-    ... test 3 against each other using MD data
-1. Finish Benchmarks
-    ... basic benchmarks 
-    ... benchmark on MD data
-2. do final profiling run

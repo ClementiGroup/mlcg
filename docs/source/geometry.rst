@@ -8,7 +8,8 @@ Internal Coordinate Functions
 
 .. autofunction:: mlcg.geometry.internal_coordinates.compute_distances
 .. autofunction:: mlcg.geometry.internal_coordinates.compute_distance_vectors
-.. autofunction:: mlcg.geometry.internal_coordinates.compute_angles
+.. autofunction:: mlcg.geometry.internal_coordinates.compute_angles_cos
+.. autofunction:: mlcg.geometry.internal_coordinates.compute_angles_raw
 .. autofunction:: mlcg.geometry.internal_coordinates.compute_torsions
 
 Topology Utilities
