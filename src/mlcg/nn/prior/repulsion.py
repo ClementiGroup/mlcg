@@ -10,7 +10,7 @@ from ...geometry.internal_coordinates import (
     compute_distances,
 )
 
-
+from ..kernels.models.prior.repulsion import flash_repulsion
 class Repulsion(_Prior):
     r"""1-D power law repulsion prior for feature :math:`x` of the form:
 
@@ -237,3 +237,50 @@ class Repulsion(_Prior):
                 Repulsion._neighbor_list_name
             )
         }
+
+class FlashRepulsion(_Prior):
+    """
+    Computes per-graph repulsion energy:
+        e_ij = (sigma[type_i, type_j] / r_ij)^6
+    reduced as sum over edges per graph (using mapping_batch).
+
+    Returns: y of shape [num_graphs] (float32).
+    """
+    name="repulsion"
+    def __init__(self, sigma: torch.Tensor,name:str, eps: float = 1e-12, block: int = 256, num_warps: int = 4):
+        super().__init__()
+        # register as parameter or buffer depending on whether you want to learn sigma
+        # If sigma is fixed: use register_buffer; if learnable: nn.Parameter.
+        self.sigma = torch.nn.Parameter(sigma)  # change to register_buffer(...) if fixed
+        self.eps = float(eps)
+        self.block = int(block)
+        self.num_warps = int(num_warps)
+        self.name = name
+
+    def forward(
+        self,
+        data # int
+    ) -> torch.Tensor:
+        # minimal checks
+        pos = data.pos                       # [N,3], 
+        atom_types = data.atom_types        # [N], int32 or int64
+        index_mapping = data.neighbor_list[self.name]["index_mapping"].T
+        mapping_batch = data.neighbor_list[self.name]["mapping_batch"]
+        num_graphs = data.ptr.numel() - 1 if hasattr(data, "ptr") else None
+        assert pos.is_cuda, "pos must be CUDA"
+        assert pos.shape[-1] == 3, "pos must be [N,3]"
+        assert index_mapping.shape[-1] == 2, "index_mapping must be [E,2]"
+        assert self.sigma.is_cuda == pos.is_cuda, "sigma and pos must be on same device"
+        y = flash_repulsion(
+            pos=pos,
+            atom_types=atom_types,
+            index_mapping=index_mapping,
+            mapping_batch=mapping_batch,
+            sigma=self.sigma,
+            num_graphs=num_graphs,
+            eps=self.eps,
+            block=self.block,
+            num_warps=self.num_warps,
+        )
+        data.out[self.name] = {"energy": y}
+        return data
