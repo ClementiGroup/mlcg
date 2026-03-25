@@ -69,7 +69,7 @@ def compute_distance_vectors(
     return distances, direction_vectors
 
 
-@torch.jit.script
+# @torch.jit.script
 def compute_distances(
     pos: torch.Tensor,
     mapping: torch.Tensor,

@@ -13,7 +13,7 @@ from ..cutoffs import (
     _d_cosine_cutoff_dd,
     _torch_cosine_cutoff,
     _torch_d_cosine_cutoff_dd,
-    _torch_d2_cosine_cutoff_dd2
+    _torch_d2_cosine_cutoff_dd2,
 )
 from .cfconv_double_backwards import (
     grad_x_grad_filters_fused_cfconv,
@@ -172,7 +172,7 @@ def grad_filters_fused_cfconv(
 
     grad_filters = torch.empty(
         num_edges, feature_dim, device=x.device, dtype=out_dtype
-    )
+    ).contiguous()
 
     if num_edges == 0:
         return grad_filters
@@ -250,16 +250,16 @@ def backward_grad_filters_fused_cfconv(ctx, grad_grad_filters):
     grad_x = grad_grad_output = grad_edge_weight = None
 
     if ctx.needs_input_grad[0]:
-        grad_x = torch.zeros_like(x)
         C = _torch_cosine_cutoff(edge_weight, cutoff_upper)
         expanded = grad_grad_filters * grad_output[edge_dst] * C.unsqueeze(1)
-        grad_x.index_add_(0, edge_src, expanded)
+        grad_x = torch.zeros_like(x).index_add(0, edge_src, expanded)
 
     if ctx.needs_input_grad[1]:
-        grad_grad_output = torch.zeros_like(grad_output)
         C = _torch_cosine_cutoff(edge_weight, cutoff_upper)
         expanded = grad_grad_filters * x[edge_src] * C.unsqueeze(1)
-        grad_grad_output.index_add_(0, edge_dst, expanded)
+        grad_grad_output = torch.zeros_like(grad_output).index_add(
+            0, edge_dst, expanded
+        )
 
     if ctx.needs_input_grad[2]:
         C1 = _torch_d_cosine_cutoff_dd(edge_weight, cutoff_upper)
@@ -542,6 +542,8 @@ def backward_grad_x_fused_cfconv(ctx, grad_grad_x):
         dst_ptr,
     ) = ctx.saved_tensors
 
+    grad_grad_x = grad_grad_x.contiguous()
+
     cutoff_upper = ctx.cutoff_upper
 
     grad_grad_output = grad_filters = grad_edge_weight = None
@@ -550,11 +552,13 @@ def backward_grad_x_fused_cfconv(ctx, grad_grad_x):
         grad_grad_output = torch.zeros_like(grad_out)
         C = _torch_cosine_cutoff(edge_weight, cutoff_upper)
         expanded = grad_grad_x[edge_src] * filters * C.unsqueeze(1)
-        grad_grad_output.index_add_(0, edge_dst, expanded)
+        grad_grad_output = grad_grad_output.index_add(0, edge_dst, expanded)
 
     if ctx.needs_input_grad[1]:
         C = _torch_cosine_cutoff(edge_weight, cutoff_upper)
-        grad_filters = grad_grad_x[edge_src] * grad_out[edge_dst] * C
+        grad_filters = (
+            grad_grad_x[edge_src] * grad_out[edge_dst] * C.unsqueeze(1)
+        )
 
     if ctx.needs_input_grad[2]:
         C1 = _torch_d_cosine_cutoff_dd(edge_weight, cutoff_upper)
@@ -602,7 +606,7 @@ def cpu_grad_x_fused_cfconv(
     """
     C = _torch_cosine_cutoff(edge_weight, cutoff_upper)
     grad_x = torch.zeros_like(grad_output)
-    grad_x.index_add_(
+    grad_x = grad_x.index_add(
         0, edge_src, grad_output[edge_dst] * filters * C.unsqueeze(-1)
     )
     return grad_x
@@ -763,7 +767,9 @@ def grad_edge_weight_fused_cfconv(
     if out_dtype is None:
         out_dtype = x.dtype
 
-    grad_edge_weight = torch.empty(num_edges, device=x.device, dtype=out_dtype)
+    grad_edge_weight = torch.empty(
+        num_edges, device=x.device, dtype=out_dtype
+    ).contiguous()
 
     if num_edges == 0:
         return grad_edge_weight
@@ -841,29 +847,46 @@ def backward_grad_edge_weight_fused_cfconv(ctx, grad_grad_edge_weight):
     cutoff_upper = ctx.cutoff_upper
     grad_edge_dtype = ctx.out_dtype
     grad_x = grad_grad_output = grad_filters = grad_edge_weight = None
+    grad_grad_edge_weight = grad_grad_edge_weight.contiguous()
 
     if ctx.needs_input_grad[0]:
         grad_x = torch.zeros_like(x)
         C1 = _torch_d_cosine_cutoff_dd(edge_weight, cutoff_upper)
-        expanded = grad_grad_edge_weight.unsqueeze(1) * grad_output[edge_dst] * filters * C1.unsqueeze(1)
-        grad_x.index_add_(0, edge_src, expanded)
+        expanded = (
+            grad_grad_edge_weight.unsqueeze(1)
+            * grad_output[edge_dst]
+            * filters
+            * C1.unsqueeze(1)
+        )
+        grad_x = grad_x.index_add(0, edge_src, expanded)
 
     if ctx.needs_input_grad[1]:
         grad_grad_output = torch.zeros_like(grad_output)
         C1 = _torch_d_cosine_cutoff_dd(edge_weight, cutoff_upper)
-        expanded = grad_grad_edge_weight.unsqueeze(1) * x[edge_src] * filters * C1.unsqueeze(1)
-        grad_grad_output.index_add_(0, edge_dst, expanded)
+        expanded = (
+            grad_grad_edge_weight.unsqueeze(1)
+            * x[edge_src]
+            * filters
+            * C1.unsqueeze(1)
+        )
+        grad_grad_output = grad_grad_output.index_add(0, edge_dst, expanded)
 
     if ctx.needs_input_grad[2]:
         C1 = _torch_d_cosine_cutoff_dd(edge_weight, cutoff_upper)
-        grad_filters = grad_grad_edge_weight.unsqueeze(1) * x[edge_src] * grad_output[edge_dst] * C1.unsqueeze(1)
-
+        grad_filters = (
+            grad_grad_edge_weight.unsqueeze(1)
+            * x[edge_src]
+            * grad_output[edge_dst]
+            * C1.unsqueeze(1)
+        )
 
     if ctx.needs_input_grad[3]:
         C2 = _torch_d2_cosine_cutoff_dd2(edge_weight, cutoff_upper)
         grad_edge_weight = (
-            x[edge_src] * grad_output[edge_dst] * filters
-        ).sum(dim=1) * grad_grad_edge_weight * C2
+            (x[edge_src] * grad_output[edge_dst] * filters).sum(dim=1)
+            * grad_grad_edge_weight
+            * C2
+        )
 
     return (
         grad_x,

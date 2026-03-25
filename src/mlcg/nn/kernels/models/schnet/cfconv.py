@@ -7,8 +7,9 @@ import torch
 import triton
 import triton.language as tl
 from torch.library import triton_op, wrap_triton
-from .cfconv_backwards import (
-# from .cfconv_backwards_torch_double_backward import ( #FIXME:understand if faster
+
+# from .cfconv_backwards import (
+from .cfconv_backwards_torch_double_backward import (  # FIXME:understand if faster
     grad_x_fused_cfconv,
     grad_filters_fused_cfconv,
     grad_edge_weight_fused_cfconv,
@@ -354,6 +355,6 @@ def cpu_fused_cfconv(
     C = C * (edge_weight < cutoff_upper).float()
     messages = x[edge_src] * filters * C.unsqueeze(-1)
     out = torch.zeros_like(x)
-    out.index_add_(0, edge_dst, messages)
+    out = out.index_add(0, edge_dst, messages)
     # out = scatter(messages, edge_dst, dim=0, reduce='sum')
     return out

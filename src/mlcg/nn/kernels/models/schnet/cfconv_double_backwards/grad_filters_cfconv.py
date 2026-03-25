@@ -30,7 +30,7 @@ def grad_x_grad_filters_fused_cfconv_kernel(
     src_perm_ptr,  # [num_edges] - src-CSR permutation
     src_ptr_ptr,  # [num_nodes + 1] - src-CSR row pointers
     edge_dst_ptr,  # [num_edges]
-    grad_grad_filters_ptr, # [num_edges, feature_dim]
+    grad_grad_filters_ptr,  # [num_edges, feature_dim]
     # Output pointer
     grad_x_grad_filters_ptr,  # [num_edges, feature_dim] - OUTPUT (FP32 or FP16)
     # Cutoff parameters
@@ -93,7 +93,7 @@ def grad_x_grad_filters_fused_cfconv_kernel(
             grad_grad_filters = tl.load(
                 grad_grad_filters_ptr + edge_idx * feature_dim + f_offsets,
                 mask=f_mask,
-                other=0.0
+                other=0.0,
             )
 
             # Fused multiply: grad * C (in FP32)
@@ -190,14 +190,14 @@ def grad_x_grad_filters_fused_cfconv(
 
 def setup_context_grad_x_grad_filters_fused_cfconv(ctx, inputs, output):
     (
-        grad_output, 
-        edge_weight, 
-        edge_src, 
-        edge_dst, 
-        grad_grad_filters, #FIXME: add this in backward
+        grad_output,
+        edge_weight,
+        edge_src,
+        edge_dst,
+        grad_grad_filters,  # FIXME: add this in backward
         cutoff_upper,
         _,
-        _, 
+        _,
     ) = inputs
 
     ctx.save_for_backward(
@@ -206,7 +206,7 @@ def setup_context_grad_x_grad_filters_fused_cfconv(ctx, inputs, output):
         edge_src,
         edge_dst,
     )
-    
+
     ctx.cutoff_upper = cutoff_upper
 
 
@@ -231,17 +231,9 @@ def backward_grad_x_grad_filters_fused_cfconv(ctx, grad_grad_x_grad_filters):
             * grad_output[edge_dst]
             * dC_dd.unsqueeze(1)
         )
-        grad_edge_weight.index_add_(0,edge_src,expanded)
-    
-    return (
-        grad_grad_out, 
-        grad_edge_weight, 
-        None, 
-        None, 
-        None, 
-        None, 
-        None
-    )
+        grad_edge_weight.index_add_(0, edge_src, expanded)
+
+    return (grad_grad_out, grad_edge_weight, None, None, None, None, None)
 
 
 grad_x_grad_filters_fused_cfconv.register_autograd(
@@ -282,7 +274,7 @@ def grad_grad_out_grad_filters_fused_cfconv_kernel(
     x_ptr,  # [num_nodes, feature_dim]
     edge_weight_ptr,  # [num_edges]
     edge_src_ptr,  # [num_edges]
-    grad_grad_filters_ptr, # [num_edges, feature_dim]
+    grad_grad_filters_ptr,  # [num_edges, feature_dim]
     # Output ptr
     grad_grad_out_grad_filters_ptr,  # [num_edges, feature_dim] - OUTPUT (FP32 or FP16)
     # Cutoff parameters
@@ -339,7 +331,7 @@ def grad_grad_out_grad_filters_fused_cfconv_kernel(
             grad_grad_filters = tl.load(
                 grad_grad_filters_ptr + edge_idx * feature_dim + f_offsets,
                 mask=f_mask,
-                other=0.0 #FIXME: here
+                other=0.0,  # FIXME: here
             )
             # Fused multiply: x * grad * C (in FP32)
             acc += grad_grad_filters * x * C[:, None]
@@ -453,7 +445,9 @@ def setup_context_grad_grad_out_grad_filters_fused_cfconv(ctx, inputs, output):
     ctx.cutoff_upper = cutoff_upper
 
 
-def backward_grad_grad_out_grad_filters_fused_cfconv(ctx, grad_grad_out_grad_filters):
+def backward_grad_grad_out_grad_filters_fused_cfconv(
+    ctx, grad_grad_out_grad_filters
+):
     (
         x,
         edge_weight,
@@ -466,14 +460,10 @@ def backward_grad_grad_out_grad_filters_fused_cfconv(ctx, grad_grad_out_grad_fil
         C = _torch_cosine_cutoff(edge_weight, ctx.cutoff_upper)
         grad_x = grad_grad_out_grad_filters * C.unsqueeze(1)
     if ctx.needs_input_grad[1]:
-        grad_edge_weight = torch.zeros_like()
+        grad_edge_weight = torch.zeros_like()  # FIXME: wrong!
         dC_dd = _torch_d_cosine_cutoff_dd(edge_weight, ctx.cutoff_upper)
-        expanded = (
-            grad_grad_out_grad_filters
-            * x[edge_src]
-            * dC_dd.unsqueeze(1)
-        )
-        grad_edge_weight.index_add_(0,edge_dst,expanded)
+        expanded = grad_grad_out_grad_filters * x[edge_src] * dC_dd.unsqueeze(1)
+        grad_edge_weight.index_add_(0, edge_dst, expanded)
     return (
         grad_x,
         grad_edge_weight,
@@ -497,9 +487,9 @@ def cpu_grad_grad_out_grad_filters_fused_cfconv(
     edge_src: torch.Tensor,
     edge_dst: torch.Tensor,
     grad_grad_filters: torch.Tensor,
-    cutoff_upper: float,
     dst_perm: torch.Tensor,
     dst_ptr: torch.Tensor,
+    cutoff_upper: float,
     out_dtype: torch.dtype = None,
 ) -> torch.Tensor:
     """
@@ -524,7 +514,7 @@ def grad_edge_weight_grad_filters_fused_cfconv_kernel(
     edge_weight_ptr,  # [num_edges]
     edge_src_ptr,  # [num_edges]
     edge_dst_ptr,  # [num_edges]
-    grad_grad_filters_ptr, # [num_edges, feature_dim]
+    grad_grad_filters_ptr,  # [num_edges, feature_dim]
     # Output ptr
     grad_filters_ptr,  # [num_edges, feature_dim] - OUTPUT (FP32 or FP16)
     # Cutoff parameters
@@ -585,7 +575,7 @@ def grad_edge_weight_grad_filters_fused_cfconv_kernel(
         grad_grad_filters = tl.load(
             grad_grad_filters_ptr + edge_idx * feature_dim + f_offsets,
             mask=f_mask,
-            other=0.0
+            other=0.0,
         )
 
         # Fused multiply: x * grad * C (in FP32)
@@ -700,23 +690,28 @@ def backward_grad_edge_weight_grad_filters_fused_cfconv(
         # gradient respect to x
         grad_grad_x = torch.zeros_like(x)
         expanded = (
-            grad_grad_edge_weight_grad_filters * grad_output[edge_dst] * dC_dd
+            grad_grad_edge_weight_grad_filters
+            * grad_output[edge_dst]
+            * dC_dd.unsqueeze(1)
         )
-        grad_grad_x.index_add(0, edge_src, expanded)
+        grad_grad_x.index_add_(0, edge_src, expanded)
     if ctx.needs_input_grad[1]:
         # gradient respect to grad_out
         grad_grad_out = torch.zeros_like(x)
-        expanded = grad_grad_edge_weight_grad_filters * x[edge_src] * dC_dd
-        grad_grad_out.index_add(0, edge_dst, expanded)
+        expanded = (
+            grad_grad_edge_weight_grad_filters
+            * x[edge_src]
+            * dC_dd.unsqueeze(1)
+        )
+        grad_grad_out.index_add_(0, edge_dst, expanded)
     if ctx.needs_input_grad[2]:
         # gradient respect to edge weights
         d2C_dd2 = _torch_d2_cosine_cutoff_dd2(edge_weight, ctx.cutoff_upper)
         grad_grad_edge_weights = (
             grad_grad_edge_weight_grad_filters
-            * d2C_dd2
             * x[edge_src]
             * grad_output[edge_dst]
-        )
+        ).sum(dim=1) * d2C_dd2
     return (
         grad_grad_x,
         grad_grad_out,
@@ -742,8 +737,6 @@ def cpu_grad_edge_weight_grad_filters_fused_cfconv(
     edge_src: torch.Tensor,
     edge_dst: torch.Tensor,
     grad_grad_filters: torch.Tensor,
-    dst_perm: torch.Tensor,
-    dst_ptr: torch.Tensor,
     cutoff_upper: float,
     out_dtype: torch.dtype = None,
 ) -> torch.Tensor:
@@ -752,6 +745,9 @@ def cpu_grad_edge_weight_grad_filters_fused_cfconv(
     """
     dC = _torch_d_cosine_cutoff_dd(edge_weight, cutoff_upper)
     grad_edge_grad_filters = (
-        grad_grad_filters * grad_output[edge_dst] * x[edge_src] * dC.unsqueeze(-1)
+        grad_grad_filters
+        * grad_output[edge_dst]
+        * x[edge_src]
+        * dC.unsqueeze(-1)
     )
     return grad_edge_grad_filters
