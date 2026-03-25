@@ -231,7 +231,9 @@ def backward_grad_x_grad_filters_fused_cfconv(ctx, grad_grad_x_grad_filters):
             * grad_output[edge_dst]
             * dC_dd.unsqueeze(1)
         )
-        grad_edge_weight = torch.zeros_like(edge_weight).index_add(0, edge_src, expanded)
+        grad_edge_weight = torch.zeros_like(edge_weight).index_add(
+            0, edge_src, expanded
+        )
 
     return (grad_grad_out, grad_edge_weight, None, None, None, None, None)
 
@@ -338,7 +340,9 @@ def grad_grad_out_grad_filters_fused_cfconv_kernel(
         # Store result (convert to FP16 if needed)
 
         tl.store(
-            grad_grad_out_grad_filters_ptr + target_node * feature_dim + f_offsets,
+            grad_grad_out_grad_filters_ptr
+            + target_node * feature_dim
+            + f_offsets,
             acc,
             mask=f_mask,
         )
@@ -461,7 +465,9 @@ def backward_grad_grad_out_grad_filters_fused_cfconv(
     if ctx.needs_input_grad[1]:
         dC_dd = _torch_d_cosine_cutoff_dd(edge_weight, ctx.cutoff_upper)
         expanded = grad_grad_out_grad_filters * x[edge_src] * dC_dd.unsqueeze(1)
-        grad_edge_weight = torch.zeros_like(edge_weight).index_add(0, edge_dst, expanded)
+        grad_edge_weight = torch.zeros_like(edge_weight).index_add(
+            0, edge_dst, expanded
+        )
     return (
         grad_x,
         grad_edge_weight,

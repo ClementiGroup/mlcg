@@ -793,7 +793,9 @@ def grad_edge_weight_fused_cfconv(
     if out_dtype is None:
         out_dtype = x.dtype
 
-    grad_edge_weight = torch.empty(num_edges, device=x.device, dtype=out_dtype).contiguous()
+    grad_edge_weight = torch.empty(
+        num_edges, device=x.device, dtype=out_dtype
+    ).contiguous()
 
     if num_edges == 0:
         return grad_edge_weight

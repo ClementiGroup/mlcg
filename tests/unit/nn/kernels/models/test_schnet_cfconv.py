@@ -37,7 +37,8 @@ RECEIVERS = torch.tensor(
 
 database = MolDatabase()
 
-torch.set_float32_matmul_precision('high')
+torch.set_float32_matmul_precision("high")
+
 
 # Graph generation strategies
 @pytest.fixture(params=["fixed", "molecules"])
@@ -205,6 +206,8 @@ def test_standard_vs_flash_cfconv(device, graph_type):
             torch.testing.assert_close(
                 g2to,
                 g2tr,
+                atol=5e-5,  # encrease tolerance: also plain torch has error in that bound
+                rtol=5e-5,
                 msg=lambda msg: f"Failed second grad check wrt inner {inner_name}, outer {outer_name}\n\n{msg}",
             )
 
