@@ -117,7 +117,7 @@ def build_csr_index(
         csr_perm = torch.empty(0, dtype=torch.int64, device=device)
         return dst_ptr, csr_perm
 
-    counts = torch.zeros(num_nodes, dtype=torch.int32, device=device)
+    counts = torch.zeros(num_nodes, dtype=torch.int32, device=device).contiguous()
     BLOCK_SIZE = 1024
     grid = ((num_edges + BLOCK_SIZE - 1) // BLOCK_SIZE,)
 
@@ -128,11 +128,11 @@ def build_csr_index(
         BLOCK_SIZE=BLOCK_SIZE,
     )
 
-    dst_ptr = torch.zeros(num_nodes + 1, dtype=torch.int64, device=device)
+    dst_ptr = torch.zeros(num_nodes + 1, dtype=torch.int64, device=device).contiguous()
     dst_ptr[1:] = counts.to(torch.int64).cumsum(0)
 
     cursor = dst_ptr[:-1].clone().to(torch.int64)
-    csr_perm = torch.empty(num_edges, dtype=torch.int64, device=device)
+    csr_perm = torch.empty(num_edges, dtype=torch.int64, device=device).contiguous()
 
     wrap_triton(csr_fill_kernel)[grid](
         edge_dst,
