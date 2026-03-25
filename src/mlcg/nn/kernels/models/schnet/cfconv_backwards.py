@@ -171,7 +171,7 @@ def grad_filters_fused_cfconv(
 
     grad_filters = torch.empty(
         num_edges, feature_dim, device=x.device, dtype=out_dtype
-    )
+    ).contiguous()
 
     if num_edges == 0:
         return grad_filters
@@ -632,8 +632,7 @@ def cpu_grad_x_fused_cfconv(
     CPU fallback for fused_src_csr_grad_x
     """
     C = _torch_cosine_cutoff(edge_weight, cutoff_upper)
-    grad_x = torch.zeros_like(grad_output)
-    grad_x.index_add_(
+    grad_x = torch.zeros_like(grad_output).index_add(
         0, edge_src, grad_output[edge_dst] * filters * C.unsqueeze(-1)
     )
     return grad_x
@@ -794,7 +793,7 @@ def grad_edge_weight_fused_cfconv(
     if out_dtype is None:
         out_dtype = x.dtype
 
-    grad_edge_weight = torch.empty(num_edges, device=x.device, dtype=out_dtype)
+    grad_edge_weight = torch.empty(num_edges, device=x.device, dtype=out_dtype).contiguous()
 
     if num_edges == 0:
         return grad_edge_weight

@@ -8,8 +8,8 @@ import triton
 import triton.language as tl
 from torch.library import triton_op, wrap_triton
 
-# from .cfconv_backwards import (
-from .cfconv_backwards_torch_double_backward import (  # FIXME:understand if faster
+from .cfconv_backwards import (
+# from .cfconv_backwards_torch_double_backward import (  # FIXME:understand if faster
     grad_x_fused_cfconv,
     grad_filters_fused_cfconv,
     grad_edge_weight_fused_cfconv,
