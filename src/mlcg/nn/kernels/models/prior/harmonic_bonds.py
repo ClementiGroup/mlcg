@@ -24,11 +24,11 @@ def harmonic_bonds_edge_fwd_kernel(
     BLOCK: tl.constexpr,
 ):
     pid = tl.program_id(0)
-    k = pid * BLOCK + tl.arange(0, BLOCK)
-    mask = k < E
+    blk_idx = pid * BLOCK + tl.arange(0, BLOCK)
+    mask = blk_idx < E
 
-    off_i = k * EDGES_STRIDE0 + 0 * EDGES_STRIDE1
-    off_j = k * EDGES_STRIDE0 + 1 * EDGES_STRIDE1
+    off_i = blk_idx * EDGES_STRIDE0 + 0 * EDGES_STRIDE1
+    off_j = blk_idx * EDGES_STRIDE0 + 1 * EDGES_STRIDE1
     i = tl.load(edges_ptr + off_i, mask=mask, other=0).to(tl.int32)
     j = tl.load(edges_ptr + off_j, mask=mask, other=0).to(tl.int32)
 
@@ -60,7 +60,7 @@ def harmonic_bonds_edge_fwd_kernel(
     x = tl.sqrt(dx0 * dx0 + dx1 * dx1 + dx2 * dx2)
     xdiff = x - x_0
     e = k_ener * xdiff * xdiff
-    tl.store(eedge_ptr + k, e, mask=mask)
+    tl.store(eedge_ptr + blk_idx, e, mask=mask)
 
 
 @triton.jit
@@ -74,14 +74,14 @@ def scatter_sum_edges_kernel(
     BLOCK: tl.constexpr,
 ):
     pid = tl.program_id(0)
-    k = pid * BLOCK + tl.arange(0, BLOCK)
-    mask = k < E
-    e = tl.load(eedge_ptr + k, mask=mask, other=0.).to(tl.float32)
+    blk_idx = pid * BLOCK + tl.arange(0, BLOCK)
+    mask = blk_idx < E
+    e = tl.load(eedge_ptr + blk_idx, mask=mask, other=0.).to(tl.float32)
 
     if BATCH_DTYPE == 32:
-        b = tl.load(edge_batch_ptr + k, mask=mask, other=0).to(tl.int32)
+        b = tl.load(edge_batch_ptr + blk_idx, mask=mask, other=0).to(tl.int32)
     else:
-        b = tl.load(edge_batch_ptr + k, mask=mask, other=0).to(tl.int64)
+        b = tl.load(edge_batch_ptr + blk_idx, mask=mask, other=0).to(tl.int64)
 
     valid = mask & (b >= 0) & (b < B)
     tl.atomic_add(out_ptr + b, e, mask=valid)
@@ -108,19 +108,20 @@ def harmonic_bonds_pos_bwd_kernel(
     BLOCK: tl.constexpr,
 ):
     pid = tl.program_id(0)
-    k = pid * BLOCK + tl.arange(0, BLOCK)
-    mask = k < E
+    blk_idx = pid * BLOCK + tl.arange(0, BLOCK)
+    mask = blk_idx < E
 
-    off_i = k * EDGES_STRIDE0 + 0 * EDGES_STRIDE1
-    off_j = k * EDGES_STRIDE0 + 1 * EDGES_STRIDE1
+    off_i = blk_idx * EDGES_STRIDE0 + 0 * EDGES_STRIDE1
+    off_j = blk_idx * EDGES_STRIDE0 + 1 * EDGES_STRIDE1
+
     i = tl.load(edges_ptr + off_i, mask=mask, other=0).to(tl.int64)
     j = tl.load(edges_ptr + off_j, mask=mask, other=0).to(tl.int64)
 
     # grad multiplier per edge from upstream grad_y[batch]
     if BATCH_DTYPE == 32:
-        b = tl.load(edge_batch_ptr + k, mask=mask, other=0).to(tl.int32)
+        b = tl.load(edge_batch_ptr + blk_idx, mask=mask, other=0).to(tl.int32)
     else:
-        b = tl.load(edge_batch_ptr + k, mask=mask, other=0).to(tl.int64)
+        b = tl.load(edge_batch_ptr + blk_idx, mask=mask, other=0).to(tl.int64)
     gy = tl.load(grad_y_ptr + b, mask=mask & (b >= 0) & (b < B), other=0.).to(tl.float32)
 
     if TYPE_DTYPE == 32:
