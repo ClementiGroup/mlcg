@@ -63,6 +63,7 @@ def test_repulsion_kernel(device, Base_prior, Flash_prior):
     data = data.to(device)
     base_prior = base_prior.to(device)
     flash_prior = flash_prior.to(device)
+    compiled_flash_prior = compiled_flash_prior.to(device)
 
     data = base_prior(data)
     base_energy = data.out[Repulsion.name]["energy"]
