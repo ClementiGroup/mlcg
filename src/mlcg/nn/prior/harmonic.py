@@ -17,6 +17,7 @@ from ...geometry.internal_coordinates import (
 )
 
 from ..kernels.models.prior.harmonic_bonds import flash_harmonic_bonds
+from ..kernels.models.prior.harmonic_angles import flash_harmonic_angles
 
 torch_pi = torch.tensor(pi)
 
@@ -607,6 +608,56 @@ class FlashHarmonicBonds(_Prior):
         assert pos.shape[-1] == 3, "pos must be [N,3]"
         assert index_mapping.shape[-1] == 2, "index_mapping must be [E,2]"
         y = flash_harmonic_bonds(
+            pos=pos,
+            atom_types=atom_types,
+            index_mapping=index_mapping,
+            mapping_batch=mapping_batch,
+            k=self.k,
+            x_0=self.x_0,
+            num_graphs=num_graphs,
+            block=self.block,
+            num_warps=self.num_warps,
+        )
+        data.out[self.name] = {"energy": y}
+        return data
+
+
+class FlashHarmonicAngles(_Prior):
+    """
+    Computes per-graph repulsion energy:
+        e_ijk = k[type_i, type_j, type_k]* (cos(theta_ijk) - cos0_ijk)^6
+    reduced as sum over edges per graph (using mapping_batch).
+
+    Returns: y of shape [num_graphs] (float32).
+    """
+
+    name = "repulsion"
+
+    def __init__(
+        self,
+        k: torch.Tensor,
+        x_0: torch.Tensor,
+        name: str,
+        block: int = 256,
+        num_warps: int = 4,
+    ):
+        super().__init__()
+        self.register_buffer("k", k)
+        self.register_buffer("x_0", x_0)
+        self.block = int(block)
+        self.num_warps = int(num_warps)
+        self.name = name
+
+    def forward(self, data) -> torch.Tensor:  # int
+        # minimal checks
+        pos = data.pos  # [N,3],
+        atom_types = data.atom_types  # [N], int32 or int64
+        index_mapping = data.neighbor_list[self.name]["index_mapping"].T
+        mapping_batch = data.neighbor_list[self.name]["mapping_batch"]
+        num_graphs = data.ptr.numel() - 1 if hasattr(data, "ptr") else None
+        assert pos.shape[-1] == 3, "pos must be [N,3]"
+        assert index_mapping.shape[-1] == 3, "index_mapping must be [E,3]"
+        y = flash_harmonic_angles(
             pos=pos,
             atom_types=atom_types,
             index_mapping=index_mapping,
