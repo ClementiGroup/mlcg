@@ -257,29 +257,25 @@ class FlashRepulsion(_Prior):
         sigma: torch.Tensor,
         name: str,
         eps: float = 1e-12,
-        block: int = 256,
-        num_warps: int = 4,
     ):
         super().__init__()
         self.register_buffer("sigma", sigma)
         self.eps = float(eps)
-        self.block = int(block)
-        self.num_warps = int(num_warps)
         self.name = name
 
     def forward(self, data) -> torch.Tensor:  # int
         # minimal checks
         pos = data.pos  # [N,3],
         atom_types = data.atom_types  # [N], int32 or int64
-        index_mapping = data.neighbor_list[self.name]["index_mapping"].T
+        index_mapping = data.neighbor_list[self.name]["index_mapping"]
         mapping_batch = data.neighbor_list[self.name]["mapping_batch"]
         num_graphs = data.ptr.numel() - 1 if hasattr(data, "ptr") else None
-        assert pos.is_cuda, "pos must be CUDA"
+        # assert pos.is_cuda, "pos must be CUDA"
         assert pos.shape[-1] == 3, "pos must be [N,3]"
-        assert index_mapping.shape[-1] == 2, "index_mapping must be [E,2]"
-        assert (
-            self.sigma.is_cuda == pos.is_cuda
-        ), "sigma and pos must be on same device"
+        assert index_mapping.shape[0] == 2, "index_mapping must be [2,E]"
+        # assert (
+        # self.sigma.is_cuda == pos.is_cuda
+        # ), "sigma and pos must be on same device"
         y = flash_repulsion(
             pos=pos,
             atom_types=atom_types,
@@ -288,8 +284,6 @@ class FlashRepulsion(_Prior):
             sigma=self.sigma,
             num_graphs=num_graphs,
             eps=self.eps,
-            block=self.block,
-            num_warps=self.num_warps,
         )
         data.out[self.name] = {"energy": y}
         return data
