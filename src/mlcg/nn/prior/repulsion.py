@@ -261,11 +261,7 @@ class FlashRepulsion(_Prior):
         num_warps: int = 4,
     ):
         super().__init__()
-        # register as parameter or buffer depending on whether you want to learn sigma
-        # If sigma is fixed: use register_buffer; if learnable: nn.Parameter.
-        self.sigma = torch.nn.Parameter(
-            sigma
-        )  # change to register_buffer(...) if fixed
+        self.register_buffer("sigma", sigma)
         self.eps = float(eps)
         self.block = int(block)
         self.num_warps = int(num_warps)
