@@ -7,11 +7,21 @@ from torch_geometric.utils import scatter
 from ...utils import ensure_contiguous
 from .....geometry import compute_angles_cos
 
+@triton.autotune(
+    configs=[
+        triton.Config({"BLOCK": 64}, num_warps=2),
+        triton.Config({"BLOCK": 128}, num_warps=4),
+        triton.Config({"BLOCK": 256}, num_warps=4),
+        triton.Config({"BLOCK": 512}, num_warps=8),
+        triton.Config({"BLOCK": 1024}, num_warps=8),
+    ],
+    key=[],
+)
 @triton.jit
 def harmonic_angles_edge_fwd_kernel(
     pos_ptr,          # *fp16/fp32, [N,3]
-    types_ptr,        # *i32/i64,   [N]
-    edges_ptr,        # *i32,       [E,2] (may be non-contiguous)
+    atom_types_ptr,        # *i32/i64,   [N]
+    index_mapping_ptr,        # *i32,       [E,2] (may be non-contiguous)
     k_ptr,
     x_ptr,        # *fp16/fp32, [T,T]
     eedge_ptr,        # *fp32,      [E]
@@ -33,18 +43,18 @@ def harmonic_angles_edge_fwd_kernel(
     off_j = blk_idx * EDGES_STRIDE0 + 1 * EDGES_STRIDE1
     off_k = blk_idx * EDGES_STRIDE0 + 2 * EDGES_STRIDE1
 
-    i = tl.load(edges_ptr + off_i, mask=mask, other=0).to(tl.int32)
-    j = tl.load(edges_ptr + off_j, mask=mask, other=0).to(tl.int32)
-    k = tl.load(edges_ptr + off_k, mask=mask, other=0).to(tl.int32)
+    i = tl.load(index_mapping_ptr + off_i, mask=mask, other=0).to(tl.int32)
+    j = tl.load(index_mapping_ptr + off_j, mask=mask, other=0).to(tl.int32)
+    k = tl.load(index_mapping_ptr + off_k, mask=mask, other=0).to(tl.int32)
 
     if TYPE_DTYPE == 32:
-        ti = tl.load(types_ptr + i, mask=mask, other=0).to(tl.int32)
-        tj = tl.load(types_ptr + j, mask=mask, other=0).to(tl.int32)
-        tk = tl.load(types_ptr + k, mask=mask, other=0).to(tl.int32)
+        ti = tl.load(atom_types_ptr + i, mask=mask, other=0).to(tl.int32)
+        tj = tl.load(atom_types_ptr + j, mask=mask, other=0).to(tl.int32)
+        tk = tl.load(atom_types_ptr + k, mask=mask, other=0).to(tl.int32)
     else:
-        ti = tl.load(types_ptr + i, mask=mask, other=0).to(tl.int64)
-        tj = tl.load(types_ptr + j, mask=mask, other=0).to(tl.int64)
-        tk = tl.load(types_ptr + k, mask=mask, other=0).to(tl.int64)
+        ti = tl.load(atom_types_ptr + i, mask=mask, other=0).to(tl.int64)
+        tj = tl.load(atom_types_ptr + j, mask=mask, other=0).to(tl.int64)
+        tk = tl.load(atom_types_ptr + k, mask=mask, other=0).to(tl.int64)
 
     k_ener = tl.load(k_ptr + ti * K_STRIDE0 + tj*K_STRIDE1 + tk, mask=mask, other=0.).to(tl.float32)
     x_0 = tl.load(x_ptr + ti * X_0_STRIDE0 + tj*X_0_STRIDE1 + tk, mask=mask, other=0.).to(tl.float32)
@@ -55,49 +65,35 @@ def harmonic_angles_edge_fwd_kernel(
     j3 = j * 3
     k3 = k * 3
 
-    xi0 = tl.load(pos_ptr + i3 + 0, mask=mask, other=0.).to(tl.float32)
-    xi1 = tl.load(pos_ptr + i3 + 1, mask=mask, other=0.).to(tl.float32)
-    xi2 = tl.load(pos_ptr + i3 + 2, mask=mask, other=0.).to(tl.float32)
+    xi = tl.load(pos_ptr + i3 + 0, mask=mask, other=0.).to(tl.float32)
+    yi = tl.load(pos_ptr + i3 + 1, mask=mask, other=0.).to(tl.float32)
+    zi = tl.load(pos_ptr + i3 + 2, mask=mask, other=0.).to(tl.float32)
     
-    xj0 = tl.load(pos_ptr + j3 + 0, mask=mask, other=0.).to(tl.float32)
-    xj1 = tl.load(pos_ptr + j3 + 1, mask=mask, other=0.).to(tl.float32)
-    xj2 = tl.load(pos_ptr + j3 + 2, mask=mask, other=0.).to(tl.float32)
+    xj = tl.load(pos_ptr + j3 + 0, mask=mask, other=0.).to(tl.float32)
+    yj = tl.load(pos_ptr + j3 + 1, mask=mask, other=0.).to(tl.float32)
+    zj = tl.load(pos_ptr + j3 + 2, mask=mask, other=0.).to(tl.float32)
 
-    xk0 = tl.load(pos_ptr + k3 + 0, mask=mask, other=0.).to(tl.float32)
-    xk1 = tl.load(pos_ptr + k3 + 1, mask=mask, other=0.).to(tl.float32)
-    xk2 = tl.load(pos_ptr + k3 + 2, mask=mask, other=0.).to(tl.float32)
-
-    """
-    dij0 = xi0 - xj0
-    dij1 = xi1 - xj1
-    dij2 = xi2 - xj2
-
-    dkj0 = xk0 - xj0
-    dkj1 = xk1 - xj1
-    dkj2 = xk2 - xj2
-    
-    dot = dij0 * dkj0 + dij1 * dkj1 + dij2 * dkj2  
-    norm_dij_dkj = tl.sqrt((dij0 * dij0 + dij1 * dij1 + dij2 * dij2) * (dkj0 * dkj0 + dkj1 * dkj1 + dkj2 * dkj2))
-    cos_ang = dot / norm_dij_dkj
-    """
+    xk = tl.load(pos_ptr + k3 + 0, mask=mask, other=0.).to(tl.float32)
+    yk = tl.load(pos_ptr + k3 + 1, mask=mask, other=0.).to(tl.float32)
+    zk = tl.load(pos_ptr + k3 + 2, mask=mask, other=0.).to(tl.float32)
 
        
-    dij0 = xi0 - xj0
-    dij1 = xi1 - xj1
-    dij2 = xi2 - xj2
+    dijx = xi - xj
+    dijy = yi - yj
+    dijz = zi - zj
 
-    dkj0 = xk0 - xj0
-    dkj1 = xk1 - xj1
-    dkj2 = xk2 - xj2
+    dkjx = xk - xj
+    dkjy = yk - yj
+    dkjz = zk - zj
 
     # norms
-    a2 = dij0*dij0 + dij1*dij1 + dij2*dij2
-    b2 = dkj0*dkj0 + dkj1*dkj1 + dkj2*dkj2
+    a2 = dijx*dijx + dijy*dijy + dijz*dijz
+    b2 = dkjx*dkjx + dkjy*dkjy + dkjz*dkjz
     A = tl.sqrt(a2)
     B = tl.sqrt(b2)
 
     invAB = 1.0 / (A * B)
-    dot = dij0*dkj0 + dij1*dkj1 + dij2*dkj2
+    dot = dijx*dkjx + dijy*dkjy + dijz*dkjz
     cosang = dot * invAB
     xdiff = (cosang-x_0)
     e = k_ener * xdiff * xdiff
@@ -130,12 +126,21 @@ def scatter_sum_edges_kernel(
     valid = mask & (b >= 0) & (b < B)
     tl.atomic_add(out_ptr + b, e, mask=valid)
 
-
+@triton.autotune(
+    configs=[
+        triton.Config({"BLOCK": 64}, num_warps=2),
+        triton.Config({"BLOCK": 128}, num_warps=4),
+        triton.Config({"BLOCK": 256}, num_warps=4),
+        triton.Config({"BLOCK": 512}, num_warps=8),
+        triton.Config({"BLOCK": 1024}, num_warps=8),
+    ],
+    key=[],
+)
 @triton.jit
 def harmonic_angles_pos_bwd_kernel(
     pos_ptr,          # *fp16/fp32, [N,3] (read)
-    types_ptr,        # *i32/i64,   [N]
-    edges_ptr,        # *i32,       [E,2]
+    atom_types_ptr,        # *i32/i64,   [N]
+    index_mapping_ptr,        # *i32,       [E,3]
     k_ptr,
     x_ptr,   
     edge_batch_ptr,   # *i32/i64,   [E]
@@ -161,18 +166,18 @@ def harmonic_angles_pos_bwd_kernel(
     off_j = blk_idx * EDGES_STRIDE0 + 1 * EDGES_STRIDE1
     off_k = blk_idx * EDGES_STRIDE0 + 2 * EDGES_STRIDE1
 
-    i = tl.load(edges_ptr + off_i, mask=mask, other=0).to(tl.int32)
-    j = tl.load(edges_ptr + off_j, mask=mask, other=0).to(tl.int32)
-    k = tl.load(edges_ptr + off_k, mask=mask, other=0).to(tl.int32)
+    i = tl.load(index_mapping_ptr + off_i, mask=mask, other=0).to(tl.int32)
+    j = tl.load(index_mapping_ptr + off_j, mask=mask, other=0).to(tl.int32)
+    k = tl.load(index_mapping_ptr + off_k, mask=mask, other=0).to(tl.int32)
 
     if TYPE_DTYPE == 32:
-        ti = tl.load(types_ptr + i, mask=mask, other=0).to(tl.int32)
-        tj = tl.load(types_ptr + j, mask=mask, other=0).to(tl.int32)
-        tk = tl.load(types_ptr + k, mask=mask, other=0).to(tl.int32)
+        ti = tl.load(atom_types_ptr + i, mask=mask, other=0).to(tl.int32)
+        tj = tl.load(atom_types_ptr + j, mask=mask, other=0).to(tl.int32)
+        tk = tl.load(atom_types_ptr + k, mask=mask, other=0).to(tl.int32)
     else:
-        ti = tl.load(types_ptr + i, mask=mask, other=0).to(tl.int64)
-        tj = tl.load(types_ptr + j, mask=mask, other=0).to(tl.int64)
-        tk = tl.load(types_ptr + k, mask=mask, other=0).to(tl.int64)
+        ti = tl.load(atom_types_ptr + i, mask=mask, other=0).to(tl.int64)
+        tj = tl.load(atom_types_ptr + j, mask=mask, other=0).to(tl.int64)
+        tk = tl.load(atom_types_ptr + k, mask=mask, other=0).to(tl.int64)
     
     # grad multiplier per edge from upstream grad_y[batch]
     if BATCH_DTYPE == 32:
@@ -191,58 +196,60 @@ def harmonic_angles_pos_bwd_kernel(
     j3 = j * 3
     k3 = k * 3
 
-    xi0 = tl.load(pos_ptr + i3 + 0, mask=mask, other=0.).to(tl.float32)
-    xi1 = tl.load(pos_ptr + i3 + 1, mask=mask, other=0.).to(tl.float32)
-    xi2 = tl.load(pos_ptr + i3 + 2, mask=mask, other=0.).to(tl.float32)
+    xi = tl.load(pos_ptr + i3 + 0, mask=mask, other=0.).to(tl.float32)
+    yi = tl.load(pos_ptr + i3 + 1, mask=mask, other=0.).to(tl.float32)
+    zi = tl.load(pos_ptr + i3 + 2, mask=mask, other=0.).to(tl.float32)
     
-    xj0 = tl.load(pos_ptr + j3 + 0, mask=mask, other=0.).to(tl.float32)
-    xj1 = tl.load(pos_ptr + j3 + 1, mask=mask, other=0.).to(tl.float32)
-    xj2 = tl.load(pos_ptr + j3 + 2, mask=mask, other=0.).to(tl.float32)
+    xj = tl.load(pos_ptr + j3 + 0, mask=mask, other=0.).to(tl.float32)
+    yj = tl.load(pos_ptr + j3 + 1, mask=mask, other=0.).to(tl.float32)
+    zj = tl.load(pos_ptr + j3 + 2, mask=mask, other=0.).to(tl.float32)
 
-    xk0 = tl.load(pos_ptr + k3 + 0, mask=mask, other=0.).to(tl.float32)
-    xk1 = tl.load(pos_ptr + k3 + 1, mask=mask, other=0.).to(tl.float32)
-    xk2 = tl.load(pos_ptr + k3 + 2, mask=mask, other=0.).to(tl.float32)
+    xk = tl.load(pos_ptr + k3 + 0, mask=mask, other=0.).to(tl.float32)
+    yk = tl.load(pos_ptr + k3 + 1, mask=mask, other=0.).to(tl.float32)
+    zk = tl.load(pos_ptr + k3 + 2, mask=mask, other=0.).to(tl.float32)
 
     
-    dij0 = xi0 - xj0
-    dij1 = xi1 - xj1
-    dij2 = xi2 - xj2
+    dijx = xi - xj
+    dijy = yi - yj
+    dijz = zi - zj
 
-    dkj0 = xk0 - xj0
-    dkj1 = xk1 - xj1
-    dkj2 = xk2 - xj2
+    dkjx = xk - xj
+    dkjy = yk - yj
+    dkjz = zk - zj
 
     # norms
-    a2 = dij0*dij0 + dij1*dij1 + dij2*dij2
-    b2 = dkj0*dkj0 + dkj1*dkj1 + dkj2*dkj2
+    a2 = dijx*dijx + dijy*dijy + dijz*dijz
+    b2 = dkjx*dkjx + dkjy*dkjy + dkjz*dkjz
     A = tl.sqrt(a2)
     B = tl.sqrt(b2)
 
     invAB = 1.0 / (A * B)
-    dot = dij0*dkj0 + dij1*dkj1 + dij2*dkj2
+    dot = dijx*dkjx + dijy*dkjy + dijz*dkjz
     cosang = dot * invAB
+    xdiff = (cosang-x_0)
+    de = 2*k_ener * xdiff
 
     invA2 = 1.0 / (a2)   # ~ 1/A^2
     invB2 = 1.0 / (b2)   # ~ 1/B^2
 
     # dc/da = b/(AB) - c * a/(A^2)
-    dca0 = dkj0 * invAB - cosang * dij0 * invA2
-    dca1 = dkj1 * invAB - cosang * dij1 * invA2
-    dca2 = dkj2 * invAB - cosang * dij2 * invA2
+    dca0 = dkjx * invAB - cosang * dijx * invA2
+    dca1 = dkjy * invAB - cosang * dijy * invA2
+    dca2 = dkjz * invAB - cosang * dijz * invA2
 
     # dc/db = a/(AB) - c * b/(B^2)
-    dcb0 = dij0 * invAB - cosang * dkj0 * invB2
-    dcb1 = dij1 * invAB - cosang * dkj1 * invB2
-    dcb2 = dij2 * invAB - cosang * dkj2 * invB2
+    dcb0 = dijx * invAB - cosang * dkjx * invB2
+    dcb1 = dijy * invAB - cosang * dkjy * invB2
+    dcb2 = dijz * invAB - cosang * dkjz * invB2
 
     # Multiply by upstream grad
-    gi0 = gy * dca0
-    gi1 = gy * dca1
-    gi2 = gy * dca2
+    gi0 = gy * de * dca0
+    gi1 = gy * de * dca1
+    gi2 = gy * de * dca2
 
-    gk0 = gy * dcb0
-    gk1 = gy * dcb1
-    gk2 = gy * dcb2
+    gk0 = gy * de * dcb0
+    gk1 = gy * de * dcb1
+    gk2 = gy * de * dcb2
     
     gj0 = -(gi0 + gk0)
     gj1 = -(gi1 + gk1)
@@ -263,8 +270,7 @@ def harmonic_angles_pos_bwd_kernel(
     tl.atomic_add(grad_pos_ptr + k3 + 2, gk2, mask=mask)
 
 
-#class RepulsionSigmaOverR6Fn(torch.autograd.Function):
-#    @staticmethod
+
 @triton_op("mlcg_kernels::flash_harmonic_angles", mutates_args={})
 @ensure_contiguous
 def flash_harmonic_angles(
@@ -286,7 +292,12 @@ def flash_harmonic_angles(
 
     grid = (triton.cdiv(E, block),)
     wrap_triton(harmonic_angles_edge_fwd_kernel)[grid](
-        pos, atom_types, index_mapping, k, x_0, eedge,
+        pos, 
+        atom_types, 
+        index_mapping, 
+        k,
+        x_0, 
+        eedge,
         E=E,
         TYPE_DTYPE=32 if atom_types.dtype == torch.int32 else 64,
         K_STRIDE0=k.stride(0),
@@ -295,8 +306,6 @@ def flash_harmonic_angles(
         X_0_STRIDE1=x_0.stride(1),
         EDGES_STRIDE0=index_mapping.stride(0),
         EDGES_STRIDE1=index_mapping.stride(1),
-        BLOCK=block,
-        num_warps=num_warps,
     )
     wrap_triton(scatter_sum_edges_kernel)[grid](
         eedge, mapping_batch, y,
@@ -349,7 +358,6 @@ def backward_flash_harmonic_angles(ctx, grad_y):
     E = index_mapping.shape[0]
     block = ctx.block
     grid = (triton.cdiv(E, block),)
-
     wrap_triton(harmonic_angles_pos_bwd_kernel)[grid](
         pos, 
         atom_types, 
@@ -369,7 +377,6 @@ def backward_flash_harmonic_angles(ctx, grad_y):
         X_0_STRIDE1=x_0.stride(1),
         EDGES_STRIDE0=index_mapping.stride(0),
         EDGES_STRIDE1=index_mapping.stride(1),
-        BLOCK=block,
         num_warps=ctx.num_warps,
     )
 
