@@ -2,6 +2,7 @@ import torch
 import pytorch_lightning as pl
 from ..utils import detect_nan_parameters
 from typing import Tuple
+from collections.abc import Mapping
 from copy import deepcopy
 
 from ..data import AtomicData
@@ -113,7 +114,30 @@ class PLModel(pl.LightningModule):
     def step(self, data: AtomicData, stage: str) -> Tuple[torch.Tensor, int]:
         with torch.set_grad_enabled(stage == "train" or self.derivative):
             data = self.model(data)
-        data.out.update(**data.out[self.model.name])
+
+
+        # data.out.update(**data.out[self.model.name])
+
+
+        # Support both output styles:
+        # 1) Nested: data.out[self.model.name] is a dict of targets
+        # 2) Flat (SumOut default): targets are already at top level in data.out
+        model_out = data.out.get(self.model.name)
+
+        if model_out is None:
+            # Flat-output models are valid as long as they produced something.
+            if len(data.out) == 0:
+                raise KeyError(
+                    f"Model '{self.model.name}' did not populate data.out with predictions."
+                )
+        elif isinstance(model_out, Mapping):
+            data.out.update(**model_out)
+        else:
+            raise TypeError(
+                f"Expected data.out['{self.model.name}'] to be a mapping, got "
+                f"{type(model_out).__name__}."
+            )
+
         loss = self.loss(data)
         batch_size = data[N_ATOMS_KEY].shape[0]
         # Add sync_dist=True to sync logging across all GPU workers
