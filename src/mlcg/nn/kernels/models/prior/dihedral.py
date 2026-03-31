@@ -575,10 +575,8 @@ def cpu_bwd_flash_harmonic_angles(
     mapping_batch:torch.Tensor, 
     k1 : torch.Tensor, 
     k2 : torch.Tensor, 
-    v_0 : torch.Tensor,
     deg : int,
     grad_y: torch.Tensor,
-    num_graphs: int,
 ) -> torch.Tensor:
     grad_pos = torch.zeros_like(pos)
     i = index_mapping[0].long()
@@ -615,10 +613,11 @@ def cpu_bwd_flash_harmonic_angles(
     b2_sq = (b2*b2).sum(dim=1)
     b2_len = torch.sqrt(b2_sq)
 
-    x = (n1*n2).sum(dim=1)
-    c = torch.cross(n1,n2)
-    y = ((c*b2).sum(dim=1)) / b2_len
-    phi = torch.atan2(y, x)
+    #x = (n1*n2).sum(dim=1)
+    #c = torch.cross(n1,n2)
+    #y = ((c*b2).sum(dim=1)) / b2_len
+    #phi = torch.atan2(y, x)
+    
     interaction_types = tuple(
             atom_types[index_mapping[ii]] for ii in range(4)
         )
@@ -629,7 +628,6 @@ def cpu_bwd_flash_harmonic_angles(
     k2s = torch.vstack(
         [k2[ii][interaction_types] for ii in range(deg)]
     ).t()
-    v_0s = v_0[interaction_types].view(-1, 1)
 
     phis = compute_torsions(pos,index_mapping)
 
@@ -645,16 +643,16 @@ def cpu_bwd_flash_harmonic_angles(
     inv_n1 = 1.0 / n1_sq
     inv_n2 = 1.0 / n2_sq
 
-    dphi_i = b2_len*n1*inv_n1
-    dphi_l = -b2_len*n2*inv_n2
+    dphi_i = b2_len.unsqueeze(1)*n1*inv_n1.unsqueeze(1)
+    dphi_l = -b2_len.unsqueeze(1)*n2*inv_n2.unsqueeze(1)
     b1_dot_b2 = (b1*b2).sum(dim=1)
     b3_dot_b2 = (b3*b2).sum(dim=1)
     inv_b2sq = 1.0 / b2_sq
     a = b1_dot_b2 * inv_b2sq
     c_ = b3_dot_b2 * inv_b2sq
 
-    dphi_j = -dphi_i+a*dphi_i-c_*dphi_l
-    dphi_k = -dphi_l+a*dphi_i-c_*dphi_l
+    dphi_j = -dphi_i+a.unsqueeze(1)*dphi_i-c_.unsqueeze(1)*dphi_l
+    dphi_k = -dphi_l+a.unsqueeze(1)*dphi_i-c_.unsqueeze(1)*dphi_l
 
     gi = de*dphi_i
     gj = de*dphi_j
