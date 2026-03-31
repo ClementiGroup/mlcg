@@ -21,8 +21,8 @@ from .....geometry import compute_distances
 @triton.jit
 def repulsion_edge_fwd_kernel(
     pos_ptr,  # *fp16/fp32, [N,3]
-    types_ptr,  # *i32/i64,   [N]
-    edges_ptr,  # *i32,       [2, E]
+    atom_types_ptr,  # *i32/i64,   [N]
+    index_mapping_ptr,  # *i32,       [2, E]
     sigma_ptr,  # *fp16/fp32, [T,T]
     eedge_ptr,  # *fp32,      [E]
     E,
@@ -37,17 +37,17 @@ def repulsion_edge_fwd_kernel(
 
     off_i = k
     off_j = k + E
-    i = tl.load(edges_ptr + off_i, mask=mask, other=0).to(
+    i = tl.load(index_mapping_ptr + off_i, mask=mask, other=0).to(
         tl.int32
     )  # FIXME: indeces are int64 do we want them in int32?
-    j = tl.load(edges_ptr + off_j, mask=mask, other=0).to(tl.int32)
+    j = tl.load(index_mapping_ptr + off_j, mask=mask, other=0).to(tl.int32)
 
     if TYPE_DTYPE == 32:
-        ti = tl.load(types_ptr + i, mask=mask, other=0).to(tl.int32)
-        tj = tl.load(types_ptr + j, mask=mask, other=0).to(tl.int32)
+        ti = tl.load(atom_types_ptr + i, mask=mask, other=0).to(tl.int32)
+        tj = tl.load(atom_types_ptr + j, mask=mask, other=0).to(tl.int32)
     else:
-        ti = tl.load(types_ptr + i, mask=mask, other=0).to(tl.int64)
-        tj = tl.load(types_ptr + j, mask=mask, other=0).to(tl.int64)
+        ti = tl.load(atom_types_ptr + i, mask=mask, other=0).to(tl.int64)
+        tj = tl.load(atom_types_ptr + j, mask=mask, other=0).to(tl.int64)
 
     sig = tl.load(sigma_ptr + ti * SIG_STRIDE0 + tj, mask=mask, other=0.0).to(
         tl.float32
@@ -146,8 +146,8 @@ def backward_flash_repulsion(ctx, grad_y):
             pos,
             atom_types,
             index_mapping,
-            sigma,
             mapping_batch,
+            sigma,
             grad_y,
             ctx.num_graphs,
             ctx.eps,
@@ -195,10 +195,10 @@ def cpu_flash_repulsion(
 @triton.jit
 def repulsion_pos_bwd_kernel(
     pos_ptr,  # *fp16/fp32, [N,3] (read)
-    types_ptr,  # *i32/i64,   [N]
-    edges_ptr,  # *i32,       [2,E]
+    atom_types_ptr,  # *i32/i64,   [N]
+    index_mapping_ptr,  # *i32,       [2,E]
+    mapping_batch_ptr,  # *i32/i64,   [E]
     sigma_ptr,  # *fp16/fp32, [T,T]
-    edge_batch_ptr,  # *i32/i64,   [E]
     grad_y_ptr,  # *fp32,      [B]
     grad_pos_ptr,  # *fp32,      [N,3] (atomic add)
     E,
@@ -215,26 +215,26 @@ def repulsion_pos_bwd_kernel(
 
     off_i = k
     off_j = k + E
-    i = tl.load(edges_ptr + off_i, mask=mask, other=0).to(
+    i = tl.load(index_mapping_ptr + off_i, mask=mask, other=0).to(
         tl.int32
     )  # FIXME: indeces are int64 do we want them in int32?
-    j = tl.load(edges_ptr + off_j, mask=mask, other=0).to(tl.int32)
+    j = tl.load(index_mapping_ptr + off_j, mask=mask, other=0).to(tl.int32)
 
     # grad multiplier per edge from upstream grad_y[batch]
     if BATCH_DTYPE == 32:
-        b = tl.load(edge_batch_ptr + k, mask=mask, other=0).to(tl.int32)
+        b = tl.load(mapping_batch_ptr + k, mask=mask, other=0).to(tl.int32)
     else:
-        b = tl.load(edge_batch_ptr + k, mask=mask, other=0).to(tl.int64)
+        b = tl.load(mapping_batch_ptr + k, mask=mask, other=0).to(tl.int64)
     gy = tl.load(grad_y_ptr + b, mask=mask & (b >= 0) & (b < B), other=0.0).to(
         tl.float32
     )
 
     if TYPE_DTYPE == 32:
-        ti = tl.load(types_ptr + i, mask=mask, other=0).to(tl.int32)
-        tj = tl.load(types_ptr + j, mask=mask, other=0).to(tl.int32)
+        ti = tl.load(atom_types_ptr + i, mask=mask, other=0).to(tl.int32)
+        tj = tl.load(atom_types_ptr + j, mask=mask, other=0).to(tl.int32)
     else:
-        ti = tl.load(types_ptr + i, mask=mask, other=0).to(tl.int64)
-        tj = tl.load(types_ptr + j, mask=mask, other=0).to(tl.int64)
+        ti = tl.load(atom_types_ptr + i, mask=mask, other=0).to(tl.int64)
+        tj = tl.load(atom_types_ptr + j, mask=mask, other=0).to(tl.int64)
 
     sig = tl.load(sigma_ptr + ti * SIG_STRIDE0 + tj, mask=mask, other=0.0).to(
         tl.float32
@@ -243,18 +243,18 @@ def repulsion_pos_bwd_kernel(
     # positions
     i3 = i * 3
     j3 = j * 3
-    xi0 = tl.load(pos_ptr + i3 + 0, mask=mask, other=0.0).to(tl.float32)
-    xi1 = tl.load(pos_ptr + i3 + 1, mask=mask, other=0.0).to(tl.float32)
-    xi2 = tl.load(pos_ptr + i3 + 2, mask=mask, other=0.0).to(tl.float32)
-    xj0 = tl.load(pos_ptr + j3 + 0, mask=mask, other=0.0).to(tl.float32)
-    xj1 = tl.load(pos_ptr + j3 + 1, mask=mask, other=0.0).to(tl.float32)
-    xj2 = tl.load(pos_ptr + j3 + 2, mask=mask, other=0.0).to(tl.float32)
+    xi = tl.load(pos_ptr + i3 + 0, mask=mask, other=0.0).to(tl.float32)
+    yi = tl.load(pos_ptr + i3 + 1, mask=mask, other=0.0).to(tl.float32)
+    zi = tl.load(pos_ptr + i3 + 2, mask=mask, other=0.0).to(tl.float32)
+    xj = tl.load(pos_ptr + j3 + 0, mask=mask, other=0.0).to(tl.float32)
+    yj = tl.load(pos_ptr + j3 + 1, mask=mask, other=0.0).to(tl.float32)
+    zj = tl.load(pos_ptr + j3 + 2, mask=mask, other=0.0).to(tl.float32)
 
-    dx0 = xi0 - xj0
-    dx1 = xi1 - xj1
-    dx2 = xi2 - xj2
+    dx = xi - xj
+    dy = yi - yj
+    dz = zi - zj
 
-    r2 = dx0 * dx0 + dx1 * dx1 + dx2 * dx2
+    r2 = dx * dx + dy * dy + dz * dz
     inv_r2 = 1.0 / (r2 + eps)
     inv_r4 = inv_r2 * inv_r2
     inv_r8 = inv_r4 * inv_r4  # (r^2)^-4
@@ -268,18 +268,18 @@ def repulsion_pos_bwd_kernel(
     scale = (-6.0) * sig6 * inv_r8
     scale = scale * gy
 
-    g0 = scale * dx0
-    g1 = scale * dx1
-    g2 = scale * dx2
+    gx = scale * dx
+    gy = scale * dy
+    gz = scale * dz
 
     # atomic add to grad_pos for i and j
-    tl.atomic_add(grad_pos_ptr + i3 + 0, g0, mask=mask)
-    tl.atomic_add(grad_pos_ptr + i3 + 1, g1, mask=mask)
-    tl.atomic_add(grad_pos_ptr + i3 + 2, g2, mask=mask)
+    tl.atomic_add(grad_pos_ptr + i3 + 0, gx, mask=mask)
+    tl.atomic_add(grad_pos_ptr + i3 + 1, gy, mask=mask)
+    tl.atomic_add(grad_pos_ptr + i3 + 2, gz, mask=mask)
 
-    tl.atomic_add(grad_pos_ptr + j3 + 0, -g0, mask=mask)
-    tl.atomic_add(grad_pos_ptr + j3 + 1, -g1, mask=mask)
-    tl.atomic_add(grad_pos_ptr + j3 + 2, -g2, mask=mask)
+    tl.atomic_add(grad_pos_ptr + j3 + 0, -gx, mask=mask)
+    tl.atomic_add(grad_pos_ptr + j3 + 1, -gy, mask=mask)
+    tl.atomic_add(grad_pos_ptr + j3 + 2, -gz, mask=mask)
 
 
 @triton_op("mlcg_kernels::repulsion_pos_bwd", mutates_args={})
@@ -288,8 +288,8 @@ def repulsion_pos_bwd(
     pos: torch.Tensor,
     atom_types: torch.Tensor,
     index_mapping: torch.Tensor,
-    sigma: torch.Tensor,
     mapping_batch: torch.Tensor,
+    sigma: torch.Tensor,
     grad_y: torch.Tensor,
     num_graphs: int,
     eps: float = 1e-12,
@@ -304,8 +304,8 @@ def repulsion_pos_bwd(
         pos,
         atom_types,
         index_mapping,
-        sigma,
         mapping_batch,
+        sigma,
         grad_y,
         grad_pos,
         E=E,
@@ -323,8 +323,8 @@ def cpu_repulsion_pos_bwd(
     pos: torch.Tensor,
     atom_types: torch.Tensor,
     index_mapping: torch.Tensor,
-    sigma: torch.Tensor,
     mapping_batch: torch.Tensor,
+    sigma: torch.Tensor,
     grad_y: torch.Tensor,
     num_graphs: int,
     eps: float = 1e-12,
