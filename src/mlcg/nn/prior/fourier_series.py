@@ -8,7 +8,7 @@ from typing import Optional, Dict, Final
 from .base import _Prior
 from ...data.atomic_data import AtomicData
 from ...geometry.topology import Topology
-from ...geometry.internal_coordinates import (
+from ...geometry import (
     compute_torsions,
 )
 
@@ -520,11 +520,11 @@ class FlashDihedral(_Prior):
         # minimal checks
         pos = data.pos  # [N,3],
         atom_types = data.atom_types  # [N], int32 or int64
-        index_mapping = data.neighbor_list[self.name]["index_mapping"].T
+        index_mapping = data.neighbor_list[self.name]["index_mapping"]
         mapping_batch = data.neighbor_list[self.name]["mapping_batch"]
         num_graphs = data.ptr.numel() - 1 if hasattr(data, "ptr") else None
         assert pos.shape[-1] == 3, "pos must be [N,3]"
-        assert index_mapping.shape[-1] == 4, "index_mapping must be [E,4]"
+        assert index_mapping.shape[0] == 4, "index_mapping must be [4,E]"
         y = flash_dihedral(
             pos=pos,
             atom_types=atom_types,

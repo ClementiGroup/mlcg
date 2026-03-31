@@ -4,6 +4,7 @@ from .internal_coordinates import (
     compute_distances,
     compute_angles_raw,
     compute_angles_cos,
+    compute_torsions,
 )
 from .statistics import compute_statistics, fit_baseline_models
 
@@ -13,6 +14,7 @@ __all__ = [
     "compute_distances",
     "compute_angles_raw",
     "compute_angles_cos",
+    "compute_torsions",
     "compute_statistics",
     "fit_baseline_models",
     "get_connectivity_matrix",
