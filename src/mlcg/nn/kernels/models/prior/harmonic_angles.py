@@ -195,7 +195,7 @@ def cpu_flash_harmonic_angles(
     num_graphs: int,
 ) -> torch.Tensor:
     interaction_types = tuple(
-            atom_types[index_mapping[ii]] for ii in range(2)
+            atom_types[index_mapping[ii]] for ii in range(3)
         )
     distances = compute_angles_cos(pos,index_mapping)
     xdiff = (distances - x_0[interaction_types])
@@ -387,7 +387,7 @@ def harmonic_angles_pos_bwd(
 
 
 
-@flash_harmonic_angles.register_kernel("cpu")
+@harmonic_angles_pos_bwd.register_kernel("cpu")
 def cpu_bwd_flash_harmonic_angles(
     pos:torch.Tensor, 
     atom_types:torch.Tensor, 
@@ -401,7 +401,7 @@ def cpu_bwd_flash_harmonic_angles(
     grad_pos = torch.zeros_like(pos)
     i = index_mapping[0].long()
     j = index_mapping[1].long()
-    k = index_mapping[1].long()
+    k = index_mapping[2].long()
     b = mapping_batch.long()
 
     dij = pos[i] - pos[j]
