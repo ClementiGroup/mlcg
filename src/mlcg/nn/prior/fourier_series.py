@@ -497,7 +497,7 @@ class FlashDihedral(_Prior):
     Returns: y of shape [num_graphs] (float32).
     """
 
-    name = "repulsion"
+    name = "dihedral"
 
     def __init__(
         self,
@@ -505,15 +505,11 @@ class FlashDihedral(_Prior):
         k2s: torch.Tensor,
         v_0: torch.Tensor,
         name: str,
-        block: int = 256,
-        num_warps: int = 4,
     ):
         super().__init__()
-        self.register_buffer("k1", k1s)
-        self.register_buffer("k2", k2s)
+        self.register_buffer("k1s", k1s)
+        self.register_buffer("k2s", k2s)
         self.register_buffer("v_0", v_0)
-        self.block = int(block)
-        self.num_warps = int(num_warps)
         self.name = name
 
     def forward(self, data) -> torch.Tensor:  # int
@@ -530,10 +526,10 @@ class FlashDihedral(_Prior):
             atom_types=atom_types,
             index_mapping=index_mapping,
             mapping_batch=mapping_batch,
-            k1=self.k1,
-            k2=self.k2,
+            k1=self.k1s,
+            k2=self.k2s,
             v_0=self.v_0,
-            deg=self.k1.shape[0],
+            deg=self.k1s.shape[0],
             num_graphs=num_graphs,
         )
         data.out[self.name] = {"energy": y}

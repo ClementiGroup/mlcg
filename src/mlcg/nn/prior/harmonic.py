@@ -625,7 +625,7 @@ class FlashHarmonicAngles(_Prior):
     Returns: y of shape [num_graphs] (float32).
     """
 
-    name = "repulsion"
+    name = "angles"
 
     def __init__(
         self,

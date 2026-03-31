@@ -112,7 +112,6 @@ def flash_harmonic_angles(
     ) -> torch.Tensor:
     #assert index_mapping.dtype == torch.int32, "index_mapping must be int32 per your requirement"
     E = index_mapping.shape[1]
-
     eedge = torch.empty((E,), device=pos.device, dtype=torch.float32).contiguous()
     y = torch.zeros((num_graphs,), device=pos.device, dtype=torch.float32).contiguous()
 
@@ -132,7 +131,6 @@ def flash_harmonic_angles(
         X_0_STRIDE0=x_0.stride(0),
         X_0_STRIDE1=x_0.stride(1),
     )
-
     return y.index_add_(0, mapping_batch, eedge)
 
 def setup_context_flash_harmonic_angles(ctx,inputs,output):
@@ -161,7 +159,6 @@ def backward_flash_harmonic_angles(ctx, grad_y):
     ) = ctx.saved_tensors
 
     grad_pos = None
-
     if ctx.needs_input_grad[0]:
         grad_pos = harmonic_angles_pos_bwd(
             pos,
@@ -173,7 +170,6 @@ def backward_flash_harmonic_angles(ctx, grad_y):
             grad_y,
             ctx.num_graphs,
         )
-
     # Return gradients for each forward input
     return grad_pos, None, None, None, None, None, None
 
@@ -222,7 +218,6 @@ def harmonic_angles_pos_bwd_kernel(
     mapping_batch_ptr,   # *i32/i64,   [E]
     k_ptr,
     x_ptr,   
-    
     grad_y_ptr,       # *fp32,      [B]
     grad_pos_ptr,     # *fp32,      [N,3] (atomic add)
     E: tl.constexpr,
@@ -399,13 +394,13 @@ def cpu_bwd_flash_harmonic_angles(
     num_graphs: int,
 ) -> torch.Tensor:
     grad_pos = torch.zeros_like(pos)
-    i = index_mapping[0].long()
-    j = index_mapping[1].long()
-    k = index_mapping[2].long()
+    i_idx = index_mapping[0].long()
+    j_idx = index_mapping[1].long()
+    k_idx = index_mapping[2].long()
     b = mapping_batch.long()
 
-    dij = pos[i] - pos[j]
-    dkj = pos[k] - pos[j]
+    dij = pos[i_idx] - pos[j_idx]
+    dkj = pos[k_idx] - pos[j_idx]
 
     A = dij.norm(p=2,dim=1)
     B = dkj.norm(p=2,dim=1)
@@ -415,28 +410,27 @@ def cpu_bwd_flash_harmonic_angles(
     dot = (dij * dkj).sum(dim=1)
     cosang = dot*invAB
 
-    ti = atom_types[i].long()
-    tj = atom_types[j].long()
-    tk = atom_types[k].long()
+    ti = atom_types[i_idx].long()
+    tj = atom_types[j_idx].long()
+    tk = atom_types[k_idx].long()
 
     k_ener = k[ti, tj, tk].float()
     x0 = x_0[ti, tj,tk].float()
     xdiff = cosang - x0  # [E]
     de = 2*k_ener * xdiff
 
-    
-    
-    dca = dkj*invAB - cosang*dkj*invA2
-    dcb = dij*invAB - cosang*dkj*invB2
+    dca = dkj*invAB.unsqueeze(1) - (dkj*invA2.unsqueeze(1))*cosang.unsqueeze(1)
+    dcb = dij*invAB.unsqueeze(1) - (dkj*invB2.unsqueeze(1))*cosang.unsqueeze(1)
     
     gy  = grad_y[b]
-    gi = gy*dca*de
-    gk = gy*dcb*de
+
+    gi = (dca*gy.unsqueeze(1))*de.unsqueeze(1)
+    gk = (dcb*gy.unsqueeze(1))*de.unsqueeze(1)
 
     gj = -(gi+gk)
 
-    grad_pos.index_add_(0,i,gi)
-    grad_pos.index_add_(0,j,gj)
-    grad_pos.index_add_(0,k,gk)
+    grad_pos.index_add_(0,i_idx,gi)
+    grad_pos.index_add_(0,j_idx,gj)
+    grad_pos.index_add_(0,k_idx,gk)
 
     return grad_pos

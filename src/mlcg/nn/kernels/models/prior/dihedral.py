@@ -329,7 +329,7 @@ def cpu_flash_dihedral(
     if v_0s.ndim > 1:
         v_0s = v_0s[:, 0]
 
-    y =y.sum(dim=1) + v_0s
+    y = y.sum(dim=1) + v_0s
 
     y = scatter(y, mapping_batch, dim=0, reduce="sum", dim_size=num_graphs)
 
