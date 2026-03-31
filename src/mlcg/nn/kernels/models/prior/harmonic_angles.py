@@ -31,17 +31,15 @@ def harmonic_angles_edge_fwd_kernel(
     K_STRIDE1: tl.constexpr,
     X_0_STRIDE0: tl.constexpr,
     X_0_STRIDE1: tl.constexpr,
-    EDGES_STRIDE0: tl.constexpr,
-    EDGES_STRIDE1: tl.constexpr,
     BLOCK: tl.constexpr,
 ):
     pid = tl.program_id(0)
     blk_idx = pid * BLOCK + tl.arange(0, BLOCK)
     mask = blk_idx < E
 
-    off_i = blk_idx * EDGES_STRIDE0 + 0 * EDGES_STRIDE1
-    off_j = blk_idx * EDGES_STRIDE0 + 1 * EDGES_STRIDE1
-    off_k = blk_idx * EDGES_STRIDE0 + 2 * EDGES_STRIDE1
+    off_i = blk_idx
+    off_j = blk_idx + E
+    off_k = blk_idx + 2*E
 
     i = tl.load(index_mapping_ptr + off_i, mask=mask, other=0).to(tl.int32)
     j = tl.load(index_mapping_ptr + off_j, mask=mask, other=0).to(tl.int32)
@@ -100,31 +98,111 @@ def harmonic_angles_edge_fwd_kernel(
     tl.store(eedge_ptr + blk_idx, e, mask=mask)
     
     
-    
+
+@triton_op("mlcg_kernels::flash_harmonic_angles", mutates_args={})
+@ensure_contiguous
+def flash_harmonic_angles(
+        pos:torch.Tensor, 
+        atom_types:torch.Tensor, 
+        index_mapping:torch.Tensor, 
+        mapping_batch:torch.Tensor, 
+        k:torch.Tensor, 
+        x_0:torch.Tensor, 
+        num_graphs: int,
+    ) -> torch.Tensor:
+    #assert index_mapping.dtype == torch.int32, "index_mapping must be int32 per your requirement"
+    E = index_mapping.shape[1]
+
+    eedge = torch.empty((E,), device=pos.device, dtype=torch.float32).contiguous()
+    y = torch.zeros((num_graphs,), device=pos.device, dtype=torch.float32).contiguous()
+
+    wrap_triton(harmonic_angles_edge_fwd_kernel)[
+        lambda meta: (triton.cdiv(E, meta["BLOCK"]),)
+    ](
+        pos, 
+        atom_types, 
+        index_mapping, 
+        k,
+        x_0, 
+        eedge,
+        E=E,
+        TYPE_DTYPE=32 if atom_types.dtype == torch.int32 else 64,
+        K_STRIDE0=k.stride(0),
+        K_STRIDE1=k.stride(1),
+        X_0_STRIDE0=x_0.stride(0),
+        X_0_STRIDE1=x_0.stride(1),
+    )
+
+    return y.index_add_(0, mapping_batch, eedge)
+
+def setup_context_flash_harmonic_angles(ctx,inputs,output):
+    # Save for backward (only what we need for grad w.r.t pos)
+    (
+        pos, 
+        atom_types, 
+        index_mapping, 
+        mapping_batch, 
+        k,
+        x_0, 
+        num_graphs,
+    ) = inputs
+    ctx.save_for_backward(pos, atom_types, index_mapping, mapping_batch, k ,x_0)
+    ctx.num_graphs = num_graphs
 
 
-@triton.jit
-def scatter_sum_edges_kernel(
-    eedge_ptr,        # *fp32, [E]
-    edge_batch_ptr,   # *i32/i64, [E]
-    out_ptr,          # *fp32, [B]
-    E: tl.constexpr,
-    B: tl.constexpr,
-    BATCH_DTYPE: tl.constexpr,  # 32 or 64
-    BLOCK: tl.constexpr,
-):
-    pid = tl.program_id(0)
-    blk_idx = pid * BLOCK + tl.arange(0, BLOCK)
-    mask = blk_idx < E
-    e = tl.load(eedge_ptr + blk_idx, mask=mask, other=0.).to(tl.float32)
+def backward_flash_harmonic_angles(ctx, grad_y):
+    (
+        pos,
+        atom_types,
+        index_mapping,
+        mapping_batch,
+        k,
+        x_0,
+    ) = ctx.saved_tensors
 
-    if BATCH_DTYPE == 32:
-        b = tl.load(edge_batch_ptr + blk_idx, mask=mask, other=0).to(tl.int32)
-    else:
-        b = tl.load(edge_batch_ptr + blk_idx, mask=mask, other=0).to(tl.int64)
+    grad_pos = None
 
-    valid = mask & (b >= 0) & (b < B)
-    tl.atomic_add(out_ptr + b, e, mask=valid)
+    if ctx.needs_input_grad[0]:
+        grad_pos = harmonic_angles_pos_bwd(
+            pos,
+            atom_types,
+            index_mapping,
+            mapping_batch,
+            k,
+            x_0,
+            grad_y,
+            ctx.num_graphs,
+        )
+
+    # Return gradients for each forward input
+    return grad_pos, None, None, None, None, None, None
+
+
+flash_harmonic_angles.register_autograd(
+    backward_flash_harmonic_angles,
+    setup_context=setup_context_flash_harmonic_angles,
+)
+
+
+@flash_harmonic_angles.register_kernel("cpu")
+def cpu_flash_harmonic_angles(
+    pos:torch.Tensor, 
+    atom_types:torch.Tensor, 
+    index_mapping:torch.Tensor, 
+    mapping_batch:torch.Tensor, 
+    k:torch.Tensor, 
+    x_0:torch.Tensor, 
+    num_graphs: int,
+) -> torch.Tensor:
+    interaction_types = tuple(
+            atom_types[index_mapping[ii]] for ii in range(2)
+        )
+    distances = compute_angles_cos(pos,index_mapping)
+    xdiff = (distances - x_0[interaction_types])
+    y = k[interaction_types]*xdiff*xdiff
+    y = scatter(y, mapping_batch, dim=0, reduce="sum", dim_size=num_graphs)
+    return y 
+
 
 @triton.autotune(
     configs=[
@@ -141,9 +219,10 @@ def harmonic_angles_pos_bwd_kernel(
     pos_ptr,          # *fp16/fp32, [N,3] (read)
     atom_types_ptr,        # *i32/i64,   [N]
     index_mapping_ptr,        # *i32,       [E,3]
+    mapping_batch_ptr,   # *i32/i64,   [E]
     k_ptr,
     x_ptr,   
-    edge_batch_ptr,   # *i32/i64,   [E]
+    
     grad_y_ptr,       # *fp32,      [B]
     grad_pos_ptr,     # *fp32,      [N,3] (atomic add)
     E: tl.constexpr,
@@ -154,17 +233,15 @@ def harmonic_angles_pos_bwd_kernel(
     K_STRIDE1: tl.constexpr,
     X_0_STRIDE0: tl.constexpr,
     X_0_STRIDE1: tl.constexpr,
-    EDGES_STRIDE0: tl.constexpr,
-    EDGES_STRIDE1: tl.constexpr,
     BLOCK: tl.constexpr,
 ):
     pid = tl.program_id(0)
     blk_idx = pid * BLOCK + tl.arange(0, BLOCK)
     mask = blk_idx < E
 
-    off_i = blk_idx * EDGES_STRIDE0 + 0 * EDGES_STRIDE1
-    off_j = blk_idx * EDGES_STRIDE0 + 1 * EDGES_STRIDE1
-    off_k = blk_idx * EDGES_STRIDE0 + 2 * EDGES_STRIDE1
+    off_i = blk_idx
+    off_j = blk_idx + E
+    off_k = blk_idx + 2*E
 
     i = tl.load(index_mapping_ptr + off_i, mask=mask, other=0).to(tl.int32)
     j = tl.load(index_mapping_ptr + off_j, mask=mask, other=0).to(tl.int32)
@@ -181,9 +258,9 @@ def harmonic_angles_pos_bwd_kernel(
     
     # grad multiplier per edge from upstream grad_y[batch]
     if BATCH_DTYPE == 32:
-        b = tl.load(edge_batch_ptr + blk_idx, mask=mask, other=0).to(tl.int32)
+        b = tl.load(mapping_batch_ptr + blk_idx, mask=mask, other=0).to(tl.int32)
     else:
-        b = tl.load(edge_batch_ptr + blk_idx, mask=mask, other=0).to(tl.int64)
+        b = tl.load(mapping_batch_ptr + blk_idx, mask=mask, other=0).to(tl.int64)
     gy = tl.load(grad_y_ptr + b, mask=mask & (b >= 0) & (b < B), other=0.).to(tl.float32)
 
     k_ener = tl.load(k_ptr + ti * K_STRIDE0 + tj*K_STRIDE1 + tk, mask=mask, other=0.).to(tl.float32)
@@ -233,180 +310,133 @@ def harmonic_angles_pos_bwd_kernel(
     invB2 = 1.0 / (b2)   # ~ 1/B^2
 
     # dc/da = b/(AB) - c * a/(A^2)
-    dca0 = dkjx * invAB - cosang * dijx * invA2
-    dca1 = dkjy * invAB - cosang * dijy * invA2
-    dca2 = dkjz * invAB - cosang * dijz * invA2
+    dcax = dkjx * invAB - cosang * dijx * invA2
+    dcay = dkjy * invAB - cosang * dijy * invA2
+    dcaz = dkjz * invAB - cosang * dijz * invA2
 
     # dc/db = a/(AB) - c * b/(B^2)
-    dcb0 = dijx * invAB - cosang * dkjx * invB2
-    dcb1 = dijy * invAB - cosang * dkjy * invB2
-    dcb2 = dijz * invAB - cosang * dkjz * invB2
+    dcbx = dijx * invAB - cosang * dkjx * invB2
+    dcby = dijy * invAB - cosang * dkjy * invB2
+    dcbz = dijz * invAB - cosang * dkjz * invB2
 
     # Multiply by upstream grad
-    gi0 = gy * de * dca0
-    gi1 = gy * de * dca1
-    gi2 = gy * de * dca2
+    gxi = gy * de * dcax
+    gyi = gy * de * dcay
+    gzi = gy * de * dcaz
 
-    gk0 = gy * de * dcb0
-    gk1 = gy * de * dcb1
-    gk2 = gy * de * dcb2
+    gxk = gy * de * dcbx
+    gyk = gy * de * dcby
+    gzk = gy * de * dcbz
     
-    gj0 = -(gi0 + gk0)
-    gj1 = -(gi1 + gk1)
-    gj2 = -(gi2 + gk2)
+    gxj = -(gxi + gxk)
+    gyj = -(gyi + gyk)
+    gzj = -(gzi + gzk)
 
 
     # atomic add to grad_pos for i, j and k
-    tl.atomic_add(grad_pos_ptr + i3 + 0, gi0, mask=mask)
-    tl.atomic_add(grad_pos_ptr + i3 + 1, gi1, mask=mask)
-    tl.atomic_add(grad_pos_ptr + i3 + 2, gi2, mask=mask)
+    tl.atomic_add(grad_pos_ptr + i3 + 0, gxi, mask=mask)
+    tl.atomic_add(grad_pos_ptr + i3 + 1, gyi, mask=mask)
+    tl.atomic_add(grad_pos_ptr + i3 + 2, gzi, mask=mask)
 
-    tl.atomic_add(grad_pos_ptr + j3 + 0, gj0, mask=mask)
-    tl.atomic_add(grad_pos_ptr + j3 + 1, gj1, mask=mask)
-    tl.atomic_add(grad_pos_ptr + j3 + 2, gj2, mask=mask)
+    tl.atomic_add(grad_pos_ptr + j3 + 0, gxj, mask=mask)
+    tl.atomic_add(grad_pos_ptr + j3 + 1, gyj, mask=mask)
+    tl.atomic_add(grad_pos_ptr + j3 + 2, gzj, mask=mask)
 
-    tl.atomic_add(grad_pos_ptr + k3 + 0, gk0, mask=mask)
-    tl.atomic_add(grad_pos_ptr + k3 + 1, gk1, mask=mask)
-    tl.atomic_add(grad_pos_ptr + k3 + 2, gk2, mask=mask)
+    tl.atomic_add(grad_pos_ptr + k3 + 0, gxk, mask=mask)
+    tl.atomic_add(grad_pos_ptr + k3 + 1, gyk, mask=mask)
+    tl.atomic_add(grad_pos_ptr + k3 + 2, gzk, mask=mask)
 
-
-
-@triton_op("mlcg_kernels::flash_harmonic_angles", mutates_args={})
+@triton_op("mlcg_kernels::harmonic_angles_pos_bwd", mutates_args={})
 @ensure_contiguous
-def flash_harmonic_angles(
-        pos:torch.Tensor, 
-        atom_types:torch.Tensor, 
-        index_mapping:torch.Tensor, 
-        mapping_batch:torch.Tensor, 
-        k:torch.Tensor, 
-        x_0:torch.Tensor, 
-        num_graphs: int,
-        block: int =  256, 
-        num_warps: int = 4
-    ) -> torch.Tensor:
-    #assert index_mapping.dtype == torch.int32, "index_mapping must be int32 per your requirement"
-    E = index_mapping.shape[0]
+def harmonic_angles_pos_bwd(
+    pos: torch.Tensor,
+    atom_types: torch.Tensor,
+    index_mapping: torch.Tensor,
+    mapping_batch: torch.Tensor,
+    k: torch.Tensor,
+    x_0: torch.Tensor,
+    grad_y: torch.Tensor,
+    num_graphs: int,
+) -> torch.Tensor:
 
-    eedge = torch.empty((E,), device=pos.device, dtype=torch.float32).contiguous()
-    y = torch.zeros((num_graphs,), device=pos.device, dtype=torch.float32).contiguous()
-
-    grid = (triton.cdiv(E, block),)
-    wrap_triton(harmonic_angles_edge_fwd_kernel)[grid](
-        pos, 
-        atom_types, 
-        index_mapping, 
-        k,
-        x_0, 
-        eedge,
-        E=E,
-        TYPE_DTYPE=32 if atom_types.dtype == torch.int32 else 64,
-        K_STRIDE0=k.stride(0),
-        K_STRIDE1=k.stride(1),
-        X_0_STRIDE0=x_0.stride(0),
-        X_0_STRIDE1=x_0.stride(1),
-        EDGES_STRIDE0=index_mapping.stride(0),
-        EDGES_STRIDE1=index_mapping.stride(1),
-    )
-    wrap_triton(scatter_sum_edges_kernel)[grid](
-        eedge, mapping_batch, y,
-        E=E, B=num_graphs,
-        BATCH_DTYPE=32 if mapping_batch.dtype == torch.int32 else 64,
-        BLOCK=block,
-        num_warps=num_warps,
-    )
-
-
-    return y
-
-
-
-
-
-def setup_context_flash_harmonic_angles(ctx,inputs,output):
-    # Save for backward (only what we need for grad w.r.t pos)
-    (
-        pos, 
-        atom_types, 
-        index_mapping, 
-        mapping_batch, 
-        k,
-        x_0, 
-        num_graphs,
-        block,
-        num_warps
-    ) = inputs
-    ctx.save_for_backward(pos, atom_types, index_mapping, mapping_batch, k ,x_0)
-    ctx.num_graphs = num_graphs
-    ctx.block = block
-    ctx.num_warps = num_warps
-
-def backward_flash_harmonic_angles(ctx, grad_y):
-    (
-        pos, 
-        atom_types, 
-        index_mapping, 
-        mapping_batch, 
-        k,
-        x_0,
-    ) = ctx.saved_tensors
     
-    
-    grad_y = grad_y.contiguous().to(torch.float32)
-
     grad_pos = torch.zeros((pos.shape[0], 3), device=pos.device, dtype=torch.float32).contiguous()
-
-    E = index_mapping.shape[0]
-    block = ctx.block
-    grid = (triton.cdiv(E, block),)
-    wrap_triton(harmonic_angles_pos_bwd_kernel)[grid](
+    E = index_mapping.shape[1]
+    wrap_triton(harmonic_angles_pos_bwd_kernel)[
+        lambda meta: (triton.cdiv(E, meta["BLOCK"]),)
+    ](
         pos, 
         atom_types, 
         index_mapping, 
+        mapping_batch, 
         k,
         x_0, 
-        mapping_batch, 
         grad_y, 
         grad_pos,
         E=E, 
-        B=ctx.num_graphs, 
+        B=num_graphs, 
         TYPE_DTYPE=32 if atom_types.dtype == torch.int32 else 64,
         BATCH_DTYPE=32 if mapping_batch.dtype == torch.int32 else 64,
         K_STRIDE0=k.stride(0),
         K_STRIDE1=k.stride(1),
         X_0_STRIDE0=x_0.stride(0),
         X_0_STRIDE1=x_0.stride(1),
-        EDGES_STRIDE0=index_mapping.stride(0),
-        EDGES_STRIDE1=index_mapping.stride(1),
-        num_warps=ctx.num_warps,
     )
 
-    # Return gradients for each forward input: (pos, atom_types, index_mapping, mapping_batch, sigma, num_graphs, eps, block, num_warps)
-    return grad_pos, None, None, None, None, None, None, None, None
+    return grad_pos
 
-flash_harmonic_angles.register_autograd(
-    backward_flash_harmonic_angles,
-    setup_context=setup_context_flash_harmonic_angles,
-)
+
 
 @flash_harmonic_angles.register_kernel("cpu")
-def cpu_flash_harmonic_angles(
+def cpu_bwd_flash_harmonic_angles(
     pos:torch.Tensor, 
     atom_types:torch.Tensor, 
     index_mapping:torch.Tensor, 
     mapping_batch:torch.Tensor, 
     k:torch.Tensor, 
     x_0:torch.Tensor, 
+    grad_y: torch.Tensor,
     num_graphs: int,
-    block: int = 
-    256, num_warps: int = 4
 ) -> torch.Tensor:
-    interaction_types = tuple(
-            atom_types[index_mapping[ii]] for ii in range(2)
-        )
-    distances = compute_angles_cos(pos,index_mapping)
-    xdiff = (distances - x_0[interaction_types])
-    y = k[interaction_types]*xdiff*xdiff
-    y = scatter(y, mapping_batch, dim=0, reduce="sum", dim_size=num_graphs)
-    return y 
+    grad_pos = torch.zeros_like(pos)
+    i = index_mapping[0].long()
+    j = index_mapping[1].long()
+    k = index_mapping[1].long()
+    b = mapping_batch.long()
 
+    dij = pos[i] - pos[j]
+    dkj = pos[k] - pos[j]
 
+    A = dij.norm(p=2,dim=1)
+    B = dkj.norm(p=2,dim=1)
+    invAB = 1/(A*B)
+    invA2 = 1.0 / ((dij*dij).sum(dim=1)) 
+    invB2 = 1.0 / ((dkj*dkj).sum(dim=1)) 
+    dot = (dij * dkj).sum(dim=1)
+    cosang = dot*invAB
+
+    ti = atom_types[i].long()
+    tj = atom_types[j].long()
+    tk = atom_types[k].long()
+
+    k_ener = k[ti, tj, tk].float()
+    x0 = x_0[ti, tj,tk].float()
+    xdiff = cosang - x0  # [E]
+    de = 2*k_ener * xdiff
+
+    
+    
+    dca = dkj*invAB - cosang*dkj*invA2
+    dcb = dij*invAB - cosang*dkj*invB2
+    
+    gy  = grad_y[b]
+    gi = gy*dca*de
+    gk = gy*dcb*de
+
+    gj = -(gi+gk)
+
+    grad_pos.index_add_(0,i,gi)
+    grad_pos.index_add_(0,j,gj)
+    grad_pos.index_add_(0,k,gk)
+
+    return grad_pos
