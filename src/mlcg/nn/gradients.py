@@ -1,5 +1,5 @@
 import torch
-from typing import Sequence, Any, List
+from typing import Dict, Sequence, Any, List, Union
 from ..data.atomic_data import AtomicData
 from ..data._keys import *
 
@@ -47,14 +47,22 @@ class SumOut(torch.nn.Module):
 
     def __init__(
         self,
-        models: torch.nn.ModuleDict,
+        models: Union[Dict[str, torch.nn.Module], torch.nn.ModuleDict],
         targets: List[str] = None,
     ):
         super(SumOut, self).__init__()
         if targets is None:
             targets = [ENERGY_KEY, FORCE_KEY]
         self.targets = targets
-        self.models = models
+        if isinstance(models, torch.nn.ModuleDict):
+            self.models = models
+        else:
+            for name, model in models.items():
+                if not isinstance(model, torch.nn.Module):
+                    raise TypeError(
+                        f"models['{name}'] must be a torch.nn.Module, got {type(model).__name__}."
+                    )
+            self.models = torch.nn.ModuleDict(models)
 
     def forward(self, data: AtomicData) -> AtomicData:
         r"""Sums output properties from individual models into global

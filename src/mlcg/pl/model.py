@@ -2,6 +2,7 @@ import torch
 import pytorch_lightning as pl
 from ..utils import detect_nan_parameters
 from typing import Tuple
+from collections.abc import Mapping
 from copy import deepcopy
 
 from ..data import AtomicData
