@@ -31,6 +31,7 @@ def repulsion_edge_fwd_kernel(
     SIG_STRIDE0: tl.constexpr,
     BLOCK: tl.constexpr,
 ):
+    """Compute per-edge repulsion energy from atomic positions and types."""
     pid = tl.program_id(0)
     k = pid * BLOCK + tl.arange(0, BLOCK)
     mask = k < E
@@ -89,12 +90,20 @@ def flash_repulsion(
     num_graphs: int,
     eps: float = 1e-12,
 ) -> torch.Tensor:
-    # assert index_mapping.dtype == torch.int32, "index_mapping must be int32 per your requirement"
+    """Compute repulsion energy per graph using a Triton fused energy kernel.
+
+    The repulsion energy for each pair of atoms i,j is given by:
+
+    $$ E_{ij} = \left( \frac{\sigma_{t_i t_j}}{r_{ij}} \right)^6 $$
+
+    where $t_i$ is the atom type of atom i, $\sigma_{t_i t_j}$ is the repulsion parameter,
+    and $r_{ij}$ is the distance between atoms i and j.
+
+    The total energy per graph is the sum over all pairs in that graph.
+    """
     E = index_mapping.shape[1]
 
-    eedge = torch.empty(
-        (E,), device=pos.device, dtype=torch.float32
-    ).contiguous()
+    eedge = torch.empty((E,), device=pos.device, dtype=torch.float32).contiguous()
     y = torch.zeros((num_graphs,), device=pos.device, dtype=torch.float32)
 
     wrap_triton(repulsion_edge_fwd_kernel)[
@@ -153,7 +162,6 @@ def backward_flash_repulsion(ctx, grad_y):
             ctx.eps,
         )
 
-    # Return gradients for each forward input
     return grad_pos, None, None, None, None, None, None
 
 
@@ -173,6 +181,7 @@ def cpu_flash_repulsion(
     num_graphs: int,
     eps: float = 1e-12,
 ) -> torch.Tensor:
+    """CPU reference implementation for repulsion energy aggregation."""
     interaction_types = tuple(atom_types[index_mapping[ii]] for ii in range(2))
     distances = compute_distances(pos, index_mapping)
     special = sigma[interaction_types] / distances
@@ -209,6 +218,7 @@ def repulsion_pos_bwd_kernel(
     SIG_STRIDE0: tl.constexpr,
     BLOCK: tl.constexpr,
 ):
+    """Compute gradients of repulsion energy with respect to atomic positions."""
     pid = tl.program_id(0)
     k = pid * BLOCK + tl.arange(0, BLOCK)
     mask = k < E
@@ -294,6 +304,12 @@ def repulsion_pos_bwd(
     num_graphs: int,
     eps: float = 1e-12,
 ) -> torch.Tensor:
+    """Compute position gradients for repulsion energy using Triton.
+
+    The gradient with respect to position is:
+
+    $$ \frac{\partial E_{ij}}{\partial \mathbf{r}_i} = -6 \left( \frac{\sigma_{t_i t_j}}{r_{ij}} \right)^6 \frac{\mathbf{r}_i - \mathbf{r}_j}{r_{ij}^8} $$
+    """
     grad_pos = torch.zeros_like(pos).contiguous()
 
     E = index_mapping.shape[1]
@@ -329,6 +345,7 @@ def cpu_repulsion_pos_bwd(
     num_graphs: int,
     eps: float = 1e-12,
 ) -> torch.Tensor:
+    """CPU reference backward implementation for repulsion position gradients."""
     grad_pos = torch.zeros_like(pos)
 
     i = index_mapping[0].long()

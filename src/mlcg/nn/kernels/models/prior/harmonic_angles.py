@@ -195,9 +195,9 @@ def cpu_flash_harmonic_angles(
         )
     distances = compute_angles_cos(pos,index_mapping)
     xdiff = (distances - x_0[interaction_types])
-    y = k[interaction_types]*xdiff*xdiff
-    y = scatter(y, mapping_batch, dim=0, reduce="sum", dim_size=num_graphs)
-    return y 
+    ey = k[interaction_types]*xdiff*xdiff
+    y = torch.zeros((num_graphs,), device=pos.device, dtype=pos.dtype)
+    return y.index_add_(0, mapping_batch, ey)
 
 
 @triton.autotune(
@@ -208,7 +208,8 @@ def cpu_flash_harmonic_angles(
         triton.Config({"BLOCK": 512}, num_warps=8),
         triton.Config({"BLOCK": 1024}, num_warps=8),
     ],
-    key=[],
+    key=[],#FIXME: check if we need to zeors grad pos during autotune because of atomics
+    reset_to_zero=["grad_pos_ptr"],
 )
 @triton.jit
 def harmonic_angles_pos_bwd_kernel(
@@ -394,32 +395,31 @@ def cpu_bwd_flash_harmonic_angles(
     num_graphs: int,
 ) -> torch.Tensor:
     grad_pos = torch.zeros_like(pos)
-    i_idx = index_mapping[0].long()
-    j_idx = index_mapping[1].long()
-    k_idx = index_mapping[2].long()
-    b = mapping_batch.long()
+    i_idx = index_mapping[0]
+    j_idx = index_mapping[1]
+    k_idx = index_mapping[2]
+    b = mapping_batch
 
     dij = pos[i_idx] - pos[j_idx]
     dkj = pos[k_idx] - pos[j_idx]
 
     A = dij.norm(p=2,dim=1)
     B = dkj.norm(p=2,dim=1)
-    invAB = 1/(A*B)
-    invA2 = 1.0 / ((dij*dij).sum(dim=1)) 
-    invB2 = 1.0 / ((dkj*dkj).sum(dim=1)) 
+    invAB = (A*B).reciprocal_()
+    invA2 = ((dij*dij).sum(dim=1)).reciprocal_()
+    invB2 = ((dkj*dkj).sum(dim=1)).reciprocal_()
     dot = (dij * dkj).sum(dim=1)
     cosang = dot*invAB
 
-    ti = atom_types[i_idx].long()
-    tj = atom_types[j_idx].long()
-    tk = atom_types[k_idx].long()
-
-    k_ener = k[ti, tj, tk].float()
-    x0 = x_0[ti, tj,tk].float()
+    interaction_types = tuple(
+            atom_types[index_mapping[ii]] for ii in range(3)
+        )
+    k_ener = k[interaction_types].float()
+    x0 = x_0[interaction_types].float()
     xdiff = cosang - x0  # [E]
-    de = 2*k_ener * xdiff
+    de = 2 * k_ener * xdiff
 
-    dca = dkj*invAB.unsqueeze(1) - (dkj*invA2.unsqueeze(1))*cosang.unsqueeze(1)
+    dca = dkj*invAB.unsqueeze(1) - (dij*invA2.unsqueeze(1))*cosang.unsqueeze(1)
     dcb = dij*invAB.unsqueeze(1) - (dkj*invB2.unsqueeze(1))*cosang.unsqueeze(1)
     
     gy  = grad_y[b]
