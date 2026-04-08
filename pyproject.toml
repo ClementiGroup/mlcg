@@ -96,7 +96,7 @@ mlcg-combine_model = "mlcg.scripts.mlcg_combine_model:main"
 mlcg-train_h5 = "mlcg.scripts.mlcg_train_h5:main"
 mlcg-train = "mlcg.scripts.mlcg_train:main"
 mlcg-nvt_langevin = "mlcg.scripts.mlcg_nvt_langevin:main"
-mlcg-nvt_pt_langevin = "mlcg.scripts.mlcg_pt_nvt_langevin:main"
+mlcg-nvt_pt_langevin = "mlcg.scripts.mlcg_nvt_pt_langevin:main"
 
 [tool.black]
 line-length = 80
