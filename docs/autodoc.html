@@ -614,7 +614,7 @@ types</p></li>
 <dd class="field-even"><p>CG topoology</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="geometry/topology.html#mlcg.geometry.topology.Topology" title="mlcg.geometry.topology.Topology">Topology</a></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="geometry/topology.html#mlcg.geometry.topology.Topology" title="mlcg.geometry.topology.Topology"><code class="xref py py-class docutils literal notranslate"><span class="pre">Topology</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -635,7 +635,7 @@ the protein/peptide sequence.</p>
 of residues.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>connectivity_matrix</p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -660,7 +660,7 @@ the first N-1 features sets correspond to those isolated features, and the final
 feauture set is the list of bulk/non-isolated features.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>feature_sets</p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -708,7 +708,7 @@ the molecular sequence</p>
 an atom belongs</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>residue_indices</p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]</span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -833,7 +833,7 @@ hidden_channels)</p></li>
 hidden_channels)</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>x</p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -856,7 +856,7 @@ hidden_channels)</p></li>
 <dd class="field-even"><p>Elementwise multiplication of the filters with embedded features.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>x_j * W</p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -909,7 +909,7 @@ hidden_channels)</p></li>
 hidden_channels)</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>x</p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -927,7 +927,7 @@ described in <a class="reference internal" href="bibliography.html#schnet" id="i
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>embedding_layer</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Initial embedding layer that transforms atoms/coarse grain bead
 types into embedded features</p></li>
-<li><p><strong>interaction_blocks</strong> (<em>list</em><em> of </em><em>torch.nn.Module</em><em> or </em><em>torch.nn.Sequential</em>) – Sequential interaction blocks of the model, where each interaction
+<li><p><strong>interaction_blocks</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code>]</span>) – Sequential interaction blocks of the model, where each interaction
 block applies</p></li>
 <li><p><strong>rbf_layer</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – The set of radial basis functions that expands pairwise distances
 between atoms/CG beads.</p></li>
@@ -965,7 +965,7 @@ and atom/bead types.</p>
 information.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>data</p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="data/atom_data.html#mlcg.data.atomic_data.AtomicData" title="mlcg.data.atomic_data.AtomicData"><code class="xref py py-class docutils literal notranslate"><span class="pre">AtomicData</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1306,16 +1306,16 @@ registered hooks while the latter silently ignores them.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>atomic_numbers</strong> (<em>torch.Tensor</em>) – Tensor of atomic numbers present in the system.</p></li>
-<li><p><strong>node_embedding</strong> (<em>torch.nn.Module</em>) – Module for embedding node (atom) attributes.</p></li>
-<li><p><strong>radial_embedding</strong> (<em>torch.nn.Module</em>) – Module for embedding radial (distance) features.</p></li>
-<li><p><strong>spherical_harmonics</strong> (<em>torch.nn.Module</em>) – Module for computing spherical harmonics of edge vectors.</p></li>
-<li><p><strong>interactions</strong> (<em>List</em><em>[</em><em>torch.nn.Module</em><em>]</em>) – List of interaction blocks.</p></li>
-<li><p><strong>products</strong> (<em>List</em><em>[</em><em>torch.nn.Module</em><em>]</em>) – List of product basis blocks.</p></li>
-<li><p><strong>readouts</strong> (<em>List</em><em>[</em><em>torch.nn.Module</em><em>]</em>) – List of readout blocks.</p></li>
-<li><p><strong>r_max</strong> (<em>float</em>) – Cutoff radius for neighbor list.</p></li>
-<li><p><strong>max_num_neighbors</strong> (<em>int</em>) – Maximum number of neighbors per atom.</p></li>
-<li><p><strong>pair_repulsion_fn</strong> (<em>torch.nn.Module</em><em>, </em><em>optional</em>) – Optional pairwise repulsion energy function.</p></li>
+<li><p><strong>atomic_numbers</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span>) – Tensor of atomic numbers present in the system.</p></li>
+<li><p><strong>node_embedding</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Module for embedding node (atom) attributes.</p></li>
+<li><p><strong>radial_embedding</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Module for embedding radial (distance) features.</p></li>
+<li><p><strong>spherical_harmonics</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Module for computing spherical harmonics of edge vectors.</p></li>
+<li><p><strong>interactions</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code>]</span>) – List of interaction blocks.</p></li>
+<li><p><strong>products</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code>]</span>) – List of product basis blocks.</p></li>
+<li><p><strong>readouts</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code>]</span>) – List of readout blocks.</p></li>
+<li><p><strong>r_max</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – Cutoff radius for neighbor list.</p></li>
+<li><p><strong>max_num_neighbors</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Maximum number of neighbors per atom.</p></li>
+<li><p><strong>pair_repulsion_fn</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Optional pairwise repulsion energy function.</p></li>
 <li><p><strong>nls_distance_method</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Method for computing a neighbor list. Supported values are
 <cite>torch</cite>, <cite>nvalchemi_naive</cite>, <cite>nvalchemi_cell</cite> and custom.</p></li>
 </ul>
@@ -1327,13 +1327,13 @@ registered hooks while the latter silently ignores them.</p>
 <dd><p>Forward pass of the MACE model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>data</strong> (<a class="reference internal" href="data/atom_data.html#mlcg.data.atomic_data.AtomicData" title="mlcg.data.atomic_data.AtomicData"><em>AtomicData</em></a>) – Input atomic data object.</p>
+<dd class="field-odd"><p><strong>data</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="data/atom_data.html#mlcg.data.atomic_data.AtomicData" title="mlcg.data.atomic_data.AtomicData"><code class="xref py py-class docutils literal notranslate"><span class="pre">AtomicData</span></code></a></span>) – Input atomic data object.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Output data with predicted energies in <cite>data.out</cite>.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="data/atom_data.html#mlcg.data.atomic_data.AtomicData" title="mlcg.data.atomic_data.AtomicData">AtomicData</a></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="data/atom_data.html#mlcg.data.atomic_data.AtomicData" title="mlcg.data.atomic_data.AtomicData"><code class="xref py py-class docutils literal notranslate"><span class="pre">AtomicData</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1361,28 +1361,28 @@ and readout modules.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>r_max</strong> (<em>float</em>) – Cutoff radius for neighbor list.</p></li>
-<li><p><strong>num_bessel</strong> (<em>int</em>) – Number of Bessel functions for radial basis.</p></li>
-<li><p><strong>num_polynomial_cutoff</strong> (<em>int</em>) – Number of polynomial cutoff functions.</p></li>
-<li><p><strong>max_ell</strong> (<em>int</em>) – Maximum angular momentum for spherical harmonics.</p></li>
-<li><p><strong>interaction_cls</strong> (<em>str</em>) – Class name for interaction blocks.</p></li>
-<li><p><strong>interaction_cls_first</strong> (<em>str</em>) – Class name for the first interaction block.</p></li>
-<li><p><strong>num_interactions</strong> (<em>int</em>) – Number of interaction blocks.</p></li>
-<li><p><strong>hidden_irreps</strong> (<em>str</em>) – Irreducible representations for hidden features. For example if only
+<li><p><strong>r_max</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – Cutoff radius for neighbor list.</p></li>
+<li><p><strong>num_bessel</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Number of Bessel functions for radial basis.</p></li>
+<li><p><strong>num_polynomial_cutoff</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Number of polynomial cutoff functions.</p></li>
+<li><p><strong>max_ell</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Maximum angular momentum for spherical harmonics.</p></li>
+<li><p><strong>interaction_cls</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Class name for interaction blocks.</p></li>
+<li><p><strong>interaction_cls_first</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Class name for the first interaction block.</p></li>
+<li><p><strong>num_interactions</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Number of interaction blocks.</p></li>
+<li><p><strong>hidden_irreps</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Irreducible representations for hidden features. For example if only
 a scalar representation with 128 channels is used can be “128x0e”. If
 also a vector representation is used can be “128x0e + 128x1o”.</p></li>
-<li><p><strong>MLP_irreps</strong> (<em>str</em>) – Irreducible representations for MLP layers.</p></li>
-<li><p><strong>avg_num_neighbors</strong> (<em>float</em>) – Average number of neighbors per atom used for normalization and numerical stability.</p></li>
-<li><p><strong>atomic_numbers</strong> (<em>List</em><em>[</em><em>int</em><em>]</em>) – List of atomic numbers in the system.</p></li>
-<li><p><strong>correlation</strong> (<em>Union</em><em>[</em><em>int</em><em>, </em><em>List</em><em>[</em><em>int</em><em>]</em><em>]</em>) – Correlation order(s) for product blocks.</p></li>
-<li><p><strong>gate</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>]</em>) – Activation function for non-linearities.</p></li>
-<li><p><strong>max_num_neighbors</strong> (<em>int</em><em>, </em><em>optional</em>) – Maximum number of neighbors per atom.</p></li>
-<li><p><strong>pair_repulsion</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to use pairwise repulsion.</p></li>
-<li><p><strong>distance_transform</strong> (<em>str</em><em>, </em><em>optional</em>) – Distance transformation type.</p></li>
-<li><p><strong>radial_MLP</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>int</em><em>]</em><em>]</em><em>, </em><em>optional</em>) – Radial MLP architecture.</p></li>
-<li><p><strong>radial_type</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – Radial basis type.</p></li>
-<li><p><strong>cueq_config</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em><em>, </em><em>optional</em>) – cuEquivariance configuration.</p></li>
-<li><p><strong>use_cueq</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em><em>, </em><em>optional</em>) – Whether to use cuEquivariance acceleration.</p></li>
+<li><p><strong>MLP_irreps</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Irreducible representations for MLP layers.</p></li>
+<li><p><strong>avg_num_neighbors</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – Average number of neighbors per atom used for normalization and numerical stability.</p></li>
+<li><p><strong>atomic_numbers</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]</span>) – List of atomic numbers in the system.</p></li>
+<li><p><strong>correlation</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]]</span>) – Correlation order(s) for product blocks.</p></li>
+<li><p><strong>gate</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>]</span>) – Activation function for non-linearities.</p></li>
+<li><p><strong>max_num_neighbors</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Maximum number of neighbors per atom.</p></li>
+<li><p><strong>pair_repulsion</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Whether to use pairwise repulsion.</p></li>
+<li><p><strong>distance_transform</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Distance transformation type.</p></li>
+<li><p><strong>radial_MLP</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]]</span>) – Radial MLP architecture.</p></li>
+<li><p><strong>radial_type</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]</span>) – Radial basis type.</p></li>
+<li><p><strong>cueq_config</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]</span>) – cuEquivariance configuration.</p></li>
+<li><p><strong>use_cueq</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>]</span>) – Whether to use cuEquivariance acceleration.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1433,13 +1433,13 @@ supplied.</p></li>
 <dd><p>Expansion of distances through the radial basis function set.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>dist</strong> (<em>torch.Tensor</em>) – Input pairwise distances of shape (total_num_edges)</p>
+<dd class="field-odd"><p><strong>dist</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span>) – Input pairwise distances of shape (total_num_edges)</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>expanded_distances</strong> – Distances expanded in the radial basis with shape (total_num_edges, lmax + 1, nmax)</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.Tensor</p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1492,15 +1492,14 @@ in an unoptimizable buffer.</p></li>
 <dt class="sig sig-object py" id="mlcg.nn.radial_basis.exp_normal.ExpNormalBasis.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dist</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/radial_basis/exp_normal.html#ExpNormalBasis.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.radial_basis.exp_normal.ExpNormalBasis.forward" title="Link to this definition">¶</a></dt>
 <dd><p>Expansion of distances through the radial basis function set.
-:type dist: <span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span>
 :param dist: Input pairwise distances of shape (total_num_edges)
-:type dist: torch.Tensor</p>
+:type dist: <span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span></p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>expanded_distances</strong> – Distances expanded in the radial basis with shape (total_num_edges, num_rbf)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>torch.Tensor</p>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1542,15 +1541,14 @@ in an unoptimizable buffer.</p>
 <dt class="sig sig-object py" id="mlcg.nn.radial_basis.exp_normal.ExtendedExpNormalBasis.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dist</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/radial_basis/exp_normal.html#ExtendedExpNormalBasis.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.radial_basis.exp_normal.ExtendedExpNormalBasis.forward" title="Link to this definition">¶</a></dt>
 <dd><p>Expansion of distances through the radial basis function set.
-:type dist: <span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span>
 :param dist: Input pairwise distances of shape (total_num_edges)
-:type dist: torch.Tensor</p>
+:type dist: <span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span></p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>expanded_distances</strong> – Distances expanded in the radial basis with shape (total_num_edges, num_rbf)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>torch.Tensor</p>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1593,7 +1591,7 @@ instead fixed in an unoptimizable buffer.</p></li>
 num_rbf)</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>expanded_distances</p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1644,13 +1642,13 @@ in an unoptimizable buffer.</p></li>
 <dd><p>Expansion of distances through the radial basis function set.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>dist</strong> (<em>torch.Tensor</em>) – Input pairwise distances of shape (total_num_edges)</p>
+<dd class="field-odd"><p><strong>dist</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span>) – Input pairwise distances of shape (total_num_edges)</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>expanded_distances</strong> – Distances expanded in the radial basis with shape (total_num_edges, num_rbf)</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.Tensor</p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1699,8 +1697,8 @@ when <code class="docutils literal notranslate"><span class="pre">normalize=True
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>l</strong> (<em>int</em><em> or </em><em>list</em><em> of </em><em>int</em>) – degree of the spherical harmonics.</p></li>
 <li><p><strong>x</strong> (<cite>torch.Tensor</cite>) – tensor <span class="math notranslate nohighlight">\(x\)</span> of shape <code class="docutils literal notranslate"><span class="pre">(...,</span> <span class="pre">3)</span></code>.</p></li>
-<li><p><strong>normalize</strong> (<em>bool</em>) – whether to normalize the <code class="docutils literal notranslate"><span class="pre">x</span></code> to vectors that lie on the unit sphere before projecting onto the spherical harmonics</p></li>
-<li><p><strong>normalization</strong> (<em>{'integral'</em><em>, </em><em>'component'</em><em>, </em><em>'norm'}</em>) – normalization of the output tensors — note that this option is independent of <code class="docutils literal notranslate"><span class="pre">normalize</span></code>, which controls the processing of the <em>input</em>, rather than the output.
+<li><p><strong>normalize</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – whether to normalize the <code class="docutils literal notranslate"><span class="pre">x</span></code> to vectors that lie on the unit sphere before projecting onto the spherical harmonics</p></li>
+<li><p><strong>normalization</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – normalization of the output tensors — note that this option is independent of <code class="docutils literal notranslate"><span class="pre">normalize</span></code>, which controls the processing of the <em>input</em>, rather than the output.
 Valid options:
 * <em>component</em>: <span class="math notranslate nohighlight">\(\|Y^l(x)\|^2 = 2l+1, x \in S^2\)</span>
 * <em>norm</em>: <span class="math notranslate nohighlight">\(\|Y^l(x)\| = 1, x \in S^2\)</span>, <code class="docutils literal notranslate"><span class="pre">component</span> <span class="pre">/</span> <span class="pre">sqrt(2l+1)</span></code>
@@ -1779,7 +1777,7 @@ default. We recommend visualizing your basis via the <cite>plot</cite> method.</
 (total_num_edges)</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>cutoffs</p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1990,7 +1988,7 @@ not interacting through bonds and angles are included in the interaction set</p>
 <dd class="field-even"><p>Topology class object for all-atom molecule</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>topology</p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="geometry/topology.html#mlcg.geometry.topology.Topology" title="mlcg.geometry.topology.Topology"><code class="xref py py-class docutils literal notranslate"><span class="pre">Topology</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -2011,7 +2009,7 @@ not interacting through bonds and angles are included in the interaction set</p>
 <dd class="field-even"><p>Dictionary of prior models fitted with the right harmonic restraint values</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>baseline_models</p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">ModuleDict</span></code></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -2024,15 +2022,15 @@ not interacting through bonds and angles are included in the interaction set</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>topology</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="geometry/topology.html#mlcg.geometry.topology.Topology" title="mlcg.geometry.topology.Topology"><code class="xref py py-class docutils literal notranslate"><span class="pre">Topology</span></code></a></span>) – All-atom topology</p></li>
-<li><p><strong>cg_mapping</strong> (<em>(</em><em>optional</em><em>)</em>) – Dictionary containing CG mapping. The default is AL_CG_MAP.</p></li>
-<li><p><strong>special_terminal</strong> (<em>(</em><em>optional</em><em>)</em>) – True if termini beads are to be treated separately. The default is False.</p></li>
+<li><p><strong>cg_mapping</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></span>) – Dictionary containing CG mapping. The default is AL_CG_MAP.</p></li>
+<li><p><strong>special_terminal</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – True if termini beads are to be treated separately. The default is False.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Topology class object for CG molecule</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>cg_topo</p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="geometry/topology.html#mlcg.geometry.topology.Topology" title="mlcg.geometry.topology.Topology"><code class="xref py py-class docutils literal notranslate"><span class="pre">Topology</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -2079,7 +2077,7 @@ not interacting through bonds and angles are included in the interaction set</p>
 <dd class="field-even"><p>Dictionary containing all prior neighbor lists</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>prior_nls</p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -2091,7 +2089,7 @@ not interacting through bonds and angles are included in the interaction set</p>
 All outputs are stored in the relevant processed files</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>cg_mapping</strong> (<em>(</em><em>optional</em><em>)</em>) – CG mapping dictionary. The default is AL_CG_MAP.</p>
+<dd class="field-odd"><p><strong>cg_mapping</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></span>) – CG mapping dictionary. The default is AL_CG_MAP.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -2125,7 +2123,7 @@ be present in order to skip downloading.</p>
 <dd class="field-even"><p>Dictionary containing repulsion neighor list</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>dict</p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -2368,14 +2366,14 @@ Use .get_dataloader for obtaining a dataloader for PyTorch training, etc.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>h5_file_path</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Path to the hdf5 file containing the dataset(s)</p></li>
-<li><p><strong>stride</strong> (<em>default 1</em>) – Stride for loading the frames</p></li>
-<li><p><strong>detailed_indices</strong> (default <cite>None</cite>) – Set this to manually define which frames to be included for each molecule.</p></li>
-<li><p><strong>metaset_name</strong> (default <cite>None</cite>) – the name of the h5 group containing the molecule data. If kept <cite>None</cite> and
+<li><p><strong>stride</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Stride for loading the frames</p></li>
+<li><p><strong>detailed_indices</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>]]</span>) – Set this to manually define which frames to be included for each molecule.</p></li>
+<li><p><strong>metaset_name</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – the name of the h5 group containing the molecule data. If kept <cite>None</cite> and
 the given file consists of only one metaset, this parameter will be
 inferred from the file.</p></li>
-<li><p><strong>mol_list</strong> (default <cite>None</cite>) – A list of the molecules to be loaded. When kept <cite>None</cite>, all molecules will
+<li><p><strong>mol_list</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]]</span>) – A list of the molecules to be loaded. When kept <cite>None</cite>, all molecules will
 be loaded.</p></li>
-<li><p><strong>hdf_key_mapping</strong> (<em>default loading the delta forces</em>) – Key mapping for reading the data from h5 file.</p></li>
+<li><p><strong>hdf_key_mapping</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]</span>) – Key mapping for reading the data from h5 file.</p></li>
 <li><p><strong>parallel</strong> (<em>default for single process</em>) – For DDP parallelism. Details see the head of this file.</p></li>
 </ul>
 </dd>
@@ -2495,7 +2493,7 @@ If the number of actual neighbors is greater than
 <dd class="field-even"><p>Neighborlist dictionary</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Dict</p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -2526,7 +2524,7 @@ the actual position of the neighboring atoms)</p></li>
 <dd class="field-even"><p>Neighborlist dictionary</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Dict</p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -2543,7 +2541,7 @@ the actual position of the neighboring atoms)</p></li>
 <dd class="field-even"><p>True if the supplied neighborlist is valid, false otherwise</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>bool</p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -2701,21 +2699,18 @@ large.</p></li>
 <dd><p>Vectorized version of position wrapping to unit cell.
 Returns positions changed by a multiple of the unit cell vectors to
 fit inside the space spanned by these vectors.
-:type data: <span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="data/atom_data.html#mlcg.data.atomic_data.AtomicData" title="mlcg.data.atomic_data.AtomicData"><code class="xref py py-class docutils literal notranslate"><span class="pre">AtomicData</span></code></a></span>
 :param data: torch_geometric.Data instance with pos, cell, pbc, batch attributes
-:type data: AtomicData
-:type device: <span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>
+:type data: <span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="data/atom_data.html#mlcg.data.atomic_data.AtomicData" title="mlcg.data.atomic_data.AtomicData"><code class="xref py py-class docutils literal notranslate"><span class="pre">AtomicData</span></code></a></span>
 :param device: Device to perform computations on
-:type device: str
-:type eps: <span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>
+:type device: <span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>
 :param eps: Small number to prevent slightly negative coordinates from being wrapped
-:type eps: float</p>
+:type eps: <span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span></p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>torch_geometric.Data instance with positions wrapped in unit cell</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="data/atom_data.html#mlcg.data.atomic_data.AtomicData" title="mlcg.data.atomic_data.AtomicData">AtomicData</a></p>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
 </dd>
 </dl>
 </dd></dl>

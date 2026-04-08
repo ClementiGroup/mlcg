@@ -218,7 +218,7 @@ described in <a class="reference internal" href="../bibliography.html#schnet" id
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>embedding_layer</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Initial embedding layer that transforms atoms/coarse grain bead
 types into embedded features</p></li>
-<li><p><strong>interaction_blocks</strong> (<em>list</em><em> of </em><em>torch.nn.Module</em><em> or </em><em>torch.nn.Sequential</em>) – Sequential interaction blocks of the model, where each interaction
+<li><p><strong>interaction_blocks</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code>]</span>) – Sequential interaction blocks of the model, where each interaction
 block applies</p></li>
 <li><p><strong>rbf_layer</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – The set of radial basis functions that expands pairwise distances
 between atoms/CG beads.</p></li>
@@ -363,14 +363,14 @@ may find the class <cite>StandardPaiNN</cite> to be helpful in getting started q
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>embedding_layer</strong> (<em>nn.Module</em>) – Embedding layer for atom types.</p></li>
-<li><p><strong>rbf_layer</strong> (<em>nn.Module</em>) – Radial basis function layer to project distances.</p></li>
-<li><p><strong>interaction_blocks</strong> (<em>List</em><em>[</em><em>So3kratesLayer</em><em>]</em>) – List of SO3krates layers.</p></li>
-<li><p><strong>layer_norm</strong> (<em>nn.Module</em>) – Layer normalization module.</p></li>
-<li><p><strong>output_network</strong> (<em>nn.Module</em>) – Output network for final energy prediction.</p></li>
-<li><p><strong>degrees</strong> (<em>List</em><em>[</em><em>int</em><em>]</em>) – List of spherical harmonic degrees.</p></li>
-<li><p><strong>max_num_neighbors</strong> (<em>int</em>) – Maximum number of neighbors per atom.</p></li>
-<li><p><strong>normalize_sph</strong> (<em>bool</em>) – Whether to normalize spherical harmonics, default is True.</p></li>
+<li><p><strong>embedding_layer</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Embedding layer for atom types.</p></li>
+<li><p><strong>rbf_layer</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Radial basis function layer to project distances.</p></li>
+<li><p><strong>interaction_blocks</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">So3kratesLayer</span></code>]</span>) – List of SO3krates layers.</p></li>
+<li><p><strong>layer_norm</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Layer normalization module.</p></li>
+<li><p><strong>output_network</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Output network for final energy prediction.</p></li>
+<li><p><strong>degrees</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]</span>) – List of spherical harmonic degrees.</p></li>
+<li><p><strong>max_num_neighbors</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Maximum number of neighbors per atom.</p></li>
+<li><p><strong>normalize_sph</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Whether to normalize spherical harmonics, default is True.</p></li>
 <li><p><strong>nls_distance_method</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Method for computing a neighbor list. Supported values are
 <cite>torch</cite>, <cite>nvalchemi_naive</cite>, <cite>nvalchemi_cell</cite> and custom.</p></li>
 </ul>
@@ -387,17 +387,17 @@ settings, including embedding, interaction, and output modules.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>rbf_layer</strong> (<em>nn.Module</em>) – Radial basis function layer.</p></li>
-<li><p><strong>cutoff</strong> (<em>nn.Module</em>) – Cutoff function for edge weights.</p></li>
-<li><p><strong>output_hidden_layer_widths</strong> (<em>List</em><em>[</em><em>int</em><em>]</em>) – Widths for hidden layers in output MLP.</p></li>
-<li><p><strong>hidden_channels</strong> (<em>int</em>) – Number of hidden channels.</p></li>
-<li><p><strong>embedding_size</strong> (<em>int</em>) – Size of atom type embedding.</p></li>
-<li><p><strong>num_interactions</strong> (<em>int</em>) – Number of SO3krates layers.</p></li>
-<li><p><strong>degrees</strong> (<em>List</em><em>[</em><em>int</em><em>]</em>) – List of spherical harmonic degrees.</p></li>
-<li><p><strong>n_heads</strong> (<em>int</em>) – Number of attention heads.</p></li>
-<li><p><strong>activation</strong> (<em>nn.Module</em>) – Activation function.</p></li>
-<li><p><strong>max_num_neighbors</strong> (<em>int</em>) – Maximum number of neighbors per atom.</p></li>
-<li><p><strong>normalize_sph</strong> (<em>bool</em>) – Whether to normalize spherical harmonics, default is True.</p></li>
+<li><p><strong>rbf_layer</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Radial basis function layer.</p></li>
+<li><p><strong>cutoff</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Cutoff function for edge weights.</p></li>
+<li><p><strong>output_hidden_layer_widths</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]</span>) – Widths for hidden layers in output MLP.</p></li>
+<li><p><strong>hidden_channels</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Number of hidden channels.</p></li>
+<li><p><strong>embedding_size</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Size of atom type embedding.</p></li>
+<li><p><strong>num_interactions</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Number of SO3krates layers.</p></li>
+<li><p><strong>degrees</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]</span>) – List of spherical harmonic degrees.</p></li>
+<li><p><strong>n_heads</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Number of attention heads.</p></li>
+<li><p><strong>activation</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Activation function.</p></li>
+<li><p><strong>max_num_neighbors</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Maximum number of neighbors per atom.</p></li>
+<li><p><strong>normalize_sph</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Whether to normalize spherical harmonics, default is True.</p></li>
 </ul>
 </dd>
 </dl>
@@ -418,28 +418,28 @@ and readout modules.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>r_max</strong> (<em>float</em>) – Cutoff radius for neighbor list.</p></li>
-<li><p><strong>num_bessel</strong> (<em>int</em>) – Number of Bessel functions for radial basis.</p></li>
-<li><p><strong>num_polynomial_cutoff</strong> (<em>int</em>) – Number of polynomial cutoff functions.</p></li>
-<li><p><strong>max_ell</strong> (<em>int</em>) – Maximum angular momentum for spherical harmonics.</p></li>
-<li><p><strong>interaction_cls</strong> (<em>str</em>) – Class name for interaction blocks.</p></li>
-<li><p><strong>interaction_cls_first</strong> (<em>str</em>) – Class name for the first interaction block.</p></li>
-<li><p><strong>num_interactions</strong> (<em>int</em>) – Number of interaction blocks.</p></li>
-<li><p><strong>hidden_irreps</strong> (<em>str</em>) – Irreducible representations for hidden features. For example if only
+<li><p><strong>r_max</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – Cutoff radius for neighbor list.</p></li>
+<li><p><strong>num_bessel</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Number of Bessel functions for radial basis.</p></li>
+<li><p><strong>num_polynomial_cutoff</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Number of polynomial cutoff functions.</p></li>
+<li><p><strong>max_ell</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Maximum angular momentum for spherical harmonics.</p></li>
+<li><p><strong>interaction_cls</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Class name for interaction blocks.</p></li>
+<li><p><strong>interaction_cls_first</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Class name for the first interaction block.</p></li>
+<li><p><strong>num_interactions</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Number of interaction blocks.</p></li>
+<li><p><strong>hidden_irreps</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Irreducible representations for hidden features. For example if only
 a scalar representation with 128 channels is used can be “128x0e”. If
 also a vector representation is used can be “128x0e + 128x1o”.</p></li>
-<li><p><strong>MLP_irreps</strong> (<em>str</em>) – Irreducible representations for MLP layers.</p></li>
-<li><p><strong>avg_num_neighbors</strong> (<em>float</em>) – Average number of neighbors per atom used for normalization and numerical stability.</p></li>
-<li><p><strong>atomic_numbers</strong> (<em>List</em><em>[</em><em>int</em><em>]</em>) – List of atomic numbers in the system.</p></li>
-<li><p><strong>correlation</strong> (<em>Union</em><em>[</em><em>int</em><em>, </em><em>List</em><em>[</em><em>int</em><em>]</em><em>]</em>) – Correlation order(s) for product blocks.</p></li>
-<li><p><strong>gate</strong> (<em>Optional</em><em>[</em><em>Callable</em><em>]</em>) – Activation function for non-linearities.</p></li>
-<li><p><strong>max_num_neighbors</strong> (<em>int</em><em>, </em><em>optional</em>) – Maximum number of neighbors per atom.</p></li>
-<li><p><strong>pair_repulsion</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to use pairwise repulsion.</p></li>
-<li><p><strong>distance_transform</strong> (<em>str</em><em>, </em><em>optional</em>) – Distance transformation type.</p></li>
-<li><p><strong>radial_MLP</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><em>int</em><em>]</em><em>]</em><em>, </em><em>optional</em>) – Radial MLP architecture.</p></li>
-<li><p><strong>radial_type</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – Radial basis type.</p></li>
-<li><p><strong>cueq_config</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em><em>, </em><em>optional</em>) – cuEquivariance configuration.</p></li>
-<li><p><strong>use_cueq</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em><em>, </em><em>optional</em>) – Whether to use cuEquivariance acceleration.</p></li>
+<li><p><strong>MLP_irreps</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Irreducible representations for MLP layers.</p></li>
+<li><p><strong>avg_num_neighbors</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – Average number of neighbors per atom used for normalization and numerical stability.</p></li>
+<li><p><strong>atomic_numbers</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]</span>) – List of atomic numbers in the system.</p></li>
+<li><p><strong>correlation</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]]</span>) – Correlation order(s) for product blocks.</p></li>
+<li><p><strong>gate</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>]</span>) – Activation function for non-linearities.</p></li>
+<li><p><strong>max_num_neighbors</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Maximum number of neighbors per atom.</p></li>
+<li><p><strong>pair_repulsion</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Whether to use pairwise repulsion.</p></li>
+<li><p><strong>distance_transform</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Distance transformation type.</p></li>
+<li><p><strong>radial_MLP</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]]</span>) – Radial MLP architecture.</p></li>
+<li><p><strong>radial_type</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]</span>) – Radial basis type.</p></li>
+<li><p><strong>cueq_config</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]</span>) – cuEquivariance configuration.</p></li>
+<li><p><strong>use_cueq</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>]</span>) – Whether to use cuEquivariance acceleration.</p></li>
 </ul>
 </dd>
 </dl>
@@ -452,16 +452,16 @@ also a vector representation is used can be “128x0e + 128x1o”.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>atomic_numbers</strong> (<em>torch.Tensor</em>) – Tensor of atomic numbers present in the system.</p></li>
-<li><p><strong>node_embedding</strong> (<em>torch.nn.Module</em>) – Module for embedding node (atom) attributes.</p></li>
-<li><p><strong>radial_embedding</strong> (<em>torch.nn.Module</em>) – Module for embedding radial (distance) features.</p></li>
-<li><p><strong>spherical_harmonics</strong> (<em>torch.nn.Module</em>) – Module for computing spherical harmonics of edge vectors.</p></li>
-<li><p><strong>interactions</strong> (<em>List</em><em>[</em><em>torch.nn.Module</em><em>]</em>) – List of interaction blocks.</p></li>
-<li><p><strong>products</strong> (<em>List</em><em>[</em><em>torch.nn.Module</em><em>]</em>) – List of product basis blocks.</p></li>
-<li><p><strong>readouts</strong> (<em>List</em><em>[</em><em>torch.nn.Module</em><em>]</em>) – List of readout blocks.</p></li>
-<li><p><strong>r_max</strong> (<em>float</em>) – Cutoff radius for neighbor list.</p></li>
-<li><p><strong>max_num_neighbors</strong> (<em>int</em>) – Maximum number of neighbors per atom.</p></li>
-<li><p><strong>pair_repulsion_fn</strong> (<em>torch.nn.Module</em><em>, </em><em>optional</em>) – Optional pairwise repulsion energy function.</p></li>
+<li><p><strong>atomic_numbers</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span>) – Tensor of atomic numbers present in the system.</p></li>
+<li><p><strong>node_embedding</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Module for embedding node (atom) attributes.</p></li>
+<li><p><strong>radial_embedding</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Module for embedding radial (distance) features.</p></li>
+<li><p><strong>spherical_harmonics</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Module for computing spherical harmonics of edge vectors.</p></li>
+<li><p><strong>interactions</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code>]</span>) – List of interaction blocks.</p></li>
+<li><p><strong>products</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code>]</span>) – List of product basis blocks.</p></li>
+<li><p><strong>readouts</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code>]</span>) – List of readout blocks.</p></li>
+<li><p><strong>r_max</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – Cutoff radius for neighbor list.</p></li>
+<li><p><strong>max_num_neighbors</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Maximum number of neighbors per atom.</p></li>
+<li><p><strong>pair_repulsion_fn</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Optional pairwise repulsion energy function.</p></li>
 <li><p><strong>nls_distance_method</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Method for computing a neighbor list. Supported values are
 <cite>torch</cite>, <cite>nvalchemi_naive</cite>, <cite>nvalchemi_cell</cite> and custom.</p></li>
 </ul>
@@ -484,34 +484,34 @@ component manually.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>r_max</strong> (<em>float</em><em>, </em><em>default=4.0</em>) – Cutoff radius for neighbor identification.</p></li>
-<li><p><strong>embedding_size</strong> (<em>int</em><em>, </em><em>default=100</em>) – Dimension of the atom embedding space.</p></li>
-<li><p><strong>l_max</strong> (<em>int</em><em>, </em><em>default=2</em>) – Maximum spherical harmonic degree to use.</p></li>
-<li><p><strong>parity</strong> (<em>bool</em><em>, </em><em>default=False</em>) – Whether to use parity-equivariant features.</p></li>
-<li><p><strong>radial_chemical_embed</strong> (<em>Optional</em><em>[</em><em>dict</em><em>]</em><em>, </em><em>default=None</em>) – Configuration for the radial chemical embedding.</p></li>
-<li><p><strong>radial_chemical_embed_dim</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em><em>, </em><em>default=None</em>) – Dimension of the radial chemical embedding.</p></li>
-<li><p><strong>per_edge_type_cutoff</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>]</em><em>, </em><em>default=None</em>) – Cutoff parameters for each edge type.</p></li>
-<li><p><strong>scalar_embed_mlp_hidden_layers_depth</strong> (<em>int</em><em>, </em><em>default=1</em>) – Depth of the scalar embedding MLP.</p></li>
-<li><p><strong>scalar_embed_mlp_hidden_layers_width</strong> (<em>int</em><em>, </em><em>default=64</em>) – Width of the scalar embedding MLP.</p></li>
-<li><p><strong>scalar_embed_mlp_nonlinearity</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=&quot;silu&quot;</em>) – Nonlinearity to use in the scalar embedding MLP.</p></li>
-<li><p><strong>num_layers</strong> (<em>int</em><em>, </em><em>default=2</em>) – Number of message-passing layers.</p></li>
-<li><p><strong>num_scalar_features</strong> (<em>int</em><em>, </em><em>default=64</em>) – Number of scalar features.</p></li>
-<li><p><strong>num_tensor_features</strong> (<em>int</em><em>, </em><em>default=16</em>) – Number of tensor features.</p></li>
-<li><p><strong>allegro_mlp_hidden_layers_depth</strong> (<em>int</em><em>, </em><em>default=1</em>) – Depth of the Allegro MLP.</p></li>
-<li><p><strong>allegro_mlp_hidden_layers_width</strong> (<em>int</em><em>, </em><em>default=64</em>) – Width of the Allegro MLP.</p></li>
-<li><p><strong>allegro_mlp_nonlinearity</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=&quot;silu&quot;</em>) – Nonlinearity to use in the Allegro MLP.</p></li>
-<li><p><strong>tp_path_channel_coupling</strong> (<em>bool</em><em>, </em><em>default=True</em>) – Whether to use channel coupling in tensor product paths.</p></li>
-<li><p><strong>readout_mlp_hidden_layers_depth</strong> (<em>int</em><em>, </em><em>default=1</em>) – Depth of the readout MLP.</p></li>
-<li><p><strong>readout_mlp_hidden_layers_width</strong> (<em>int</em><em>, </em><em>default=32</em>) – Width of the readout MLP.</p></li>
-<li><p><strong>readout_mlp_nonlinearity</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>default=&quot;silu&quot;</em>) – Nonlinearity to use in the readout MLP.</p></li>
-<li><p><strong>avg_num_neighbors</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em><em>, </em><em>default=10.0</em>) – Average number of neighbors per atom for normalization.</p></li>
-<li><p><strong>weight_individual_irreps</strong> (<em>bool</em><em>, </em><em>default=True</em>) – Whether to use separate weights for each irreducible representation.</p></li>
-<li><p><strong>per_type_energy_scales</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>Sequence</em><em>[</em><em>float</em><em>]</em><em>]</em><em>]</em><em>, </em><em>default=None</em>) – Scaling factors for energies of each atom type.</p></li>
-<li><p><strong>per_type_energy_shifts</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>float</em><em>, </em><em>Sequence</em><em>[</em><em>float</em><em>]</em><em>]</em><em>]</em><em>, </em><em>default=None</em>) – Shift values for energies of each atom type.</p></li>
-<li><p><strong>per_type_energy_scales_trainable</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em><em>, </em><em>default=False</em>) – Whether the energy scales are trainable parameters.</p></li>
-<li><p><strong>per_type_energy_shifts_trainable</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em><em>, </em><em>default=False</em>) – Whether the energy shifts are trainable parameters.</p></li>
-<li><p><strong>pair_potential</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>]</em><em>, </em><em>default=None</em>) – Optional pair potential to add to the energy.</p></li>
-<li><p><strong>forward_normalize</strong> (<em>bool</em><em>, </em><em>default=True</em>) – Whether to normalize weights in the forward pass.</p></li>
+<li><p><strong>r_max</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – Cutoff radius for neighbor identification.</p></li>
+<li><p><strong>embedding_size</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Dimension of the atom embedding space.</p></li>
+<li><p><strong>l_max</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Maximum spherical harmonic degree to use.</p></li>
+<li><p><strong>parity</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Whether to use parity-equivariant features.</p></li>
+<li><p><strong>radial_chemical_embed</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>]</span>) – Configuration for the radial chemical embedding.</p></li>
+<li><p><strong>radial_chemical_embed_dim</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]</span>) – Dimension of the radial chemical embedding.</p></li>
+<li><p><strong>per_edge_type_cutoff</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]]]]</span>) – Cutoff parameters for each edge type.</p></li>
+<li><p><strong>scalar_embed_mlp_hidden_layers_depth</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Depth of the scalar embedding MLP.</p></li>
+<li><p><strong>scalar_embed_mlp_hidden_layers_width</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Width of the scalar embedding MLP.</p></li>
+<li><p><strong>scalar_embed_mlp_nonlinearity</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]</span>) – Nonlinearity to use in the scalar embedding MLP.</p></li>
+<li><p><strong>num_layers</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Number of message-passing layers.</p></li>
+<li><p><strong>num_scalar_features</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Number of scalar features.</p></li>
+<li><p><strong>num_tensor_features</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Number of tensor features.</p></li>
+<li><p><strong>allegro_mlp_hidden_layers_depth</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Depth of the Allegro MLP.</p></li>
+<li><p><strong>allegro_mlp_hidden_layers_width</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Width of the Allegro MLP.</p></li>
+<li><p><strong>allegro_mlp_nonlinearity</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]</span>) – Nonlinearity to use in the Allegro MLP.</p></li>
+<li><p><strong>tp_path_channel_coupling</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Whether to use channel coupling in tensor product paths.</p></li>
+<li><p><strong>readout_mlp_hidden_layers_depth</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Depth of the readout MLP.</p></li>
+<li><p><strong>readout_mlp_hidden_layers_width</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Width of the readout MLP.</p></li>
+<li><p><strong>readout_mlp_nonlinearity</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]</span>) – Nonlinearity to use in the readout MLP.</p></li>
+<li><p><strong>avg_num_neighbors</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]</span>) – Average number of neighbors per atom for normalization.</p></li>
+<li><p><strong>weight_individual_irreps</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Whether to use separate weights for each irreducible representation.</p></li>
+<li><p><strong>per_type_energy_scales</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>], <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]</span>) – Scaling factors for energies of each atom type.</p></li>
+<li><p><strong>per_type_energy_shifts</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>], <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]</span>) – Shift values for energies of each atom type.</p></li>
+<li><p><strong>per_type_energy_scales_trainable</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>]</span>) – Whether the energy scales are trainable parameters.</p></li>
+<li><p><strong>per_type_energy_shifts_trainable</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>]</span>) – Whether the energy shifts are trainable parameters.</p></li>
+<li><p><strong>pair_potential</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code>]</span>) – Optional pair potential to add to the energy.</p></li>
+<li><p><strong>forward_normalize</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Whether to normalize weights in the forward pass.</p></li>
 </ul>
 </dd>
 </dl>

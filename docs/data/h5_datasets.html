@@ -454,14 +454,14 @@ Use .get_dataloader for obtaining a dataloader for PyTorch training, etc.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>h5_file_path</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Path to the hdf5 file containing the dataset(s)</p></li>
-<li><p><strong>stride</strong> (<em>default 1</em>) – Stride for loading the frames</p></li>
-<li><p><strong>detailed_indices</strong> (default <cite>None</cite>) – Set this to manually define which frames to be included for each molecule.</p></li>
-<li><p><strong>metaset_name</strong> (default <cite>None</cite>) – the name of the h5 group containing the molecule data. If kept <cite>None</cite> and
+<li><p><strong>stride</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Stride for loading the frames</p></li>
+<li><p><strong>detailed_indices</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>]]</span>) – Set this to manually define which frames to be included for each molecule.</p></li>
+<li><p><strong>metaset_name</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – the name of the h5 group containing the molecule data. If kept <cite>None</cite> and
 the given file consists of only one metaset, this parameter will be
 inferred from the file.</p></li>
-<li><p><strong>mol_list</strong> (default <cite>None</cite>) – A list of the molecules to be loaded. When kept <cite>None</cite>, all molecules will
+<li><p><strong>mol_list</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]]</span>) – A list of the molecules to be loaded. When kept <cite>None</cite>, all molecules will
 be loaded.</p></li>
-<li><p><strong>hdf_key_mapping</strong> (<em>default loading the delta forces</em>) – Key mapping for reading the data from h5 file.</p></li>
+<li><p><strong>hdf_key_mapping</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]</span>) – Key mapping for reading the data from h5 file.</p></li>
 <li><p><strong>parallel</strong> (<em>default for single process</em>) – For DDP parallelism. Details see the head of this file.</p></li>
 </ul>
 </dd>
