@@ -25,7 +25,7 @@ def harmonic_angles_edge_fwd_kernel(
     k_ptr,
     x_ptr,  # *fp16/fp32, [T,T]
     eedge_ptr,  # *fp32,      [E]
-    E, 
+    E,
     TYPE_DTYPE: tl.constexpr,  # 32 or 64
     K_STRIDE0: tl.constexpr,
     K_STRIDE1: tl.constexpr,
