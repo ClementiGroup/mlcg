@@ -2,7 +2,7 @@ import warnings
 from typing import Optional, List, Final, Dict
 import torch
 from torch_geometric.nn import MessagePassing
-from torch_scatter import scatter
+from torch_geometric.utils import scatter
 from ..neighbor_list.neighbor_list import (
     atomic_data2neighbor_list,
     validate_neighborlist,

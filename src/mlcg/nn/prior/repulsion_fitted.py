@@ -1,4 +1,4 @@
-from torch_scatter import scatter
+from torch_geometric.utils import scatter
 from mlcg.nn.prior import _Prior
 import torch
 from typing import Final, Optional, Dict
