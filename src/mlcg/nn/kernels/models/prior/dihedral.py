@@ -2,57 +2,12 @@ import torch
 import torch.nn.functional as F
 import triton
 import triton.language as tl
+from triton.language.extra import libdevice
 from torch.library import triton_op, wrap_triton
 from torch_geometric.utils import scatter
 
 from ...utils import ensure_contiguous
 from .....geometry.internal_coordinates import compute_torsions
-
-
-@triton.jit
-def atan2_tl(y, x):
-    pi = tl.full((), 3.141592653589793, tl.float32)
-    half_pi = pi * 0.5
-    eps = tl.full((), 1e-12, tl.float32)
-
-    y = y.to(tl.float32)
-    x = x.to(tl.float32)
-
-    ax = tl.abs(x)
-    ay = tl.abs(y)
-
-    # a in [0, pi/2], using a rational/polynomial approx
-    # Use the "min/max" trick to keep ratio <= 1
-    t0 = tl.minimum(ax, ay)
-    t1 = tl.maximum(ax, ay)
-    r = t0 / (t1 + eps)  # in [0,1]
-
-    r2 = r * r
-
-    # Approx for atan(r) on [0,1]
-    # One commonly used minimax-ish polynomial:
-    # atan(r) ≈ r*(c1 + c3*r^2 + c5*r^4 + c7*r^6)
-    c1 = 0.9998660
-    c3 = -0.3302995
-    c5 = 0.1801410
-    c7 = -0.0851330
-    a = r * (c1 + r2 * (c3 + r2 * (c5 + r2 * c7)))
-
-    # If ay > ax, atan(ay/ax) = pi/2 - atan(ax/ay)
-    a = tl.where(ay > ax, half_pi - a, a)
-
-    # Quadrant fix to get atan2
-    # For x < 0: angle = pi - a (if y>=0) else a - pi
-    a = tl.where(x < 0, tl.where(y >= 0, pi - a, a - pi), a)
-
-    # Sign for y (when x>=0 the polynomial gave |angle|)
-    a = tl.where((x >= 0) & (y < 0), -a, a)
-
-    # Handle x==0 explicitly
-    a = tl.where(
-        x == 0, tl.where(y > 0, half_pi, tl.where(y < 0, -half_pi, 0.0)), a
-    )
-    return a
 
 
 def pack_type_key(ti, tj, tk, tl_, n_types: int):
@@ -79,10 +34,8 @@ def dihedral_fwd_kernel(
     k2_ptr,  # [K, deg] float32/float64 ; K = n_types^4
     v_0_ptr,  # [K, deg] float32/float64 ; K = n_types^4
     out_E_ptr,  # [E] float32/float64
-    DBG_ptr,  # [E] float32/float64
-    E: tl.constexpr,
+    E,
     deg: tl.constexpr,  # runtime passed as tl.constexpr by specialization (<=6 typical)
-    n_types: tl.constexpr,
     stride_km: tl.constexpr,
     stride_ki: tl.constexpr,
     stride_kj: tl.constexpr,
@@ -132,39 +85,41 @@ def dihedral_fwd_kernel(
     yl = tl.load(pos_ptr + l3 + 1, mask=mask, other=0.0).to(tl.float32)
     zl = tl.load(pos_ptr + l3 + 2, mask=mask, other=0.0).to(tl.float32)
 
-    # b1 = r_i - r_j, b2 = r_k - r_j, b3 = r_l - r_k
-    b1x = xi - xj
-    b1y = yi - yj
-    b1z = zi - zj
+    # b1 = r_j - r_i, b2 = r_k - r_j, b3 = r_l - r_k
+    b1x = xj - xi
+    b1y = yj - yi
+    b1z = zj - zi
+    b1_len = tl.sqrt(b1x * b1x + b1y * b1y + b1z * b1z)
+    b1x, b1y, b1z = b1x / b1_len, b1y / b1_len, b1z / b1_len
 
     b2x = xk - xj
     b2y = yk - yj
     b2z = zk - zj
+    b2_len = tl.sqrt(b2x * b2x + b2y * b2y + b2z * b2z)
+    b2x, b2y, b2z = b2x / b2_len, b2y / b2_len, b2z / b2_len
 
     b3x = xl - xk
     b3y = yl - yk
     b3z = zl - zk
+    b3_len = tl.sqrt(b3x * b3x + b3y * b3y + b3z * b3z)
+    b3x, b3y, b3z = b3x / b3_len, b3y / b3_len, b3z / b3_len
 
     # n1 = b1 x b2
     n1x = b1y * b2z - b1z * b2y
     n1y = b1z * b2x - b1x * b2z
     n1z = b1x * b2y - b1y * b2x
-    # n2 = b3 x b2
-    n2x = b3y * b2z - b3z * b2y
-    n2y = b3z * b2x - b3x * b2z
-    n2z = b3x * b2y - b3y * b2x
+    # n2 = b2 x b3
+    n2x = b2y * b3z - b2z * b3y
+    n2y = b2z * b3x - b2x * b3z
+    n2z = b2x * b3y - b2y * b3x
+    # m = n1 x b2
+    mx = n1y * b2z - n1z * b2y
+    my = n1z * b2x - n1x * b2z
+    mz = n1x * b2y - n1y * b2x
 
-    # squared norms
-    b2_sq = b2x * b2x + b2y * b2y + b2z * b2z
-    b2_len = tl.sqrt(b2_sq)
-
-    # phi (same as forward)
     x = n1x * n2x + n1y * n2y + n1z * n2z
-    cx = n1y * n2z - n1z * n2y
-    cy = n1z * n2x - n1x * n2z
-    cz = n1x * n2y - n1y * n2x
-    y = (cx * b2x + cy * b2y + cz * b2z) / b2_len
-    phi = atan2_tl(y, x)
+    y = mx * n2x + my * n2y + mz * n2z
+    phi = libdevice.atan2(-y, x)
 
     # key = (((type_i * n_types + type_j) * n_types + type_k) * n_types + type_l).to(tl.int32)
     key = (
@@ -175,18 +130,14 @@ def dihedral_fwd_kernel(
     ).to(tl.int32)
 
     v_0_loc = tl.load(v_0_ptr + key, mask=mask).to(tl.float32)
-    # --- energy sum ---
-    # ener_edge = tl.full((BLOCK,), n_types, tl.float32)  # accumulate in fp32
     ener_edge = tl.zeros((BLOCK,), tl.float32) + v_0_loc
-
-    tl.store(DBG_ptr + blk_idx, ener_edge, mask=mask)
 
     for mm in range(deg):
         m = mm + 1
-        k1 = tl.load(k1_ptr + key + mm * stride_km, mask=mask, other=0.0).to(
+        k1 = tl.load(k1_ptr + mm * stride_km + key, mask=mask, other=0.0).to(
             tl.float32
         )
-        k2 = tl.load(k2_ptr + key + mm * stride_km, mask=mask, other=0.0).to(
+        k2 = tl.load(k2_ptr + mm * stride_km + key, mask=mask, other=0.0).to(
             tl.float32
         )
         ang = phi * m
@@ -217,22 +168,11 @@ def flash_dihedral(
     """
     assert pos.is_cuda and k1.is_cuda and k2.is_cuda
     E = index_mapping.shape[1]
-    out_E = torch.empty(
+    out_E = torch.zeros(
         (E,), device=pos.device, dtype=torch.float32
     ).contiguous()
     n_types = k1.shape[1]
 
-    dbg_ptr = (
-        torch.zeros(
-            (
-                E,
-                4,
-            ),
-            device=pos.device,
-            dtype=torch.int64,
-        ).contiguous()
-        - 6
-    )
     wrap_triton(dihedral_fwd_kernel)[
         lambda meta: (triton.cdiv(E, meta["BLOCK"]),)
     ](
@@ -243,21 +183,16 @@ def flash_dihedral(
         k2,
         v_0,
         out_E_ptr=out_E,
-        DBG_ptr=dbg_ptr,
         E=E,
         deg=deg,
-        n_types=n_types,
         stride_km=k1.stride(0),
         stride_ki=k1.stride(1),
         stride_kj=k1.stride(2),
         stride_kk=k1.stride(3),
         stride_kl=k1.stride(4),
     )
-    y = torch.zeros(
-        (num_graphs,), device=pos.device, dtype=torch.float32
-    ).contiguous()
-    y.index_add_(0, mapping_batch, out_E)
-    return y
+    y = torch.zeros((num_graphs,), device=pos.device, dtype=torch.float32)
+    return y.index_add_(0, mapping_batch, out_E)
 
 
 def setup_context_flash_dihedral(ctx, inputs, output):
@@ -456,7 +391,7 @@ def dihedral_pos_bwd_kernel(
     cy = n1z * n2x - n1x * n2z
     cz = n1x * n2y - n1y * n2x
     y = (cx * b2x + cy * b2y + cz * b2z) / b2_len
-    phi = atan2_tl(y, x)
+    phi = libdevice.atan2(-y, x)
 
     key = (
         type_i * stride_ki
