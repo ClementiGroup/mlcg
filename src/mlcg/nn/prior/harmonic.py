@@ -654,7 +654,7 @@ class FlashHarmonicAngles(_Prior):
             mapping_batch=mapping_batch,
             k=self.k,
             x_0=self.x_0,
-            num_graphs=num_graphs
+            num_graphs=num_graphs,
         )
         data.out[self.name] = {"energy": y}
         return data

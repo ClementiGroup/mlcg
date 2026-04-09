@@ -487,7 +487,6 @@ class Dihedral(FourierSeries):
         return compute_torsions(pos, mapping, cell_shifts)
 
 
-
 class FlashDihedral(_Prior):
     """
     Computes per-graph repulsion energy:

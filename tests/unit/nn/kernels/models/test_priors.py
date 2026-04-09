@@ -2,8 +2,13 @@ import pytest
 import torch
 
 from mlcg.nn.prior.repulsion import Repulsion, FlashRepulsion
-from mlcg.nn.prior.harmonic import HarmonicBonds, HarmonicAngles, FlashHarmonicBonds, FlashHarmonicAngles
-from mlcg.nn.prior.fourier_series import Dihedral,FlashDihedral
+from mlcg.nn.prior.harmonic import (
+    HarmonicBonds,
+    HarmonicAngles,
+    FlashHarmonicBonds,
+    FlashHarmonicAngles,
+)
+from mlcg.nn.prior.fourier_series import Dihedral, FlashDihedral
 
 from mlcg.geometry import compute_statistics
 from mlcg.nn import GradientsOut
@@ -49,21 +54,17 @@ def create_data(prior):
         base_prior = model_with_data["model"][HarmonicBonds.name]
         flash_prior = GradientsOut(
             FlashHarmonicBonds(
-                base_prior.model.k,
-                base_prior.model.x_0,
-                HarmonicBonds.name
+                base_prior.model.k, base_prior.model.x_0, HarmonicBonds.name
             )
         )
-    
+
     elif prior.name == HarmonicAngles.name:
         model_with_data = _ASE_prior_model(sum_out=False)
         data = model_with_data["collated_prior_data"]
         base_prior = model_with_data["model"][HarmonicAngles.name]
         flash_prior = GradientsOut(
             FlashHarmonicAngles(
-                base_prior.model.k,
-                base_prior.model.x_0,
-                HarmonicAngles.name
+                base_prior.model.k, base_prior.model.x_0, HarmonicAngles.name
             )
         )
     elif prior.name == Dihedral.name:
@@ -75,7 +76,7 @@ def create_data(prior):
                 base_prior.model.k1s,
                 base_prior.model.k2s,
                 base_prior.model.v_0,
-                Dihedral.name
+                Dihedral.name,
             )
         )
 
@@ -89,13 +90,13 @@ def create_data(prior):
 
 @pytest.mark.parametrize("device", DEVICES)
 @pytest.mark.parametrize(
-    "base_prior", 
+    "base_prior",
     [
         (Repulsion),
         (HarmonicBonds),
         (HarmonicAngles),
         (Dihedral),
-    ]
+    ],
 )
 def test_base_vs_kernel(device, base_prior):
 

@@ -38,7 +38,9 @@ def harmonic_bonds_edge_fwd_kernel(
 
     off_i = blk_idx
     off_j = blk_idx + E
-    i = tl.load(index_mapping_ptr + off_i, mask=mask, other=0).to(tl.int32)# FIXME: indeces are int64 do we want them in int32?
+    i = tl.load(index_mapping_ptr + off_i, mask=mask, other=0).to(
+        tl.int32
+    )  # FIXME: indeces are int64 do we want them in int32?
     j = tl.load(index_mapping_ptr + off_j, mask=mask, other=0).to(tl.int32)
 
     if TYPE_DTYPE == 32:
@@ -217,14 +219,20 @@ def harmonic_bonds_pos_bwd_kernel(
     off_i = blk_idx
     off_j = blk_idx + E
 
-    i = tl.load(index_mapping_ptr + off_i, mask=mask, other=0).to(tl.int32)# FIXME: indeces are int64 do we want them in int32?
+    i = tl.load(index_mapping_ptr + off_i, mask=mask, other=0).to(
+        tl.int32
+    )  # FIXME: indeces are int64 do we want them in int32?
     j = tl.load(index_mapping_ptr + off_j, mask=mask, other=0).to(tl.int32)
 
     # grad multiplier per edge from upstream grad_y[batch]
     if BATCH_DTYPE == 32:
-        b = tl.load(mapping_batch_ptr + blk_idx, mask=mask, other=0).to(tl.int32)
+        b = tl.load(mapping_batch_ptr + blk_idx, mask=mask, other=0).to(
+            tl.int32
+        )
     else:
-        b = tl.load(mapping_batch_ptr + blk_idx, mask=mask, other=0).to(tl.int64)
+        b = tl.load(mapping_batch_ptr + blk_idx, mask=mask, other=0).to(
+            tl.int64
+        )
     gy = tl.load(grad_y_ptr + b, mask=mask & (b >= 0) & (b < B), other=0.0).to(
         tl.float32
     )

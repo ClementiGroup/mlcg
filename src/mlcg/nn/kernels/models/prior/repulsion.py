@@ -103,7 +103,9 @@ def flash_repulsion(
     """
     E = index_mapping.shape[1]
 
-    eedge = torch.empty((E,), device=pos.device, dtype=torch.float32).contiguous()
+    eedge = torch.empty(
+        (E,), device=pos.device, dtype=torch.float32
+    ).contiguous()
     y = torch.zeros((num_graphs,), device=pos.device, dtype=torch.float32)
 
     wrap_triton(repulsion_edge_fwd_kernel)[
