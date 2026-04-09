@@ -1,4 +1,5 @@
 import torch
+import torch.nn.functional as F
 import triton
 import triton.language as tl
 from torch.library import triton_op, wrap_triton
@@ -7,11 +8,12 @@ from torch_geometric.utils import scatter
 from ...utils import ensure_contiguous
 from .....geometry.internal_coordinates import compute_torsions
 
+
 @triton.jit
 def atan2_tl(y, x):
-    pi      = tl.full((), 3.141592653589793, tl.float32)
+    pi = tl.full((), 3.141592653589793, tl.float32)
     half_pi = pi * 0.5
-    eps     = tl.full((), 1e-12, tl.float32)
+    eps = tl.full((), 1e-12, tl.float32)
 
     y = y.to(tl.float32)
     x = x.to(tl.float32)
@@ -23,7 +25,7 @@ def atan2_tl(y, x):
     # Use the "min/max" trick to keep ratio <= 1
     t0 = tl.minimum(ax, ay)
     t1 = tl.maximum(ax, ay)
-    r  = t0 / (t1 + eps)     # in [0,1]
+    r = t0 / (t1 + eps)  # in [0,1]
 
     r2 = r * r
 
@@ -47,13 +49,16 @@ def atan2_tl(y, x):
     a = tl.where((x >= 0) & (y < 0), -a, a)
 
     # Handle x==0 explicitly
-    a = tl.where(x == 0, tl.where(y > 0, half_pi,
-                         tl.where(y < 0, -half_pi, 0.0)), a)
+    a = tl.where(
+        x == 0, tl.where(y > 0, half_pi, tl.where(y < 0, -half_pi, 0.0)), a
+    )
     return a
+
 
 def pack_type_key(ti, tj, tk, tl_, n_types: int):
     # ti,tj,tk,tl_ are int tensors
-    return (((ti * n_types + tj) * n_types + tk) * n_types + tl_)
+    return ((ti * n_types + tj) * n_types + tk) * n_types + tl_
+
 
 @triton.autotune(
     configs=[
@@ -67,75 +72,75 @@ def pack_type_key(ti, tj, tk, tl_, n_types: int):
 )
 @triton.jit
 def dihedral_fwd_kernel(
-    pos_ptr,                 # [B*N, 3] float32/float64
-    atom_types_ptr,          # [B*N] int32
-    index_mapping_ptr,       # [E,4] int32
-    k1_ptr,                  # [K, deg] float32/float64 ; K = n_types^4
-    k2_ptr,                  # [K, deg] float32/float64 ; K = n_types^4
-    v_0_ptr,                 # [K, deg] float32/float64 ; K = n_types^4
-    out_E_ptr,               # [E] float32/float64
-    DBG_ptr,               # [E] float32/float64
+    pos_ptr,  # [B*N, 3] float32/float64
+    atom_types_ptr,  # [B*N] int32
+    index_mapping_ptr,  # [E,4] int32
+    k1_ptr,  # [K, deg] float32/float64 ; K = n_types^4
+    k2_ptr,  # [K, deg] float32/float64 ; K = n_types^4
+    v_0_ptr,  # [K, deg] float32/float64 ; K = n_types^4
+    out_E_ptr,  # [E] float32/float64
+    DBG_ptr,  # [E] float32/float64
     E: tl.constexpr,
     deg: tl.constexpr,  # runtime passed as tl.constexpr by specialization (<=6 typical)
     n_types: tl.constexpr,
     stride_km: tl.constexpr,
-    stride_ki: tl.constexpr, 
-    stride_kj: tl.constexpr, 
-    stride_kk: tl.constexpr, 
-    stride_kl: tl.constexpr, 
+    stride_ki: tl.constexpr,
+    stride_kj: tl.constexpr,
+    stride_kk: tl.constexpr,
+    stride_kl: tl.constexpr,
     BLOCK: tl.constexpr,
 ):
     pid = tl.program_id(0)
     blk_idx = pid * BLOCK + tl.arange(0, BLOCK)
     mask = blk_idx < E
 
-    off_i = blk_idx 
+    off_i = blk_idx
     off_j = blk_idx + E
-    off_k = blk_idx + 2*E
-    off_l = blk_idx + 3*E
-    
+    off_k = blk_idx + 2 * E
+    off_l = blk_idx + 3 * E
+
     i = tl.load(index_mapping_ptr + off_i, mask=mask, other=0).to(tl.int64)
     j = tl.load(index_mapping_ptr + off_j, mask=mask, other=0).to(tl.int64)
     k = tl.load(index_mapping_ptr + off_k, mask=mask, other=0).to(tl.int64)
     l = tl.load(index_mapping_ptr + off_l, mask=mask, other=0).to(tl.int64)
-    
+
     # types -> key
-    type_i = tl.load(atom_types_ptr + i , mask=mask, other=-1).to(tl.int64)
-    type_j = tl.load(atom_types_ptr + j , mask=mask, other=-2).to(tl.int64)
-    type_k = tl.load(atom_types_ptr + k , mask=mask, other=-3).to(tl.int64)
-    type_l = tl.load(atom_types_ptr + l , mask=mask, other=-4).to(tl.int64)
-    
+    type_i = tl.load(atom_types_ptr + i, mask=mask, other=-1).to(tl.int64)
+    type_j = tl.load(atom_types_ptr + j, mask=mask, other=-2).to(tl.int64)
+    type_k = tl.load(atom_types_ptr + k, mask=mask, other=-3).to(tl.int64)
+    type_l = tl.load(atom_types_ptr + l, mask=mask, other=-4).to(tl.int64)
+
     # positions
     i3 = i * 3
     j3 = j * 3
     k3 = k * 3
     l3 = l * 3
-    
-    xi = tl.load(pos_ptr + i3 + 0, mask=mask, other=0.).to(tl.float32)
-    yi = tl.load(pos_ptr + i3 + 1, mask=mask, other=0.).to(tl.float32)
-    zi = tl.load(pos_ptr + i3 + 2, mask=mask, other=0.).to(tl.float32)
-    
-    xj = tl.load(pos_ptr + j3 + 0, mask=mask, other=0.).to(tl.float32)
-    yj = tl.load(pos_ptr + j3 + 1, mask=mask, other=0.).to(tl.float32)
-    zj = tl.load(pos_ptr + j3 + 2, mask=mask, other=0.).to(tl.float32)
 
-    xk = tl.load(pos_ptr + k3 + 0, mask=mask, other=0.).to(tl.float32)
-    yk = tl.load(pos_ptr + k3 + 1, mask=mask, other=0.).to(tl.float32)
-    zk = tl.load(pos_ptr + k3 + 2, mask=mask, other=0.).to(tl.float32)
+    xi = tl.load(pos_ptr + i3 + 0, mask=mask, other=0.0).to(tl.float32)
+    yi = tl.load(pos_ptr + i3 + 1, mask=mask, other=0.0).to(tl.float32)
+    zi = tl.load(pos_ptr + i3 + 2, mask=mask, other=0.0).to(tl.float32)
 
-    xl = tl.load(pos_ptr + l3 + 0, mask=mask, other=0.).to(tl.float32)
-    yl = tl.load(pos_ptr + l3 + 1, mask=mask, other=0.).to(tl.float32)
-    zl = tl.load(pos_ptr + l3 + 2, mask=mask, other=0.).to(tl.float32)
-    
+    xj = tl.load(pos_ptr + j3 + 0, mask=mask, other=0.0).to(tl.float32)
+    yj = tl.load(pos_ptr + j3 + 1, mask=mask, other=0.0).to(tl.float32)
+    zj = tl.load(pos_ptr + j3 + 2, mask=mask, other=0.0).to(tl.float32)
+
+    xk = tl.load(pos_ptr + k3 + 0, mask=mask, other=0.0).to(tl.float32)
+    yk = tl.load(pos_ptr + k3 + 1, mask=mask, other=0.0).to(tl.float32)
+    zk = tl.load(pos_ptr + k3 + 2, mask=mask, other=0.0).to(tl.float32)
+
+    xl = tl.load(pos_ptr + l3 + 0, mask=mask, other=0.0).to(tl.float32)
+    yl = tl.load(pos_ptr + l3 + 1, mask=mask, other=0.0).to(tl.float32)
+    zl = tl.load(pos_ptr + l3 + 2, mask=mask, other=0.0).to(tl.float32)
+
     # b1 = r_i - r_j, b2 = r_k - r_j, b3 = r_l - r_k
-    b1x = xi - xj 
+    b1x = xi - xj
     b1y = yi - yj
     b1z = zi - zj
-    
+
     b2x = xk - xj
     b2y = yk - yj
     b2z = zk - zj
-    
+
     b3x = xl - xk
     b3y = yl - yk
     b3z = zl - zk
@@ -148,54 +153,61 @@ def dihedral_fwd_kernel(
     n2x = b3y * b2z - b3z * b2y
     n2y = b3z * b2x - b3x * b2z
     n2z = b3x * b2y - b3y * b2x
-    
+
     # squared norms
-    b2_sq = b2x*b2x + b2y*b2y + b2z*b2z 
+    b2_sq = b2x * b2x + b2y * b2y + b2z * b2z
     b2_len = tl.sqrt(b2_sq)
 
     # phi (same as forward)
-    x = n1x*n2x + n1y*n2y + n1z*n2z
-    cx = n1y*n2z - n1z*n2y
-    cy = n1z*n2x - n1x*n2z
-    cz = n1x*n2y - n1y*n2x
-    y = (cx*b2x + cy*b2y + cz*b2z) / b2_len
+    x = n1x * n2x + n1y * n2y + n1z * n2z
+    cx = n1y * n2z - n1z * n2y
+    cy = n1z * n2x - n1x * n2z
+    cz = n1x * n2y - n1y * n2x
+    y = (cx * b2x + cy * b2y + cz * b2z) / b2_len
     phi = atan2_tl(y, x)
-    
 
-    #key = (((type_i * n_types + type_j) * n_types + type_k) * n_types + type_l).to(tl.int32)
-    key = (type_i*stride_ki + type_j*stride_kj + type_k*stride_kk + type_l*stride_kl).to(tl.int32)
+    # key = (((type_i * n_types + type_j) * n_types + type_k) * n_types + type_l).to(tl.int32)
+    key = (
+        type_i * stride_ki
+        + type_j * stride_kj
+        + type_k * stride_kk
+        + type_l * stride_kl
+    ).to(tl.int32)
 
     v_0_loc = tl.load(v_0_ptr + key, mask=mask).to(tl.float32)
     # --- energy sum ---
-    #ener_edge = tl.full((BLOCK,), n_types, tl.float32)  # accumulate in fp32
+    # ener_edge = tl.full((BLOCK,), n_types, tl.float32)  # accumulate in fp32
     ener_edge = tl.zeros((BLOCK,), tl.float32) + v_0_loc
 
     tl.store(DBG_ptr + blk_idx, ener_edge, mask=mask)
 
     for mm in range(deg):
         m = mm + 1
-        k1 = tl.load(k1_ptr + key + mm * stride_km, mask=mask, other=0.0).to(tl.float32)
-        k2 = tl.load(k2_ptr + key + mm * stride_km, mask=mask, other=0.0).to(tl.float32)
+        k1 = tl.load(k1_ptr + key + mm * stride_km, mask=mask, other=0.0).to(
+            tl.float32
+        )
+        k2 = tl.load(k2_ptr + key + mm * stride_km, mask=mask, other=0.0).to(
+            tl.float32
+        )
         ang = phi * m
-        ener_edge += k1 * tl.sin(ang) + k2 * tl.cos(ang) 
-    
+        ener_edge += k1 * tl.sin(ang) + k2 * tl.cos(ang)
+
     tl.store(out_E_ptr + blk_idx, ener_edge, mask=mask)
-    
 
 
 @triton_op("mlcg_kernels::flash_dihedral", mutates_args={})
 @ensure_contiguous
 def flash_dihedral(
-    pos : torch.Tensor, 
-    atom_types : torch.Tensor, 
-    index_mapping : torch.Tensor,  
-    mapping_batch : torch.Tensor, 
-    k1 : torch.Tensor, 
-    k2 : torch.Tensor, 
-    v_0 : torch.Tensor,
-    deg : int,
+    pos: torch.Tensor,
+    atom_types: torch.Tensor,
+    index_mapping: torch.Tensor,
+    mapping_batch: torch.Tensor,
+    k1: torch.Tensor,
+    k2: torch.Tensor,
+    v_0: torch.Tensor,
+    deg: int,
     num_graphs: int,
-)-> torch.Tensor:
+) -> torch.Tensor:
     """
     pos:      [N*B, 3] float32
     types:    [N*B] int32
@@ -205,12 +217,26 @@ def flash_dihedral(
     """
     assert pos.is_cuda and k1.is_cuda and k2.is_cuda
     E = index_mapping.shape[1]
-    out_E = torch.empty((E,), device=pos.device, dtype=torch.float32).contiguous()
+    out_E = torch.empty(
+        (E,), device=pos.device, dtype=torch.float32
+    ).contiguous()
     n_types = k1.shape[1]
-    
-    dbg_ptr = torch.zeros((E,4,), device=pos.device, dtype=torch.int64).contiguous()-6
-    wrap_triton(dihedral_fwd_kernel)[lambda meta: (triton.cdiv(E, meta["BLOCK"]),)](
-        pos, 
+
+    dbg_ptr = (
+        torch.zeros(
+            (
+                E,
+                4,
+            ),
+            device=pos.device,
+            dtype=torch.int64,
+        ).contiguous()
+        - 6
+    )
+    wrap_triton(dihedral_fwd_kernel)[
+        lambda meta: (triton.cdiv(E, meta["BLOCK"]),)
+    ](
+        pos,
         atom_types,
         index_mapping,
         k1,
@@ -219,19 +245,22 @@ def flash_dihedral(
         out_E_ptr=out_E,
         DBG_ptr=dbg_ptr,
         E=E,
-        deg=deg, 
-        n_types=n_types, 
+        deg=deg,
+        n_types=n_types,
         stride_km=k1.stride(0),
-        stride_ki=k1.stride(1), 
-        stride_kj=k1.stride(2), 
-        stride_kk=k1.stride(3), 
-        stride_kl=k1.stride(4), 
+        stride_ki=k1.stride(1),
+        stride_kj=k1.stride(2),
+        stride_kk=k1.stride(3),
+        stride_kl=k1.stride(4),
     )
-    y = torch.zeros((num_graphs,), device=pos.device, dtype=torch.float32).contiguous()
+    y = torch.zeros(
+        (num_graphs,), device=pos.device, dtype=torch.float32
+    ).contiguous()
     y.index_add_(0, mapping_batch, out_E)
     return y
 
-def setup_context_flash_dihedral(ctx,inputs,output):
+
+def setup_context_flash_dihedral(ctx, inputs, output):
     (
         pos,
         atom_types,
@@ -241,7 +270,7 @@ def setup_context_flash_dihedral(ctx,inputs,output):
         k2,
         v_0,
         deg,
-        num_graphs
+        num_graphs,
     ) = inputs
     ctx.save_for_backward(
         pos,
@@ -251,10 +280,10 @@ def setup_context_flash_dihedral(ctx,inputs,output):
         k1,
         k2,
     )
-    ctx.v_0=v_0
+    ctx.v_0 = v_0
     ctx.deg = deg
     ctx.num_graphs = num_graphs
-    
+
 
 def backward_flash_dihedral(ctx, grad_y):
     (
@@ -271,23 +300,18 @@ def backward_flash_dihedral(ctx, grad_y):
     grad_pos = None
     if ctx.needs_input_grad[0]:
         grad_pos = dihedral_pos_bwd(
-            pos,
-            atom_types,
-            index_mapping,
-            mapping_batch,
-            k1,
-            k2,
-            deg,
-            grad_y
+            pos, atom_types, index_mapping, mapping_batch, k1, k2, deg, grad_y
         )
 
     # Only grad wrt pos
     return grad_pos, None, None, None, None, None, None, None, None
 
+
 flash_dihedral.register_autograd(
     backward_flash_dihedral,
     setup_context=setup_context_flash_dihedral,
 )
+
 
 @flash_dihedral.register_kernel("cpu")
 def cpu_flash_dihedral(
@@ -295,49 +319,38 @@ def cpu_flash_dihedral(
     atom_types: torch.Tensor,
     index_mapping: torch.Tensor,
     mapping_batch: torch.Tensor,
-    k1 : torch.Tensor, 
-    k2 : torch.Tensor, 
-    v_0 : torch.Tensor,
-    deg : int,
+    k1: torch.Tensor,
+    k2: torch.Tensor,
+    v_0: torch.Tensor,
+    deg: int,
     num_graphs: int,
 ) -> torch.Tensor:
 
-    interaction_types = tuple(
-            atom_types[index_mapping[ii]] for ii in range(4)
-        )
-            # the parameters have shape n_features x n_degs
-    k1s = torch.vstack(
-        [k1[ii][interaction_types] for ii in range(deg)]
-    ).t()
-    k2s = torch.vstack(
-        [k2[ii][interaction_types] for ii in range(deg)]
-    ).t()
+    interaction_types = tuple(atom_types[index_mapping[ii]] for ii in range(4))
+    # the parameters have shape n_features x n_degs
+    k1s = torch.vstack([k1[ii][interaction_types] for ii in range(deg)]).t()
+    k2s = torch.vstack([k2[ii][interaction_types] for ii in range(deg)]).t()
     v_0s = v_0[interaction_types].view(-1, 1)
 
-    phis = compute_torsions(pos,index_mapping)
+    phis = compute_torsions(pos, index_mapping).flatten()
 
     _, n_k = k1s.shape
-    n_degs = torch.arange(
-        1, n_k + 1, dtype=phis.dtype, device=phis.device
-    )
+    n_degs = torch.arange(1, n_k + 1, dtype=phis.dtype, device=phis.device)
     # expand the features w.r.t the mult integer so that it has the
     # shape of k1s and k2s
     angles = phis.view(-1, 1) * n_degs.view(1, -1)
-    y = k1s * torch.sin(angles) + k2s * torch.cos(angles)
+    ey = k1s * torch.sin(angles) + k2s * torch.cos(angles)
     # HOTFIX to avoid shape mismatch when using specialized priors
     # TODO: think of a better fix
     if v_0s.ndim > 1:
         v_0s = v_0s[:, 0]
 
-    y = y.sum(dim=1) + v_0s
+    ey = ey.sum(dim=1) + v_0s
+    y = torch.zeros((num_graphs,), device=pos.device, dtype=pos.dtype)
 
-    y = scatter(y, mapping_batch, dim=0, reduce="sum", dim_size=num_graphs)
-
-    return y 
-
+    return y.index_add_(0, mapping_batch, ey)
 
 
-   
 @triton.autotune(
     configs=[
         triton.Config({"BLOCK": 64}, num_warps=2),
@@ -346,77 +359,78 @@ def cpu_flash_dihedral(
         triton.Config({"BLOCK": 512}, num_warps=8),
         triton.Config({"BLOCK": 1024}, num_warps=8),
     ],
-    key=[],
+    key=[],  # FIXME: check if we need to zeors grad pos during autotune because of atomics
+    reset_to_zero=["grad_pos_ptr"],
 )
 @triton.jit
 def dihedral_pos_bwd_kernel(
-    pos_ptr, 
+    pos_ptr,
     atom_types_ptr,
     index_mapping_ptr,
-    k1_ptr, 
+    k1_ptr,
     k2_ptr,
     E,
-    upstream_dE_ptr,     # [T]
-    grad_pos_ptr,        # [B, N, 3] (atomic adds)
+    upstream_dE_ptr,  # [T]
+    grad_pos_ptr,  # [B, N, 3] (atomic adds)
     deg: tl.constexpr,
     stride_km: tl.constexpr,
-    stride_ki: tl.constexpr, 
-    stride_kj: tl.constexpr, 
-    stride_kk: tl.constexpr, 
-    stride_kl: tl.constexpr, 
+    stride_ki: tl.constexpr,
+    stride_kj: tl.constexpr,
+    stride_kk: tl.constexpr,
+    stride_kl: tl.constexpr,
     BLOCK: tl.constexpr,
 ):
     pid = tl.program_id(0)
     blk_idx = pid * BLOCK + tl.arange(0, BLOCK)
     mask = blk_idx < E
-    
-    off_i = blk_idx 
+
+    off_i = blk_idx
     off_j = blk_idx + E
-    off_k = blk_idx + 2*E
-    off_l = blk_idx + 3*E
+    off_k = blk_idx + 2 * E
+    off_l = blk_idx + 3 * E
 
     i = tl.load(index_mapping_ptr + off_i, mask=mask, other=0).to(tl.int64)
     j = tl.load(index_mapping_ptr + off_j, mask=mask, other=0).to(tl.int64)
     k = tl.load(index_mapping_ptr + off_k, mask=mask, other=0).to(tl.int64)
     l = tl.load(index_mapping_ptr + off_l, mask=mask, other=0).to(tl.int64)
-    
+
     # types -> key
-    type_i = tl.load(atom_types_ptr + i , mask=mask, other=-1).to(tl.int64)
-    type_j = tl.load(atom_types_ptr + j , mask=mask, other=-2).to(tl.int64)
-    type_k = tl.load(atom_types_ptr + k , mask=mask, other=-3).to(tl.int64)
-    type_l = tl.load(atom_types_ptr + l , mask=mask, other=-4).to(tl.int64)
-    
+    type_i = tl.load(atom_types_ptr + i, mask=mask, other=-1).to(tl.int64)
+    type_j = tl.load(atom_types_ptr + j, mask=mask, other=-2).to(tl.int64)
+    type_k = tl.load(atom_types_ptr + k, mask=mask, other=-3).to(tl.int64)
+    type_l = tl.load(atom_types_ptr + l, mask=mask, other=-4).to(tl.int64)
+
     # positions
     i3 = i * 3
     j3 = j * 3
     k3 = k * 3
     l3 = l * 3
-    
-    xi = tl.load(pos_ptr + i3 + 0, mask=mask, other=0.).to(tl.float32)
-    yi = tl.load(pos_ptr + i3 + 1, mask=mask, other=0.).to(tl.float32)
-    zi = tl.load(pos_ptr + i3 + 2, mask=mask, other=0.).to(tl.float32)
-    
-    xj = tl.load(pos_ptr + j3 + 0, mask=mask, other=0.).to(tl.float32)
-    yj = tl.load(pos_ptr + j3 + 1, mask=mask, other=0.).to(tl.float32)
-    zj = tl.load(pos_ptr + j3 + 2, mask=mask, other=0.).to(tl.float32)
 
-    xk = tl.load(pos_ptr + k3 + 0, mask=mask, other=0.).to(tl.float32)
-    yk = tl.load(pos_ptr + k3 + 1, mask=mask, other=0.).to(tl.float32)
-    zk = tl.load(pos_ptr + k3 + 2, mask=mask, other=0.).to(tl.float32)
+    xi = tl.load(pos_ptr + i3 + 0, mask=mask, other=0.0).to(tl.float32)
+    yi = tl.load(pos_ptr + i3 + 1, mask=mask, other=0.0).to(tl.float32)
+    zi = tl.load(pos_ptr + i3 + 2, mask=mask, other=0.0).to(tl.float32)
 
-    xl = tl.load(pos_ptr + l3 + 0, mask=mask, other=0.).to(tl.float32)
-    yl = tl.load(pos_ptr + l3 + 1, mask=mask, other=0.).to(tl.float32)
-    zl = tl.load(pos_ptr + l3 + 2, mask=mask, other=0.).to(tl.float32)
-    
+    xj = tl.load(pos_ptr + j3 + 0, mask=mask, other=0.0).to(tl.float32)
+    yj = tl.load(pos_ptr + j3 + 1, mask=mask, other=0.0).to(tl.float32)
+    zj = tl.load(pos_ptr + j3 + 2, mask=mask, other=0.0).to(tl.float32)
+
+    xk = tl.load(pos_ptr + k3 + 0, mask=mask, other=0.0).to(tl.float32)
+    yk = tl.load(pos_ptr + k3 + 1, mask=mask, other=0.0).to(tl.float32)
+    zk = tl.load(pos_ptr + k3 + 2, mask=mask, other=0.0).to(tl.float32)
+
+    xl = tl.load(pos_ptr + l3 + 0, mask=mask, other=0.0).to(tl.float32)
+    yl = tl.load(pos_ptr + l3 + 1, mask=mask, other=0.0).to(tl.float32)
+    zl = tl.load(pos_ptr + l3 + 2, mask=mask, other=0.0).to(tl.float32)
+
     # b1 = r_i - r_j, b2 = r_k - r_j, b3 = r_l - r_k
-    b1x = xi - xj 
+    b1x = xi - xj
     b1y = yi - yj
     b1z = zi - zj
-    
+
     b2x = xk - xj
     b2y = yk - yj
     b2z = zk - zj
-    
+
     b3x = xl - xk
     b3y = yl - yk
     b3z = zl - zk
@@ -429,35 +443,44 @@ def dihedral_pos_bwd_kernel(
     n2x = b3y * b2z - b3z * b2y
     n2y = b3z * b2x - b3x * b2z
     n2z = b3x * b2y - b3y * b2x
-    
+
     # squared norms
-    n1_sq = n1x*n1x + n1y*n1y + n1z*n1z
-    n2_sq = n2x*n2x + n2y*n2y + n2z*n2z
-    b2_sq = b2x*b2x + b2y*b2y + b2z*b2z 
+    n1_sq = n1x * n1x + n1y * n1y + n1z * n1z
+    n2_sq = n2x * n2x + n2y * n2y + n2z * n2z
+    b2_sq = b2x * b2x + b2y * b2y + b2z * b2z
     b2_len = tl.sqrt(b2_sq)
 
     # phi (same as forward)
-    x = n1x*n2x + n1y*n2y + n1z*n2z
-    cx = n1y*n2z - n1z*n2y
-    cy = n1z*n2x - n1x*n2z
-    cz = n1x*n2y - n1y*n2x
-    y = (cx*b2x + cy*b2y + cz*b2z) / b2_len
+    x = n1x * n2x + n1y * n2y + n1z * n2z
+    cx = n1y * n2z - n1z * n2y
+    cy = n1z * n2x - n1x * n2z
+    cz = n1x * n2y - n1y * n2x
+    y = (cx * b2x + cy * b2y + cz * b2z) / b2_len
     phi = atan2_tl(y, x)
-    
 
-    key = (type_i*stride_ki + type_j*stride_kj + type_k*stride_kk + type_l*stride_kl).to(tl.int32)
-
+    key = (
+        type_i * stride_ki
+        + type_j * stride_kj
+        + type_k * stride_kk
+        + type_l * stride_kl
+    ).to(tl.int32)
 
     # dE/dphi = sum_m m*(k1_m cos(m phi) - k2_m sin(m phi))
     dEdphi = tl.zeros([BLOCK], tl.float32)
     for mm in range(0, deg):
         m = mm + 1
-        k1 = tl.load(k1_ptr + key + mm * stride_km, mask=mask, other=0.0).to(tl.float32)
-        k2 = tl.load(k2_ptr + key + mm * stride_km, mask=mask, other=0.0).to(tl.float32)
+        k1 = tl.load(k1_ptr + key + mm * stride_km, mask=mask, other=0.0).to(
+            tl.float32
+        )
+        k2 = tl.load(k2_ptr + key + mm * stride_km, mask=mask, other=0.0).to(
+            tl.float32
+        )
         ang = phi * m
         dEdphi += m * (k1 * tl.cos(ang) - k2 * tl.sin(ang))
 
-    upstream = tl.load(upstream_dE_ptr + blk_idx, mask=mask, other=0.0).to(tl.float32)
+    upstream = tl.load(upstream_dE_ptr + blk_idx, mask=mask, other=0.0).to(
+        tl.float32
+    )
     dEdphi *= upstream
 
     # ---- torsion derivative w.r.t. positions (forces) ----
@@ -476,16 +499,16 @@ def dihedral_pos_bwd_kernel(
     inv_n1 = 1.0 / n1_sq
     inv_n2 = 1.0 / n2_sq
     # dphi/di
-    dphidx_i =  b2_len * n1x * inv_n1
-    dphidy_i =  b2_len * n1y * inv_n1
-    dphidz_i =  b2_len * n1z * inv_n1
+    dphidx_i = b2_len * n1x * inv_n1
+    dphidy_i = b2_len * n1y * inv_n1
+    dphidz_i = b2_len * n1z * inv_n1
     # dphi/dl
     dphidx_l = -b2_len * n2x * inv_n2
     dphidy_l = -b2_len * n2y * inv_n2
     dphidz_l = -b2_len * n2z * inv_n2
 
-    b1_dot_b2 = b1x*b2x + b1y*b2y + b1z*b2z
-    b3_dot_b2 = b3x*b2x + b3y*b2y + b3z*b2z
+    b1_dot_b2 = b1x * b2x + b1y * b2y + b1z * b2z
+    b3_dot_b2 = b3x * b2x + b3y * b2y + b3z * b2z
     inv_b2sq = 1.0 / b2_sq
     a = b1_dot_b2 * inv_b2sq
     c_ = b3_dot_b2 * inv_b2sq
@@ -500,168 +523,251 @@ def dihedral_pos_bwd_kernel(
     dphidz_k = -dphidz_l - a * dphidz_i + c_ * dphidz_l
 
     # dE/dpos = dE/dphi * dphi/dpos
-    gi_x = dEdphi * dphidx_i 
-    gi_y = dEdphi * dphidy_i 
+    gi_x = dEdphi * dphidx_i
+    gi_y = dEdphi * dphidy_i
     gi_z = dEdphi * dphidz_i
-    
-    gj_x = dEdphi * dphidx_j 
-    gj_y = dEdphi * dphidy_j 
+
+    gj_x = dEdphi * dphidx_j
+    gj_y = dEdphi * dphidy_j
     gj_z = dEdphi * dphidz_j
-    
-    gk_x = dEdphi * dphidx_k 
-    gk_y = dEdphi * dphidy_k 
+
+    gk_x = dEdphi * dphidx_k
+    gk_y = dEdphi * dphidy_k
     gk_z = dEdphi * dphidz_k
-    
-    gl_x = dEdphi * dphidx_l 
-    gl_y = dEdphi * dphidy_l 
+
+    gl_x = dEdphi * dphidx_l
+    gl_y = dEdphi * dphidy_l
     gl_z = dEdphi * dphidz_l
 
+    tl.atomic_add(grad_pos_ptr + i3 + 0, gi_x, mask=mask)
+    tl.atomic_add(grad_pos_ptr + i3 + 1, gi_y, mask=mask)
+    tl.atomic_add(grad_pos_ptr + i3 + 2, gi_z, mask=mask)
 
-    tl.atomic_add(grad_pos_ptr + i3 + 0 , gi_x, mask=mask)
-    tl.atomic_add(grad_pos_ptr + i3 + 1 , gi_y, mask=mask)
-    tl.atomic_add(grad_pos_ptr + i3 + 2 , gi_z, mask=mask)
+    tl.atomic_add(grad_pos_ptr + j3 + 0, gj_x, mask=mask)
+    tl.atomic_add(grad_pos_ptr + j3 + 1, gj_y, mask=mask)
+    tl.atomic_add(grad_pos_ptr + j3 + 2, gj_z, mask=mask)
 
-    tl.atomic_add(grad_pos_ptr + j3 + 0 , gj_x, mask=mask)
-    tl.atomic_add(grad_pos_ptr + j3 + 1 , gj_y, mask=mask)
-    tl.atomic_add(grad_pos_ptr + j3 + 2 , gj_z, mask=mask)
+    tl.atomic_add(grad_pos_ptr + k3 + 0, gk_x, mask=mask)
+    tl.atomic_add(grad_pos_ptr + k3 + 1, gk_y, mask=mask)
+    tl.atomic_add(grad_pos_ptr + k3 + 2, gk_z, mask=mask)
 
-    tl.atomic_add(grad_pos_ptr + k3 + 0 , gk_x, mask=mask)
-    tl.atomic_add(grad_pos_ptr + k3 + 1 , gk_y, mask=mask)
-    tl.atomic_add(grad_pos_ptr + k3 + 2 , gk_z, mask=mask)
-    
-    tl.atomic_add(grad_pos_ptr + l3 + 0 , gl_x, mask=mask)
-    tl.atomic_add(grad_pos_ptr + l3 + 1 , gl_y, mask=mask)
-    tl.atomic_add(grad_pos_ptr + l3 + 2 , gl_z, mask=mask)
- 
+    tl.atomic_add(grad_pos_ptr + l3 + 0, gl_x, mask=mask)
+    tl.atomic_add(grad_pos_ptr + l3 + 1, gl_y, mask=mask)
+    tl.atomic_add(grad_pos_ptr + l3 + 2, gl_z, mask=mask)
+
 
 @triton_op("mlcg_kernels::dihedral_pos_bwd", mutates_args={})
 @ensure_contiguous
 def dihedral_pos_bwd(
     pos: torch.Tensor,
     atom_types: torch.Tensor,
-    index_mapping : torch.Tensor,  
-    mapping_batch : torch.Tensor, 
-    k1 : torch.Tensor, 
-    k2 : torch.Tensor, 
-    deg : int,
+    index_mapping: torch.Tensor,
+    mapping_batch: torch.Tensor,
+    k1: torch.Tensor,
+    k2: torch.Tensor,
+    deg: int,
     grad_y: torch.Tensor,
 ) -> torch.Tensor:
     grad_pos = torch.zeros_like(pos, dtype=torch.float32).contiguous()
     E = index_mapping.shape[1]
-    wrap_triton(dihedral_pos_bwd_kernel)[lambda meta: (triton.cdiv(E, meta["BLOCK"]),)](
-        pos, 
+    wrap_triton(dihedral_pos_bwd_kernel)[
+        lambda meta: (triton.cdiv(E, meta["BLOCK"]),)
+    ](
+        pos,
         atom_types,
         index_mapping,
-        k1, 
+        k1,
         k2,
         E,
         grad_y,
         grad_pos,
-        deg=deg, 
+        deg=deg,
         stride_km=k1.stride(0),
-        stride_ki=k1.stride(1), 
-        stride_kj=k1.stride(2), 
-        stride_kk=k1.stride(3), 
-        stride_kl=k1.stride(4)
+        stride_ki=k1.stride(1),
+        stride_kj=k1.stride(2),
+        stride_kk=k1.stride(3),
+        stride_kl=k1.stride(4),
     )
     return grad_pos
 
 
 @dihedral_pos_bwd.register_kernel("cpu")
-def cpu_bwd_flash_harmonic_angles(
-    pos:torch.Tensor, 
-    atom_types:torch.Tensor, 
-    index_mapping:torch.Tensor, 
-    mapping_batch:torch.Tensor, 
-    k1 : torch.Tensor, 
-    k2 : torch.Tensor, 
-    deg : int,
+def cpu_bwd_dihedral(
+    pos: torch.Tensor,
+    atom_types: torch.Tensor,
+    index_mapping: torch.Tensor,
+    mapping_batch: torch.Tensor,
+    k1: torch.Tensor,
+    k2: torch.Tensor,
+    deg: int,
     grad_y: torch.Tensor,
 ) -> torch.Tensor:
-    grad_pos = torch.zeros_like(pos)
-    i = index_mapping[0].long()
-    j = index_mapping[1].long()
-    k = index_mapping[2].long()
-    l = index_mapping[3].long()
-    b = mapping_batch.long()
+    i, j, k, l = index_mapping
 
-    dij = pos[i] - pos[j]
-    dkj = pos[k] - pos[j]
+    # Compute distances and unit vectors
+    r1 = pos[j] - pos[i]
+    r2 = pos[k] - pos[j]
+    r3 = pos[l] - pos[k]
+    b1 = F.normalize(r1, dim=1)
+    b2 = F.normalize(r2, dim=1)
+    b3 = F.normalize(r3, dim=1)
 
-    A = dij.norm(p=2,dim=1)
-    B = dkj.norm(p=2,dim=1)
-    invAB = 1/(A*B)
-    invA2 = 1.0 / ((dij*dij).sum(dim=1)) 
-    invB2 = 1.0 / ((dkj*dkj).sum(dim=1)) 
-    dot = (dij * dkj).sum(dim=1)
-    cosang = dot*invAB
+    # Compute torsion angles
+    n1 = torch.cross(b1, b2)
+    n2 = torch.cross(b2, b3)
+    m1 = torch.cross(n1, b2, dim=1)
+    y = torch.sum(m1 * n2, dim=-1)
+    x = torch.sum(n1 * n2, dim=-1)
+    phis = torch.atan2(-y, x)
 
-    ti = atom_types[i].long()
-    tj = atom_types[j].long()
-    tk = atom_types[k].long()
-
-    b1 = pos[i] - pos[j]
-    b2 = pos[k] - pos[j]
-    b3 = pos[l] - pos[k]
-    
-    
-    n1 = torch.cross(b1,b2)
-    n2 = torch.cross(b3,b2)
-
-    n1_sq = (n1*n1).sum(dim=1)
-    n2_sq = (n2*n2).sum(dim=1)
-    b2_sq = (b2*b2).sum(dim=1)
-    b2_len = torch.sqrt(b2_sq)
-
-    #x = (n1*n2).sum(dim=1)
-    #c = torch.cross(n1,n2)
-    #y = ((c*b2).sum(dim=1)) / b2_len
-    #phi = torch.atan2(y, x)
-    
-    interaction_types = tuple(
-            atom_types[index_mapping[ii]] for ii in range(4)
-        )
-            # the parameters have shape n_features x n_degs
-    k1s = torch.vstack(
-        [k1[ii][interaction_types] for ii in range(deg)]
-    ).t()
-    k2s = torch.vstack(
-        [k2[ii][interaction_types] for ii in range(deg)]
-    ).t()
-
-    phis = compute_torsions(pos,index_mapping)
-
+    # Compute dE/dphi
+    interaction_types = tuple(atom_types[index_mapping[ii]] for ii in range(4))
+    k1s = torch.vstack([k1[ii][interaction_types] for ii in range(deg)]).t()
+    k2s = torch.vstack([k2[ii][interaction_types] for ii in range(deg)]).t()
     _, n_k = k1s.shape
-    n_degs = torch.arange(
-        1, n_k + 1, dtype=phis.dtype, device=phis.device
-    )
-    # expand the features w.r.t the mult integer so that it has the
-    # shape of k1s and k2s
+    n_degs = torch.arange(1, n_k + 1, dtype=phis.dtype, device=phis.device)
     angles = phis.view(-1, 1) * n_degs.view(1, -1)
-    de = k1s * torch.cos(angles) - k2s * torch.sin(angles)
+    de = (
+        (k1s * torch.cos(angles) - k2s * torch.sin(angles)) * n_degs.view(1, -1)
+    ).sum(dim=1, keepdim=True)
 
-    inv_n1 = 1.0 / n1_sq
-    inv_n2 = 1.0 / n2_sq
+    # Backprop
+    b = mapping_batch
+    de = de * grad_y[b].unsqueeze(1)
 
-    dphi_i = b2_len.unsqueeze(1)*n1*inv_n1.unsqueeze(1)
-    dphi_l = -b2_len.unsqueeze(1)*n2*inv_n2.unsqueeze(1)
-    b1_dot_b2 = (b1*b2).sum(dim=1)
-    b3_dot_b2 = (b3*b2).sum(dim=1)
-    inv_b2sq = 1.0 / b2_sq
-    a = b1_dot_b2 * inv_b2sq
-    c_ = b3_dot_b2 * inv_b2sq
+    # Backprob trough the torsion angle:
+    d = x**2 + y**2
+    gx = (y / d).unsqueeze(-1) * de
+    gy = (-x / d).unsqueeze(-1) * de
 
-    dphi_j = -dphi_i+a.unsqueeze(1)*dphi_i-c_.unsqueeze(1)*dphi_l
-    dphi_k = -dphi_l+a.unsqueeze(1)*dphi_i-c_.unsqueeze(1)*dphi_l
+    # gradients wrt intermediates
+    gn1 = gx * n2
+    gm = gy * n2
+    gn2 = gx * n1 + gy * m1
 
-    gi = de*dphi_i
-    gj = de*dphi_j
-    gk = de*dphi_k
-    gl = de*dphi_l
+    # backprop m = n1 × b2
+    gn1 = gn1 + torch.cross(b2, gm, dim=1)
+    gb2 = torch.cross(gm, n1, dim=1)
 
-    grad_pos.index_add_(0,i,gi)
-    grad_pos.index_add_(0,j,gj)
-    grad_pos.index_add_(0,k,gk)
-    grad_pos.index_add_(0,l,gl)
+    # backprop n1 = b1 × b2
+    gb1 = torch.cross(b2, gn1, dim=1)
+    gb2 = gb2 + torch.cross(gn1, b1, dim=1)
+
+    # backprop n2 = b2 × b3
+    gb2 = gb2 + torch.cross(b3, gn2, dim=1)
+    gb3 = torch.cross(gn2, b2, dim=1)
+
+    def backnorm(gb, b, r):
+        norm = r.norm(dim=1, keepdim=True)
+        return (gb - (gb * b).sum(dim=1, keepdim=True) * b) / norm
+
+    gr1 = backnorm(gb1, b1, r1)
+    gr2 = backnorm(gb2, b2, r2)
+    gr3 = backnorm(gb3, b3, r3)
+
+    grad_pos = torch.zeros_like(pos)
+    grad_pos.index_add_(0, i, -gr1)
+    grad_pos.index_add_(0, j, gr1 - gr2)
+    grad_pos.index_add_(0, k, gr2 - gr3)
+    grad_pos.index_add_(0, l, gr3)
 
     return grad_pos
+
+
+# def cpu_bwd_flash_harmonic_angles(
+#     pos:torch.Tensor,
+#     atom_types:torch.Tensor,
+#     index_mapping:torch.Tensor,
+#     mapping_batch:torch.Tensor,
+#     k1 : torch.Tensor,
+#     k2 : torch.Tensor,
+#     deg : int,
+#     grad_y: torch.Tensor,
+# ) -> torch.Tensor:
+#     grad_pos = torch.zeros_like(pos)
+#     i = index_mapping[0].long()
+#     j = index_mapping[1].long()
+#     k = index_mapping[2].long()
+#     l = index_mapping[3].long()
+#     b = mapping_batch.long()
+
+#     dij = pos[i] - pos[j]
+#     dkj = pos[k] - pos[j]
+
+#     A = dij.norm(p=2,dim=1)
+#     B = dkj.norm(p=2,dim=1)
+#     invAB = 1/(A*B)
+#     invA2 = 1.0 / ((dij*dij).sum(dim=1))
+#     invB2 = 1.0 / ((dkj*dkj).sum(dim=1))
+#     dot = (dij * dkj).sum(dim=1)
+#     cosang = dot*invAB
+
+#     ti = atom_types[i].long()
+#     tj = atom_types[j].long()
+#     tk = atom_types[k].long()
+
+#     b1 = pos[i] - pos[j]
+#     b2 = pos[k] - pos[j]
+#     b3 = pos[l] - pos[k]
+
+
+#     n1 = torch.cross(b1,b2)
+#     n2 = torch.cross(b3,b2)
+
+#     n1_sq = (n1*n1).sum(dim=1)
+#     n2_sq = (n2*n2).sum(dim=1)
+#     b2_sq = (b2*b2).sum(dim=1)
+#     b2_len = torch.sqrt(b2_sq)
+
+#     #x = (n1*n2).sum(dim=1)
+#     #c = torch.cross(n1,n2)
+#     #y = ((c*b2).sum(dim=1)) / b2_len
+#     #phi = torch.atan2(y, x)
+
+#     interaction_types = tuple(
+#             atom_types[index_mapping[ii]] for ii in range(4)
+#         )
+#             # the parameters have shape n_features x n_degs
+#     k1s = torch.vstack(
+#         [k1[ii][interaction_types] for ii in range(deg)]
+#     ).t()
+#     k2s = torch.vstack(
+#         [k2[ii][interaction_types] for ii in range(deg)]
+#     ).t()
+
+#     phis = compute_torsions(pos,index_mapping)
+
+#     _, n_k = k1s.shape
+#     n_degs = torch.arange(
+#         1, n_k + 1, dtype=phis.dtype, device=phis.device
+#     )
+#     # expand the features w.r.t the mult integer so that it has the
+#     # shape of k1s and k2s
+#     angles = phis.view(-1, 1) * n_degs.view(1, -1)
+#     de = k1s * torch.cos(angles) - k2s * torch.sin(angles) #FIXME: check if correct
+
+#     inv_n1 = 1.0 / n1_sq
+#     inv_n2 = 1.0 / n2_sq
+
+#     dphi_i = b2_len.unsqueeze(1)*n1*inv_n1.unsqueeze(1)
+#     dphi_l = -b2_len.unsqueeze(1)*n2*inv_n2.unsqueeze(1)
+#     b1_dot_b2 = (b1*b2).sum(dim=1)
+#     b3_dot_b2 = (b3*b2).sum(dim=1)
+#     inv_b2sq = 1.0 / b2_sq
+#     a = b1_dot_b2 * inv_b2sq
+#     c_ = b3_dot_b2 * inv_b2sq
+
+#     dphi_j = -dphi_i+a.unsqueeze(1)*dphi_i-c_.unsqueeze(1)*dphi_l
+#     dphi_k = -dphi_l+a.unsqueeze(1)*dphi_i-c_.unsqueeze(1)*dphi_l #FIXME: check if correct
+
+#     gi = de*dphi_i
+#     gj = de*dphi_j
+#     gk = de*dphi_k
+#     gl = de*dphi_l
+
+#     grad_pos.index_add_(0,i,gi)
+#     grad_pos.index_add_(0,j,gj)
+#     grad_pos.index_add_(0,k,gk)
+#     grad_pos.index_add_(0,l,gl)
+
+#     return grad_pos
