@@ -76,7 +76,7 @@ model:
           activation:
             class_path: torch.nn.Tanh
             init_args: {}
-          max_num_neighbors: 20
+          max_num_neighbors: 400
           aggr: "add"
           cutoff:
             class_path: mlcg.nn.CosineCutoff

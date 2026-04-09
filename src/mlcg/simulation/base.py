@@ -19,6 +19,7 @@ import logging
 from ..utils import tqdm
 
 from ..data.atomic_data import AtomicData
+from ..neighbor_list.torch_impl import wrap_positions
 from ..data._keys import (
     ENERGY_KEY,
     FORCE_KEY,
@@ -31,7 +32,6 @@ from .torch_compile_warning import (
     torch_compile_waring,
     force_torch_compile_warning,
 )
-
 
 # Physical Constants
 KBOLTZMANN = 1.38064852e-23  # Boltzmann's constant in Joules/Kelvin
@@ -223,6 +223,7 @@ class _Simulation(object):
         self.sim_subroutine_interval = sim_subroutine_interval
         self.save_subroutine = save_subroutine
         self.tqdm_refresh = tqdm_refresh
+        self.sim_t = 0
 
         # check to make sure input options for the simulation
         self.input_option_checks()
@@ -378,6 +379,11 @@ class _Simulation(object):
         ):
             # step forward in time
             data, potential, forces = self.timestep(data, forces)
+            self.sim_t = t
+            pbc = getattr(data, "pbc", None)
+            cell = getattr(data, "cell", None)
+            if all([feat != None for feat in [pbc, cell]]):
+                data = wrap_positions(data, self.device)
 
             # save to arrays if relevant
             if (t + 1) % self.save_interval == 0:

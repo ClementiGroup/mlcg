@@ -8,21 +8,20 @@ from ..cutoff import _Cutoff, CosineCutoff, IdentityCutoff
 
 class SpacedExpBasis(_RadialBasis):
     r"""Class for generating a set of exponential normal radial basis functions,
-    with means and standard deviations designed to capture the physics around 2-* A.
+    with means and standard deviations designed to capture the physics around 2 :math:`\AA`.
     The functions have an exponential form with the following means and std:
 
     .. math::
-        \sigma_0 = \sigma_f/s
-        \sigma_1 = \sigma_${min}
-        \sigma_2 = \sigma_f*\sigma_1
-        ...
-        \sigma_n = \sigma_f*\sigma_${n-1}
 
-        \mu_0 = 0
-        \mu_1 = \sigma_f
-        \mu_2 = \mu_1 + s*\sigma_1
-        ...
-        \mu_n = \mu_${n-1} + s*\sigma_${n-1}
+        &\mu_0 = 0                       &,\quad &\sigma_0 = \sigma_f/s \\
+        &\mu_1 = \sigma_f                &,\quad &\sigma_1 = \sigma_{min} \\
+        &\mu_2 = \mu_1 + s\,\sigma_1     &,\quad &\sigma_2 = \sigma_f \sigma_1 \\
+        &\vdots &\vdots      \;         &\vdots \\
+        &\mu_n = \mu_{n-1} + s\,\sigma_{n-1} &,\quad &\sigma_n = \sigma_f \sigma_{n-1}
+
+    with :math:`\sigma_{min}` the minimum sigma,  :math:`\sigma_f` the sigma factor and
+    :math:`s` the mean spacing 
+
 
     Parameters
     ----------
@@ -31,11 +30,11 @@ class SpacedExpBasis(_RadialBasis):
         an IdentityCutoff ranging over [0, cutoff]. Otherwise,
         a chosen `_Cutoff` instance can be supplied.
     sigma_min:
-        Width of first non-zero-centered basis function
+        :math:`\sigma_{min}`, width of first non-zero-centered basis function
     sigma_factor:
-        Location of first non-zero-centered basis function and multiplicative factor to spread std of each new peak by
+        :math:`\sigma_f`, location of first non-zero-centered basis function and multiplicative factor to spread std of each new peak by
     mean_spacing:
-        this time previous sigma indicates how much to distance the mean of subsequent gaussian by
+        :math:`s` this time previous sigma indicates how much to distance the mean of subsequent gaussian by
     trainable:
         If True, the parameters of the basis (the centers and widths of each
         function) are registered as optimizable parameters that will be updated

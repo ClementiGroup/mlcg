@@ -1,0 +1,21 @@
+betas:
+- 1.437770096538915
+model_file: sim_extracted_model.pt
+simulation:
+  create_checkpoints: true
+  device: cpu
+  dt: 0.004
+  dtype: single
+  export_interval: 20
+  filename: test_sim
+  friction: 1.0
+  log_interval: 20
+  log_type: write
+  n_timesteps: 100
+  read_checkpoint_file: false
+  save_energies: false
+  save_forces: false
+  save_interval: 10
+  specialize_priors: true
+  compile: true
+structure_file: STRUCTURES

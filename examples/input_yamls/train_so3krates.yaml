@@ -85,7 +85,7 @@ model:
           degrees: [1, 2]
           n_heads: 4
           activation: torch.nn.SiLU
-          max_num_neighbors: 100
+          max_num_neighbors: 400
           normalize_sph: true
           output_hidden_layer_widths:
             - 32
