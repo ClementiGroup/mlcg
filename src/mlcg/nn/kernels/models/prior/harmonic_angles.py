@@ -2,7 +2,6 @@ import torch
 import triton
 import triton.language as tl
 from torch.library import triton_op, wrap_triton
-from torch_geometric.utils import scatter
 
 from ...utils import ensure_contiguous
 from .....geometry import compute_angles_cos
@@ -26,7 +25,7 @@ def harmonic_angles_edge_fwd_kernel(
     k_ptr,
     x_ptr,  # *fp16/fp32, [T,T]
     eedge_ptr,  # *fp32,      [E]
-    E: tl.constexpr,
+    E, 
     TYPE_DTYPE: tl.constexpr,  # 32 or 64
     K_STRIDE0: tl.constexpr,
     K_STRIDE1: tl.constexpr,
@@ -226,8 +225,8 @@ def harmonic_angles_pos_bwd_kernel(
     x_ptr,
     grad_y_ptr,  # *fp32,      [B]
     grad_pos_ptr,  # *fp32,      [N,3] (atomic add)
-    E: tl.constexpr,
-    B: tl.constexpr,
+    E,
+    B,
     TYPE_DTYPE: tl.constexpr,  # 32 or 64
     BATCH_DTYPE: tl.constexpr,  # 32 or 64
     K_STRIDE0: tl.constexpr,
