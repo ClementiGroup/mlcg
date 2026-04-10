@@ -4,15 +4,10 @@ import triton
 import triton.language as tl
 from triton.language.extra import libdevice
 from torch.library import triton_op, wrap_triton
-from torch_geometric.utils import scatter
 
 from ...utils import ensure_contiguous
 from .....geometry.internal_coordinates import compute_torsions
-
-
-def pack_type_key(ti, tj, tk, tl_, n_types: int):
-    # ti,tj,tk,tl_ are int tensors
-    return ((ti * n_types + tj) * n_types + tk) * n_types + tl_
+from .utils import _backnorm
 
 
 @triton.autotune(
@@ -29,10 +24,10 @@ def pack_type_key(ti, tj, tk, tl_, n_types: int):
 def dihedral_fwd_kernel(
     pos_ptr,  # [B*N, 3] float32/float64
     atom_types_ptr,  # [B*N] int32
-    index_mapping_ptr,  # [E,4] int32
-    k1_ptr,  # [K, deg] float32/float64 ; K = n_types^4
-    k2_ptr,  # [K, deg] float32/float64 ; K = n_types^4
-    v_0_ptr,  # [K, deg] float32/float64 ; K = n_types^4
+    index_mapping_ptr,  # [4, E] int32
+    k1_ptr,  # [deg, n_types, n_types, n_types, n_types] float32/float64
+    k2_ptr,  # [deg, n_types, n_types, n_types, n_types] float32/float64
+    v_0_ptr,  # [n_types, n_types, n_types, n_types] float32/float64
     out_E_ptr,  # [E] float32/float64
     E,
     deg: tl.constexpr,  # runtime passed as tl.constexpr by specialization (<=6 typical)
@@ -85,24 +80,37 @@ def dihedral_fwd_kernel(
     yl = tl.load(pos_ptr + l3 + 1, mask=mask, other=0.0).to(tl.float32)
     zl = tl.load(pos_ptr + l3 + 2, mask=mask, other=0.0).to(tl.float32)
 
+    # Unit vectors
     # b1 = r_j - r_i, b2 = r_k - r_j, b3 = r_l - r_k
-    b1x = xj - xi
-    b1y = yj - yi
-    b1z = zj - zi
-    b1_len = tl.sqrt(b1x * b1x + b1y * b1y + b1z * b1z)
-    b1x, b1y, b1z = b1x / b1_len, b1y / b1_len, b1z / b1_len
+    r1x = xj - xi
+    r1y = yj - yi
+    r1z = zj - zi
+    r1_len = tl.maximum(tl.sqrt(b1x * b1x + b1y * b1y + b1z * b1z), 1e-12)
+    b1x, b1y, b1z = (
+        tl.div_rn(r1x, r1_len),
+        tl.div_rn(r1y, r1_len),
+        tl.div_rn(r1z, r1_len),
+    )
 
-    b2x = xk - xj
-    b2y = yk - yj
-    b2z = zk - zj
-    b2_len = tl.sqrt(b2x * b2x + b2y * b2y + b2z * b2z)
-    b2x, b2y, b2z = b2x / b2_len, b2y / b2_len, b2z / b2_len
+    r2x = xk - xj
+    r2y = yk - yj
+    r2z = zk - zj
+    r2_len = tl.maximum(tl.sqrt(b2x * b2x + b2y * b2y + b2z * b2z), 1e-12)
+    b2x, b2y, b2z = (
+        tl.div_rn(r2x, r2_len),
+        tl.div_rn(r2y, r2_len),
+        tl.div_rn(r2z, r2_len),
+    )
 
-    b3x = xl - xk
-    b3y = yl - yk
-    b3z = zl - zk
-    b3_len = tl.sqrt(b3x * b3x + b3y * b3y + b3z * b3z)
-    b3x, b3y, b3z = b3x / b3_len, b3y / b3_len, b3z / b3_len
+    r3x = xl - xk
+    r3y = yl - yk
+    r3z = zl - zk
+    r3_len = tl.maximum(tl.sqrt(b3x * b3x + b3y * b3y + b3z * b3z), 1e-12)
+    b3x, b3y, b3z = (
+        tl.div_rn(r3x, r3_len),
+        tl.div_rn(r3y, r3_len),
+        tl.div_rn(r3z, r3_len),
+    )
 
     # n1 = b1 x b2
     n1x = b1y * b2z - b1z * b2y
@@ -306,6 +314,7 @@ def dihedral_pos_bwd_kernel(
     k2_ptr,
     E,
     upstream_dE_ptr,  # [T]
+    mapping_batch_ptr,  # [T]
     grad_pos_ptr,  # [B, N, 3] (atomic adds)
     deg: tl.constexpr,
     stride_km: tl.constexpr,
@@ -357,40 +366,53 @@ def dihedral_pos_bwd_kernel(
     yl = tl.load(pos_ptr + l3 + 1, mask=mask, other=0.0).to(tl.float32)
     zl = tl.load(pos_ptr + l3 + 2, mask=mask, other=0.0).to(tl.float32)
 
-    # b1 = r_i - r_j, b2 = r_k - r_j, b3 = r_l - r_k
-    b1x = xi - xj
-    b1y = yi - yj
-    b1z = zi - zj
+    # Unit vectors
+    # b1 = r_j - r_i, b2 = r_k - r_j, b3 = r_l - r_k
+    r1x = xj - xi
+    r1y = yj - yi
+    r1z = zj - zi
+    r1_len = tl.maximum(tl.sqrt(r1x * r1x + r1y * r1y + r1z * r1z), 1e-12)
+    b1x, b1y, b1z = (
+        tl.div_rn(r1x, r1_len),
+        tl.div_rn(r1y, r1_len),
+        tl.div_rn(r1z, r1_len),
+    )
 
-    b2x = xk - xj
-    b2y = yk - yj
-    b2z = zk - zj
+    r2x = xk - xj
+    r2y = yk - yj
+    r2z = zk - zj
+    r2_len = tl.maximum(tl.sqrt(r2x * r2x + r2y * r2y + r2z * r2z), 1e-12)
+    b2x, b2y, b2z = (
+        tl.div_rn(r2x, r2_len),
+        tl.div_rn(r2y, r2_len),
+        tl.div_rn(r2z, r2_len),
+    )
 
-    b3x = xl - xk
-    b3y = yl - yk
-    b3z = zl - zk
+    r3x = xl - xk
+    r3y = yl - yk
+    r3z = zl - zk
+    r3_len = tl.maximum(tl.sqrt(r3x * r3x + r3y * r3y + r3z * r3z), 1e-12)
+    b3x, b3y, b3z = (
+        tl.div_rn(r3x, r3_len),
+        tl.div_rn(r3y, r3_len),
+        tl.div_rn(r3z, r3_len),
+    )
 
     # n1 = b1 x b2
     n1x = b1y * b2z - b1z * b2y
     n1y = b1z * b2x - b1x * b2z
     n1z = b1x * b2y - b1y * b2x
-    # n2 = b3 x b2
-    n2x = b3y * b2z - b3z * b2y
-    n2y = b3z * b2x - b3x * b2z
-    n2z = b3x * b2y - b3y * b2x
+    # n2 = b2 x b3
+    n2x = b2y * b3z - b2z * b3y
+    n2y = b2z * b3x - b2x * b3z
+    n2z = b2x * b3y - b2y * b3x
+    # m = n1 x b2
+    mx = n1y * b2z - n1z * b2y
+    my = n1z * b2x - n1x * b2z
+    mz = n1x * b2y - n1y * b2x
 
-    # squared norms
-    n1_sq = n1x * n1x + n1y * n1y + n1z * n1z
-    n2_sq = n2x * n2x + n2y * n2y + n2z * n2z
-    b2_sq = b2x * b2x + b2y * b2y + b2z * b2z
-    b2_len = tl.sqrt(b2_sq)
-
-    # phi (same as forward)
     x = n1x * n2x + n1y * n2y + n1z * n2z
-    cx = n1y * n2z - n1z * n2y
-    cy = n1z * n2x - n1x * n2z
-    cz = n1x * n2y - n1y * n2x
-    y = (cx * b2x + cy * b2y + cz * b2z) / b2_len
+    y = mx * n2x + my * n2y + mz * n2z
     phi = libdevice.atan2(-y, x)
 
     key = (
@@ -404,91 +426,89 @@ def dihedral_pos_bwd_kernel(
     dEdphi = tl.zeros([BLOCK], tl.float32)
     for mm in range(0, deg):
         m = mm + 1
-        k1 = tl.load(k1_ptr + key + mm * stride_km, mask=mask, other=0.0).to(
+        k1 = tl.load(k1_ptr + mm * stride_km + key, mask=mask, other=0.0).to(
             tl.float32
         )
-        k2 = tl.load(k2_ptr + key + mm * stride_km, mask=mask, other=0.0).to(
+        k2 = tl.load(k2_ptr + mm * stride_km + key, mask=mask, other=0.0).to(
             tl.float32
         )
         ang = phi * m
         dEdphi += m * (k1 * tl.cos(ang) - k2 * tl.sin(ang))
 
-    upstream = tl.load(upstream_dE_ptr + blk_idx, mask=mask, other=0.0).to(
+    batch_idx = tl.load(mapping_batch_ptr + blk_idx, mask=mask, other=0).to(
+        tl.int64
+    )
+    upstream = tl.load(upstream_dE_ptr + batch_idx, mask=mask, other=0.0).to(
         tl.float32
     )
     dEdphi *= upstream
 
-    # ---- torsion derivative w.r.t. positions (forces) ----
-    # Standard dihedral gradient (see e.g. OpenMM / many MD codes):
-    # Let:
-    #   t1 = n1 / |n1|^2
-    #   t2 = n2 / |n2|^2
-    # Then:
-    #   dphi/di =  (|b2|) * t1
-    #   dphi/dl = -(|b2|) * t2
-    #   dphi/dj = -dphi/di + ( (b1·b2)/|b2|^2 ) * dphi/di - ( (b3·b2)/|b2|^2 ) * dphi/dl
-    #   dphi/dk = -dphi/dl - ( (b1·b2)/|b2|^2 ) * dphi/di + ( (b3·b2)/|b2|^2 ) * dphi/dl
-    #
-    # Signs depend on the exact phi convention; this matches the atan2(y,x) above with n2=b3xb2.
+    ## Backprop through torsion angle
+    d = tl.maximum(x * x + y * y, 1e-12)
+    gx = tl.div_rn(y, d) * dEdphi
+    gy = tl.div_rn(-x, d) * dEdphi
 
-    inv_n1 = 1.0 / n1_sq
-    inv_n2 = 1.0 / n2_sq
-    # dphi/di
-    dphidx_i = b2_len * n1x * inv_n1
-    dphidy_i = b2_len * n1y * inv_n1
-    dphidz_i = b2_len * n1z * inv_n1
-    # dphi/dl
-    dphidx_l = -b2_len * n2x * inv_n2
-    dphidy_l = -b2_len * n2y * inv_n2
-    dphidz_l = -b2_len * n2z * inv_n2
+    # gradients wrt intermediates
+    gn1x = gx * n2x
+    gn1y = gx * n2y
+    gn1z = gx * n2z
 
-    b1_dot_b2 = b1x * b2x + b1y * b2y + b1z * b2z
-    b3_dot_b2 = b3x * b2x + b3y * b2y + b3z * b2z
-    inv_b2sq = 1.0 / b2_sq
-    a = b1_dot_b2 * inv_b2sq
-    c_ = b3_dot_b2 * inv_b2sq
+    gmx = gy * n2x
+    gmy = gy * n2y
+    gmz = gy * n2z
 
-    # dphi/dj
-    dphidx_j = -dphidx_i + a * dphidx_i - c_ * dphidx_l
-    dphidy_j = -dphidy_i + a * dphidy_i - c_ * dphidy_l
-    dphidz_j = -dphidz_i + a * dphidz_i - c_ * dphidz_l
-    # dphi/dk
-    dphidx_k = -dphidx_l - a * dphidx_i + c_ * dphidx_l
-    dphidy_k = -dphidy_l - a * dphidy_i + c_ * dphidy_l
-    dphidz_k = -dphidz_l - a * dphidz_i + c_ * dphidz_l
+    gn2x = gx * n1x + gy * mx
+    gn2y = gx * n1y + gy * my
+    gn2z = gx * n1z + gy * mz
 
-    # dE/dpos = dE/dphi * dphi/dpos
-    gi_x = dEdphi * dphidx_i
-    gi_y = dEdphi * dphidy_i
-    gi_z = dEdphi * dphidz_i
+    # backprop m = n1 × b2
+    gn1x += b2y * gmz - b2z * gmy
+    gn1y += b2z * gmx - b2x * gmz
+    gn1z += b2x * gmy - b2y * gmx
 
-    gj_x = dEdphi * dphidx_j
-    gj_y = dEdphi * dphidy_j
-    gj_z = dEdphi * dphidz_j
+    gb2x = gmy * n1z - gmz * n1y
+    gb2y = gmz * n1x - gmx * n1z
+    gb2z = gmx * n1y - gmy * n1x
 
-    gk_x = dEdphi * dphidx_k
-    gk_y = dEdphi * dphidy_k
-    gk_z = dEdphi * dphidz_k
+    # backprop n1 = b1 × b2
+    gb1x = b2y * gn1z - b2z * gn1y
+    gb1y = b2z * gn1x - b2x * gn1z
+    gb1z = b2x * gn1y - b2y * gn1x
 
-    gl_x = dEdphi * dphidx_l
-    gl_y = dEdphi * dphidy_l
-    gl_z = dEdphi * dphidz_l
+    gb2x += gn1y * b1z - gn1z * b1y
+    gb2y += gn1z * b1x - gn1x * b1z
+    gb2z += gn1x * b1y - gn1y * b1x
 
-    tl.atomic_add(grad_pos_ptr + i3 + 0, gi_x, mask=mask)
-    tl.atomic_add(grad_pos_ptr + i3 + 1, gi_y, mask=mask)
-    tl.atomic_add(grad_pos_ptr + i3 + 2, gi_z, mask=mask)
+    # backprop n2 = b2 × b3
+    gb2x += b3y * gn2z - b3z * gn2y
+    gb2y += b3z * gn2x - b3x * gn2z
+    gb2z += b3x * gn2y - b3y * gn2x
 
-    tl.atomic_add(grad_pos_ptr + j3 + 0, gj_x, mask=mask)
-    tl.atomic_add(grad_pos_ptr + j3 + 1, gj_y, mask=mask)
-    tl.atomic_add(grad_pos_ptr + j3 + 2, gj_z, mask=mask)
+    gb3x = gn2y * b2z - gn2z * b2y
+    gb3y = gn2z * b2x - gn2x * b2z
+    gb3z = gn2x * b2y - gn2y * b2x
 
-    tl.atomic_add(grad_pos_ptr + k3 + 0, gk_x, mask=mask)
-    tl.atomic_add(grad_pos_ptr + k3 + 1, gk_y, mask=mask)
-    tl.atomic_add(grad_pos_ptr + k3 + 2, gk_z, mask=mask)
+    # backprop normalization of b1, b2, b3
+    gr1x, gr1y, gr1z = _backnorm(gb1x, gb1y, gb1z, b1x, b1y, b1z, r1_len)
+    gr2x, gr2y, gr2z = _backnorm(gb2x, gb2y, gb2z, b2x, b2y, b2z, r2_len)
+    gr3x, gr3y, gr3z = _backnorm(gb3x, gb3y, gb3z, b3x, b3y, b3z, r3_len)
 
-    tl.atomic_add(grad_pos_ptr + l3 + 0, gl_x, mask=mask)
-    tl.atomic_add(grad_pos_ptr + l3 + 1, gl_y, mask=mask)
-    tl.atomic_add(grad_pos_ptr + l3 + 2, gl_z, mask=mask)
+    # backprop r1 = r_j - r_i, r2 = r_k - r_j, r3 = r_l - r_k
+    tl.atomic_add(grad_pos_ptr + i3 + 0, -gr1x, mask=mask)
+    tl.atomic_add(grad_pos_ptr + i3 + 1, -gr1y, mask=mask)
+    tl.atomic_add(grad_pos_ptr + i3 + 2, -gr1z, mask=mask)
+
+    tl.atomic_add(grad_pos_ptr + j3 + 0, gr1x - gr2x, mask=mask)
+    tl.atomic_add(grad_pos_ptr + j3 + 1, gr1y - gr2y, mask=mask)
+    tl.atomic_add(grad_pos_ptr + j3 + 2, gr1z - gr2z, mask=mask)
+
+    tl.atomic_add(grad_pos_ptr + k3 + 0, gr2x - gr3x, mask=mask)
+    tl.atomic_add(grad_pos_ptr + k3 + 1, gr2y - gr3y, mask=mask)
+    tl.atomic_add(grad_pos_ptr + k3 + 2, gr2z - gr3z, mask=mask)
+
+    tl.atomic_add(grad_pos_ptr + l3 + 0, gr3x, mask=mask)
+    tl.atomic_add(grad_pos_ptr + l3 + 1, gr3y, mask=mask)
+    tl.atomic_add(grad_pos_ptr + l3 + 2, gr3z, mask=mask)
 
 
 @triton_op("mlcg_kernels::dihedral_pos_bwd", mutates_args={})
@@ -515,6 +535,7 @@ def dihedral_pos_bwd(
         k2,
         E,
         grad_y,
+        mapping_batch,
         grad_pos,
         deg=deg,
         stride_km=k1.stride(0),
@@ -607,102 +628,3 @@ def cpu_bwd_dihedral(
     grad_pos.index_add_(0, l, gr3)
 
     return grad_pos
-
-
-# def cpu_bwd_flash_harmonic_angles(
-#     pos:torch.Tensor,
-#     atom_types:torch.Tensor,
-#     index_mapping:torch.Tensor,
-#     mapping_batch:torch.Tensor,
-#     k1 : torch.Tensor,
-#     k2 : torch.Tensor,
-#     deg : int,
-#     grad_y: torch.Tensor,
-# ) -> torch.Tensor:
-#     grad_pos = torch.zeros_like(pos)
-#     i = index_mapping[0].long()
-#     j = index_mapping[1].long()
-#     k = index_mapping[2].long()
-#     l = index_mapping[3].long()
-#     b = mapping_batch.long()
-
-#     dij = pos[i] - pos[j]
-#     dkj = pos[k] - pos[j]
-
-#     A = dij.norm(p=2,dim=1)
-#     B = dkj.norm(p=2,dim=1)
-#     invAB = 1/(A*B)
-#     invA2 = 1.0 / ((dij*dij).sum(dim=1))
-#     invB2 = 1.0 / ((dkj*dkj).sum(dim=1))
-#     dot = (dij * dkj).sum(dim=1)
-#     cosang = dot*invAB
-
-#     ti = atom_types[i].long()
-#     tj = atom_types[j].long()
-#     tk = atom_types[k].long()
-
-#     b1 = pos[i] - pos[j]
-#     b2 = pos[k] - pos[j]
-#     b3 = pos[l] - pos[k]
-
-
-#     n1 = torch.cross(b1,b2)
-#     n2 = torch.cross(b3,b2)
-
-#     n1_sq = (n1*n1).sum(dim=1)
-#     n2_sq = (n2*n2).sum(dim=1)
-#     b2_sq = (b2*b2).sum(dim=1)
-#     b2_len = torch.sqrt(b2_sq)
-
-#     #x = (n1*n2).sum(dim=1)
-#     #c = torch.cross(n1,n2)
-#     #y = ((c*b2).sum(dim=1)) / b2_len
-#     #phi = torch.atan2(y, x)
-
-#     interaction_types = tuple(
-#             atom_types[index_mapping[ii]] for ii in range(4)
-#         )
-#             # the parameters have shape n_features x n_degs
-#     k1s = torch.vstack(
-#         [k1[ii][interaction_types] for ii in range(deg)]
-#     ).t()
-#     k2s = torch.vstack(
-#         [k2[ii][interaction_types] for ii in range(deg)]
-#     ).t()
-
-#     phis = compute_torsions(pos,index_mapping)
-
-#     _, n_k = k1s.shape
-#     n_degs = torch.arange(
-#         1, n_k + 1, dtype=phis.dtype, device=phis.device
-#     )
-#     # expand the features w.r.t the mult integer so that it has the
-#     # shape of k1s and k2s
-#     angles = phis.view(-1, 1) * n_degs.view(1, -1)
-#     de = k1s * torch.cos(angles) - k2s * torch.sin(angles) #FIXME: check if correct
-
-#     inv_n1 = 1.0 / n1_sq
-#     inv_n2 = 1.0 / n2_sq
-
-#     dphi_i = b2_len.unsqueeze(1)*n1*inv_n1.unsqueeze(1)
-#     dphi_l = -b2_len.unsqueeze(1)*n2*inv_n2.unsqueeze(1)
-#     b1_dot_b2 = (b1*b2).sum(dim=1)
-#     b3_dot_b2 = (b3*b2).sum(dim=1)
-#     inv_b2sq = 1.0 / b2_sq
-#     a = b1_dot_b2 * inv_b2sq
-#     c_ = b3_dot_b2 * inv_b2sq
-
-#     dphi_j = -dphi_i+a.unsqueeze(1)*dphi_i-c_.unsqueeze(1)*dphi_l
-#     dphi_k = -dphi_l+a.unsqueeze(1)*dphi_i-c_.unsqueeze(1)*dphi_l #FIXME: check if correct
-
-#     gi = de*dphi_i
-#     gj = de*dphi_j
-#     gk = de*dphi_k
-#     gl = de*dphi_l
-
-#     grad_pos.index_add_(0,i,gi)
-#     grad_pos.index_add_(0,j,gj)
-#     grad_pos.index_add_(0,k,gk)
-#     grad_pos.index_add_(0,l,gl)
-
-#     return grad_pos
