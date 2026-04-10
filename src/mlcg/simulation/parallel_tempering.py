@@ -103,7 +103,7 @@ class PTSimulation(LangevinSimulation):
     def _set_up_simulation(self, overwrite: bool = False):
         super(PTSimulation, self)._set_up_simulation(overwrite=overwrite)
         self._reset_exchange_stats()
-        self.exchange_arr = torch.zeros((self.n_sims, self._save_size))
+        self.exchange_arr = torch.zeros((self.n_sims, int(self.n_timesteps / self.save_interval)),dtype=torch.int8)
         self.acceptance_matrix = torch.zeros(
             self.n_replicas, self.n_replicas
         ).to(self.device)
