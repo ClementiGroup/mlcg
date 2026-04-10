@@ -92,7 +92,7 @@ def harmonic_angles_edge_fwd_kernel(
     A = tl.sqrt(a2)
     B = tl.sqrt(b2)
 
-    invAB = 1.0 / (A * B)
+    invAB = 1.0 / tl.maximum(A * B, 1e-12)
     dot = dijx * dkjx + dijy * dkjy + dijz * dkjz
     cosang = dot * invAB
     xdiff = cosang - x_0
