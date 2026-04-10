@@ -1,4 +1,5 @@
 import numpy as np
+import copy
 import torch
 from typing import Final, Optional, Dict
 from torch_geometric.utils import scatter
@@ -287,3 +288,25 @@ class FlashRepulsion(_Prior):
         )
         data.out[self.name] = {"energy": y}
         return data
+
+    @classmethod
+    def flash_from_standard(cls, standard_model: Repulsion) -> "FlashRepulsion":
+        """Class method to initialize a FlashRepulsion from a preexisting Repulsion model.
+
+        Parameters
+        ----------
+        standard_model:
+            A preexisting Repulsion model from which to initialize the FlashRepulsion. The
+            sigma parameter will be taken from the standard_model and used to initialize
+            the flash model.
+        """
+
+        if not isinstance(standard_model, Repulsion):
+            raise ValueError(
+                f"Expected input model of type Repulsion, but got {type(standard_model)}"
+            )
+
+        return cls(
+            sigma=copy.deepcopy(standard_model.sigma),
+            name=standard_model.name,
+        )

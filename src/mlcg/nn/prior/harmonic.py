@@ -1,4 +1,5 @@
 from math import pi
+import copy
 from scipy.integrate import trapezoid
 from scipy.optimize import curve_fit
 import torch
@@ -615,6 +616,29 @@ class FlashHarmonicBonds(_Prior):
         data.out[self.name] = {"energy": y}
         return data
 
+    @classmethod
+    def flash_from_standard(
+        cls, standard_model: HarmonicBonds
+    ) -> "FlashHarmonicBonds":
+        """Class method to initialize a FlashHarmonicBonds from a preexisting HarmonicBonds model.
+
+        Parameters
+        ----------
+        standard_model:
+            A preexisting HarmonicBonds model from which to initialize the FlashHarmonicBonds.
+        """
+
+        if not isinstance(standard_model, HarmonicBonds):
+            raise ValueError(
+                f"Expected input model of type HarmonicBonds, but got {type(standard_model)}"
+            )
+
+        return cls(
+            k=copy.deepcopy(standard_model.k),
+            x_0=copy.deepcopy(standard_model.x_0),
+            name=standard_model.name,
+        )
+
 
 class FlashHarmonicAngles(_Prior):
     """
@@ -658,3 +682,26 @@ class FlashHarmonicAngles(_Prior):
         )
         data.out[self.name] = {"energy": y}
         return data
+
+    @classmethod
+    def flash_from_standard(
+        cls, standard_model: HarmonicAngles
+    ) -> "FlashHarmonicAngles":
+        """Class method to initialize a FlashHarmonicAngles from a preexisting HarmonicAngles model.
+
+        Parameters
+        ----------
+        standard_model:
+            A preexisting HarmonicAngles model from which to initialize the FlashHarmonicAngles.
+        """
+
+        if not isinstance(standard_model, HarmonicAngles):
+            raise ValueError(
+                f"Expected input model of type HarmonicAngles, but got {type(standard_model)}"
+            )
+
+        return cls(
+            k=copy.deepcopy(standard_model.k),
+            x_0=copy.deepcopy(standard_model.x_0),
+            name=standard_model.name,
+        )

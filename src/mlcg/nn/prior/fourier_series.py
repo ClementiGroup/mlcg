@@ -1,5 +1,6 @@
 from scipy.integrate import trapezoid
 from scipy.optimize import curve_fit
+import copy
 import torch
 from torch_geometric.utils import scatter
 from typing import Optional, Dict, Final
@@ -533,3 +534,27 @@ class FlashDihedral(_Prior):
         )
         data.out[self.name] = {"energy": y}
         return data
+
+    @classmethod
+    def flash_from_standard(
+        cls, standard_model: FourierSeries
+    ) -> "FlashDihedral":
+        """Class method to initialize a FlashDihedral from a preexisting Dihedral model.
+
+        Parameters
+        ----------
+        standard_model:
+            A preexisting Dihedral model from which to initialize the FlashDihedral.
+        """
+
+        if not isinstance(standard_model, Dihedral):
+            raise ValueError(
+                f"Expected input model of type Dihedral, but got {type(standard_model)}"
+            )
+
+        return cls(
+            k1s=copy.deepcopy(standard_model.k1s),
+            k2s=copy.deepcopy(standard_model.k2s),
+            v_0=copy.deepcopy(standard_model.v_0),
+            name=standard_model.name,
+        )

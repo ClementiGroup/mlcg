@@ -18,6 +18,7 @@ from ..nn.quantization import (
     GPTQW16A16FilterNetwork,
 )
 from ..nn.gradients import SumOut
+from ..nn.kernels.converter import convert_standard_model_to_flash
 from ..utils import tqdm
 
 from ..data.atomic_data import AtomicData
@@ -146,6 +147,10 @@ class _Simulation(object):
         outputs or NaN gradients.
     gptq:
         Quantization method parameter. Current accepted values are "w16a16"
+    convert_to_flash:
+        If set to True, the script will attempt to convert the loaded model to its flash counterpart,
+        which may provide significant speedups for some models. This option is fully compatible with 
+        torch compile.
     """
 
     def __init__(
@@ -177,6 +182,7 @@ class _Simulation(object):
         compile_mode: str = "default",
         force_compile: bool = False,
         gptq: Optional[str] = None,
+        convert_to_flash: bool = False,
     ):
         self.model = None
         self.gptq = gptq
@@ -248,6 +254,7 @@ class _Simulation(object):
         self.compile = compile
         self.compile_mode = compile_mode
         self.force_compile = force_compile
+        self.convert_to_flash = convert_to_flash
 
     def attach_model_and_configurations(
         self,
@@ -276,6 +283,8 @@ class _Simulation(object):
         model : torch.nn.Module
             Trained model used to generate simulation data
         """
+        if self.convert_to_flash:
+            model = convert_standard_model_to_flash(model)
         self.model = model.eval().to(device=self.device, dtype=self.dtype)
         for param in self.model.parameters():
             param.requires_grad_(False)

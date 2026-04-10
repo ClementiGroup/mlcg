@@ -1,10 +1,7 @@
 #! /usr/bin/env python
 
-from time import ctime
-import os.path as osp
 import torch
-import sys
-
+from mlcg.nn.kernels.converter import convert_standard_model_to_flash
 
 from mlcg.nn.gradients import SumOut
 from mlcg.pl.utils import (
@@ -25,10 +22,15 @@ def parse_cli():
     )
     parser.add_argument(
         "--prior",
+        default=None,
         type=str,
         help="path to the prior model. Must be a valid .pt file.",
     )
-
+    parser.add_argument(
+        "--convert_to_flash",
+        action="store_true",
+        help="if set, the script will attempt to convert the loaded model to its flash counterpart",
+    )
     parser.add_argument(
         "--out",
         default="combined_model.pt",
@@ -43,9 +45,16 @@ def main():
     parser = parse_cli()
     args = parser.parse_args()
 
-    full_model = merge_priors_and_checkpoint(
-        checkpoint=args.ckpt, priors=args.prior
-    )
+    if args.prior is not None:
+        full_model = merge_priors_and_checkpoint(
+            checkpoint=args.ckpt, priors=args.prior
+        )
+    else:
+        full_model = extract_model_from_checkpoint(args.ckpt, None)
+
+    if args.convert_to_flash:
+        full_model = convert_standard_model_to_flash(full_model)
+
     full_model.to("cpu")
     torch.save(full_model, args.out)
 

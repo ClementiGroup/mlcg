@@ -1,4 +1,5 @@
 import warnings
+import copy
 from typing import Optional, List, Final
 import torch
 from torch_geometric.utils import scatter
@@ -8,6 +9,7 @@ from ..neighbor_list.neighbor_list import (
 )
 from ..data.atomic_data import AtomicData, ENERGY_KEY
 from .mlp import MLP
+from .schnet import StandardSchNet
 from ._module_init import init_xavier_uniform
 from .kernels.radial_basis import fused_distance_exp_norm_rbf_cosinecutoff
 from .kernels.csr import build_csr_representation_from_edges
@@ -515,3 +517,58 @@ class StandardFlashSchNet(FlashSchNet):
             output_network,
             max_num_neighbors=max_num_neighbors,
         )
+
+    @classmethod
+    def flash_from_standard(
+        cls, standard_model: StandardSchNet
+    ) -> "StandardFlashSchNet":
+        """Class method to initialize a StandardFlashSchNet from a preexisting StandardSchNet model.
+
+        Parameters
+        ----------
+        standard_model:
+            A StandardSchNet model that will be used to create a
+            StandardFlashSchNet with the same architecture and weights.
+
+        Returns
+        -------
+        flash_model:
+            A StandardFlashSchNet model with the same architecture and
+            weights as the input standard_model.
+        """
+
+        if not isinstance(standard_model, StandardSchNet):
+            raise ValueError(
+                f"Expected input model of type StandardSchNet, but got {type(standard_model)}"
+            )
+
+        linear_layers = [
+            l
+            for l in standard_model.output_network.layers
+            if isinstance(l, torch.nn.Linear)
+        ]
+        widths = [linear_layers[0].in_features] + [
+            l.out_features for l in linear_layers
+        ]
+
+        instance = cls(
+            rbf_layer=copy.deepcopy(standard_model.rbf_layer),
+            cutoff=copy.deepcopy(
+                standard_model.interaction_blocks[0].conv.cutoff
+            ),
+            output_hidden_layer_widths=widths[1:-1],
+            hidden_channels=widths[0],
+            embedding_size=standard_model.embedding_layer.num_embeddings,
+            num_filters=standard_model.interaction_blocks[
+                0
+            ].conv.lin1.out_features,
+            num_interactions=len(standard_model.interaction_blocks),
+            activation=copy.deepcopy(
+                standard_model.interaction_blocks[0].activation
+            ),
+            max_num_neighbors=standard_model.max_num_neighbors,
+            aggr=standard_model.interaction_blocks[0].conv.aggr,
+        )
+        instance.load_state_dict(standard_model.state_dict(), strict=True)
+
+        return instance
