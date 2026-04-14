@@ -85,7 +85,7 @@ def dihedral_fwd_kernel(
     r1x = xj - xi
     r1y = yj - yi
     r1z = zj - zi
-    r1_len = tl.maximum(tl.sqrt(b1x * b1x + b1y * b1y + b1z * b1z), 1e-12)
+    r1_len = tl.maximum(tl.sqrt(r1x * r1x + r1y * r1y + r1z * r1z), 1e-12)
     b1x, b1y, b1z = (
         tl.div_rn(r1x, r1_len),
         tl.div_rn(r1y, r1_len),
@@ -95,7 +95,7 @@ def dihedral_fwd_kernel(
     r2x = xk - xj
     r2y = yk - yj
     r2z = zk - zj
-    r2_len = tl.maximum(tl.sqrt(b2x * b2x + b2y * b2y + b2z * b2z), 1e-12)
+    r2_len = tl.maximum(tl.sqrt(r2x * r2x + r2y * r2y + r2z * r2z), 1e-12)
     b2x, b2y, b2z = (
         tl.div_rn(r2x, r2_len),
         tl.div_rn(r2y, r2_len),
@@ -105,7 +105,7 @@ def dihedral_fwd_kernel(
     r3x = xl - xk
     r3y = yl - yk
     r3z = zl - zk
-    r3_len = tl.maximum(tl.sqrt(b3x * b3x + b3y * b3y + b3z * b3z), 1e-12)
+    r3_len = tl.maximum(tl.sqrt(r3x * r3x + r3y * r3y + r3z * r3z), 1e-12)
     b3x, b3y, b3z = (
         tl.div_rn(r3x, r3_len),
         tl.div_rn(r3y, r3_len),
