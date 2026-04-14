@@ -1,0 +1,20 @@
+train:
+  batch_sizes:
+    2RVD: 256
+  metasets:
+    2RVD:
+      detailed_indices:
+        2RVD: /group/ag_clementi_cmb/users/sayeg84/mlcg_benchmarking/grappa/train_idx_2RVD_badn_min_pair_4.npy
+      molecules:
+      - 2RVD
+      stride: 1
+val:
+  batch_sizes:
+    2RVD: 64
+  metasets:
+    2RVD:
+      detailed_indices:
+        2RVD: /group/ag_clementi_cmb/users/sayeg84/mlcg_benchmarking/grappa/val_idx_2RVD_badn_min_pair_4.npy
+      molecules:
+      - 2RVD
+      stride: 1
