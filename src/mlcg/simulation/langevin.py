@@ -397,7 +397,7 @@ class LangevinBenchmark(LangevinSimulation):
 
         return
     
-    def write():
+    def write(self):
         super().write()
         if self.started_benchmarking:
             aux_np = np.array(self.times_ms)
