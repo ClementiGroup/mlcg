@@ -404,7 +404,7 @@ class LangevinBenchmark(LangevinSimulation):
         super().write()
         if self.started_benchmarking:
             aux_np = np.array(self.times_ms)
-            np.save(self.filename,aux_np)
+            np.save(f"{self.filename}_ms_per_times.npy",aux_np)
         
 
 
