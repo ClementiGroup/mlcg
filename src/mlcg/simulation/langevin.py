@@ -4,6 +4,7 @@ from torch.distributions.normal import Normal
 import numpy as np
 import warnings
 from copy import deepcopy
+from tqdm import tqdm
 
 from ..data.atomic_data import AtomicData
 from ..data._keys import (
@@ -272,6 +273,136 @@ class LangevinSimulation(_Simulation):
 # pipe the doc from the base class into the child class so that it's properly
 # displayed by sphinx
 LangevinSimulation.__doc__ += _Simulation.__doc__ + "\n"
+
+
+class LangevinBenchmark(LangevinSimulation):
+
+    def __init__(self, **kwargs: Any):
+        super().__init__(**kwargs)
+        if "timesteps_burnout" in kwargs.keys():
+            self.burnout = kwargs["timesteps_burnout"]
+        else:
+            self.burnout = 5000
+        self.started_benchmarking = False
+        self.times_ms = []
+
+    def simulate(self, overwrite: bool = False, prof=None) -> np.ndarray:
+        """Generates independent simulations.
+
+        Parameters
+        ----------
+        overwrite :
+            Set to True if you wish to overwrite any saved simulation data
+
+        Returns
+        -------
+        simulated_coords :
+            Shape [n_simulations, n_frames, n_atoms, n_dimensions]
+            Also an attribute; stores the simulation coordinates at the
+            save_interval
+        """
+
+        self._set_up_simulation(overwrite)
+        data = deepcopy(self.initial_data)
+        data = data.to(self.device)
+        self.compile_model(data)
+        _, forces = self.calculate_potential_and_forces(data)
+        if self.export_interval is not None:
+            t_init = self.current_timestep * self.export_interval
+        else:
+            t_init = 0
+        if t_init >= self.n_timesteps:
+            raise ValueError(
+                f"Simulation has already been running for {t_init} steps, which is larger than the target number of steps {self.n_timesteps}"
+            )
+        torch.cuda.synchronize()
+
+        start_ev = torch.cuda.Event(enable_timing=True)
+        end_ev = torch.cuda.Event(enable_timing=True)
+
+        for t in tqdm(
+            range(t_init, self.n_timesteps),
+            desc="Simulation timestep",
+            mininterval=self.tqdm_refresh,
+            initial=t_init,
+            total=self.n_timesteps,
+        ):
+            # step forward in time
+            if not self.started_benchmarking and t > self.burnout:
+
+                self.started_benchmarking = True
+                start_ev.record()
+            data, potential, forces = self.timestep(data, forces)
+            self.sim_t = t
+            pbc = getattr(data, "pbc", None)
+            cell = getattr(data, "cell", None)
+            if all([feat != None for feat in [pbc, cell]]):
+                data = wrap_positions(data, self.device)
+
+            # save to arrays if relevant
+            if (t + 1) % self.save_interval == 0:
+                # save arrays
+                self.save(
+                    data=data,
+                    forces=forces,
+                    potential=potential,
+                    t=t,
+                )
+
+                # write numpys to file if relevant; this can be indented here because
+                # it only happens when time points are also recorded
+                if self.export_interval is not None:
+                    if (t + 1) % self.export_interval == 0:
+                        self.write()
+                        if self.save_subroutine is not None:
+                            self.save_subroutine(
+                                data, (t + 1) // self.save_interval
+                            )
+                    if self.started_benchmarking:
+                        end_ev.record()
+                        ms = start_ev.elapsed_time(end_ev)  # milliseconds
+                        self.times_ms.append(ms)
+
+                # log if relevant; this can be indented here because
+                # it only happens when time when time points are also recorded
+                if self.log_interval is not None:
+                    if int((t + 1) % self.log_interval) == 0:
+                        self.log((t + 1) // self.save_interval)
+
+            if self.sim_subroutine != None:
+                if (t + 1) % self.sim_subroutine_interval == 0:
+                    data = self.sim_subroutine(data)
+
+            # reset data outputs to collect the new forces/energies
+            data.out = {}
+            if prof:
+                prof.step()
+
+        
+        
+
+        
+        # if relevant, save the remainder of the simulation
+        if self.export_interval is not None:
+            if int(t + 1) % self.export_interval > 0:
+                self.write()
+
+        # if relevant, log that simulation has been completed
+        if self.log_interval is not None:
+            self.summary()
+
+        self.reshape_output()
+
+        self._simulated = True
+
+        return
+    
+    def write():
+        super().write()
+        if self.started_benchmarking:
+            aux_np = np.array(self.times_ms)
+            np.save(self.filename,aux_np)
+        
 
 
 class OverdampedSimulation(_Simulation):
