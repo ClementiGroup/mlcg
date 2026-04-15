@@ -278,11 +278,13 @@ LangevinSimulation.__doc__ += _Simulation.__doc__ + "\n"
 class LangevinBenchmark(LangevinSimulation):
 
     def __init__(self, **kwargs: Any):
-        super().__init__(**kwargs)
+        
         if "timesteps_burnout" in kwargs.keys():
             self.burnout = kwargs["timesteps_burnout"]
+            kwargs.pop("timesteps_burnout")
         else:
             self.burnout = 5000
+        super().__init__(**kwargs)
         self.started_benchmarking = False
         self.times_ms = []
 
