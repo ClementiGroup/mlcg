@@ -5,7 +5,6 @@ import torch
 from typing import List, Optional
 
 
-@torch.jit.script
 def safe_norm(
     input: torch.Tensor,
     dim: Optional[List[int]] = None,
@@ -21,7 +20,6 @@ def safe_norm(
     ) - math.sqrt(eps)
 
 
-@torch.jit.script
 def safe_normalization(
     input: torch.Tensor, norms: torch.Tensor
 ) -> torch.Tensor:
@@ -33,7 +31,6 @@ def safe_normalization(
     return out
 
 
-@torch.jit.script
 def compute_distance_vectors(
     pos: torch.Tensor,
     mapping: torch.Tensor,
@@ -69,7 +66,6 @@ def compute_distance_vectors(
     return distances, direction_vectors
 
 
-# @torch.jit.script
 def compute_distances(
     pos: torch.Tensor,
     mapping: torch.Tensor,
@@ -100,7 +96,6 @@ def compute_distances(
     return dr.norm(p=2, dim=1)
 
 
-@torch.jit.script
 def compute_angles_raw(
     pos: torch.Tensor,
     mapping: torch.Tensor,
@@ -142,7 +137,6 @@ def compute_angles_raw(
     return theta
 
 
-@torch.jit.script
 def compute_angles_cos(
     pos: torch.Tensor,
     mapping: torch.Tensor,
@@ -184,7 +178,6 @@ def compute_angles_cos(
     return cos_theta
 
 
-@torch.jit.script
 def compute_torsions(
     pos: torch.Tensor,
     mapping: torch.Tensor,
