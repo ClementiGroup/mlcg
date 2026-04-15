@@ -360,10 +360,11 @@ class LangevinBenchmark(LangevinSimulation):
                             self.save_subroutine(
                                 data, (t + 1) // self.save_interval
                             )
-                    if self.started_benchmarking:
-                        end_ev.record()
-                        ms = start_ev.elapsed_time(end_ev)  # milliseconds
-                        self.times_ms.append(ms)
+                        if self.started_benchmarking:
+                            end_ev.record()
+                            torch.cuda.synchronize()  
+                            ms = start_ev.elapsed_time(end_ev)  # milliseconds
+                            self.times_ms.append(ms)
 
                 # log if relevant; this can be indented here because
                 # it only happens when time when time points are also recorded
