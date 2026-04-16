@@ -4,7 +4,7 @@ from scipy.integrate import trapezoid
 from scipy.optimize import curve_fit
 import torch
 from torch_geometric.utils import scatter
-from typing import Final, Dict
+from typing import Final, Dict, Union
 
 
 from .base import _Prior
@@ -575,14 +575,14 @@ class GeneralAngles(Harmonic):
 
 class FlashHarmonicBonds(_Prior):
     """
-    Computes per-graph repulsion energy:
-        e_ij = k[type_i, type_j]* (r_ij - r_{ij})^6
-    reduced as sum over edges per graph (using mapping_batch).
+    Compute fused harmonic bonds energy.
 
-    Returns: y of shape [num_graphs] (float32).
+    Attention!
+    ----------
+    At the moment only non periodic systems are supported
     """
 
-    name = "repulsion"
+    name = "bonds"
 
     def __init__(
         self,
@@ -618,9 +618,10 @@ class FlashHarmonicBonds(_Prior):
 
     @classmethod
     def flash_from_standard(
-        cls, standard_model: HarmonicBonds
+        cls, standard_model: Union[HarmonicBonds, GeneralBonds]
     ) -> "FlashHarmonicBonds":
-        """Class method to initialize a FlashHarmonicBonds from a preexisting HarmonicBonds model.
+        """Class method to initialize a FlashHarmonicBonds from a preexisting
+        HarmonicBonds or GeneralBonds model.
 
         Parameters
         ----------
@@ -628,7 +629,10 @@ class FlashHarmonicBonds(_Prior):
             A preexisting HarmonicBonds model from which to initialize the FlashHarmonicBonds.
         """
 
-        if not isinstance(standard_model, HarmonicBonds):
+        if not (
+            isinstance(standard_model, HarmonicBonds)
+            or isinstance(standard_model, GeneralBonds)
+        ):
             raise ValueError(
                 f"Expected input model of type HarmonicBonds, but got {type(standard_model)}"
             )
@@ -642,11 +646,11 @@ class FlashHarmonicBonds(_Prior):
 
 class FlashHarmonicAngles(_Prior):
     """
-    Computes per-graph repulsion energy:
-        e_ijk = k[type_i, type_j, type_k]* (cos(theta_ijk) - cos0_ijk)^6
-    reduced as sum over edges per graph (using mapping_batch).
+    ompute fused harmonic angles energy.
 
-    Returns: y of shape [num_graphs] (float32).
+    Attention!
+    ----------
+    At the moment only non periodic systems are supported
     """
 
     name = "angles"
@@ -685,9 +689,10 @@ class FlashHarmonicAngles(_Prior):
 
     @classmethod
     def flash_from_standard(
-        cls, standard_model: HarmonicAngles
+        cls, standard_model: Union[HarmonicAngles, GeneralAngles]
     ) -> "FlashHarmonicAngles":
-        """Class method to initialize a FlashHarmonicAngles from a preexisting HarmonicAngles model.
+        """Class method to initialize a FlashHarmonicAngles from a preexisting
+        HarmonicAngles  or GeneralAngles model.
 
         Parameters
         ----------
@@ -695,7 +700,10 @@ class FlashHarmonicAngles(_Prior):
             A preexisting HarmonicAngles model from which to initialize the FlashHarmonicAngles.
         """
 
-        if not isinstance(standard_model, HarmonicAngles):
+        if not (
+            isinstance(standard_model, HarmonicAngles)
+            or isinstance(standard_model, GeneralAngles)
+        ):
             raise ValueError(
                 f"Expected input model of type HarmonicAngles, but got {type(standard_model)}"
             )

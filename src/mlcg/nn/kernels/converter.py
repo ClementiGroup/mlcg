@@ -15,6 +15,8 @@ from ..prior import (
     HarmonicBonds,
     HarmonicAngles,
     Dihedral,
+    GeneralBonds,
+    GeneralAngles,
 )
 from ..gradients import GradientsOut, SumOut, EnergyOut
 
@@ -37,6 +39,8 @@ def convert_single_standard_model_to_flash(
         HarmonicBonds: FlashHarmonicBonds,
         HarmonicAngles: FlashHarmonicAngles,
         Dihedral: FlashDihedral,
+        GeneralBonds: FlashHarmonicBonds,  # FIXME: check if this conversion is always valid
+        GeneralAngles: FlashHarmonicAngles,  # FIXME: check if this conversion is always valid
     }
     model_type = type(standard_model)
     if model_type not in _supported_conversions:
