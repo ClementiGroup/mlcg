@@ -278,7 +278,7 @@ LangevinSimulation.__doc__ += _Simulation.__doc__ + "\n"
 class LangevinBenchmark(LangevinSimulation):
 
     def __init__(self, **kwargs: Any):
-        
+
         if "timesteps_burnout" in kwargs.keys():
             self.burnout = kwargs["timesteps_burnout"]
             kwargs.pop("timesteps_burnout")
@@ -362,7 +362,7 @@ class LangevinBenchmark(LangevinSimulation):
                             )
                         if self.started_benchmarking:
                             end_ev.record()
-                            torch.cuda.synchronize()  
+                            torch.cuda.synchronize()
                             ms = start_ev.elapsed_time(end_ev)  # milliseconds
                             self.times_ms.append(ms)
 
@@ -381,10 +381,6 @@ class LangevinBenchmark(LangevinSimulation):
             if prof:
                 prof.step()
 
-        
-        
-
-        
         # if relevant, save the remainder of the simulation
         if self.export_interval is not None:
             if int(t + 1) % self.export_interval > 0:
@@ -399,13 +395,12 @@ class LangevinBenchmark(LangevinSimulation):
         self._simulated = True
 
         return
-    
+
     def write(self):
         super().write()
         if self.started_benchmarking:
             aux_np = np.array(self.times_ms)
-            np.save(f"{self.filename}_ms_per_times.npy",aux_np)
-        
+            np.save(f"{self.filename}_ms_per_times.npy", aux_np)
 
 
 class OverdampedSimulation(_Simulation):

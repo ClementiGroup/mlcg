@@ -149,7 +149,7 @@ class _Simulation(object):
         Quantization method parameter. Current accepted values are "w16a16"
     convert_to_flash:
         If set to True, the script will attempt to convert the loaded model to its flash counterpart,
-        which may provide significant speedups for some models. This option is fully compatible with 
+        which may provide significant speedups for some models. This option is fully compatible with
         torch compile.
     """
 
