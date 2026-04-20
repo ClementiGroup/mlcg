@@ -11,7 +11,7 @@ from ...geometry.internal_coordinates import (
     compute_distances,
 )
 
-from ..kernels.models.prior.repulsion import flash_repulsion
+from ..kernels.models.prior import flash_repulsion
 
 
 class Repulsion(_Prior):

@@ -17,8 +17,7 @@ from ...geometry.internal_coordinates import (
     compute_torsions,
 )
 
-from ..kernels.models.prior.harmonic_bonds import flash_harmonic_bonds
-from ..kernels.models.prior.harmonic_angles import flash_harmonic_angles
+from ..kernels.models.prior import flash_harmonic_bonds, flash_harmonic_angles
 
 torch_pi = torch.tensor(pi)
 
@@ -639,7 +638,11 @@ class FlashHarmonicBonds(_Prior):
 
         return cls(
             k=copy.deepcopy(standard_model.k),
-            x_0=copy.deepcopy(standard_model.x_0),
+            x_0=copy.deepcopy(
+                standard_model.x_0
+                if hasattr(standard_model, "x_0")
+                else standard_model.x0
+            ),
             name=standard_model.name,
         )
 
@@ -710,6 +713,10 @@ class FlashHarmonicAngles(_Prior):
 
         return cls(
             k=copy.deepcopy(standard_model.k),
-            x_0=copy.deepcopy(standard_model.x_0),
+            x_0=copy.deepcopy(
+                standard_model.x_0
+                if hasattr(standard_model, "x_0")
+                else standard_model.x0
+            ),
             name=standard_model.name,
         )

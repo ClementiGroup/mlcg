@@ -13,7 +13,7 @@ from ...geometry import (
     compute_torsions,
 )
 
-from ..kernels.models.prior.dihedral import flash_dihedral
+from ..kernels.models.prior import flash_dihedral
 
 
 class FourierSeries(_Prior):
@@ -504,12 +504,14 @@ class FlashDihedral(_Prior):
         k1s: torch.Tensor,
         k2s: torch.Tensor,
         v_0: torch.Tensor,
+        n_degs: int,
         name: str,
     ):
         super().__init__()
         self.register_buffer("k1s", k1s)
         self.register_buffer("k2s", k2s)
         self.register_buffer("v_0", v_0)
+        self.n_degs = n_degs
         self.name = name
 
     def forward(self, data) -> torch.Tensor:  # int
@@ -529,7 +531,7 @@ class FlashDihedral(_Prior):
             k1=self.k1s,
             k2=self.k2s,
             v_0=self.v_0,
-            deg=self.k1s.shape[0],
+            deg=self.n_degs,
             num_graphs=num_graphs,
         )
         data.out[self.name] = {"energy": y}
@@ -556,5 +558,6 @@ class FlashDihedral(_Prior):
             k1s=copy.deepcopy(standard_model.k1s),
             k2s=copy.deepcopy(standard_model.k2s),
             v_0=copy.deepcopy(standard_model.v_0),
+            n_degs=standard_model.n_degs,
             name=standard_model.name,
         )

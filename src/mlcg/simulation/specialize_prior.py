@@ -201,6 +201,8 @@ def condense_prior_for_simulation(
         else:
             params[k] = torch.cat(params[k]).flatten()
     static_prior = StaticCLS(**params)
+    if TargetPrior == Dihedral:
+        static_prior.n_degs = n_degs
     condensed_priors.models[StaticCLS.name] = GradientsOut(static_prior)
 
     return condensed_priors, condensed_data_list
