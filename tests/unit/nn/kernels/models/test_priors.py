@@ -76,6 +76,7 @@ def create_data(prior):
                 base_prior.model.k1s,
                 base_prior.model.k2s,
                 base_prior.model.v_0,
+                base_prior.model.n_degs,
                 Dihedral.name,
             )
         )
