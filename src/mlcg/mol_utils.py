@@ -181,6 +181,7 @@ def _ASE_prior_model(
         "molecule": mol,
         "num_examples": len(prior_data_list),
         "neighbor_lists": neighbor_lists,
+        "data_list": prior_data_list,
     }
     return model_with_data
 
