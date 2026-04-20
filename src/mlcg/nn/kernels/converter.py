@@ -42,7 +42,6 @@ def convert_single_standard_model_to_flash(
         Dihedral: FlashDihedral,
         GeneralBonds: FlashHarmonicBonds,  # FIXME: check if this conversion is always valid
         GeneralAngles: FlashHarmonicAngles,  # FIXME: check if this conversion is always valid
-        # glbls["StaticRepulsion"]: FlashRepulsion,
         glbls["StaticHarmonicBonds"]: FlashHarmonicBonds,
         glbls["StaticHarmonicAngles"]: FlashHarmonicAngles,
         glbls["StaticDihedral"]: FlashDihedral,

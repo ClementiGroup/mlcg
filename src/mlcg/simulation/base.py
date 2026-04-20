@@ -18,7 +18,6 @@ from ..nn.quantization import (
     GPTQW16A16FilterNetwork,
 )
 from ..nn.gradients import SumOut
-from ..nn.kernels.converter import convert_standard_model_to_flash
 from ..utils import tqdm
 
 from ..data.atomic_data import AtomicData
@@ -284,6 +283,8 @@ class _Simulation(object):
             Trained model used to generate simulation data
         """
         if self.convert_to_flash:
+            from ..nn.kernels.converter import convert_standard_model_to_flash
+
             model = convert_standard_model_to_flash(model)
         self.model = model.eval().to(device=self.device, dtype=self.dtype)
         for param in self.model.parameters():
