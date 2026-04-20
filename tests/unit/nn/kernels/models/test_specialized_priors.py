@@ -78,11 +78,11 @@ def test_base_vs_kernel(device, base_prior):
 
     data = data.to(device)
     specialized_data = specialized_data.to(device)
-    base_prior = base_prior.to(device)
-    specialized_prior = specialized_prior.to(device)
-    flash_specialized_prior = flash_specialized_prior.to(device)
-    compiled_flash_specialized_prior = compiled_flash_specialized_prior.to(
-        device
+    base_prior = base_prior.eval().to(device)
+    specialized_prior = specialized_prior.eval().to(device)
+    flash_specialized_prior = flash_specialized_prior.eval().to(device)
+    compiled_flash_specialized_prior = (
+        compiled_flash_specialized_prior.eval().to(device)
     )
 
     data = base_prior(data)
