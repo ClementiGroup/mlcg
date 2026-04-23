@@ -1,7 +1,7 @@
 from .gradients import GradientsOut, SumOut, EnergyOut
 from .schnet import SchNet, StandardSchNet, RBFRegularizedSchNet
 from .interpretable_models import EdgeRBFRegularizedSchNet
-from .radial_basis import GaussianBasis, ExpNormalBasis
+from .radial_basis import GaussianBasis, ExpNormalBasis, FilteredExpNormalBasis
 from .cutoff import CosineCutoff, IdentityCutoff
 from .losses import ForceMSE, ForceRMSE, Loss, EnergyMSE
 from .prior import (
@@ -38,6 +38,7 @@ __all__ = [
     "RBFRegularizedSchNet",
     "GaussianBasis",
     "ExpNormalBasis",
+    "FilteredExpNormalBasis",
     "CosineCutoff",
     "IdentityCutoff",
     "ForceMSE",
