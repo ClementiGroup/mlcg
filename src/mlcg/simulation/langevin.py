@@ -287,6 +287,7 @@ class LangevinBenchmark(LangevinSimulation):
         super().__init__(**kwargs)
         self.started_benchmarking = False
         self.times_ms = []
+        self.peak_mems_gb = []
 
     def simulate(self, overwrite: bool = False, prof=None) -> np.ndarray:
         """Generates independent simulations.
@@ -317,8 +318,8 @@ class LangevinBenchmark(LangevinSimulation):
             raise ValueError(
                 f"Simulation has already been running for {t_init} steps, which is larger than the target number of steps {self.n_timesteps}"
             )
+        torch.cuda.reset_peak_memory_stats()
         torch.cuda.synchronize()
-
         start_ev = torch.cuda.Event(enable_timing=True)
         end_ev = torch.cuda.Event(enable_timing=True)
 
@@ -336,10 +337,6 @@ class LangevinBenchmark(LangevinSimulation):
                 start_ev.record()
             data, potential, forces = self.timestep(data, forces)
             self.sim_t = t
-            pbc = getattr(data, "pbc", None)
-            cell = getattr(data, "cell", None)
-            if all([feat != None for feat in [pbc, cell]]):
-                data = wrap_positions(data, self.device)
 
             # save to arrays if relevant
             if (t + 1) % self.save_interval == 0:
@@ -362,9 +359,12 @@ class LangevinBenchmark(LangevinSimulation):
                             )
                         if self.started_benchmarking:
                             end_ev.record()
+                            peak_mem = torch.cuda.max_memory_allocated()
+                            torch.cuda.reset_peak_memory_stats()
                             torch.cuda.synchronize()
                             ms = start_ev.elapsed_time(end_ev)  # milliseconds
                             self.times_ms.append(ms)
+                            self.peak_mems_gb.append(peak_mem / 1e9) # Gb
 
                 # log if relevant; this can be indented here because
                 # it only happens when time when time points are also recorded
@@ -399,8 +399,8 @@ class LangevinBenchmark(LangevinSimulation):
     def write(self):
         super().write()
         if self.started_benchmarking:
-            aux_np = np.array(self.times_ms)
-            np.save(f"{self.filename}_ms_per_times.npy", aux_np)
+            np.save(f"{self.filename}_times_ms.npy", np.array(self.times_ms))
+            np.save(f"{self.filename}_peak_mems_gb.npy", np.array(self.peak_mems_gb))
 
 
 class OverdampedSimulation(_Simulation):
