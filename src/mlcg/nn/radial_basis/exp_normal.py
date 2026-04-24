@@ -150,10 +150,11 @@ class FilteredExpNormalBasis(ExpNormalBasis):
         cutoff: Union[int, float, _Cutoff],
         lambda_filter: torch.Tensor,
         num_rbf: int = 50,
-        trainable: bool = True,
+        trainable: bool = False,
     ):
         super().__init__(cutoff=cutoff, num_rbf=num_rbf, trainable=trainable)
 
+        lambda_filter = lambda_filter.to(device=self.means.device)
         if lambda_filter.dtype != torch.bool:
             lambda_filter = lambda_filter.to(torch.bool)
         if lambda_filter.numel() != num_rbf:
