@@ -16,12 +16,32 @@ from ...cutoffs import (
 
 triton_pi = tl.constexpr(3.141592653589793)
 
+def filter_configs(configs, named_args, **kwargs):
+    feature_dim = named_args["feature_dim"]
+    filtered = [
+        cfg for cfg in configs
+        if cfg.kwargs["BLOCK_F"] <= feature_dim
+    ]
+    return filtered if filtered else [min(configs, key=lambda c: c.kwargs["BLOCK_F"])]
 
 # ============================================================================
 # grad_x_grad_filters_fused_cfconv
 # ============================================================================
 
-
+@triton.autotune(
+    configs=[
+        triton.Config({"BLOCK_F": 8},   num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 16},  num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 32},  num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 32},  num_warps=4, num_stages=3),
+        triton.Config({"BLOCK_F": 64},  num_warps=4, num_stages=2),
+        triton.Config({"BLOCK_F": 64},  num_warps=8, num_stages=3),
+        triton.Config({"BLOCK_F": 128}, num_warps=4, num_stages=2),
+        triton.Config({"BLOCK_F": 128}, num_warps=8, num_stages=3),
+    ],
+    key=["feature_dim"],
+    prune_configs_by={"early_config_prune": filter_configs},
+)
 @triton.jit
 def grad_x_grad_filters_fused_cfconv_kernel(
     # Input pointers
@@ -37,10 +57,10 @@ def grad_x_grad_filters_fused_cfconv_kernel(
     cutoff_upper,
     # Sizes
     num_nodes,
-    feature_dim,
+    feature_dim: tl.constexpr,
     # Block size
-    BLOCK_F: tl.constexpr,
     OUTPUT_FP16: tl.constexpr,  # Whether to output FP16
+    BLOCK_F: tl.constexpr,
 ):
     """
     Fused kernel for grad_filters computation in CFConv backward pass.
@@ -165,7 +185,6 @@ def grad_x_grad_filters_fused_cfconv(
     if num_edges == 0:
         return grad_x_grad_filters
 
-    BLOCK_F = min(128, triton.next_power_of_2(feature_dim))
     grid = (num_nodes,)
 
     # Determine if output should be FP16
@@ -182,7 +201,6 @@ def grad_x_grad_filters_fused_cfconv(
         cutoff_upper,
         num_nodes,
         feature_dim,
-        BLOCK_F=BLOCK_F,
         OUTPUT_FP16=output_fp16,
     )
 
@@ -268,7 +286,20 @@ def cpu_grad_x_grad_filters_fused_cfconv(
 # grad_grad_out_grad_filters_fused_cfconv
 # ============================================================================
 
-
+@triton.autotune(
+    configs=[
+        triton.Config({"BLOCK_F": 8},   num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 16},  num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 32},  num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 32},  num_warps=4, num_stages=3),
+        triton.Config({"BLOCK_F": 64},  num_warps=4, num_stages=2),
+        triton.Config({"BLOCK_F": 64},  num_warps=8, num_stages=3),
+        triton.Config({"BLOCK_F": 128}, num_warps=4, num_stages=2),
+        triton.Config({"BLOCK_F": 128}, num_warps=8, num_stages=3),
+    ],
+    key=["feature_dim"],
+    prune_configs_by={"early_config_prune": filter_configs},
+)
 @triton.jit
 def grad_grad_out_grad_filters_fused_cfconv_kernel(
     # Input pointers
@@ -284,10 +315,10 @@ def grad_grad_out_grad_filters_fused_cfconv_kernel(
     cutoff_upper,
     # Sizes
     num_nodes,
-    feature_dim,
+    feature_dim: tl.constexpr,
     # Block size
-    BLOCK_F: tl.constexpr,
     OUTPUT_FP16: tl.constexpr,  # Whether to output FP16
+    BLOCK_F: tl.constexpr,
 ):
     """
     Fused kernel for grad_filters computation in CFConv backward pass.
@@ -405,7 +436,6 @@ def grad_grad_out_grad_filters_fused_cfconv(
     if num_edges == 0:
         return grad_grad_out_grad_filters
 
-    BLOCK_F = 128
     grid = (num_nodes,)
 
     # Determine if output should be FP16
@@ -422,7 +452,6 @@ def grad_grad_out_grad_filters_fused_cfconv(
         cutoff_upper,
         num_nodes,
         feature_dim,
-        BLOCK_F=BLOCK_F,
         OUTPUT_FP16=output_fp16,
     )
 
@@ -508,7 +537,20 @@ def cpu_grad_grad_out_grad_filters_fused_cfconv(
 # grad_edge_weight_grad_filters_fused_cfconv
 # ============================================================================
 
-
+@triton.autotune(
+    configs=[
+        triton.Config({"BLOCK_F": 8},   num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 16},  num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 32},  num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 32},  num_warps=4, num_stages=3),
+        triton.Config({"BLOCK_F": 64},  num_warps=4, num_stages=2),
+        triton.Config({"BLOCK_F": 64},  num_warps=8, num_stages=3),
+        triton.Config({"BLOCK_F": 128}, num_warps=4, num_stages=2),
+        triton.Config({"BLOCK_F": 128}, num_warps=8, num_stages=3),
+    ],
+    key=["feature_dim"],
+    prune_configs_by={"early_config_prune": filter_configs},
+)
 @triton.jit
 def grad_edge_weight_grad_filters_fused_cfconv_kernel(
     # Input pointers
@@ -524,10 +566,10 @@ def grad_edge_weight_grad_filters_fused_cfconv_kernel(
     cutoff_upper,
     # Sizes
     num_edges,
-    feature_dim,
+    feature_dim: tl.constexpr,
     # Block size
-    BLOCK_F: tl.constexpr,
     OUTPUT_FP16: tl.constexpr,  # Whether to output FP16
+    BLOCK_F: tl.constexpr,
 ):
     """
     Fused kernel for grad_filters computation in CFConv backward pass.
@@ -649,7 +691,6 @@ def grad_edge_weight_grad_filters_fused_cfconv(
     if num_edges == 0:
         return grad_filters
 
-    BLOCK_F = min(128, triton.next_power_of_2(feature_dim))
     grid = (num_edges,)
 
     # Determine if output should be FP16
@@ -666,7 +707,6 @@ def grad_edge_weight_grad_filters_fused_cfconv(
         cutoff_upper,
         num_edges,
         feature_dim,
-        BLOCK_F=BLOCK_F,
         OUTPUT_FP16=output_fp16,
     )
 

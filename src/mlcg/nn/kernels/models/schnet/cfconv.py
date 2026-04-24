@@ -20,6 +20,28 @@ from ...utils import ensure_contiguous
 triton_pi = tl.constexpr(3.141592653589793)
 
 
+def filter_configs(configs, named_args, **kwargs):
+    feature_dim = named_args["feature_dim"]
+    filtered = [
+        cfg for cfg in configs
+        if cfg.kwargs["BLOCK_F"] <= feature_dim
+    ]
+    return filtered if filtered else [min(configs, key=lambda c: c.kwargs["BLOCK_F"])]
+
+@triton.autotune(
+    configs=[
+        triton.Config({"BLOCK_F": 8},   num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 16},  num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 32},  num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 32},  num_warps=4, num_stages=3),
+        triton.Config({"BLOCK_F": 64},  num_warps=4, num_stages=2),
+        triton.Config({"BLOCK_F": 64},  num_warps=8, num_stages=3),
+        triton.Config({"BLOCK_F": 128}, num_warps=4, num_stages=2),
+        triton.Config({"BLOCK_F": 128}, num_warps=8, num_stages=3),
+    ],
+    key=["feature_dim"],
+    prune_configs_by={"early_config_prune": filter_configs},
+)
 @triton.jit
 def fused_cfconv_kernel(
     # Input pointers
@@ -34,10 +56,10 @@ def fused_cfconv_kernel(
     # Parameters
     cutoff_upper,
     num_nodes,
-    feature_dim,
+    feature_dim: tl.constexpr,
     # Block size
-    BLOCK_F: tl.constexpr,
     filters_FP16: tl.constexpr,  # Whether filters is FP16
+    BLOCK_F: tl.constexpr,
 ):
     """
     Fused CSR-based CFConv: cutoff + gather + multiply + segment-reduce.
@@ -183,9 +205,6 @@ def fused_cfconv(
     if num_edges == 0:
         return output
 
-    # Choose block size
-    BLOCK_F = min(128, triton.next_power_of_2(feature_dim))
-
     # Auto-detect filters dtype
     filters_fp16 = filters.dtype == torch.float16
 
@@ -203,7 +222,6 @@ def fused_cfconv(
         cutoff_upper,
         num_nodes,
         feature_dim,
-        BLOCK_F=BLOCK_F,
         filters_FP16=filters_fp16,
     )
 

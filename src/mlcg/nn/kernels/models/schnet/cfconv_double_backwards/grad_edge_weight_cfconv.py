@@ -39,12 +39,32 @@ from ...cutoffs import (
 
 triton_pi = tl.constexpr(3.141592653589793)
 
+def filter_configs(configs, named_args, **kwargs):
+    feature_dim = named_args["feature_dim"]
+    filtered = [
+        cfg for cfg in configs
+        if cfg.kwargs["BLOCK_F"] <= feature_dim
+    ]
+    return filtered if filtered else [min(configs, key=lambda c: c.kwargs["BLOCK_F"])]
 
 # ============================================================================
 # grad_x_grad_edge_weight_fused_cfconv
 # ============================================================================
 
-
+@triton.autotune(
+    configs=[
+        triton.Config({"BLOCK_F": 8},   num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 16},  num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 32},  num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 32},  num_warps=4, num_stages=3),
+        triton.Config({"BLOCK_F": 64},  num_warps=4, num_stages=2),
+        triton.Config({"BLOCK_F": 64},  num_warps=8, num_stages=3),
+        triton.Config({"BLOCK_F": 128}, num_warps=4, num_stages=2),
+        triton.Config({"BLOCK_F": 128}, num_warps=8, num_stages=3),
+    ],
+    key=["feature_dim"],
+    prune_configs_by={"early_config_prune": filter_configs},
+)
 @triton.jit
 def grad_x_grad_edge_weight_fused_cfconv_kernel(
     # Input pointers
@@ -61,11 +81,12 @@ def grad_x_grad_edge_weight_fused_cfconv_kernel(
     cutoff_upper,
     # Sizes
     num_nodes,
-    feature_dim,
+    feature_dim: tl.constexpr,
     # Block size #FIXME: check if other casting are needed
-    BLOCK_F: tl.constexpr,
     filters_FP16: tl.constexpr,
     GRAD_EDGE_WEIGHT_FP16: tl.constexpr,  # Whether to output FP16
+    BLOCK_F: tl.constexpr,
+
 ):
     """
     Triton kernel: Compute grad_x by aggregating over edges using source-CSR format.
@@ -175,7 +196,6 @@ def grad_x_grad_edge_weight_fused_cfconv(
     filters_fp16 = filters.dtype == torch.float16
     grad_edge_weight_fp16 = grad_edge_weight_dtype == torch.float16
 
-    BLOCK_F = min(128, triton.next_power_of_2(feature_dim))
     grid = (num_nodes,)
 
     wrap_triton(grad_x_grad_edge_weight_fused_cfconv_kernel)[grid](
@@ -190,7 +210,6 @@ def grad_x_grad_edge_weight_fused_cfconv(
         cutoff_upper,
         num_nodes,
         feature_dim,
-        BLOCK_F=BLOCK_F,
         filters_FP16=filters_fp16,
         GRAD_EDGE_WEIGHT_FP16=grad_edge_weight_fp16,
     )
@@ -324,7 +343,20 @@ def cpu_grad_x_grad_edge_weight_fused_cfconv(
 # grad_grad_out_grad_edge_weight_fused_cfconv
 # ============================================================================
 
-
+@triton.autotune(
+    configs=[
+        triton.Config({"BLOCK_F": 8},   num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 16},  num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 32},  num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 32},  num_warps=4, num_stages=3),
+        triton.Config({"BLOCK_F": 64},  num_warps=4, num_stages=2),
+        triton.Config({"BLOCK_F": 64},  num_warps=8, num_stages=3),
+        triton.Config({"BLOCK_F": 128}, num_warps=4, num_stages=2),
+        triton.Config({"BLOCK_F": 128}, num_warps=8, num_stages=3),
+    ],
+    key=["feature_dim"],
+    prune_configs_by={"early_config_prune": filter_configs},
+)
 @triton.jit
 def grad_grad_out_grad_edge_weight_fused_cfconv_kernel(
     # Input pointers
@@ -341,11 +373,11 @@ def grad_grad_out_grad_edge_weight_fused_cfconv_kernel(
     cutoff_upper,
     # Sizes
     num_nodes,
-    feature_dim,
+    feature_dim: tl.constexpr,
     # Block size #FIXME: check if other casting are needed
-    BLOCK_F: tl.constexpr,
     filters_FP16: tl.constexpr,
     GRAD_EDGE_WEIGHT_FP16: tl.constexpr,  # Whether to output FP16
+    BLOCK_F: tl.constexpr,
 ):
     """
     Triton kernel: Compute grad_grad_out by aggregating over edges using destination-CSR format.
@@ -458,7 +490,6 @@ def grad_grad_out_grad_edge_weight_fused_cfconv(
     filters_fp16 = filters.dtype == torch.float16
     grad_edge_weight_fp16 = grad_edge_weight_dtype == torch.float16
 
-    BLOCK_F = min(128, triton.next_power_of_2(feature_dim))
     grid = (num_nodes,)
 
     wrap_triton(grad_grad_out_grad_edge_weight_fused_cfconv_kernel)[grid](
@@ -473,7 +504,6 @@ def grad_grad_out_grad_edge_weight_fused_cfconv(
         cutoff_upper,
         num_nodes,
         feature_dim,
-        BLOCK_F=BLOCK_F,
         filters_FP16=filters_fp16,
         GRAD_EDGE_WEIGHT_FP16=grad_edge_weight_fp16,
     )
@@ -604,7 +634,20 @@ def cpu_grad_grad_out_grad_edge_weight_fused_cfconv(
 # grad_filters_grad_edge_weight_fused_cfconv
 # ============================================================================
 
-
+@triton.autotune(
+    configs=[
+        triton.Config({"BLOCK_F": 8},   num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 16},  num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 32},  num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 32},  num_warps=4, num_stages=3),
+        triton.Config({"BLOCK_F": 64},  num_warps=4, num_stages=2),
+        triton.Config({"BLOCK_F": 64},  num_warps=8, num_stages=3),
+        triton.Config({"BLOCK_F": 128}, num_warps=4, num_stages=2),
+        triton.Config({"BLOCK_F": 128}, num_warps=8, num_stages=3),
+    ],
+    key=["feature_dim"],
+    prune_configs_by={"early_config_prune": filter_configs},
+)
 @triton.jit
 def grad_filters_grad_edge_weight_fused_cfconv_kernel(
     # Input pointers
@@ -620,10 +663,10 @@ def grad_filters_grad_edge_weight_fused_cfconv_kernel(
     cutoff_upper,
     # Sizes
     num_edges,
-    feature_dim,
+    feature_dim: tl.constexpr,
     # Block size #FIXME: check if other casting are needed
-    BLOCK_F: tl.constexpr,
     GRAD_EDGE_WEIGHT_FP16: tl.constexpr,  # Whether to output FP16
+    BLOCK_F: tl.constexpr,
 ):
     """
     Triton kernel: Compute grad_filters for each edge independently.
@@ -719,7 +762,6 @@ def grad_filters_grad_edge_weight_fused_cfconv(
 
     grad_edge_weight_fp16 = grad_edge_weight_dtype == torch.float16
 
-    BLOCK_F = min(128, triton.next_power_of_2(feature_dim))
     grid = (num_edges,)
 
     wrap_triton(grad_filters_grad_edge_weight_fused_cfconv_kernel)[grid](
@@ -733,7 +775,6 @@ def grad_filters_grad_edge_weight_fused_cfconv(
         cutoff_upper,
         num_edges,
         feature_dim,
-        BLOCK_F=BLOCK_F,
         GRAD_EDGE_WEIGHT_FP16=grad_edge_weight_fp16,
     )
 
@@ -857,7 +898,20 @@ def cpu_grad_filters_grad_edge_weight_fused_cfconv(
 # grad_edge_weight_grad_edge_weight_fused_cfconv
 # ============================================================================
 
-
+@triton.autotune(
+    configs=[
+        triton.Config({"BLOCK_F": 8},   num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 16},  num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 32},  num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 32},  num_warps=4, num_stages=3),
+        triton.Config({"BLOCK_F": 64},  num_warps=4, num_stages=2),
+        triton.Config({"BLOCK_F": 64},  num_warps=8, num_stages=3),
+        triton.Config({"BLOCK_F": 128}, num_warps=4, num_stages=2),
+        triton.Config({"BLOCK_F": 128}, num_warps=8, num_stages=3),
+    ],
+    key=["feature_dim"],
+    prune_configs_by={"early_config_prune": filter_configs},
+)
 @triton.jit
 def grad_edge_weight_grad_edge_weight_fused_cfconv_kernel(
     # Input pointers
@@ -874,11 +928,11 @@ def grad_edge_weight_grad_edge_weight_fused_cfconv_kernel(
     cutoff_upper,
     # Sizes
     num_edges,
-    feature_dim,
+    feature_dim: tl.constexpr,
     # Block size #FIXME: check if other casting are needed
-    BLOCK_F: tl.constexpr,
     filters_FP16: tl.constexpr,
     GRAD_EDGE_WEIGHT_FP16: tl.constexpr,  # Whether to output FP16
+    BLOCK_F: tl.constexpr,
 ):
     """
     Triton kernel: Compute grad_edge_weight for each edge independently.
@@ -985,7 +1039,6 @@ def grad_edge_weight_grad_edge_weight_fused_cfconv(
     filters_fp16 = filters.dtype == torch.float16
     grad_edge_weight_fp16 = grad_edge_weight_dtype == torch.float16
 
-    BLOCK_F = 128
     grid = (num_edges,)
 
     wrap_triton(grad_edge_weight_grad_edge_weight_fused_cfconv_kernel)[grid](
@@ -1000,7 +1053,6 @@ def grad_edge_weight_grad_edge_weight_fused_cfconv(
         cutoff_upper,
         num_edges,
         feature_dim,
-        BLOCK_F=BLOCK_F,
         filters_FP16=filters_fp16,
         GRAD_EDGE_WEIGHT_FP16=grad_edge_weight_fp16,
     )
