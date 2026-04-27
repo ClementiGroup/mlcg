@@ -247,10 +247,11 @@ class CutoffRepulsion(Repulsion):
         self.name = name
 
     @staticmethod
-    def compute_dev(x, sigma):
-        """Method defining the repulsion interaction"""
-        orig = Repulsion.compute(x, sigma)
-        return -6 * orig / x
+    def compute_with_dev(x, sigma):
+        r"""Method defining the repulsion and its derivative"""
+        orig = CutoffRepulsion.compute(x, sigma)
+        deriv = -6 * orig / x
+        return orig, deriv
 
     def forward(self, data: AtomicData) -> AtomicData:
         """Forward pass through the repulsion interaction.
@@ -284,24 +285,17 @@ class CutoffRepulsion(Repulsion):
         ]
 
         y = Repulsion.compute(features, self.sigma[interaction_types])
-        yc = Repulsion.compute(self.cutoff, self.sigma[interaction_types])
-        # ensure that the cutoff is continupus
-        y = (
-            y
-            - yc
-            - (features - self.cutoff)
-            * (
-                CutoffRepulsion.compute_dev(
-                    self.cutoff, self.sigma[interaction_types]
-                )
-            )
+        yc, dyc = CutoffRepulsion.compute_with_dev(
+            self.cutoff, self.sigma[interaction_types]
         )
+        # ensure that the cutoff is continupus
+        y = y - yc - (features - self.cutoff) * (dyc)
         y = scatter(y, mapping_batch, dim=0, reduce="sum")
         data.out[self.name] = {"energy": y}
         return data
 
     @classmethod
-    def from_repulsion(
+    def from_base(
         cls, repulsion: Repulsion, cutoff: float, name: str = "repulsion"
     ):
         prior_stats = {}
@@ -435,10 +429,11 @@ class CutoffExpRepulsion(ExpRepulsion):
         self.name = name
 
     @staticmethod
-    def compute_dev(x, alpha, r_0):
-        """Method defining the repulsion interaction derivative"""
+    def compute_with_dev(x, alpha, r_0):
+        r"""Method defining the repulsion and its derivative"""
         orig = CutoffExpRepulsion.compute(x, alpha, r_0)
-        return -(alpha / r_0) * orig
+        deriv = -(alpha / r_0) * orig
+        return orig, deriv
 
     def forward(self, data: AtomicData) -> AtomicData:
         """Forward pass through the repulsion interaction.
@@ -474,33 +469,23 @@ class CutoffExpRepulsion(ExpRepulsion):
         y = ExpRepulsion.compute(
             features, self.alpha[interaction_types], self.r_0[interaction_types]
         )
-        yc = ExpRepulsion.compute(
+        yc, dyc = CutoffExpRepulsion.compute_with_dev(
             self.cutoff,
             self.alpha[interaction_types],
             self.r_0[interaction_types],
         )
         # ensure that the cutoff is continupus
-        y = (
-            y
-            - yc
-            - (features - self.cutoff)
-            * (
-                CutoffExpRepulsion.compute_dev(
-                    self.cutoff,
-                    self.alpha[interaction_types],
-                    self.r_0[interaction_types],
-                )
-            )
-        )
+        y = y - yc - (features - self.cutoff) * dyc
         # we can override the
         y = scatter(y, mapping_batch, dim=0, reduce="sum")
         data.out[self.name] = {"energy": y}
         return data
 
     @classmethod
-    def from_repulsion(
+    def from_base(
         cls, repulsion: ExpRepulsion, cutoff: float, name: str = "repulsion"
     ):
+        """initialize a CutoffExpRepulsion from a normal ExpRepulsion"""
         prior_stats = {}
         for key in repulsion.allowed_interaction_keys:
             single_alpha = repulsion.alpha[key]
