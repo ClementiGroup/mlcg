@@ -295,14 +295,12 @@ class CutoffRepulsion(Repulsion):
         return data
 
     @classmethod
-    def from_base(
-        cls, repulsion: Repulsion, cutoff: float, name: str = "repulsion"
-    ):
+    def from_base(cls, repulsion: Repulsion, cutoff: float):
         prior_stats = {}
         for key in repulsion.allowed_interaction_keys:
             single_sigma = repulsion.sigma[key]
             prior_stats[key] = {"sigma": single_sigma}
-        return cls(statistics=prior_stats, cutoff=cutoff, name=name)
+        return cls(statistics=prior_stats, cutoff=cutoff, name=repulsion.name)
 
 
 class ExpRepulsion(_Prior):
@@ -482,13 +480,11 @@ class CutoffExpRepulsion(ExpRepulsion):
         return data
 
     @classmethod
-    def from_base(
-        cls, repulsion: ExpRepulsion, cutoff: float, name: str = "repulsion"
-    ):
+    def from_base(cls, repulsion: ExpRepulsion, cutoff: float):
         """initialize a CutoffExpRepulsion from a normal ExpRepulsion"""
         prior_stats = {}
         for key in repulsion.allowed_interaction_keys:
             single_alpha = repulsion.alpha[key]
             single_r_0 = repulsion.r_0[key]
             prior_stats[key] = {"alpha": single_alpha, "r_0": single_r_0}
-        return cls(statistics=prior_stats, cutoff=cutoff, name=name)
+        return cls(statistics=prior_stats, cutoff=cutoff, name=repulsion.name)
