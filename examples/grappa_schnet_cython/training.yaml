@@ -32,8 +32,6 @@ model:
           # with retain_graph=True so SchNet can also compute gradients
           class_path: mlcg.nn.prior.grappa.grappa_wrappers.StandardGrappa
           init_args:
-            h5_file_path: /group/ag_clementi_cmb/users/sayeg84/mlcg_benchmarking/grappa/2RVD_raw_dataset_bond_exc.h5
-            molecule_name: 2RVD
             graph_node_features: 128
             gnn_width: 256
             gnn_attentional_layers: 2
