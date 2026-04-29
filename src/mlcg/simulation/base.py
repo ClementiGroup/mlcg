@@ -913,7 +913,7 @@ class _Simulation(object):
             self.simulated_potential[save_ind] = potential
 
         if self.save_velocities:
-            v_new = data[VELOCITY_KEY].view(-1, self.n_atoms, self.n_dims)
+            v_new = deepcopy(data[VELOCITY_KEY].detach()).view(-1, self.n_atoms, self.n_dims)
             self.simulated_velocities[save_ind, :, :] = v_new
         if self.save_force_components:
             for key, tensor in self.force_components.items():  # type: ignore , check for None in input validation
