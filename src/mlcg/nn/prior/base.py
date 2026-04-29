@@ -2,6 +2,67 @@ import torch
 from ...data import AtomicData
 
 
+def compute_cell_shifts(
+    pos: torch.Tensor,
+    mapping: torch.Tensor,
+    pbc: torch.Tensor,
+    cell: torch.Tensor,
+    batch: torch.Tensor,
+) -> torch.Tensor:
+    """
+    Compute the minimum vector using index 0 as reference
+        Scale vectors based on box size and shift if greater than half the box size
+        Initial implementation written by Clark Templeton
+        Adapted by Luca Sagresti and Jacopo Venturin
+        Adopted from ase.geometry naive_find_mic
+            https://gitlab.com/ase/ase/
+    Inputs:
+        pos: (n_coords_over_frames x 3(x,y,z))
+            positions from AtomicData object
+        mapping: (order_map x n_mapping)
+            index mapping from AtomicData object
+            order_map = 2,3,4,etc. for harmonic, angle, dihedral, etc.
+        pbc: (frames x 3)
+            whether to apply cell shift in this dimension
+        cell: (frames x 3 x 3)
+            unit cell
+        batch: (n_mapping)
+            which frame corresponds to each mapping
+    Returns:
+        cell_shifts: (n_mapping x 3(x,y,z) x order_map-1)
+            Integer values of how many unit cells to shift for minimum image convention
+                based on the first index in mapping
+    """
+
+    # Must wrap with no grad in order to avoid error when passing through forward
+    with torch.no_grad():
+        atom_groups, mapping_order = mapping.T.shape[:2]
+        cell_shifts = torch.zeros(
+            atom_groups, 3, mapping_order - 1, dtype=pos.dtype
+        ).to(pos.device)
+        if batch == None:
+            batch = torch.zeros(pos.shape[0], dtype=int)
+        batch_ids = batch[mapping[0]]
+        cell_inv = torch.linalg.inv(cell[batch_ids])
+        for ii in range(cell_shifts.shape[-1]):
+            drs = pos[mapping[0]] - pos[mapping[ii + 1]]
+            # convert to fractional displacement
+            frac_dr = torch.einsum(
+                "bij,bj->bi",
+                cell_inv.to(drs.dtype),
+                drs,
+            )
+            # compute unit number of unit cell shifts
+            cell_shifts[:, :, ii] = torch.floor(frac_dr + 0.5)
+            # convert back to cartesian displacement
+            cell_shifts[:, :, ii] = pbc[batch_ids] * torch.einsum(
+                "bij,bj->bi",
+                cell[batch_ids].to(drs.dtype),
+                cell_shifts[:, :, ii],
+            )
+    return cell_shifts
+
+
 class _Prior(torch.nn.Module):
     r"""Abstract prior class
 
@@ -58,3 +119,23 @@ class _Prior(torch.nn.Module):
         given by the `data2features` object.
         """
         raise NotImplementedError
+
+    @staticmethod
+    def _get_cell_shifts(
+        pos: torch.Tensor,
+        mapping: torch.Tensor,
+        pbc: torch.Tensor,
+        cell: torch.Tensor,
+        batch: torch.Tensor,
+    ) -> torch.Tensor:
+        r"""
+        Wrapper method to compute cell shifts using periodic boundary conditions.
+
+        This is a convenience wrapper around the compute_cell_shifts function.
+
+        """
+        if all([feat != None for feat in [pbc, cell]]):
+            cell_shifts = compute_cell_shifts(pos, mapping, pbc, cell, batch)
+        else:
+            cell_shifts = None
+        return cell_shifts

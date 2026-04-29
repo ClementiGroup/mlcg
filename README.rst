@@ -3,7 +3,7 @@ mlcg
 
 .. start-intro
 
-|Docs badge| |License|
+|Docs badge| |License| |Circleci|
 
 .. |Docs badge| image:: https://img.shields.io/badge/mlcg-docs-blue.svg
    :target: https://clementigroup.github.io/mlcg/
@@ -11,6 +11,8 @@ mlcg
 .. |License| image:: https://img.shields.io/github/license/Naereen/StrapDown.js.svg
    :target: https://opensource.org/licenses/MIT
 
+.. |Circleci| image:: https://dl.circleci.com/status-badge/img/gh/ClementiGroup/mlcg/tree/main.svg?style=shield
+    :target: https://dl.circleci.com/status-badge/redirect/gh/ClementiGroup/mlcg/tree/main
 
 This repository collects a set of tools to apply machine learning techniques to coarse grain atomic systems.
 
@@ -50,7 +52,7 @@ The models defined in this library can be conveniently trained using the pytorch
 Examples
 --------
 
-Please take a look into the examples folder to see how to use this code to train a model over an existing dataset.
+Please take a look into the ``examples`` folder of the repository to see how to use this code to train a model over an existing dataset.
 
 
 .. end-intro
@@ -67,7 +69,7 @@ Dependencies
 
 .. code:: bash
 
-    pip install sphinx sphinx_rtd_theme sphinx-autodoc-typehints
+    pip install sphinx shibuya sphinx-autodoc-typehints
 
 
 How to build
@@ -106,7 +108,7 @@ To produce a report locally, run:
     coverage run -m pytest
     coverage report
 
-This will run the full set of tests in `mlcg` and the larger test under `examples/test_examples.py`, 
+This will run the full set of unit and continuity tests in `mlcg` and the larger integration tests under `tests/integration`, 
 including training and simulation of all models described in `examples/input_yamls/README.md`.  
 
 For quick local development testing, it is also possible to exclude the large test by running:
@@ -123,7 +125,8 @@ following commands can do a similar job.
 
 .. code:: bash
 
-    pip install --extra-index-url=https://download.pytorch.org/whl/cu124 torch==2.6.0
+    pip install --extra-index-url=https://download.pytorch.org/whl/cu128 torch==2.8.0
     pip install torch_geometric
-    pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.6.0+cu124.html
+    pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.8.0+cu128.html
     pip install lightning tensorboard torchtnt
+    pip install cuequivariance-torch==0.8.1 cuequivariance-ops-torch-cu12==0.8.1 nvalchemi-toolkit-ops==0.2.0

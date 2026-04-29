@@ -18,4 +18,3 @@ simulation:
   save_forces: false
   save_interval: 250
   specialize_priors: true
-

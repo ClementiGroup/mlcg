@@ -43,7 +43,7 @@ class AtomicData(Data):
         reference forces associated with each structures
     velocities: [n_atoms * n_structures, 3] (optional)
         velocities associated with each structure
-    neighborlist: Dict[str, Dict[str, Any]] (Optional)
+    neighbor_list: Dict[str, Dict[str, Any]] (Optional)
         contains information about the connectivity formatted according to
         :ref:`mlcg.neighbor_list.neighbor_list.make_neighbor_list`.
     batch: [n_atoms]

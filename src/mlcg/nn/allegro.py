@@ -14,6 +14,7 @@ to debug or modify.
 import math
 from e3nn import o3
 import torch
+import warnings
 
 from nequip.data import AtomicDataDict
 from nequip.nn import (
@@ -41,6 +42,28 @@ from mlcg.neighbor_list.neighbor_list import (
 
 from nequip.nn.mlp import ScalarLinearLayer
 
+try:
+    import cuequivariance as cue
+    import cuequivariance_torch as cuet
+
+    CUET_AVAILABLE = True
+except ImportError:
+    CUET_AVAILABLE = False
+    print(
+        "cuEquivariance is not installed. cuEquivariance features will be disabled. It is recommended to install cuEquivariance for better performance. "
+        + "To install cuEquivariance run pip install cuequivariance cuequivariance-torch cuequivariance-ops-torch-cu12 "
+        + 'Replace "cu12" with "cu11" if you are using CUDA 11.'
+    )
+
+if CUET_AVAILABLE:
+    from allegro.nn._strided._contract import Contracter
+
+
+RED = "\033[91m"
+YELLOW = "\033[93m"
+BOLD = "\033[1m"
+RESET = "\033[0m"
+
 
 def init_xavier_uniform(
     module: torch.nn.Module, zero_bias: bool = True
@@ -67,6 +90,29 @@ def init_xavier_uniform(
         torch.nn.init.xavier_uniform_(module.weight)
         if module.bias is not None and zero_bias == True:
             torch.nn.init.constant_(module.bias, 0.0)
+
+
+def _nls_warning(method):
+
+    if torch.compiler.is_compiling():
+        return ""
+    else:
+        return f"""
+        {RED}{BOLD}
+        ============================================================
+        !!!  NLS method warning  !!!
+        ============================================================{RESET}
+
+        You have selected {method} as your neighbor list method for this 
+        allegro model.
+
+        if you want to train or simulate with PBC information, you need to use 
+        the `nvalchemi_raw` method in order to accurately use the PBC information
+        with an allegro model. 
+        {YELLOW}{BOLD}
+        Neighbor list results with other methods WILL BE WRONG
+        {RED}{BOLD}============================================================{RESET}
+        """
 
 
 class Allegro(torch.nn.Module):
@@ -99,8 +145,12 @@ class Allegro(torch.nn.Module):
         Optional pair potential to add to the energy.
     max_num_neighbors : int, default=1000
         Maximum number of neighbors per atom to consider.
+    nls_distance_method:
+        Method for computing a neighbor list. Supported values are
+        `torch`, `nvalchemi_naive`, `nvalchemi_cell` and custom.
     """
 
+    _warned = False
     name: Final[str] = "allegro"
     # list of labels that need to be removed after a forward pass
     # from an atomic data to avoid mismatches
@@ -116,6 +166,19 @@ class Allegro(torch.nn.Module):
         "edge_lengths",
     ]
 
+    # used only to warn
+    def __setstate__(self, state):
+        # Let nn.Module restore itself
+        super().__setstate__(state)
+        nls_met = getattr(self, "nls_distance_method", "torch")
+        if nls_met != "nvalchemi_raw":
+            # nls metod warning
+            warnings.warn(
+                _nls_warning(nls_met),
+                category=UserWarning,
+                stacklevel=2,
+            )
+
     def __init__(
         self,
         edge_norm,
@@ -128,6 +191,7 @@ class Allegro(torch.nn.Module):
         per_type_energy_scale_shift,
         pair_potential=None,
         max_num_neighbors: int = 1000,
+        nls_distance_method: str = "torch",
     ):
         super().__init__()
 
@@ -141,7 +205,14 @@ class Allegro(torch.nn.Module):
         self.per_type_energy_scale_shift = per_type_energy_scale_shift
         self.pair_potential = pair_potential
         self.max_num_neighbors = max_num_neighbors
-
+        self.nls_distance_method = nls_distance_method
+        if self.nls_distance_method != "nvalchemi_raw":
+            # nls metod warning
+            warnings.warn(
+                _nls_warning(getattr(self, "nls_distance_method", None)),
+                category=UserWarning,
+                stacklevel=2,
+            )
         self.reset_parameters()
 
     def forward(self, data):
@@ -173,6 +244,7 @@ class Allegro(torch.nn.Module):
         edge_index = neighbor_list["index_mapping"]
 
         data[AtomicDataDict.EDGE_INDEX_KEY] = edge_index
+        data[AtomicDataDict.EDGE_CELL_SHIFT_KEY] = neighbor_list["cell_shifts"]
         data[AtomicDataDict.NUM_NODES_KEY] = data.n_atoms
         # FIXME: check compatibility with pbc
 
@@ -257,33 +329,22 @@ class Allegro(torch.nn.Module):
                 is_compatible = True
         return is_compatible
 
-    @staticmethod
     def neighbor_list(
-        data: AtomicData, rcut: float, max_num_neighbors: int = 1000
+        self,
+        data: AtomicData,
+        rcut: float,
+        max_num_neighbors: int = 1000,
     ) -> dict:
-        """
-        Compute a neighbor list for the given atomic data.
-
-        Parameters
-        ----------
-        data : AtomicData
-            The atomic data to compute neighbor lists for.
-        rcut : float
-            Cutoff radius for neighbor identification.
-        max_num_neighbors : int, default=1000
-            Maximum number of neighbors per atom.
-
-        Returns
-        -------
-        dict
-            A dictionary containing the computed neighbor list.
-        """
+        """Computes the neighborlist for :obj:`data` using a strict cutoff of :obj:`rcut`."""
+        if not hasattr(self, "nls_distance_method"):
+            self.nls_distance_method = "torch"
         return {
             Allegro.name: atomic_data2neighbor_list(
                 data,
                 rcut,
                 self_interaction=False,
                 max_num_neighbors=max_num_neighbors,
+                nls_distance_method=self.nls_distance_method,
             )
         }
 
@@ -397,8 +458,10 @@ class StandardAllegro(Allegro):
         pair_potential: Optional[Dict] = None,
         # weight initialization and normalization
         forward_normalize: bool = True,
+        # cuequivariance acceleration
+        use_cueq: bool = False,
+        nls_distance_method: str = "torch",
     ):
-
         ## haking jit for module
         _original_script = torch.jit.script
         torch.jit.script = lambda fn: fn  # No-op
@@ -532,6 +595,7 @@ class StandardAllegro(Allegro):
             irreps_in=edge_eng_sum.irreps_out,
         )
 
+        # Build the base model first
         super().__init__(
             edge_norm=edge_norm,
             radial_chemical_embed=radial_chemical_embed_module,
@@ -542,7 +606,20 @@ class StandardAllegro(Allegro):
             edge_eng_sum=edge_eng_sum,
             per_type_energy_scale_shift=per_type_energy_scale_shift,
             pair_potential=pair_potential,
+            nls_distance_method=nls_distance_method,
         )
+
+        # Apply CuEquivariance modifier if requested
+        if use_cueq:
+            if not CUET_AVAILABLE:
+                raise RuntimeError(
+                    "use_cueq=True but cuEquivariance is not installed. "
+                    "Install with: pip install cuequivariance cuequivariance-torch cuequivariance-ops-torch-cu12"
+                )
+
+            # Use Allegro's built-in CuEquivariance modifier
+            Contracter.enable_CuEquivarianceContracter(self)
+
         ## Restoring jit
         torch.jit.script = _original_script
 

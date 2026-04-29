@@ -26,4 +26,4 @@ In the `additional_files` folder you can find some useful yaml input examples fo
 ## Note
 
 1. The detailed data structure information of an H5 Dataset can be found at the [documentation](https://clementigroup.github.io/mlcg/)
-2. The pytorch-lightning script `../../scripts/mlcg-train_h5.py` may serve as an example for constructing training pipelines without pytorch-lightning.
+2. The pytorch-lightning script `${MLCG_ROOT}/scr/mlcg/scripts/mlcg-train_h5.py` may serve as an example for constructing training pipelines without pytorch-lightning.
