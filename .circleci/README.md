@@ -9,17 +9,17 @@ CUDA libraries for GPU usage, it is larger and is currently not used for CI.
 
 # update docker image
 ```
-name : nec4/pytorch_geometric_cpu:v*
+name : sayeg84/mlcg_python_312:v*
 ```
 For `v1.3`, after linking docker to `nec4` account on `DockerHub`, here is an example:
 ```
-docker build  -t nec4/pytorch_geometric_cpu:v1.3 .
-docker push nec4/pytorch_geometric_cpu:v1.3
+docker build  -t sayeg84/mlcg_python_312:v0.1 .
+docker push sayeg84/mlcg_python_312:v0.1
 ```
 
 To setup multiple arch images have a look at `https://www.docker.com/blog/multi-arch-build-and-images-the-simple-way/`.
 
 Then do
 ```
-docker buildx build --platform linux/amd64 -t nec4/pytorch_geometric_cpu:v1.4 --push .
+docker buildx build --platform linux/amd64 -t sayeg84/mlcg_python_312:v0.1 --push .
 ```

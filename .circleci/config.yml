@@ -1,20 +1,49 @@
-version: 2.0
-
+version: 2.1
 jobs:
   test:
     docker:
-      - image: nec4/pytorch_geometric_cpu:v1.5
+      - image: sayeg84/mlcg_python_312:v0.1
+    parallelism: 6   # run tests across 6 parallel containers
     steps:
       - checkout
       - run:
-          name: "Install dependencies and repo"
+          name: "Install enviroment and repo"
           command: |
-            pip3 --version
-            pip3 install -r requirements.txt
-            pip3 install .
+            pip --version
+            pip install --extra-index-url https://download.pytorch.org/whl/cpu -r env_cpu_with_hashes.in
+            pip install --no-deps git+https://github.com/ACEsuit/mace.git@v0.3.13
+            pip install --no-deps nequip==0.12.1 nequip-allegro==0.7.0
+            pip install .
+            pip install pytest-split
       - run:
-          name: "Run tests"
-          command: "pytest ."
+          name: "Run unit tests"
+          command: |
+              set -e
+              mkdir -p test-results
+              pytest -m "unit" --verbose --junitxml=test-results/tests.xml --durations-path tests/.test_durations --splits $CIRCLE_NODE_TOTAL --group $((CIRCLE_NODE_INDEX + 1)) --splitting-algorithm least_duration
+          no_output_timeout: 5m
+      - run:
+          name: "Run continuity tests"
+          command: |
+              set -e
+              mkdir -p test-results
+              pytest -m "continuity" --verbose --junitxml=test-results/tests.xml --durations-path tests/.test_durations --splits $CIRCLE_NODE_TOTAL --group $((CIRCLE_NODE_INDEX + 1)) --splitting-algorithm least_duration
+          no_output_timeout: 60m
+      - run:
+          name: "Run integration tests"
+          command: |
+            if [ -n "$CIRCLE_PULL_REQUEST" ]; then
+              set -e
+              mkdir -p test-results
+              pytest -m "integration" --verbose --junitxml=test-results/tests.xml --durations-path tests/.test_durations --splits $CIRCLE_NODE_TOTAL --group $((CIRCLE_NODE_INDEX + 1)) --splitting-algorithm least_duration
+            else
+              echo "Skipping integration test: not a PR"
+            fi
+          no_output_timeout: 60m
+      - store_test_results:
+          path: test-results
+      - store_artifacts:
+          path: test-results
 
 workflows:
   version: 2

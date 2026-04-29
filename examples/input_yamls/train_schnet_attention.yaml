@@ -1,7 +1,6 @@
 seed_everything: 16384
+ckpt_path: null
 trainer:
-  auto_lr_find: false
-  auto_scale_batch_size: false
   benchmark: false
   callbacks:
     - class_path: pytorch_lightning.callbacks.model_checkpoint.ModelCheckpoint
@@ -11,10 +10,6 @@ trainer:
         monitor: validation_loss
         save_last: true
         save_top_k: -1
-    - class_path: pytorch_lightning.callbacks.TQDMProgressBar
-      init_args:
-        refresh_rate: 20
-  checkpoint_callback: null
   default_root_dir: .
   detect_anomaly: false
   deterministic: false
@@ -31,28 +26,8 @@ trainer:
       save_dir: default_root_dir
       version: ''
   max_epochs: 550
-  move_metrics_to_cpu: false
-  multiple_trainloader_mode: max_size_cycle
   plugins: null
-  prepare_data_per_node: null
   reload_dataloaders_every_n_epochs: 0
-  replace_sampler_ddp: false
-  resume_from_checkpoint: null
-  stochastic_weight_avg: false
-  terminate_on_nan: null
-data:
-  dataset:
-    class_path: mlcg.datasets.ChignolinDataset
-    init_args:
-      root: /path/to/save/dataset/
-  log_dir: default_root_dir
-  val_ratio: 0.1
-  test_ratio: 0.
-  batch_size: 256
-  inference_batch_size: 256
-  num_workers: 0
-  loading_stride: 1
-  save_local_copy: false
 model:
   loss:
     class_path: mlcg.nn.Loss
@@ -78,19 +53,19 @@ model:
               cutoff_upper: 30
           embedding_size: 43
           hidden_channels: 128
-          max_num_neighbors: 200
+          max_num_neighbors: 400
           num_filters: 128
           attention_block:
             class_path: mlcg.nn.ExactAttention
-          num_interactions: 2
+          num_interactions: 1
           num_features_in: 128
           num_features_out: 128
           num_residual_k: 1
           num_residual_q: 1
           num_residual_v: 1
           output_hidden_layer_widths:
-          - 128
-          - 64
+          - 32
+          - 16
           rbf_layer:
             class_path: mlcg.nn.ExpNormalBasis
             init_args:
@@ -102,3 +77,16 @@ optimizer:
   class_path: torch.optim.Adam
   init_args:
     lr: 0.0001
+data:
+  dataset:
+    class_path: mlcg.datasets.ChignolinDataset
+    init_args:
+      root: /path/to/save/dataset/
+  log_dir: default_root_dir
+  val_ratio: 0.1
+  test_ratio: 0.
+  batch_size: 256
+  inference_batch_size: 256
+  num_workers: 0
+  loading_stride: 1
+  save_local_copy: false
