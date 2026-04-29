@@ -190,7 +190,9 @@ def test_simulation_run(
 def test_overdamped_save_velocities_raises(tmp_path):
     """Overdamped simulations cannot be configured to save velocities."""
     fn = tmp_path / OverdampedSimulation.__name__
-    with pytest.raises(ValueError, match="overdamped dynamics has no velocities"):
+    with pytest.raises(
+        ValueError, match="overdamped dynamics has no velocities"
+    ):
         OverdampedSimulation(filename=fn, save_velocities=True)
 
 
@@ -222,7 +224,9 @@ def test_langevin_save_velocities_exports_expected_shape(
     )
     simulation.simulate()
 
-    velocity_file = tmp_path / "langevin_with_saved_velocities_velocities_0000.npy"
+    velocity_file = (
+        tmp_path / "langevin_with_saved_velocities_velocities_0000.npy"
+    )
     assert velocity_file.exists()
 
     exported_velocities = np.load(velocity_file)
