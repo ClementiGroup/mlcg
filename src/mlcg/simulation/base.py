@@ -963,6 +963,7 @@ class _Simulation(object):
             np.save(
                 "{}_velocities_{}.npy".format(self.filename, key),
                 velocities_to_export,
+            )
         if self.save_force_components:
             components_to_export = {
                 name: self._swap_and_export(i)
