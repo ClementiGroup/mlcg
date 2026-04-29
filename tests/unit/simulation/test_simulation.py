@@ -187,6 +187,54 @@ def test_simulation_run(
     simulation.simulate()
 
 
+def test_overdamped_save_velocities_raises(tmp_path):
+    """Overdamped simulations cannot be configured to save velocities."""
+    fn = tmp_path / OverdampedSimulation.__name__
+    with pytest.raises(ValueError, match="overdamped dynamics has no velocities"):
+        OverdampedSimulation(filename=fn, save_velocities=True)
+
+
+def test_langevin_save_velocities_exports_expected_shape(
+    ASE_prior_model, get_initial_data, tmp_path
+):
+    """Langevin simulation should export velocity trajectories when requested."""
+    data_dictionary = ASE_prior_model()
+    full_model = data_dictionary["model"]
+    mol = data_dictionary["molecule"]
+    neighbor_lists = data_dictionary["neighbor_lists"]
+    initial_data_list = get_initial_data(
+        mol, neighbor_lists, corruptor=None, add_masses=True
+    )
+
+    n_timesteps = 20
+    save_interval = 5
+    filename = tmp_path / "langevin_with_saved_velocities"
+    simulation = LangevinSimulation(
+        1.0,
+        filename=filename,
+        n_timesteps=n_timesteps,
+        save_interval=save_interval,
+        export_interval=n_timesteps,
+        save_velocities=True,
+    )
+    simulation.attach_model_and_configurations(
+        full_model, initial_data_list, beta=1.0
+    )
+    simulation.simulate()
+
+    velocity_file = tmp_path / "langevin_with_saved_velocities_velocities_0000.npy"
+    assert velocity_file.exists()
+
+    exported_velocities = np.load(velocity_file)
+    expected_shape = (
+        simulation.n_sims,
+        n_timesteps // save_interval,
+        simulation.n_atoms,
+        simulation.n_dims,
+    )
+    assert exported_velocities.shape == expected_shape
+
+
 @pytest.mark.parametrize(
     "ASE_prior_model, get_initial_data, add_masses, sim_class, sim_args, betas, sim_kwargs",
     [
