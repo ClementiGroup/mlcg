@@ -144,7 +144,7 @@ class EnergyOut(torch.nn.Module):
     ):
         super().__init__()
         if targets is None:
-            targets = ["enegy"]
+            targets = [ENERGY_KEY]
         self.targets = targets
         self.model = model
         self.name = self.model.name

@@ -1,3 +1,157 @@
+r"""Python classes for processing data stored in HDF5 format.
+
+Description
+------------
+
+HDF5 format benefits the dataset management for mlcg-tools when training/validation involves multiple molecules of vastly different lengths and when parallelization is used.
+The main features are:
+
+1. The internal structure mimics the hierarchy of the dataset itself, such that we don't have to replicate it on filesystem.
+2. we don't have to actively open all files in the process
+3. we can transparently load only the necessary part of the dataset to the memory
+
+This file contains the python data structures for handling the HDF5 file and its content, i.e., the coordinates, forces and embedding vectors for multiple CG molecules.
+An example HDF5 file structure and correponding class types after loading:
+
+.. code-block::
+
+        / (HDF-group, => `H5Dataset._h5_root`)
+        ├── OPEP (HDF-group =(part, according to "partition_options")=> `Metaset` in a `Partition`)
+        │   ├── opep_0000 (HDF-group, => `MolData`)
+        │   │   ├── attrs (HDF-attributes of the molecule "/OPEP/opep_0000")
+        │   │   │   ├── cg_embeds (a 1-d numpy.int array)
+        │   │   │   ├── N_frames (int, number of frames = size of cg_coords on axis 0)
+        │   │   │   ... (optional, e.g., cg_top, cg_pdb, etc that corrsponds to the molecule)
+        │   │   ├── cg_coords (HDF-dataset of the molecule "/OPEP/opep_0000", 3-d numpy.float32 array)
+        │   │   └── cg(_delta)_forces (HDF-dataset of the molecule "/OPEP/opep_0000", 3-d numpy.float32 array)
+        │   ... (other molecules in "/OPEP")
+        ├── CATH (HDF-group ="partition_options"=> `Metaset` in a `Partition`)
+        ...
+
+Basic bricks: ``MolData`` and ``MetaSet``
+-----------------------------------------
+
+Data structure ``MolData`` is the basic brick of the dataset.
+It holds embeds, coords and forces of certain number of frames for a single molecule.
+.sub_sample: method for performing indexing on the frames.
+
+
+Data strucuture ``Metaset`` holds multiple molecules and joins their frame indices together.
+One can access frames of underlying MolData objects with a continuous index.
+The idea is that the molecules in a ``Metaset`` have similar numbers of CG beads, such that the sample requires similar processing time when passing through a neural network.
+When this rule is enforced, it will allow automatic balancing of batch composition during training and validation.
+
+* ``.create_from_hdf5_group``: initiate a Metaset by loading data from given HDF-group.mol_list, detailed_indices, hdf_key_mapping, stride and parallel can control which subset is loaded to the Metaset (details see the description of "H5Dataset")
+* ``.trim_down_to``: drop frames of underlying for obtaining a subset with desired number of frames. The indices of frames to be dropped are controlled by a random number generator. When the parameter "random_seed" and the MolData order and number of frames are the same, the frames to be dropped will be reproducible.
+* ``len() (__len__)``: return total number of samples
+* ``[] (__get_item__)``: infer the molecule and get the corresponding frame according to the given unified index. Return value is grouped by an ``AtomicData`` object.
+
+Train test split: ``Partition``
+===============================
+
+Data structure ``Partition`` can hold multiple Metaset for training and validation purposes.
+Its main function is to automatic adjust (subsample) the Metaset(s) and the underlying MolData to form a balanced data source, from which a certain number of batches can be drawn. Each batch will contain a pre-given number of samples from each Metaset.
+One or several ``Partition``s can be created to load part of the same HDF5 file into the memory.
+The exact content inside a ``Partition`` object is controlled by the ``partition_options`` as a parameter for initializing a ``H5Dataset``.
+
+Full Dataset: ``H5Dataset``
+============================
+
+Data strcuture ``H5Dataset`` opens a HDF5 file and establish the partitions.
+``partition_options`` describe what partitions to create and what content to load into them. (Detailed description and examples are as followed.)
+``loading_options`` mainly deal with the HDF key mapping (which datasets/attributes corresponds to the coordinates, forces and embeddings) as well as (optionally) the information for correctly split the dataset in a parallel training/validation.
+
+An example "partition_options" (as a Python Mappable (e.g., dict)):
+
+.. code-block::
+
+        {
+                "train": {
+                        "metasets": {
+                                "OPEP": {
+                                        "molecules": [
+                                                "opep_0000",
+                                                "opep_0001",
+                                                ...
+                                        ],
+                                        "stride": 1, # optional, default 1
+                                        "detailed_indices": {
+                        # optional, providing the indices of frames to work with (before striding and splitting for parallel processes).
+                                                # optional,
+                            "opep_0000":
+                                val_ratio: 0.1
+                                test_ratio: 0.1
+                                seed: 12345
+                            "opep_0001":
+                                val_ratio: 0.1
+                                test_ratio: 0.1
+                                seed: 12345
+                            "filename": ./splits
+
+                        # If detailed_indices are not provided for a given molecule, then it is equivalent to np.arange(N_frames)
+                                                    "opep_0000": [1, 3, 5, 7, 9, ...],
+
+
+                                        },
+                                },
+                                "CATH": {
+                                        "molecules": [
+                                                "cath_1b43A02",
+                                                ...
+                                        ],
+                                        "stride": 1, # optional
+                                        "detailed_indices": {}, # optional
+                                }
+                        },
+                        "batch_size": {
+                                # each batch will contain 24 samples from
+                                # The two metasets will be trimmed down according to this ratio
+                                # so optimally it should be proportional to the ratio of numbers of frames in the metasets.
+                                "OPEP": 24,
+                                "CATH": 6,
+                        },
+                        "subsample_random_seed": 42, # optional, default 42. Random seed for trimming down the frames.
+                        "max_epoch_samples": None, # optional, default None. For setting a desired dataset size.
+                        # Works by subsampling the dataset after it is loaded with the given stride.
+                },
+                "val": { # similar
+                }
+        }
+
+An example "loading_options" (as a Python Mappable (e.g., dict)):
+
+.. code-block::
+
+        {
+                "hdf_key_mapping": {
+                        # keys for reading CG data from HDF5 groups
+                        "embeds": "attrs:cg_embeds",
+                        "coords": "cg_coords",
+                        "forces": "cg_delta_forces",
+                },
+                "parallel": { # optional, default rank=0 and world_size=1 (single process).
+                        # For split the dataset evenly and load only the necessary parts to each process in a parallelized train/val setup
+                        "rank": 0, # which process is this
+                        "world_size": 1, # how many processes are there
+                }
+        }
+
+Loading into PyTorch: ``H5PartitionDataLoader``
+----------------------------------------------
+
+
+Class ``H5PartitionDataLoader`` mimics the pytorch data loader and can generate training/validation batches with fixed proportion of samples from several Metasets in a Partition.
+The proportion and batch size is defined when the partition is initialized.
+When the molecules in each Metaset have similar embedding vector lengths, the processing of output batches will require a more or less fixed size of VRAM on GPU, which can benefit the
+
+
+.. note::
+    Usually in a train-val split, each molecule goes to either the train or the test partition.
+    In some special cases (e.g., non-transferable training) one molecule can be part of both partitions.
+    In this situation, "detailed_indices" can be set to assign the corresponding frames to the desired partitions.
+
+"""
+
 import h5py
 import numpy as np
 import torch
@@ -13,7 +167,7 @@ from copy import copy as shallow_copy
 
 
 class MolData:
-    r"""Data-holder for coordinates, forces and embedding vector of a molecule, e.g., opep_0000.
+    r"""Data-holder for coordinates, forces and embedding vector of a molecule, e.g., cath_1b43A02.
 
     Parameters
     ----------
@@ -25,6 +179,10 @@ class MolData:
         Cartesian coordinates of the molecule, of shape `(n_frames, n_atoms, 3)`
     forces:
         Cartesian forces of the molecule, of shape `(n_frames, n_atoms, 3)`
+    cell:
+        Unit cell of the atomic structure, of shape `(n_frames, 3, 3)`
+    pbc:
+        Periodic boundary conditions, of shape `(n_frames, 3)`
     """
 
     def __init__(
@@ -37,11 +195,15 @@ class MolData:
         noise_levels: np.ndarray = None,
         neighbor_list: dict = None,
         exclusion_pairs: np.ndarray = None,
+        cell: np.ndarray = None,
+        pbc: np.ndarray = None,
     ):
         self._name = name
         self._embeds = embeds
         self._coords = coords
         self._forces = forces
+        self._cell = cell
+        self._pbc = pbc
 
         assert (
             len(self._embeds) == self._coords.shape[1] == self._forces.shape[1]
@@ -102,6 +264,14 @@ class MolData:
     @property
     def n_beads(self):
         return self.coords.shape[1]
+
+    @property
+    def cell(self):
+        return self._cell
+
+    @property
+    def pbc(self):
+        return self._pbc
 
     def __repr__(self):
         return f"""MolData(name={self.name}", N_beads={self.n_beads}, N_frames={self.n_frames})"""
@@ -174,6 +344,8 @@ class MetaSet:
             "forces": "cg_delta_forces",
             "weights": "subsampling_weights",
             "noise_levels": "noise_levels",
+            "cell": "cell",
+            "pbc": "pbc",
         },
         parallel={
             "rank": 0,
@@ -264,6 +436,8 @@ class MetaSet:
                 )
                 split_per_index = False
             selection = select_for_rank(par_range)
+            cell = None  # cell is none by default
+            pbc = None  # pbc is none by default
             if not split_per_index:
                 coords = MetaSet.retrieve_hdf(
                     hdf5_group[mol_name], keys["coords"]
@@ -282,6 +456,20 @@ class MetaSet:
                     weights = MetaSet.retrieve_hdf(
                         hdf5_group[mol_name], keys["weights"]
                     )[selection]
+                if "cell" in hdf_key_mapping:
+                    try:
+                        cell = MetaSet.retrieve_hdf(
+                            hdf5_group[mol_name], keys["cell"]
+                        )[selection]
+                    except Exception:
+                        pass
+                if "pbc" in hdf_key_mapping:
+                    try:
+                        pbc = MetaSet.retrieve_hdf(
+                            hdf5_group[mol_name], keys["pbc"]
+                        )[selection]
+                    except Exception:
+                        pass
             else:
                 # For large dataset it is usually quicker to first load everything
                 # and then perform indexing in memory
@@ -302,6 +490,20 @@ class MetaSet:
                     weights = MetaSet.retrieve_hdf(
                         hdf5_group[mol_name], keys["weights"]
                     )[:][selection]
+                if "cell" in hdf_key_mapping:
+                    try:
+                        cell = MetaSet.retrieve_hdf(
+                            hdf5_group[mol_name], keys["cell"]
+                        )[:][selection]
+                    except Exception:
+                        pass
+                if "pbc" in hdf_key_mapping:
+                    try:
+                        pbc = MetaSet.retrieve_hdf(
+                            hdf5_group[mol_name], keys["pbc"]
+                        )[:][selection]
+                    except Exception:
+                        pass
             neighbor_list = None
             if mol_neighbor_lists is not None:
                 if mol_name in mol_neighbor_lists:
@@ -318,6 +520,8 @@ class MetaSet:
                     noise_levels=noise_levels,
                     neighbor_list=neighbor_list,
                     exclusion_pairs=exclusion_pairs,
+                    cell=cell,
+                    pbc=pbc,
                 )
             )
         output._exclude_listed_pairs = exclude_listed_pairs
@@ -439,6 +643,19 @@ class MetaSet:
         if mol_data.neighbor_list is not None:
             # AtomicData.from_points uses "neighborlist" in args
             point_tensors["neighborlist"] = mol_data.neighbor_list
+        
+        if mol_data.cell is not None:
+            # AtomicData.from_points uses "neighborlist" in args
+            point_tensors["cell"] = mol_data.cell[data_id]
+        else:
+            point_tensors["cell"] = None
+
+        if mol_data.pbc is not None:
+            # AtomicData.from_points uses "neighborlist" in args
+            point_tensors["pbc"] = mol_data.pbc[data_id]
+        else:
+            point_tensors["pbc"] = None
+        
         atd = AtomicData.from_points(**point_tensors)
         if self._exclude_listed_pairs:
             atd.exc_pair_index = torch.tensor(

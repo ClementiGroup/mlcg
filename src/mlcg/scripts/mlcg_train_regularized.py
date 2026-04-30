@@ -21,8 +21,8 @@ def main():
     print("Start: {}".format(ctime()))
 
     cli = LightningCLI(
-        RegularizedPLModel,
-        DataModule,
+        model_class=RegularizedPLModel,
+        datamodule_class=DataModule,
         save_config_kwargs={"overwrite": True},
         parser_kwargs={"error_handler": None},
         auto_configure_optimizers=False,
