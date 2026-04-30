@@ -469,11 +469,9 @@ class StandardSchNet(SchNet):
         output_layer_widths = (
             [hidden_channels] + output_hidden_layer_widths + [1]
         )
-        if output_activation is None:
-            output_activation = activation
         output_network = MLP(
             output_layer_widths,
-            activation_func=output_activation,
+            activation_func=activation,
             last_bias=False,
         )
         super(StandardSchNet, self).__init__(
