@@ -1,9 +1,5 @@
-from .exp_normal import (
-    ExpNormalBasis,
-    ExtendedExpNormalBasis,
-    FilteredExpNormalBasis,
-)
-from .gaussian import GaussianBasis
+from .exp_normal import ExpNormalBasis, ExtendedExpNormalBasis, FilteredExpNormalBasis
+from .gaussian import GaussianBasis, FilteredGaussianBasis
 from .radial_integral_gto import RIGTOBasis
 from .exp_spaced import SpacedExpBasis
 from .regularized_basis import RegularizedBasis
