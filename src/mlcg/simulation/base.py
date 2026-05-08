@@ -897,10 +897,10 @@ class _Simulation(object):
             t // self.save_interval
         ) - self._npy_file_index * self._save_size
 
-        self.simulated_coords[save_ind, :, :] = x_new
+        self.simulated_coords[save_ind, :, :] = x_new.detach()
 
         if self.save_forces:
-            self.simulated_forces[save_ind, :, :] = forces
+            self.simulated_forces[save_ind, :, :] = forces.detach()
 
         if self.save_energies:
             if self.simulated_potential is None:
@@ -910,31 +910,32 @@ class _Simulation(object):
                 ]
                 self.simulated_potential = torch.zeros((potential_dims))
 
-            self.simulated_potential[save_ind] = potential
+            self.simulated_potential[save_ind] = potential.detach()
 
         if self.save_velocities:
-            v_new = deepcopy(data[VELOCITY_KEY].detach()).view(
-                -1, self.n_atoms, self.n_dims
+            v_new = (
+                data[VELOCITY_KEY].detach().view(-1, self.n_atoms, self.n_dims)
             )
             self.simulated_velocities[save_ind, :, :] = v_new
         if self.save_force_components:
             for key, tensor in self.force_components.items():  # type: ignore , check for None in input validation
-                tensor[save_ind, :, :] = deepcopy(
-                    data.out[key][FORCE_KEY].detach()
-                ).view(-1, self.n_atoms, self.n_dims)
+                tensor[save_ind, :, :] = (
+                    data.out[key][FORCE_KEY]
+                    .detach()
+                    .view(-1, self.n_atoms, self.n_dims)
+                )
 
         if self.save_energy_components:
             for key, tensor in self.energy_components.items():  # type: ignore , check for None in input validation
-                tensor[save_ind] = deepcopy(data.out[key][ENERGY_KEY].detach())
+                tensor[save_ind] = data.out[key][ENERGY_KEY].detach()
 
         if self.create_checkpoints:
             self.checkpoint = {}
-            self.checkpoint[POSITIONS_KEY] = deepcopy(
-                data[POSITIONS_KEY].detach()
+            self.checkpoint[POSITIONS_KEY] = (
+                data[POSITIONS_KEY].detach().clone()
             )
-            self.checkpoint[VELOCITY_KEY] = deepcopy(
-                data[VELOCITY_KEY].detach()
-            )
+
+            self.checkpoint[VELOCITY_KEY] = data[VELOCITY_KEY].detach().clone()
 
     def write(self):
         """Utility to write numpy arrays to disk"""
