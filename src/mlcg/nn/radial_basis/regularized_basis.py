@@ -20,23 +20,44 @@ class SymmetricTensor(torch.nn.Module):
 
     """
 
-    def __init__(self, N, size: int, init_val=1.0):
+    def __init__(self, N: int, size: int, init_val: float = 1.0):
         super().__init__()
         self.N = N
         self.size = size
         self.w = torch.nn.Parameter(
             torch.full((N * (N + 1) // 2, size), init_val)
         )
+        self.check_bounds = False
 
-    def forward(self, i, j):
+    def forward(self, i: torch.Tensor, j: torch.Tensor) -> torch.Tensor:
         r"""
         Given indices i,j return the corresponding symmetric tensor entry
         of shape (i.shape, size).
         Here i,j are indeces tensors of same shape.
         """
+        self._check_input_bounds(i, j)
         i_, j_ = torch.minimum(i, j), torch.maximum(i, j)
         k = ((2 * self.N - i_ + 1) * i_) // 2 + (j_ - i_)
         return self.w[k]
+
+    def enable_input_bound_check(self, enable: bool = True):
+        """
+        Allows to skip input bound check during inference.
+        If set to False, no check on the input value in forward
+        might lead to silently uncorrect results.
+        """
+        self.check_bounds = enable
+        return self
+
+    def _check_input_bounds(
+        self, i: Union[torch.Tensor, int], j: Union[torch.Tensor, int]
+    ):
+        if self.check_bounds:
+            invalid = (i >= self.N) | (j >= self.N) | (i < 0) | (j < 0)
+            if invalid.any():
+                raise IndexError(
+                    f"SymmetricTensor indices out of bounds [0, {self.N}): "
+                )
 
 
 class RegularizedBasis(torch.nn.Module):
@@ -222,8 +243,6 @@ class RegularizedBasis(torch.nn.Module):
 
         Parameters:
         ----------
-        distances : torch.Tensor
-            Tensor of shape (num_edges,) containing the distances between atom pairs.
         i : torch.Tensor
             Tensor of shape (num_edges,) containing the types of the first atom in each pair.
         j : torch.Tensor
@@ -239,6 +258,7 @@ class RegularizedBasis(torch.nn.Module):
             1000,
         )
         i, j = torch.as_tensor(i), torch.as_tensor(j)
+        self._check_input_bounds(i, j)
         expanded_distances = self(distances, i, j)
 
         if ax is None:
@@ -252,3 +272,12 @@ class RegularizedBasis(torch.nn.Module):
             )
 
         return ax
+
+    def _check_input_bounds(
+        self, i: Union[torch.Tensor, int], j: Union[torch.Tensor, int]
+    ):
+        invalid = (i >= self.types) | (j >= self.types) | (i < 0) | (j < 0)
+        if invalid.any():
+            raise IndexError(
+                f"SymmetricTensor indices out of bounds [0, {self.types})"
+            )
