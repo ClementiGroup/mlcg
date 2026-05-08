@@ -139,6 +139,7 @@ Note:
 
 import h5py
 import numpy as np
+import pickle
 import torch
 import typing
 import itertools
@@ -801,18 +802,27 @@ class H5DatasetNG:
             "nl_chkpts",
             None,
         )
+
+        def _load_neighbor_list_checkpoint(path):
+            try:
+                return torch.load(path, weights_only=False)
+            except Exception:
+                with open(path, "rb") as handle:
+                    return pickle.load(handle)
+
         if isinstance(neighbor_list_chkpts, dict):
             metaset_mol_neighbor_lists = {}
             for part_name, part_nl_info in neighbor_list_chkpts.items():
                 if isinstance(part_nl_info, str):
                     # this is the case when the same neighborlist will be shared for the whole partition
                     metaset_mol_neighbor_lists[part_name] = {
-                        "_default": torch.load(part_nl_info)
+                        "_default": _load_neighbor_list_checkpoint(part_nl_info)
                     }
                 elif isinstance(part_nl_info, dict):
                     # this is the case when different nls are assigned to different molecules in a partition
                     metaset_mol_neighbor_lists[part_name] = {
-                        k: torch.load(v) for k, v in part_nl_info.items()
+                        k: _load_neighbor_list_checkpoint(v)
+                        for k, v in part_nl_info.items()
                     }
                 else:
                     raise ValueError(
@@ -820,7 +830,9 @@ class H5DatasetNG:
                     )
         elif isinstance(neighbor_list_chkpts, str):
             metaset_mol_neighbor_lists = {
-                "_default": {"_default": torch.load(neighbor_list_chkpts)}
+                "_default": {
+                    "_default": _load_neighbor_list_checkpoint(neighbor_list_chkpts)
+                }
             }
         else:
             metaset_mol_neighbor_lists = None
