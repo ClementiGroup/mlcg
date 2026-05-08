@@ -479,6 +479,9 @@ class StandardPaiNN(PaiNN):
         for more options.
     epsilon:
         Stability constant added in norm to prevent numerical instabilities.
+    nls_distance_method:
+        Method for computing a neighbor list. Supported values are
+        `torch`, `nvalchemi_naive`, `nvalchemi_cell` and custom.
     """
 
     def __init__(
@@ -577,6 +580,9 @@ class RBFRegularizedPaiNN(StandardPaiNN):
         for more options.
     epsilon:
         Stability constant added in norm to prevent numerical instabilities.
+    nls_distance_method:
+        Method for computing a neighbor list. Supported values are
+        `torch`, `nvalchemi_naive`, `nvalchemi_cell` and custom.
 
     CLASS SPECIFIC PARAMETERS -------------------------------------------------------------
 
@@ -598,6 +604,7 @@ class RBFRegularizedPaiNN(StandardPaiNN):
         max_num_neighbors: int = 1000,
         aggr: str = "add",
         epsilon: float = 1e-8,
+        nls_distance_method: str = "torch",
         independent_regularizations: bool = False,
     ):
         rbf_layer = RegularizedBasis(
@@ -617,6 +624,7 @@ class RBFRegularizedPaiNN(StandardPaiNN):
             max_num_neighbors=max_num_neighbors,
             aggr=aggr,
             epsilon=epsilon,
+            nls_distance_method=nls_distance_method,
         )
 
     def forward(self, data: AtomicData):
