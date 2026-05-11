@@ -61,6 +61,9 @@ class _Simulation(object):
     save_energies : bool, default=False
         Whether to save potential at the same saved interval as the simulation
         coordinates
+    save_velocities : bool, default=False
+        Whether to save velocities at the same saved interval as the simulation
+        coordinates
     save_force_components: bool, default=False
             Whether to save model energy components at the same saved interval as the simulation
         coordinates.
@@ -91,8 +94,8 @@ class _Simulation(object):
         Interval at which .npy files will be saved. If an int is given, then
         the int specifies at what intervals numpy files will be saved per
         observable. This number must be an integer multiple of save_interval.
-        All output files should be the same shape. Forces and potentials will
-        also be saved according to the save_forces and save_energies
+        All output files should be the same shape. Forces, potential and velocities
+        will also be saved according to the save_forces, save_energies and save_velocities
         arguments, respectively. If friction is not None, kinetic energies
         will also be saved. This method is only implemented for a maximum of
         1000 files per observable due to file naming conventions.
@@ -146,6 +149,7 @@ class _Simulation(object):
         dt: float = 5e-4,
         save_forces: bool = False,
         save_energies: bool = False,
+        save_velocities: bool = False,
         save_force_components: bool = False,
         save_energy_components: bool = False,
         force_components: list[str] | str | None = None,
@@ -175,6 +179,7 @@ class _Simulation(object):
         self.specialize_priors = specialize_priors
         self.save_forces = save_forces
         self.save_energies = save_energies
+        self.save_velocities = save_velocities
         self.save_force_components = save_force_components
         self.save_energy_components = save_energy_components
 
@@ -816,6 +821,12 @@ class _Simulation(object):
         else:
             self.simulated_potential = None
 
+        if self.save_velocities:
+            self.simulated_velocities = torch.zeros(
+                (self._save_size, self.n_sims, self.n_atoms, self.n_dims)
+            )
+        else:
+            self.simulated_velocities = None
         if self.save_force_components:
             self.force_components = {
                 key: torch.zeros(
@@ -861,8 +872,8 @@ class _Simulation(object):
         also forces, potential, and/or kinetic energy
         Parameters
         ----------
-        x_new :
-            current coordinates
+        data :
+            atomic data object containing current coordinates
         forces:
             current forces
         potential :
@@ -870,7 +881,7 @@ class _Simulation(object):
         t :
             current timestep
         """
-        x_new = data.pos.view(-1, self.n_atoms, self.n_dims)
+        x_new = data[POSITIONS_KEY].view(-1, self.n_atoms, self.n_dims)
         forces = forces.view(-1, self.n_atoms, self.n_dims)
 
         pos_spread = x_new.std(dim=(1, 2)).detach()
@@ -886,10 +897,10 @@ class _Simulation(object):
             t // self.save_interval
         ) - self._npy_file_index * self._save_size
 
-        self.simulated_coords[save_ind, :, :] = x_new
+        self.simulated_coords[save_ind, :, :] = x_new.detach()
 
         if self.save_forces:
-            self.simulated_forces[save_ind, :, :] = forces
+            self.simulated_forces[save_ind, :, :] = forces.detach()
 
         if self.save_energies:
             if self.simulated_potential is None:
@@ -899,26 +910,32 @@ class _Simulation(object):
                 ]
                 self.simulated_potential = torch.zeros((potential_dims))
 
-            self.simulated_potential[save_ind] = potential
+            self.simulated_potential[save_ind] = potential.detach()
 
+        if self.save_velocities:
+            v_new = (
+                data[VELOCITY_KEY].detach().view(-1, self.n_atoms, self.n_dims)
+            )
+            self.simulated_velocities[save_ind, :, :] = v_new
         if self.save_force_components:
             for key, tensor in self.force_components.items():  # type: ignore , check for None in input validation
-                tensor[save_ind, :, :] = deepcopy(
-                    data.out[key][FORCE_KEY].detach()
-                ).view(-1, self.n_atoms, self.n_dims)
+                tensor[save_ind, :, :] = (
+                    data.out[key][FORCE_KEY]
+                    .detach()
+                    .view(-1, self.n_atoms, self.n_dims)
+                )
 
         if self.save_energy_components:
             for key, tensor in self.energy_components.items():  # type: ignore , check for None in input validation
-                tensor[save_ind] = deepcopy(data.out[key][ENERGY_KEY].detach())
+                tensor[save_ind] = data.out[key][ENERGY_KEY].detach()
 
         if self.create_checkpoints:
             self.checkpoint = {}
-            self.checkpoint[POSITIONS_KEY] = deepcopy(
-                data[POSITIONS_KEY].detach()
+            self.checkpoint[POSITIONS_KEY] = (
+                data[POSITIONS_KEY].detach().clone()
             )
-            self.checkpoint[VELOCITY_KEY] = deepcopy(
-                data[VELOCITY_KEY].detach()
-            )
+
+            self.checkpoint[VELOCITY_KEY] = data[VELOCITY_KEY].detach().clone()
 
     def write(self):
         """Utility to write numpy arrays to disk"""
@@ -943,6 +960,13 @@ class _Simulation(object):
                 potentials_to_export,
             )
 
+        if self.save_velocities:
+            velocities_to_export = self.simulated_velocities
+            velocities_to_export = self._swap_and_export(velocities_to_export)
+            np.save(
+                "{}_velocities_{}.npy".format(self.filename, key),
+                velocities_to_export,
+            )
         if self.save_force_components:
             components_to_export = {
                 name: self._swap_and_export(i)
@@ -989,6 +1013,12 @@ class _Simulation(object):
         else:
             self.simulated_potential = None
 
+        if self.save_velocities:
+            self.simulated_velocities = torch.zeros(
+                (self._save_size, self.n_sims, self.n_atoms, self.n_dims)
+            )
+        else:
+            self.simulated_velocities = None
         if self.save_force_components:
             self.force_components = {
                 key: torch.zeros(
@@ -1021,6 +1051,10 @@ class _Simulation(object):
                 self.simulated_potential
             )
 
+        if self.save_velocities:
+            self.simulated_velocities = self._swap_and_export(
+                self.simulated_velocities
+            )
         if self.save_force_components:
             self.force_components = {
                 key: self._swap_and_export(tensor)
