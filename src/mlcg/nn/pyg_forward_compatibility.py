@@ -100,7 +100,7 @@ def _search_for_model(
     """Recursively search for model_type in all submodules."""
     if isinstance(top_level, model_type):
         yield top_level
-    elif isinstance(top_level, (int, str, float, torch.Tensor, list)):
+    elif isinstance(top_level, (int, str, float, torch.Tensor, list)) or top_level is None:
         pass
     elif isinstance(top_level, torch.nn.ModuleDict) or isinstance(
         top_level, Mapping
