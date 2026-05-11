@@ -124,6 +124,64 @@ class ExpNormalBasis(_RadialBasis):
         )
 
 
+class FilteredExpNormalBasis(ExpNormalBasis):
+    r"""ExpNormalBasis that only evaluates a subset of the basis functions
+    selected by a boolean ``lambda_filter`` tensor of shape ``(num_rbf,)``.
+
+    The output of :meth:`forward` is a tensor of shape
+    ``(total_num_edges, lambda_filter.sum())`` where only the basis functions
+    whose corresponding ``lambda_filter`` entry is ``True`` are evaluated.
+
+    Parameters
+    ----------
+    cutoff:
+        See :class:`ExpNormalBasis`.
+    lambda_filter:
+        Boolean tensor of shape ``(num_rbf,)`` selecting which basis functions
+        are kept in the expansion.
+    num_rbf:
+        Total number of basis functions (before filtering).
+    trainable:
+        See :class:`ExpNormalBasis`. Only the kept means/betas are registered.
+    """
+
+    def __init__(
+        self,
+        cutoff: Union[int, float, _Cutoff],
+        lambda_filter: torch.Tensor,
+        num_rbf: int = 50,
+        trainable: bool = False,
+    ):
+        super().__init__(cutoff=cutoff, num_rbf=num_rbf, trainable=trainable)
+
+        lambda_filter = lambda_filter.to(device=self.means.device)
+        if lambda_filter.dtype != torch.bool:
+            lambda_filter = lambda_filter.to(torch.bool)
+        if lambda_filter.numel() != num_rbf:
+            raise ValueError(
+                f"lambda_filter must have {num_rbf} elements, got {lambda_filter.numel()}"
+            )
+
+        means = self.means.data[lambda_filter].clone()
+        betas = self.betas.data[lambda_filter].clone()
+
+        delattr(self, "means")
+        delattr(self, "betas")
+        if trainable:
+            self.register_parameter("means", nn.Parameter(means))
+            self.register_parameter("betas", nn.Parameter(betas))
+        else:
+            self.register_buffer("means", means)
+            self.register_buffer("betas", betas)
+
+        self.register_buffer("lambda_filter", lambda_filter)
+
+    def reset_parameters(self):
+        means, betas = self._initial_params()
+        self.means.data.copy_(means[self.lambda_filter])
+        self.betas.data.copy_(betas[self.lambda_filter])
+
+
 class ExtendedExpNormalBasis(ExpNormalBasis):
     r"""ExpNormalBasis that allows for arbitrary lower cutoffs not tied to
     a supplied `_Cutoff`. This basis follows the definition in [Physnet]_.

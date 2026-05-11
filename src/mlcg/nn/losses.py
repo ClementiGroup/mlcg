@@ -190,7 +190,9 @@ class RegL1(_Loss):
         reduce: Optional[bool] = None,
         reduction: str = "mean",
     ) -> None:
-        super().__init__(size_average=size_average, reduce=reduce, reduction=reduction)
+        super().__init__(
+            size_average=size_average, reduce=reduce, reduction=reduction
+        )
 
         self.reg_kwd = reg_kwd
         self.reg_factor = regularization_factor
@@ -228,10 +230,12 @@ class RegL1(_Loss):
             )
 
         return self.reg_factor * torch.nn.functional.l1_loss(
-                                                            data.out[self.reg_kwd],
-                                                            torch.zeros_like(data.out[self.reg_kwd]),
-                                                            reduction=self.reduction,
-                                                        )
+            data.out[self.reg_kwd],
+            torch.zeros_like(data.out[self.reg_kwd]),
+            reduction=self.reduction,
+        )
+
+
 class EnergyMSE(_Loss):
     r"""Energy mean square error per atom loss, as defined by:
 

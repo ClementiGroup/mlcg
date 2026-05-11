@@ -236,3 +236,255 @@ class Repulsion(_Prior):
                 Repulsion._neighbor_list_name
             )
         }
+
+
+class CutoffRepulsion(Repulsion):
+    def __init__(
+        self, statistics: Dict, cutoff: float, name: str = "repulsion"
+    ) -> None:
+        super().__init__(statistics=statistics)
+        self.cutoff = cutoff
+        self.name = name
+
+    @staticmethod
+    def compute_with_dev(x, sigma):
+        r"""Method defining the repulsion and its derivative"""
+        orig = CutoffRepulsion.compute(x, sigma)
+        deriv = -6 * orig / x
+        return orig, deriv
+
+    def forward(self, data: AtomicData) -> AtomicData:
+        """Forward pass through the repulsion interaction.
+
+        Parameters
+        ----------
+        data:
+            Input AtomicData instance that possesses an appropriate
+            neighbor list containing both an 'index_mapping'
+            field and a 'mapping_batch' field for accessing
+            beads relevant to the interaction and scattering
+            the interaction energies onto the correct example/structure
+            respectively.
+
+        Returns
+        -------
+        AtomicData:
+            Updated AtomicData instance with the 'out' field
+            populated with the predicted energies for each
+            example/structure
+        """
+
+        features = self.data2features(data)
+        # filter all distances that are larger than the cutoff
+        mask = features < self.cutoff
+        features = features[mask]
+        mapping = data.neighbor_list[self.name]["index_mapping"][:, mask]
+        mapping_batch = data.neighbor_list[self.name]["mapping_batch"][mask]
+        interaction_types = [
+            data.atom_types[mapping[ii]] for ii in range(self.order)
+        ]
+
+        y = Repulsion.compute(features, self.sigma[interaction_types])
+        yc, dyc = CutoffRepulsion.compute_with_dev(
+            self.cutoff, self.sigma[interaction_types]
+        )
+        # ensure that the cutoff is continupus
+        y = y - yc - (features - self.cutoff) * (dyc)
+        y = scatter(y, mapping_batch, dim=0, reduce="sum")
+        data.out[self.name] = {"energy": y}
+        return data
+
+    @classmethod
+    def from_base(cls, repulsion: Repulsion, cutoff: float):
+        prior_stats = {}
+        for key in repulsion.allowed_interaction_keys:
+            single_sigma = repulsion.sigma[key]
+            prior_stats[key] = {"sigma": single_sigma}
+        return cls(statistics=prior_stats, cutoff=cutoff, name=repulsion.name)
+
+
+class ExpRepulsion(_Prior):
+    r"""1-D exp-6 potential repulsion prior for feature :math:`x` of the form:
+
+    .. math::
+
+        U_{ \textnormal{ExpRepulsion}}(x) = (6/\alpha)exp[\alpha(1 - x/r_0)]
+
+    where :math:`\alpha` is the strength of the repulsion and :math:`r_0` is the excluded volume.
+
+    Parameters
+    ----------
+    statistics:
+        Dictionary of interaction parameters for each type of atom pair,
+        where the keys are tuples of interacting bead types and the
+        corresponding values define the interaction parameters. These
+        Can be hand-designed or taken from the output of
+        `mlcg.geometry.statistics.compute_statistics`, but must minimally
+        contain the following information for each key:
+
+        .. code-block:: python
+
+            tuple(*specific_types) : {
+                "alpha" : torch.Tensor scalar that describes the strength of the repulsion.
+                "r_0" : torch.Tensor scalar that describes the excluded volume.
+                ...
+
+                }
+        The keys can be tuples of 2 integer atom types.
+    """
+
+    name: Final[str] = "repulsion"
+    _neighbor_list_name = "fully connected"
+
+    def __init__(self, statistics: Dict) -> None:
+        super(ExpRepulsion, self).__init__()
+        keys = torch.tensor(list(statistics.keys()), dtype=torch.long)
+        self.allowed_interaction_keys = list(statistics.keys())
+        self.order = 2
+        self.name = self.name
+        unique_types = torch.unique(keys.flatten())
+        assert unique_types.min() >= 0
+        max_type = unique_types.max()
+        sizes = tuple([max_type + 1 for _ in range(self.order)])
+        alpha = torch.zeros(sizes)
+        r_0 = torch.zeros(sizes)
+        for key in statistics.keys():
+            alpha[key] = statistics[key]["alpha"]
+            r_0[key] = statistics[key]["r_0"]
+        self.register_buffer("alpha", alpha)
+        self.register_buffer("r_0", r_0)
+
+    def data2features(self, data: AtomicData) -> torch.Tensor:
+        """Computes features for the harmonic interaction from
+        an AtomicData instance)
+        """
+
+        mapping = data.neighbor_list[self.name]["index_mapping"]
+        return ExpRepulsion.compute_features(data.pos, mapping)
+
+    def forward(self, data: AtomicData) -> AtomicData:
+        """Forward pass through the repulsion interaction.
+
+        Parameters
+        ----------
+        data:
+            Input AtomicData instance that possesses an appropriate
+            neighbor list containing both an 'index_mapping'
+            field and a 'mapping_batch' field for accessing
+            beads relevant to the interaction and scattering
+            the interaction energies onto the correct example/structure
+            respectively.
+
+        Returns
+        -------
+        AtomicData:
+            Updated AtomicData instance with the 'out' field
+            populated with the predicted energies for each
+            example/structure
+        """
+
+        mapping = data.neighbor_list[self.name]["index_mapping"]
+        mapping_batch = data.neighbor_list[self.name]["mapping_batch"]
+        interaction_types = [
+            data.atom_types[mapping[ii]] for ii in range(self.order)
+        ]
+        features = self.data2features(data)
+        y = ExpRepulsion.compute(
+            features, self.alpha[interaction_types], self.r_0[interaction_types]
+        )
+        y = scatter(y, mapping_batch, dim=0, reduce="sum")
+        data.out[self.name] = {"energy": y}
+        return data
+
+    @staticmethod
+    def compute_features(pos, mapping):
+        return compute_distances(pos, mapping)
+
+    @staticmethod
+    def compute(x, alpha, r_0):
+        """Method defining the repulsion interaction"""
+        rr = 1 - (x / r_0)
+        return (6 / alpha) * torch.exp(alpha * rr)
+
+    @staticmethod
+    def neighbor_list(topology: Topology) -> Dict:
+        """Method for computing a neighbor list from a topology
+        and a chosen feature type.
+        """
+        return {
+            ExpRepulsion.name: topology.neighbor_list(
+                ExpRepulsion._neighbor_list_name
+            )
+        }
+
+
+class CutoffExpRepulsion(ExpRepulsion):
+    def __init__(
+        self, statistics: Dict, cutoff: float, name: str = "repulsion"
+    ) -> None:
+        super().__init__(statistics=statistics)
+        self.cutoff = cutoff
+        self.name = name
+
+    @staticmethod
+    def compute_with_dev(x, alpha, r_0):
+        r"""Method defining the repulsion and its derivative"""
+        orig = CutoffExpRepulsion.compute(x, alpha, r_0)
+        deriv = -(alpha / r_0) * orig
+        return orig, deriv
+
+    def forward(self, data: AtomicData) -> AtomicData:
+        """Forward pass through the repulsion interaction.
+
+        Parameters
+        ----------
+        data:
+            Input AtomicData instance that possesses an appropriate
+            neighbor list containing both an 'index_mapping'
+            field and a 'mapping_batch' field for accessing
+            beads relevant to the interaction and scattering
+            the interaction energies onto the correct example/structure
+            respectively.
+
+        Returns
+        -------
+        AtomicData:
+            Updated AtomicData instance with the 'out' field
+            populated with the predicted energies for each
+            example/structure
+        """
+
+        features = self.data2features(data)
+        # filter all distances that are larger than the cutoff
+        mask = features < self.cutoff
+        features = features[mask]
+        mapping = data.neighbor_list[self.name]["index_mapping"][:, mask]
+        mapping_batch = data.neighbor_list[self.name]["mapping_batch"][mask]
+        interaction_types = [
+            data.atom_types[mapping[ii]] for ii in range(self.order)
+        ]
+
+        y = ExpRepulsion.compute(
+            features, self.alpha[interaction_types], self.r_0[interaction_types]
+        )
+        yc, dyc = CutoffExpRepulsion.compute_with_dev(
+            self.cutoff,
+            self.alpha[interaction_types],
+            self.r_0[interaction_types],
+        )
+        # ensure that the cutoff is continupus
+        y = y - yc - (features - self.cutoff) * dyc
+        # we can override the
+        y = scatter(y, mapping_batch, dim=0, reduce="sum")
+        data.out[self.name] = {"energy": y}
+        return data
+
+    @classmethod
+    def from_base(cls, repulsion: ExpRepulsion, cutoff: float):
+        """initialize a CutoffExpRepulsion from a normal ExpRepulsion"""
+        prior_stats = {}
+        for key in repulsion.allowed_interaction_keys:
+            single_alpha = repulsion.alpha[key]
+            single_r_0 = repulsion.r_0[key]
+            prior_stats[key] = {"alpha": single_alpha, "r_0": single_r_0}
+        return cls(statistics=prior_stats, cutoff=cutoff, name=repulsion.name)
