@@ -36,6 +36,7 @@ __all__ = [
     "SchNet",
     "StandardSchNet",
     "RBFRegularizedSchNet",
+    "EdgeRBFRegularizedSchNet",
     "GaussianBasis",
     "ExpNormalBasis",
     "FilteredExpNormalBasis",

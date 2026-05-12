@@ -65,7 +65,8 @@ class SchNet(torch.nn.Module):
         distance cutoffs and expect more than 32 neighbors per node/atom.
     nls_distance_method:
         Method for computing a neighbor list. Supported values are
-        `torch`, `nvalchemi_naive`, `nvalchemi_cell` and custom.
+        `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`
+        and `custom_kernel`.
     """
 
     name: Final[str] = "SchNet"
@@ -401,7 +402,8 @@ class StandardSchNet(SchNet):
         for more options.
     nls_distance_method:
         Method for computing a neighbor list. Supported values are
-        `torch`, `nvalchemi_naive`, `nvalchemi_cell` and custom.
+        `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`
+        and `custom_kernel`.
 
     """
 
@@ -518,6 +520,10 @@ class AttentiveSchNet(SchNet):
         Inverting the order of linear layers and activation functions.
     attention_version:
         Specifiy which interaction block architecture to choose. By default normal.
+    nls_distance_method:
+        Method for computing a neighbor list. Supported values are
+        `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`
+        and `custom_kernel`.
 
     """
 
@@ -703,7 +709,8 @@ class RBFRegularizedSchNet(StandardSchNet):
         for more options.
     nls_distance_method:
         Method for computing a neighbor list. Supported values are
-        `torch`, `nvalchemi_naive`, `nvalchemi_cell` and custom.
+        `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`
+        and `custom_kernel`.
 
     CLASS SPECIFIC PARAMETERS -------------------------------------------------------------
 

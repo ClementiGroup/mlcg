@@ -633,8 +633,9 @@ class So3krates(nn.Module):
         normalize_sph (bool):
             Whether to normalize spherical harmonics, default is True.
         nls_distance_method:
-            Method for computing a neighbor list. Supported values are
-            `torch`, `nvalchemi_naive`, `nvalchemi_cell` and custom.
+        Method for computing a neighbor list. Supported values are
+        `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`
+        and `custom_kernel`.
     """
 
     name: Final[str] = "So3krates"
@@ -791,6 +792,10 @@ class StandardSo3krates(So3krates):
             Maximum number of neighbors per atom.
         normalize_sph (bool):
             Whether to normalize spherical harmonics, default is True.
+        nls_distance_method:
+            Method for computing a neighbor list. Supported values are
+            `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`
+            and `custom_kernel`.
     """
 
     def __init__(
