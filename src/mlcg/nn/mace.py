@@ -198,7 +198,7 @@ class MACE(torch.nn.Module):
             Optional pairwise repulsion energy function.
         nls_distance_method:
         Method for computing a neighbor list. Supported values are
-        `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw` 
+        `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`
         and `custom_kernel`.
     """
 
@@ -418,7 +418,7 @@ class StandardMACE(MACE):
             Whether to use cuEquivariance acceleration.
         nls_distance_method:
             Method for computing a neighbor list. Supported values are
-            `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw` 
+            `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`
             and `custom_kernel`.
     """
 

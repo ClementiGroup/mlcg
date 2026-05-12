@@ -634,7 +634,7 @@ class So3krates(nn.Module):
             Whether to normalize spherical harmonics, default is True.
         nls_distance_method:
         Method for computing a neighbor list. Supported values are
-        `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw` 
+        `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`
         and `custom_kernel`.
     """
 
@@ -794,7 +794,7 @@ class StandardSo3krates(So3krates):
             Whether to normalize spherical harmonics, default is True.
         nls_distance_method:
             Method for computing a neighbor list. Supported values are
-            `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw` 
+            `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`
             and `custom_kernel`.
     """
 

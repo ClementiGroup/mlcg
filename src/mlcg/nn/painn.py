@@ -481,7 +481,7 @@ class StandardPaiNN(PaiNN):
         Stability constant added in norm to prevent numerical instabilities.
     nls_distance_method:
         Method for computing a neighbor list. Supported values are
-        `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw` 
+        `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`
         and `custom_kernel`.
     """
 
@@ -583,7 +583,7 @@ class RBFRegularizedPaiNN(StandardPaiNN):
         Stability constant added in norm to prevent numerical instabilities.
     nls_distance_method:
         Method for computing a neighbor list. Supported values are
-        `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw` 
+        `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`
         and `custom_kernel`.
 
     CLASS SPECIFIC PARAMETERS -------------------------------------------------------------
