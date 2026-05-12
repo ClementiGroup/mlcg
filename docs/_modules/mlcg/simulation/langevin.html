@@ -517,13 +517,22 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="366">            <span class="s2">&quot;using &#39;attach_configurations&#39; is deprecated, use &#39;attach_model_and_configurations&#39; instead.&quot;</span><span class="p">,</span>
 </span><span data-line="367">            <span class="ne">DeprecationWarning</span><span class="p">,</span>
 </span><span data-line="368">        <span class="p">)</span>
-</span><span data-line="369">        <span class="bp">self</span><span class="o">.</span><span class="n">_attach_configurations</span><span class="p">(</span><span class="n">configurations</span><span class="p">,</span> <span class="n">beta</span><span class="p">)</span></div>
-
+</span><span data-line="369">        <span class="bp">self</span><span class="o">.</span><span class="n">_attach_configurations</span><span class="p">(</span><span class="n">configurations</span><span class="p">,</span> <span class="n">beta</span><span class="p">)</span>
 </span><span data-line="370">
-</span><span data-line="371">
-</span><span data-line="372"><span class="c1"># pipe the doc from the base class into the child class so that it&#39;s properly</span>
-</span><span data-line="373"><span class="c1"># displayed by sphinx</span>
-</span><span data-line="374"><span class="n">OverdampedSimulation</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">+=</span> <span class="n">_Simulation</span><span class="o">.</span><span class="vm">__doc__</span>
+</span><span data-line="371">    <span class="k">def</span><span class="w"> </span><span class="nf">input_option_checks</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span data-line="372">        <span class="nb">super</span><span class="p">(</span><span class="n">OverdampedSimulation</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">input_option_checks</span><span class="p">()</span>
+</span><span data-line="373">        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_velocities</span><span class="p">:</span>
+</span><span data-line="374">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+</span><span data-line="375">                <span class="s2">&quot;save_velocities=True is not supported for OverdampedSimulation &quot;</span>
+</span><span data-line="376">                <span class="s2">&quot;because overdamped dynamics has no velocities. Use &quot;</span>
+</span><span data-line="377">                <span class="s2">&quot;LangevinSimulation if velocity output is needed.&quot;</span>
+</span><span data-line="378">            <span class="p">)</span></div>
+
+</span><span data-line="379">
+</span><span data-line="380">
+</span><span data-line="381"><span class="c1"># pipe the doc from the base class into the child class so that it&#39;s properly</span>
+</span><span data-line="382"><span class="c1"># displayed by sphinx</span>
+</span><span data-line="383"><span class="n">OverdampedSimulation</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">+=</span> <span class="n">_Simulation</span><span class="o">.</span><span class="vm">__doc__</span>
 </span></pre></div>
         </article><button class="back-to-top" type="button">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
