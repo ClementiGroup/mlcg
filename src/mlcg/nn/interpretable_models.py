@@ -102,6 +102,9 @@ class EdgeRBFRegularizedSchNet(StandardSchNet):
         Aggregation scheme for continuous filter output. For all options,
         see `here <https://pytorch-geometric.readthedocs.io/en/latest/notes/create_gnn.html?highlight=MessagePassing#the-messagepassing-base-class>`_
         for more options.
+    nls_distance_method:
+        Method for computing a neighbor list. Supported values are
+        `torch`, `nvalchemi_naive`, `nvalchemi_cell` and custom.
 
     CLASS SPECIFIC PARAMETERS -------------------------------------------------------------
 
@@ -124,6 +127,7 @@ class EdgeRBFRegularizedSchNet(StandardSchNet):
         activation: torch.nn.Module = torch.nn.Tanh(),
         max_num_neighbors: int = 1000,
         aggr: str = "add",
+        nls_distance_method: str = "torch",
         independent_regularizations: bool = False,
     ):
 
@@ -144,6 +148,7 @@ class EdgeRBFRegularizedSchNet(StandardSchNet):
             activation=activation,
             max_num_neighbors=max_num_neighbors,
             aggr=aggr,
+            nls_distance_method=nls_distance_method,
         )
 
         # Replace standard interaction blocks with EdgeAware versions
@@ -182,41 +187,18 @@ class EdgeRBFRegularizedSchNet(StandardSchNet):
         neighbor_list = data.neighbor_list.get(self.name)
 
         if not self.is_nl_compatible(neighbor_list):
-            # we need to generate the neighbor list
-            # check whether we are using the custom kernel
-            # 1. mlcg_opt_radius is installed
-            # 2. input data is on CUDA
-            # 3. not using PBC (TODO)
-            use_custom_kernel = False
-            if (radius_distance is not None) and x.is_cuda:
-                use_custom_kernel = True
-            if not use_custom_kernel:
-                if hasattr(data, "exc_pair_index"):
-                    raise NotImplementedError(
-                        "Excluding pairs requires `mlcg_opt_radius` "
-                        "to be available and model running with CUDA."
-                    )
-                neighbor_list = self.neighbor_list(
-                    data,
-                    self.rbf_layer.cutoff.cutoff_upper,
-                    self.max_num_neighbors,
-                )[self.name]
-        if use_custom_kernel:
-            distances, edge_index = radius_distance(
-                data.pos,
+            neighbor_list = self.neighbor_list(
+                data,
                 self.rbf_layer.cutoff.cutoff_upper,
-                data.batch,
-                False,  # no loop edges due to compatibility & backward breaks with zero distance
                 self.max_num_neighbors,
-                exclude_pair_indices=data.get("exc_pair_index"),
-            )
-        else:
-            edge_index = neighbor_list["index_mapping"]
-            distances = compute_distances(
-                data.pos,
-                edge_index,
-                neighbor_list["cell_shifts"],
-            )
+            )[self.name]
+
+        edge_index = neighbor_list["index_mapping"]
+        distances = compute_distances(
+            data.pos,
+            edge_index,
+            neighbor_list["cell_shifts"],
+        )
 
         rbf_expansion = self.rbf_layer(
             distances,
