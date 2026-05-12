@@ -100,3 +100,54 @@ class GaussianBasis(_RadialBasis):
             self.coeff * torch.pow(dist - self.offset, 2)
         ) * self.cutoff(dist)
         return expanded_distances
+
+    @classmethod
+    def build_pruned_from_mask(
+        cls,
+        cutoff: Union[int, float, _Cutoff],
+        lambda_mask: torch.Tensor,
+        num_rbf: int = 50,
+        trainable: bool = False,
+    ):
+        r"""
+        Constructor for GaussianBasis that only evaluates a subset of the basis functions
+        selected by a boolean ``lambda_filter`` tensor of shape ``(num_rbf,)``.
+
+        The output of :meth:`forward` is a tensor of shape
+        ``(total_num_edges, lambda_filter.sum())`` where only the basis functions
+        whose corresponding ``lambda_filter`` entry is ``True`` are evaluated.
+
+        Parameters
+        ----------
+        cutoff:
+            See :class:`GaussianBasis`.
+        lambda_filter:
+            Boolean tensor of shape ``(num_rbf,)`` selecting which basis functions
+            are kept in the expansion.
+        num_rbf:
+            Total number of basis functions (before filtering).
+        trainable:
+            See :class:`GaussianBasis`. Only the kept offsets are registered.
+        """
+
+        if lambda_mask.numel() != num_rbf:
+            raise ValueError(
+                f"lambda_filter must have {num_rbf} elements, got {lambda_mask.numel()}"
+            )
+        obj = cls(cutoff, num_rbf, trainable)
+
+        lambda_mask = lambda_mask.to(torch.bool)
+        lambda_mask = lambda_mask.to(obj.offset.device)
+
+        offset = obj.offset[lambda_mask].clone()
+
+        del obj.offset
+
+        if trainable:
+            obj.offset = nn.Parameter(offset)
+        else:
+            obj.register_buffer("offset", offset)
+
+        obj.num_rbf = lambda_mask.numel()
+
+        return obj

@@ -197,8 +197,9 @@ class MACE(torch.nn.Module):
         pair_repulsion_fn (torch.nn.Module, optional):
             Optional pairwise repulsion energy function.
         nls_distance_method:
-            Method for computing a neighbor list. Supported values are
-            `torch`, `nvalchemi_naive`, `nvalchemi_cell` and custom.
+        Method for computing a neighbor list. Supported values are
+        `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`
+        and `custom_kernel`.
     """
 
     name: Final[str] = "mace"
@@ -415,6 +416,10 @@ class StandardMACE(MACE):
             cuEquivariance configuration.
         use_cueq (Optional[bool], optional):
             Whether to use cuEquivariance acceleration.
+        nls_distance_method:
+            Method for computing a neighbor list. Supported values are
+            `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`
+            and `custom_kernel`.
     """
 
     def __init__(
