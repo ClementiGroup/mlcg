@@ -147,7 +147,8 @@ class Allegro(torch.nn.Module):
         Maximum number of neighbors per atom to consider.
     nls_distance_method:
         Method for computing a neighbor list. Supported values are
-        `torch`, `nvalchemi_naive`, `nvalchemi_cell` and custom.
+        `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw` 
+        and `custom_kernel`.
     """
 
     _warned = False
@@ -415,6 +416,10 @@ class StandardAllegro(Allegro):
         Optional pair potential to add to the energy.
     forward_normalize : bool, default=True
         Whether to normalize weights in the forward pass.
+    nls_distance_method:
+        Method for computing a neighbor list. Supported values are
+        `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw` 
+        and `custom_kernel`.
     """
 
     def __init__(
