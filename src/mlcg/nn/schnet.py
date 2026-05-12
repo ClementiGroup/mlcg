@@ -746,7 +746,7 @@ class RBFRegularizedSchNet(StandardSchNet):
             activation=activation,
             max_num_neighbors=max_num_neighbors,
             aggr=aggr,
-            nls_distance_method=nls_distance_method
+            nls_distance_method=nls_distance_method,
         )
 
     def forward(self, data: AtomicData) -> AtomicData:
