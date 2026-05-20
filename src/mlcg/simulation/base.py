@@ -283,8 +283,8 @@ class _Simulation(object):
             Trained model used to generate simulation data
         """
         if self.convert_to_flash:
+            print("Converting model to flash")
             from ..nn.kernels.converter import convert_standard_model_to_flash
-
             model = convert_standard_model_to_flash(model)
         self.model = model.eval().to(device=self.device, dtype=self.dtype)
         for param in self.model.parameters():
@@ -525,6 +525,7 @@ class _Simulation(object):
                     "and may produce invalid outputs or NaN gradients. "
                 )
             else:
+                print("Attempting model compilation")
                 if data.batch.max() == 0:
                     warnings.warn(force_torch_compile_warning())
                 torch._logging.set_logs(dynamo=logging.ERROR)
