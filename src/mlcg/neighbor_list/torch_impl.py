@@ -99,7 +99,6 @@ def torch_neighbor_list(
     return idx_i, idx_j, cell_shifts, self_interaction_mask
 
 
-@torch.jit.script
 def compute_images(
     positions: torch.Tensor,
     cell: torch.Tensor,
@@ -163,7 +162,6 @@ def compute_images(
     )
 
 
-@torch.jit.script
 def strides_of(v: torch.Tensor) -> torch.Tensor:
     """TODO: add docs"""
     strides = torch.zeros(v.shape[0] + 1, dtype=torch.int64, device=v.device)
@@ -226,7 +224,6 @@ def torch_neighbor_list_no_pbc(
     return edge_index[0], edge_index[1], self_interaction_mask
 
 
-@torch.jit.script
 def get_j_idx(
     edge_index: torch.Tensor, batch_images: torch.Tensor, n_atoms: torch.Tensor
 ) -> torch.Tensor:

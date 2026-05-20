@@ -463,6 +463,7 @@ class StandardAllegro(Allegro):
         nls_distance_method: str = "torch",
     ):
         ## haking jit for module
+        # FIXME: remove torch script
         _original_script = torch.jit.script
         torch.jit.script = lambda fn: fn  # No-op
 

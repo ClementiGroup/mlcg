@@ -17,7 +17,7 @@ from e3nn.util.jit import compile_mode
 from ...geometry.internal_coordinates import safe_norm, safe_normalization
 
 
-@compile_mode("script")
+@compile_mode("script") #FIXME: remove deprecated torch script and use torch.compile
 class SphericalHarmonics(torch.nn.Module):
     r"""JITable module version of real Spherical harmonics
 
@@ -156,7 +156,6 @@ class SphericalHarmonics(torch.nn.Module):
         return sh
 
 
-@torch.jit.script
 def _spherical_harmonics(
     lmax: int, x: torch.Tensor, y: torch.Tensor, z: torch.Tensor
 ) -> List[torch.Tensor]:
