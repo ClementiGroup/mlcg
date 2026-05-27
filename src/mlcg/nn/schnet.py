@@ -474,6 +474,78 @@ class StandardSchNet(SchNet):
             nls_distance_method=nls_distance_method,
         )
 
+    def __init__(
+        self,
+        rbf_layer: torch.nn.Module,
+        cutoff: torch.nn.Module,
+        output_hidden_layer_widths: List[int],
+        hidden_channels: int = 128,
+        embedding_path: str = "",
+        num_filters: int = 128,
+        num_interactions: int = 3,
+        activation: torch.nn.Module = torch.nn.Tanh(),
+        max_num_neighbors: int = 1000,
+        aggr: str = "add",
+        nls_distance_method: str = "torch",
+    ):
+        if num_interactions < 1:
+            raise ValueError("At least one interaction block must be specified")
+
+        if cutoff.cutoff_lower != rbf_layer.cutoff.cutoff_lower:
+            warnings.warn(
+                "Cutoff function lower cutoff, {}, and radial basis function "
+                " lower cutoff, {}, do not match.".format(
+                    cutoff.cutoff_lower, rbf_layer.cutoff.cutoff_lower
+                )
+            )
+        if cutoff.cutoff_upper != rbf_layer.cutoff.cutoff_upper:
+            warnings.warn(
+                "Cutoff function upper cutoff, {}, and radial basis function "
+                " upper cutoff, {}, do not match.".format(
+                    cutoff.cutoff_upper, rbf_layer.cutoff.cutoff_upper
+                )
+            )
+        aux_embed = torch.load(embedding_path)
+        embedding_layer = torch.nn.Embedding.from_pretrained(aux_embed)
+
+        assert embedding_layer.weight.shape[1] == hidden_channels
+
+        interaction_blocks = []
+        for _ in range(num_interactions):
+            filter_network = MLP(
+                layer_widths=[rbf_layer.num_rbf, num_filters, num_filters],
+                activation_func=activation,
+                last_bias=False,
+            )
+
+            cfconv = CFConv(
+                filter_network,
+                cutoff=cutoff,
+                num_filters=num_filters,
+                in_channels=hidden_channels,
+                out_channels=hidden_channels,
+                aggr=aggr,
+            )
+            block = InteractionBlock(cfconv, hidden_channels, activation)
+            interaction_blocks.append(block)
+        output_layer_widths = (
+            [hidden_channels] + output_hidden_layer_widths + [1]
+        )
+        output_network = MLP(
+            output_layer_widths,
+            activation_func=activation,
+            last_bias=False,
+        )
+        super().__init__(
+            embedding_layer,
+            interaction_blocks,
+            rbf_layer,
+            output_network,
+            max_num_neighbors=max_num_neighbors,
+            nls_distance_method=nls_distance_method,
+        )
+
+
 
 class AttentiveSchNet(SchNet):
     """Small wrapper class for :ref:`mlcg.nn.SchNet` to simplify the definition of the
