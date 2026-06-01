@@ -113,6 +113,12 @@ class SchNet(torch.nn.Module):
             block.reset_parameters()
         self.output_network.reset_parameters()
 
+    def get_node_embedding(self, data: AtomicData) -> torch.Tensor:
+        """Initial per-node features. By default a learned embedding of the
+        atom/bead types; subclasses may override to use other sources (e.g.
+        precomputed embeddings carried on ``data``)."""
+        return self.embedding_layer(data.atom_types)
+
     def forward(self, data: AtomicData) -> AtomicData:
         r"""Forward pass through the SchNet architecture.
 
@@ -129,7 +135,7 @@ class SchNet(torch.nn.Module):
            (num_examples * num_atoms, 1), as well as neighbor list
            information.
         """
-        x = self.embedding_layer(data.atom_types)
+        x = self.get_node_embedding(data)
 
         neighbor_list = data.neighbor_list.get(self.name)
 
@@ -474,12 +480,46 @@ class StandardSchNet(SchNet):
             nls_distance_method=nls_distance_method,
         )
 
+
+class FrozenTypEmbeddingSchNet(SchNet):
+    """SchNet variant that uses a frozen, pretrained **per-type** embedding table
+    loaded from a file, instead of a learned one.
+
+    The embedding table is a ``(n_types, hidden_channels)`` matrix indexed by
+    ``data.atom_types`` exactly like :ref:`mlcg.nn.StandardSchNet`, but it is kept
+    **frozen** (``requires_grad=False``) for the whole training. Every bead of the
+    same type therefore receives the same fixed embedding. For fixed
+    **per-residue/bead** embeddings (different per bead) use
+    :ref:`mlcg.nn.FrozenResEmbeddingSchNet` instead.
+
+    The table is built one of two ways:
+
+    * If ``embedding_path`` is given, it is loaded from disk (a tensor of shape
+      ``(n_types, hidden_channels)``) via :func:`torch.nn.Embedding.from_pretrained`.
+    * Otherwise a fresh ``torch.nn.Embedding(embedding_size, hidden_channels)`` is
+      randomly initialized (under the active ``seed_everything``) and frozen.
+
+    Parameters
+    ----------
+    embedding_size:
+        Number of rows of the frozen type-embedding table when it is built from
+        scratch (must exceed ``data.atom_types.max()``). Ignored when
+        ``embedding_path`` is given.
+    embedding_path:
+        Optional path to a tensor of shape ``(n_types, hidden_channels)`` used as
+        the frozen embedding table. If empty, the table is randomly initialized.
+    rbf_layer, cutoff, output_hidden_layer_widths, hidden_channels, num_filters,
+    num_interactions, activation, max_num_neighbors, aggr, nls_distance_method:
+        See :ref:`mlcg.nn.StandardSchNet`.
+    """
+
     def __init__(
         self,
         rbf_layer: torch.nn.Module,
         cutoff: torch.nn.Module,
         output_hidden_layer_widths: List[int],
         hidden_channels: int = 128,
+        embedding_size: int = 100,
         embedding_path: str = "",
         num_filters: int = 128,
         num_interactions: int = 3,
@@ -505,8 +545,16 @@ class StandardSchNet(SchNet):
                     cutoff.cutoff_upper, rbf_layer.cutoff.cutoff_upper
                 )
             )
-        aux_embed = torch.load(embedding_path)
-        embedding_layer = torch.nn.Embedding.from_pretrained(aux_embed)
+        if embedding_path:
+            aux_embed = torch.load(embedding_path)
+            embedding_layer = torch.nn.Embedding.from_pretrained(
+                aux_embed, freeze=True
+            )
+        else:
+            embedding_layer = torch.nn.Embedding(embedding_size, hidden_channels)
+
+        # Freeze the type-embedding table: it is never trained.
+        embedding_layer.weight.requires_grad_(False)
 
         assert embedding_layer.weight.shape[1] == hidden_channels
 
@@ -536,7 +584,7 @@ class StandardSchNet(SchNet):
             activation_func=activation,
             last_bias=False,
         )
-        super().__init__(
+        super(FrozenTypEmbeddingSchNet, self).__init__(
             embedding_layer,
             interaction_blocks,
             rbf_layer,
@@ -544,6 +592,14 @@ class StandardSchNet(SchNet):
             max_num_neighbors=max_num_neighbors,
             nls_distance_method=nls_distance_method,
         )
+
+    def reset_parameters(self):
+        """Reset only the trainable components. The per-type embedding table is
+        a fixed (frozen) lookup, so it is deliberately NOT reset here."""
+        self.rbf_layer.reset_parameters()
+        for block in self.interaction_blocks:
+            block.reset_parameters()
+        self.output_network.reset_parameters()
 
 
 
@@ -873,3 +929,97 @@ class RBFRegularizedSchNet(StandardSchNet):
         }
 
         return data
+
+
+class FrozenResEmbeddingSchNet(SchNet):
+    """SchNet variant whose initial node features come from frozen, precomputed
+    **per-residue/bead** embeddings carried on the input
+    (``data.precomputed_embeddings``) rather than from a learned type embedding.
+
+    Each individual bead gets its own fixed vector. The frozen embedding is
+    mapped into the network's hidden space by a learned linear projection, so
+    ``embedding_dim`` and ``hidden_channels`` may differ. Everything downstream
+    of the initial features is identical to :ref:`mlcg.nn.StandardSchNet`.
+
+    Parameters
+    ----------
+    embedding_dim:
+        Dimension of the precomputed per-bead embeddings supplied in
+        ``data.precomputed_embeddings`` (shape ``(n_beads, embedding_dim)``).
+    rbf_layer, cutoff, output_hidden_layer_widths, hidden_channels, num_filters,
+    num_interactions, activation, max_num_neighbors, aggr, nls_distance_method:
+        See :ref:`mlcg.nn.StandardSchNet`.
+    """
+
+    def __init__(
+        self,
+        rbf_layer: torch.nn.Module,
+        cutoff: torch.nn.Module,
+        output_hidden_layer_widths: List[int],
+        hidden_channels: int = 128,
+        embedding_dim: int = 128,
+        num_filters: int = 128,
+        num_interactions: int = 3,
+        activation: torch.nn.Module = torch.nn.Tanh(),
+        max_num_neighbors: int = 1000,
+        aggr: str = "add",
+        nls_distance_method: str = "torch",
+    ):
+        if num_interactions < 1:
+            raise ValueError("At least one interaction block must be specified")
+
+        if cutoff.cutoff_lower != rbf_layer.cutoff.cutoff_lower:
+            warnings.warn(
+                "Cutoff function lower cutoff, {}, and radial basis function "
+                " lower cutoff, {}, do not match.".format(
+                    cutoff.cutoff_lower, rbf_layer.cutoff.cutoff_lower
+                )
+            )
+        if cutoff.cutoff_upper != rbf_layer.cutoff.cutoff_upper:
+            warnings.warn(
+                "Cutoff function upper cutoff, {}, and radial basis function "
+                " upper cutoff, {}, do not match.".format(
+                    cutoff.cutoff_upper, rbf_layer.cutoff.cutoff_upper
+                )
+            )
+
+        # Learned projection of the (frozen) precomputed embedding into the
+        # hidden space; replaces torch.nn.Embedding as the initial-feature source.
+        embedding_layer = torch.nn.Linear(embedding_dim, hidden_channels)
+
+        interaction_blocks = []
+        for _ in range(num_interactions):
+            filter_network = MLP(
+                layer_widths=[rbf_layer.num_rbf, num_filters, num_filters],
+                activation_func=activation,
+                last_bias=False,
+            )
+
+            cfconv = CFConv(
+                filter_network,
+                cutoff=cutoff,
+                num_filters=num_filters,
+                in_channels=hidden_channels,
+                out_channels=hidden_channels,
+                aggr=aggr,
+            )
+            block = InteractionBlock(cfconv, hidden_channels, activation)
+            interaction_blocks.append(block)
+        output_layer_widths = (
+            [hidden_channels] + output_hidden_layer_widths + [1]
+        )
+        output_network = MLP(
+            output_layer_widths, activation_func=activation, last_bias=False
+        )
+        super(FrozenResEmbeddingSchNet, self).__init__(
+            embedding_layer,
+            interaction_blocks,
+            rbf_layer,
+            output_network,
+            max_num_neighbors=max_num_neighbors,
+            nls_distance_method=nls_distance_method,
+        )
+
+    def get_node_embedding(self, data: AtomicData) -> torch.Tensor:
+        emb = data.precomputed_embeddings.to(self.embedding_layer.weight.dtype)
+        return self.embedding_layer(emb)
