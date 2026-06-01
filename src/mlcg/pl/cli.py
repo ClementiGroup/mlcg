@@ -5,6 +5,8 @@ from torch_geometric.data.makedirs import makedirs
 import torch_optimizer as optim
 import warnings
 
+from ..nn.muon_opt import AutoMuon
+
 
 class LightningCLI(plc.LightningCLI):
     """Command line interface for training a model with pytorch lightning.
@@ -81,3 +83,13 @@ class LightningCLI(plc.LightningCLI):
                     config["trainer"]["callbacks"][ii]["init_args"][
                         "dirpath"
                     ] = path
+
+
+class MuonCLI(LightningCLI):
+    def configure_optimizers(self, lightning_module, optimizer, lr_scheduler):
+        if isinstance(optimizer, AutoMuon):
+            optimizer = AutoMuon(
+                params=list(lightning_module.named_parameters()),
+                **self.config["optimizer"]["init_args"],
+            )
+        return {"optimizer": optimizer}
