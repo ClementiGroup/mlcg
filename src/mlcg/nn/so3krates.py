@@ -727,7 +727,7 @@ class So3krates(nn.Module):
         energy = scatter(energy, data.batch, dim=0, reduce="sum")
         energy = energy.flatten()
 
-        data.out[self.name] = {ENERGY_KEY: energy}
+        data.out.setdefault(self.name, {}).update({ENERGY_KEY: energy})
         return data
 
     def is_nl_compatible(self, nl):

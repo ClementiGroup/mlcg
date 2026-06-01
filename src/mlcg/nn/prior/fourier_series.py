@@ -147,7 +147,8 @@ class FourierSeries(_Prior):
         # Use data.ptr to avoid GPU-CPU sync in scatter
         num_graphs = data.ptr.numel() - 1 if hasattr(data, "ptr") else None
         y = scatter(y, mapping_batch, dim=0, reduce="sum", dim_size=num_graphs)
-        data.out[self.name] = {"energy": y}
+        # data.out[self.name] = {"energy": y}
+        data.out.setdefault(self.name, {})["energy"] = y
         return data
 
     @staticmethod
@@ -534,7 +535,8 @@ class FlashDihedral(_Prior):
             deg=self.n_degs,
             num_graphs=num_graphs,
         )
-        data.out[self.name] = {"energy": y}
+        # data.out[self.name] = {"energy": y}
+        data.out.setdefault(self.name, {})["energy"] = y
         return data
 
     @classmethod

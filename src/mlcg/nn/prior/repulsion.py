@@ -118,7 +118,8 @@ class Repulsion(_Prior):
         y = Repulsion.compute(features, self.sigma[interaction_types])
         num_graphs = data.ptr.numel() - 1 if hasattr(data, "ptr") else None
         y = scatter(y, mapping_batch, dim=0, reduce="sum", dim_size=num_graphs)
-        data.out[self.name] = {"energy": y}
+        # data.out[self.name] = {"energy": y}
+        data.out.setdefault(self.name, {})["energy"] = y
         return data
 
     @staticmethod
@@ -286,7 +287,8 @@ class FlashRepulsion(_Prior):
             num_graphs=num_graphs,
             eps=self.eps,
         )
-        data.out[self.name] = {"energy": y}
+        # data.out[self.name] = {"energy": y}
+        data.out.setdefault(self.name, {})["energy"] = y
         return data
 
     @classmethod

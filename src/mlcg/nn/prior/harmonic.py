@@ -116,7 +116,7 @@ class Harmonic(_Prior):
         y = Harmonic.compute(features, **params)
         num_graphs = data.ptr.numel() - 1 if hasattr(data, "ptr") else None
         y = scatter(y, mapping_batch, dim=0, reduce="sum", dim_size=num_graphs)
-        data.out[self.name] = {"energy": y}
+        data.out.setdefault(self.name, {}).update({"energy": y})
         return data
 
     @staticmethod
@@ -486,7 +486,7 @@ class ShiftedPeriodicHarmonicImpropers(Harmonic):
         # Use data.ptr to avoid GPU-CPU sync in scatter
         num_graphs = data.ptr.numel() - 1 if hasattr(data, "ptr") else None
         y = scatter(y, mapping_batch, dim=0, reduce="sum", dim_size=num_graphs)
-        data.out[self.name] = {"energy": y}
+        data.out.setdefault(self.name, {}).update({"energy": y})
         return data
 
 
@@ -612,7 +612,7 @@ class FlashHarmonicBonds(_Prior):
             x_0=self.x_0,
             num_graphs=num_graphs,
         )
-        data.out[self.name] = {"energy": y}
+        data.out.setdefault(self.name, {}).update({"energy": y})
         return data
 
     @classmethod
@@ -687,7 +687,7 @@ class FlashHarmonicAngles(_Prior):
             x_0=self.x_0,
             num_graphs=num_graphs,
         )
-        data.out[self.name] = {"energy": y}
+        data.out.setdefault(self.name, {}).update({"energy": y})
         return data
 
     @classmethod

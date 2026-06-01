@@ -157,7 +157,7 @@ class SchNet(torch.nn.Module):
             energy, data.batch, dim=0, reduce="sum", dim_size=num_graphs
         )
         energy = energy.flatten()
-        data.out[self.name] = {ENERGY_KEY: energy}
+        data.out.setdefault(self.name, {}).update({ENERGY_KEY: energy})
 
         return data
 
