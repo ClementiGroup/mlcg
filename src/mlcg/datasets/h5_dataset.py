@@ -152,6 +152,7 @@ When the molecules in each Metaset have similar embedding vector lengths, the pr
 
 """
 
+import os
 import h5py
 import numpy as np
 import torch
@@ -182,6 +183,12 @@ class MolData:
         Unit cell of the atomic structure, of shape `(n_frames, 3, 3)`
     pbc:
         Periodic boundary conditions, of shape `(n_frames, 3)`
+    embeddings_mean:
+        Externally loaded per-residue embeddings averaged on the training set,
+        of shape `(n_atoms, embedding_size)`
+    embeddings_std:
+        Externally loaded standard deviation of per-residue embeddings calculated
+        on the training set, of shape `(n_beads, embed_dim)`
     """
 
     def __init__(
@@ -194,6 +201,8 @@ class MolData:
         exclusion_pairs: np.ndarray = None,
         cell: np.ndarray = None,
         pbc: np.ndarray = None,
+        embeddings_mean: np.ndarray = None,
+        embeddings_std: np.ndarray = None,
     ):
         self._name = name
         self._embeds = embeds
@@ -206,6 +215,26 @@ class MolData:
             len(self._embeds) == self._coords.shape[1] == self._forces.shape[1]
         )
         assert self._coords.shape == self._forces.shape
+
+        # Precomputed per-bead node embeddings (mean and std dev over training set).
+        # Optional tensors of shape (n_beads, embed_dim).
+        self._embeddings_mean = (
+            torch.as_tensor(embeddings_mean, dtype=torch.float32)
+            if embeddings_mean is not None
+            else None
+        )
+        self._embeddings_std = (
+            torch.as_tensor(embeddings_std, dtype=torch.float32)
+            if embeddings_std is not None
+            else None
+        )
+        if self._embeddings_mean is not None:
+            assert self._embeddings_mean.shape[0] == self.n_beads, (
+                f"{name}: embedding has {self._embeddings_mean.shape[0]} beads "
+                f"but coords have {self.n_beads}"
+            )
+            if self._embeddings_std is not None:
+                assert self._embeddings_std.shape == self._embeddings_mean.shape
 
         self._weights = weights
         if self._weights is not None:
@@ -258,6 +287,14 @@ class MolData:
     def pbc(self):
         return self._pbc
 
+    @property
+    def embeddings_mean(self):
+        return self._embeddings_mean
+
+    @property
+    def embeddings_std(self):
+        return self._embeddings_std
+
     def __repr__(self):
         return f"""MolData(name={self.name}", N_beads={self.n_beads}, N_frames={self.n_frames})"""
 
@@ -286,6 +323,9 @@ class MetaSet:
         self._n_mol_samples = []
         self._cumulate_indices = [0]
         self._exclude_listed_pairs = False
+        # std-scaling for the Gaussian noise added to precomputed embeddings;
+        # >0 for training augmentation, 0 (default) reproduces the frozen mean
+        self._embedding_noise_scale = 0.0
 
     @staticmethod
     def retrieve_hdf(hdf_grp, hdf_key):
@@ -330,9 +370,17 @@ class MetaSet:
         },
         subsample_using_weights=False,
         exclude_listed_pairs=False,
+        embeddings_dir=None,
+        embedding_noise_scale=0.0,
     ):
         r"""initiate a Metaset by loading data from given HDF-group.
         mol_list, detailed_indices, hdf_key_mapping, stride and parallel can control which subset is loaded to the Metaset (details see the description of "H5Dataset")
+
+        embeddings_dir, if given, is a directory of per-molecule ``{mol_name}.npz``
+        files (each with ``mean`` and ``std`` arrays of shape ``(n_beads, embed_dim)``)
+        holding precomputed node embeddings. embedding_noise_scale scales the
+        Gaussian noise added around the mean at sampling time (training augmentation;
+        use 0.0 for validation/inference).
         """
 
         def select_for_rank(length_or_indices):
@@ -373,6 +421,13 @@ class MetaSet:
                     % (mol_name, hdf5_group.name)
                 )
             embeds = MetaSet.retrieve_hdf(hdf5_group[mol_name], keys["embeds"])
+            embeddings_mean = None
+            embeddings_std = None
+            if embeddings_dir is not None:
+                emb_file = os.path.join(embeddings_dir, f"{mol_name}.npz")
+                with np.load(emb_file) as emb_npz:
+                    embeddings_mean = emb_npz["mean"]
+                    embeddings_std = emb_npz["std"]
             if exclude_listed_pairs:
                 if "exclusion_pairs" not in keys:
                     raise ValueError(
@@ -466,9 +521,12 @@ class MetaSet:
                     exclusion_pairs=exclusion_pairs,
                     cell=cell,
                     pbc=pbc,
+                    embeddings_mean=embeddings_mean,
+                    embeddings_std=embeddings_std,
                 )
             )
         output._exclude_listed_pairs = exclude_listed_pairs
+        output._embedding_noise_scale = embedding_noise_scale
         return output
 
     def insert_mol(self, mol_data):
@@ -587,6 +645,16 @@ class MetaSet:
             atd.exc_pair_index = torch.tensor(
                 self._mol_dataset[dataset_id].exclusion_pairs
             )
+        mean = self._mol_dataset[dataset_id].embeddings_mean
+        if mean is not None:
+            std = self._mol_dataset[dataset_id].embeddings_std
+            if self._embedding_noise_scale > 0.0 and std is not None:
+                emb = mean + self._embedding_noise_scale * std * torch.randn_like(
+                    mean
+                )
+            else:
+                emb = mean.clone()
+            atd.precomputed_embeddings = emb
         return atd
 
     def _locate_idx(self, idx):
@@ -774,10 +842,14 @@ class H5Dataset:
                 "world_size": 1,
             },
         )  # if no parallel entry, then target for single process
+        # directory of per-molecule `{mol_name}.npz` precomputed embeddings (global)
+        embeddings_dir = loading_options.get("embeddings_dir", None)
         for part_name in partition_options:
             ## create a partition, typical names are train/val
             part = Partition(part_name)
             part_info = partition_options[part_name]
+            # noise std-scaling is per-partition: e.g. >0 for train, 0 for val
+            embedding_noise_scale = part_info.get("embedding_noise_scale", 0.0)
             # TODO: check option consistency
             for metaset_name in part_info["metasets"]:
                 if metaset_name not in self._metaset_entries:
@@ -827,6 +899,8 @@ class H5Dataset:
                         parallel=parallel,
                         subsample_using_weights=self._subsample_using_weights,
                         exclude_listed_pairs=self._exclude_listed_pairs,
+                        embeddings_dir=embeddings_dir,
+                        embedding_noise_scale=embedding_noise_scale,
                     ),
                 )
             ## trim the metasets to fit the need of sampling
@@ -985,6 +1059,8 @@ class H5SimpleDataset(H5Dataset):
         parallel={"rank": 0, "world_size": 1},
         subsample_using_weights: Optional[bool] = False,
         exclude_listed_pairs: bool = False,
+        embeddings_dir: Optional[str] = None,
+        embedding_noise_scale: float = 0.0,
     ):
         # input checking
         if not isinstance(stride, int) and stride > 0:
@@ -1031,6 +1107,8 @@ class H5SimpleDataset(H5Dataset):
             parallel=parallel,
             subsample_using_weights=subsample_using_weights,
             exclude_listed_pairs=exclude_listed_pairs,
+            embeddings_dir=embeddings_dir,
+            embedding_noise_scale=embedding_noise_scale,
         )
 
     def get_dataloader(
