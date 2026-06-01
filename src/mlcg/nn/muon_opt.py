@@ -56,9 +56,9 @@ class AutoMuon(torch.optim.Optimizer):
         self._muon = torch.optim.Muon(muon_params, **self._muon_kwargs)
         self._adamw = AdamW(adamw_params, **self._adamw_kwargs)
         print("muon params:")
-        print(muon_params)
+        print([param.name for param in muon_params])
         print("AdamW params")
-        print(adamw_params)
+        print([param.name for param in adamw_params])
         defaults = dict(lr=lr)
         super().__init__([p for _, p in named], defaults)
         self.param_groups = self._muon.param_groups + self._adamw.param_groups
