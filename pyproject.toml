@@ -55,7 +55,7 @@ dependencies = [
     "torch_optimizer<=1.5.1",
     "cuequivariance",
     "cuequivariance-torch",
-    "cuequivariance-ops-torch-cu12",
+    "cuequivariance-ops-torch-cu13",
     "tqdm>=4.67.1",
     # developer tools
     "black[jupyter]",
