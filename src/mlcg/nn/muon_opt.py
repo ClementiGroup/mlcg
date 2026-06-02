@@ -44,21 +44,24 @@ class AutoMuon(torch.optim.Optimizer):
             named = [(f"param_{i}", p) for i, p in enumerate(params)]
 
         muon_params, adamw_params = [], []
+        muon_names, adamw_names = [], []
         for name, param in named:
             if (
                 param.ndim >= 2
                 and not any(s in name for s in self._muon_exclude_names)
             ):
                 muon_params.append(param)
+                muon_names.append(name)
             else:
                 adamw_params.append(param)
-
+                adamw_names.append(name)
+        print("WARNING: Muon optimizer selected, will only optimize 2D weight params")
+        print("Muon params:")
+        print(muon_names)
+        print("AdamW params")
+        print(adamw_names)
         self._muon = torch.optim.Muon(muon_params, **self._muon_kwargs)
         self._adamw = AdamW(adamw_params, **self._adamw_kwargs)
-        print("muon params:")
-        print([param.name for param in muon_params])
-        print("AdamW params")
-        print([param.name for param in adamw_params])
         defaults = dict(lr=lr)
         super().__init__([p for _, p in named], defaults)
         self.param_groups = self._muon.param_groups + self._adamw.param_groups

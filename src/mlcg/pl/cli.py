@@ -38,7 +38,6 @@ class LightningCLI(plc.LightningCLI):
             config = self.config[self.config["subcommand"]]
         else:
             config = self.config
-
         if config["seed_everything"] in (None, False):
             devices = int(config["trainer"]["devices"])
             num_nodes = int(config["trainer"]["num_nodes"])
@@ -84,12 +83,14 @@ class LightningCLI(plc.LightningCLI):
                         "dirpath"
                     ] = path
 
-
-class MuonCLI(LightningCLI):
     def configure_optimizers(self, lightning_module, optimizer, lr_scheduler):
+        if "subcommand" in self.config:
+            config = self.config[self.config["subcommand"]]
+        else:
+            config = self.config
         if isinstance(optimizer, AutoMuon):
             optimizer = AutoMuon(
                 params=list(lightning_module.named_parameters()),
-                **self.config["optimizer"]["init_args"],
+                **config["optimizer"]["init_args"],
             )
         return {"optimizer": optimizer}
