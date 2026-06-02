@@ -123,7 +123,7 @@ class CosineCutoff(_Cutoff):
         """
         if self.cutoff_lower > 0:
             cutoffs = 0.5 * (
-                torch.cos(
+                torch.sin(
                     math.pi
                     * (
                         2
@@ -144,7 +144,7 @@ class CosineCutoff(_Cutoff):
             return cutoffs
         else:
             cutoffs = 0.5 * (
-                torch.cos(distances * math.pi / self.cutoff_upper) + 1.0
+                torch.sin(distances * math.pi / self.cutoff_upper) + 1.0
             )
             # remove contributions beyond the cutoff radius
             cutoffs = cutoffs * (distances < self.cutoff_upper).to(
