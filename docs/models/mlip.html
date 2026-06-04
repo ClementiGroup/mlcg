@@ -6,7 +6,7 @@
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=31853864" />
-    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=44020203" />
+    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=9454f7d5" />
     <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
     <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,7 +18,8 @@
   --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
 }
 </style>
-    <meta property="og:type" content="website"/><meta property="og:title" content="MLIPs"/>
+    
+  <meta property="og:type" content="website"/><meta property="og:title" content="MLIPs"/>
     <meta name="twitter:card" content="summary"/>
   </head>
 <body><div class="sy-head">
@@ -202,6 +203,9 @@ If the number of actual neighbors is greater than
 <li><p><strong>aggr</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Aggregation scheme for continuous filter output. For all options,
 see <a class="reference external" href="https://pytorch-geometric.readthedocs.io/en/latest/notes/create_gnn.html?highlight=MessagePassing#the-messagepassing-base-class">here</a>
 for more options.</p></li>
+<li><p><strong>nls_distance_method</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Method for computing a neighbor list. Supported values are
+<cite>torch</cite>, <cite>nvalchemi_naive</cite>, <cite>nvalchemi_cell</cite>, <cite>nvalchemi_raw</cite>
+and <cite>custom_kernel</cite>.</p></li>
 </ul>
 </dd>
 </dl>
@@ -237,7 +241,8 @@ routine keyword max_num_neighbors, which normally defaults to 32.
 Users should set this to higher values if they are using higher upper
 distance cutoffs and expect more than 32 neighbors per node/atom.</p></li>
 <li><p><strong>nls_distance_method</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Method for computing a neighbor list. Supported values are
-<cite>torch</cite>, <cite>nvalchemi_naive</cite>, <cite>nvalchemi_cell</cite> and custom.</p></li>
+<cite>torch</cite>, <cite>nvalchemi_naive</cite>, <cite>nvalchemi_cell</cite>, <cite>nvalchemi_raw</cite>
+and <cite>custom_kernel</cite>.</p></li>
 </ul>
 </dd>
 </dl>
@@ -311,6 +316,9 @@ see <a class="reference external" href="https://pytorch-geometric.readthedocs.io
 for more options.</p>
 </p></li>
 <li><p><strong>epsilon</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – Stability constant added in norm to prevent numerical instabilities.</p></li>
+<li><p><strong>nls_distance_method</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Method for computing a neighbor list. Supported values are
+<cite>torch</cite>, <cite>nvalchemi_naive</cite>, <cite>nvalchemi_cell</cite>, <cite>nvalchemi_raw</cite>
+and <cite>custom_kernel</cite>.</p></li>
 </ul>
 </dd>
 </dl>
@@ -371,8 +379,13 @@ may find the class <cite>StandardPaiNN</cite> to be helpful in getting started q
 <li><p><strong>degrees</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]</span>) – List of spherical harmonic degrees.</p></li>
 <li><p><strong>max_num_neighbors</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Maximum number of neighbors per atom.</p></li>
 <li><p><strong>normalize_sph</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Whether to normalize spherical harmonics, default is True.</p></li>
-<li><p><strong>nls_distance_method</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Method for computing a neighbor list. Supported values are
-<cite>torch</cite>, <cite>nvalchemi_naive</cite>, <cite>nvalchemi_cell</cite> and custom.</p></li>
+<li><p><strong>nls_distance_method</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>)</p></li>
+<li><p><strong>are</strong> (<em>Method for computing a neighbor list. Supported values</em>)</p></li>
+<li><p><strong>torch</strong></p></li>
+<li><p><strong>nvalchemi_naive</strong></p></li>
+<li><p><strong>nvalchemi_cell</strong></p></li>
+<li><p><strong>nvalchemi_raw</strong></p></li>
+<li><p><strong>custom_kernel.</strong> (<em>and</em>)</p></li>
 </ul>
 </dd>
 </dl>
@@ -398,6 +411,9 @@ settings, including embedding, interaction, and output modules.</p>
 <li><p><strong>activation</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Activation function.</p></li>
 <li><p><strong>max_num_neighbors</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Maximum number of neighbors per atom.</p></li>
 <li><p><strong>normalize_sph</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Whether to normalize spherical harmonics, default is True.</p></li>
+<li><p><strong>nls_distance_method</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Method for computing a neighbor list. Supported values are
+<cite>torch</cite>, <cite>nvalchemi_naive</cite>, <cite>nvalchemi_cell</cite>, <cite>nvalchemi_raw</cite>
+and <cite>custom_kernel</cite>.</p></li>
 </ul>
 </dd>
 </dl>
@@ -440,6 +456,9 @@ also a vector representation is used can be “128x0e + 128x1o”.</p></li>
 <li><p><strong>radial_type</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]</span>) – Radial basis type.</p></li>
 <li><p><strong>cueq_config</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]</span>) – cuEquivariance configuration.</p></li>
 <li><p><strong>use_cueq</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>]</span>) – Whether to use cuEquivariance acceleration.</p></li>
+<li><p><strong>nls_distance_method</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Method for computing a neighbor list. Supported values are
+<cite>torch</cite>, <cite>nvalchemi_naive</cite>, <cite>nvalchemi_cell</cite>, <cite>nvalchemi_raw</cite>
+and <cite>custom_kernel</cite>.</p></li>
 </ul>
 </dd>
 </dl>
@@ -462,8 +481,13 @@ also a vector representation is used can be “128x0e + 128x1o”.</p></li>
 <li><p><strong>r_max</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – Cutoff radius for neighbor list.</p></li>
 <li><p><strong>max_num_neighbors</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Maximum number of neighbors per atom.</p></li>
 <li><p><strong>pair_repulsion_fn</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Optional pairwise repulsion energy function.</p></li>
-<li><p><strong>nls_distance_method</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Method for computing a neighbor list. Supported values are
-<cite>torch</cite>, <cite>nvalchemi_naive</cite>, <cite>nvalchemi_cell</cite> and custom.</p></li>
+<li><p><strong>nls_distance_method</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>)</p></li>
+<li><p><strong>are</strong> (<em>Method for computing a neighbor list. Supported values</em>)</p></li>
+<li><p><strong>torch</strong></p></li>
+<li><p><strong>nvalchemi_naive</strong></p></li>
+<li><p><strong>nvalchemi_cell</strong></p></li>
+<li><p><strong>nvalchemi_raw</strong></p></li>
+<li><p><strong>custom_kernel.</strong> (<em>and</em>)</p></li>
 </ul>
 </dd>
 </dl>
@@ -512,6 +536,9 @@ component manually.</p>
 <li><p><strong>per_type_energy_shifts_trainable</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>]</span>) – Whether the energy shifts are trainable parameters.</p></li>
 <li><p><strong>pair_potential</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code>]</span>) – Optional pair potential to add to the energy.</p></li>
 <li><p><strong>forward_normalize</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Whether to normalize weights in the forward pass.</p></li>
+<li><p><strong>nls_distance_method</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Method for computing a neighbor list. Supported values are
+<cite>torch</cite>, <cite>nvalchemi_naive</cite>, <cite>nvalchemi_cell</cite>, <cite>nvalchemi_raw</cite>
+and <cite>custom_kernel</cite>.</p></li>
 </ul>
 </dd>
 </dl>
@@ -563,6 +590,6 @@ component manually.</p>
       <script src="../_static/documentation_options.js?v=360bc84d"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
-      <script src="../_static/shibuya.js?v=cac61aee"></script>
+      <script src="../_static/shibuya.js?v=50760d75"></script>
       <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script></body>
 </html>

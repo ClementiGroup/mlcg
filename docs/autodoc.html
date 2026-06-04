@@ -6,7 +6,7 @@
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="_static/pygments.css?v=31853864" />
-    <link rel="stylesheet" type="text/css" href="_static/shibuya.css?v=44020203" />
+    <link rel="stylesheet" type="text/css" href="_static/shibuya.css?v=9454f7d5" />
     <link media="print" rel="stylesheet" type="text/css" href="_static/print.css?v=20ff2c19" />
     <link rel="stylesheet" type="text/css" href="_static/custom.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,7 +18,8 @@
   --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
 }
 </style>
-    <meta property="og:type" content="website"/><meta property="og:title" content="API Reference"/>
+    
+  <meta property="og:type" content="website"/><meta property="og:title" content="API Reference"/>
     <meta name="twitter:card" content="summary"/>
   </head>
 <body><div class="sy-head">
@@ -152,6 +153,10 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#mlcg.nn.schnet.InteractionBlock.forward"><code class="docutils literal notranslate">forward()</span></code></a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#mlcg.nn.schnet.RBFRegularizedSchNet"><code class="docutils literal notranslate"><span class="pre">RBFRegularizedSchNet</span></code></a><ul>
+<li><a class="reference internal" href="#mlcg.nn.schnet.RBFRegularizedSchNet.forward"><code class="docutils literal notranslate">forward()</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#mlcg.nn.schnet.SchNet"><code class="docutils literal notranslate"><span class="pre">SchNet</span></code></a><ul>
 <li><a class="reference internal" href="#mlcg.nn.schnet.SchNet.forward"><code class="docutils literal notranslate">forward()</span></code></a></li>
 <li><a class="reference internal" href="#mlcg.nn.schnet.SchNet.neighbor_list"><code class="docutils literal notranslate">neighbor_list()</span></code></a></li>
@@ -178,6 +183,10 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#mlcg.nn.painn.PaiNNMixing.reset_parameters"><code class="docutils literal notranslate">reset_parameters()</span></code></a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#mlcg.nn.painn.RBFRegularizedPaiNN"><code class="docutils literal notranslate"><span class="pre">RBFRegularizedPaiNN</span></code></a><ul>
+<li><a class="reference internal" href="#mlcg.nn.painn.RBFRegularizedPaiNN.forward"><code class="docutils literal notranslate">forward()</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#mlcg.nn.painn.StandardPaiNN"><code class="docutils literal notranslate"><span class="pre">StandardPaiNN</span></code></a></li>
 <li><a class="reference internal" href="#mlcg.nn.mace.CustomRealAgnosticResidualInteractionBlock"><code class="docutils literal notranslate"><span class="pre">CustomRealAgnosticResidualInteractionBlock</span></code></a><ul>
 <li><a class="reference internal" href="#mlcg.nn.mace.CustomRealAgnosticResidualInteractionBlock.forward"><code class="docutils literal notranslate">forward()</span></code></a></li>
@@ -198,6 +207,7 @@ data-aria-dark="Switch to auto color mode">
 </ul>
 </li>
 <li><a class="reference internal" href="#mlcg.nn.radial_basis.exp_normal.ExpNormalBasis"><code class="docutils literal notranslate"><span class="pre">ExpNormalBasis</span></code></a><ul>
+<li><a class="reference internal" href="#mlcg.nn.radial_basis.exp_normal.ExpNormalBasis.build_pruned_from_mask"><code class="docutils literal notranslate">build_pruned_from_mask()</span></code></a></li>
 <li><a class="reference internal" href="#mlcg.nn.radial_basis.exp_normal.ExpNormalBasis.forward"><code class="docutils literal notranslate">forward()</span></code></a></li>
 <li><a class="reference internal" href="#mlcg.nn.radial_basis.exp_normal.ExpNormalBasis.reset_parameters"><code class="docutils literal notranslate">reset_parameters()</span></code></a></li>
 </ul>
@@ -208,6 +218,7 @@ data-aria-dark="Switch to auto color mode">
 </ul>
 </li>
 <li><a class="reference internal" href="#mlcg.nn.radial_basis.gaussian.GaussianBasis"><code class="docutils literal notranslate"><span class="pre">GaussianBasis</span></code></a><ul>
+<li><a class="reference internal" href="#mlcg.nn.radial_basis.gaussian.GaussianBasis.build_pruned_from_mask"><code class="docutils literal notranslate">build_pruned_from_mask()</span></code></a></li>
 <li><a class="reference internal" href="#mlcg.nn.radial_basis.gaussian.GaussianBasis.forward"><code class="docutils literal notranslate">forward()</span></code></a></li>
 <li><a class="reference internal" href="#mlcg.nn.radial_basis.gaussian.GaussianBasis.reset_parameters"><code class="docutils literal notranslate">reset_parameters()</span></code></a></li>
 </ul>
@@ -791,6 +802,9 @@ see <a class="reference external" href="https://pytorch-geometric.readthedocs.io
 for more options.</p></li>
 <li><p><strong>activation_first</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Inverting the order of linear layers and activation functions.</p></li>
 <li><p><strong>attention_version</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Specifiy which interaction block architecture to choose. By default normal.</p></li>
+<li><p><strong>nls_distance_method</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Method for computing a neighbor list. Supported values are
+<cite>torch</cite>, <cite>nvalchemi_naive</cite>, <cite>nvalchemi_cell</cite>, <cite>nvalchemi_raw</cite>
+and <cite>custom_kernel</cite>.</p></li>
 </ul>
 </dd>
 </dl>
@@ -917,11 +931,58 @@ hidden_channels)</p>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="mlcg.nn.schnet.RBFRegularizedSchNet">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.nn.schnet.</span></span><span class="sig-name descname"><span class="pre">RBFRegularizedSchNet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rbf_layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_hidden_layer_widths</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hidden_channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embedding_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_filters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_interactions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Tanh()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_neighbors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aggr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'add'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nls_distance_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'torch'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">independent_regularizations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/schnet.html#RBFRegularizedSchNet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.schnet.RBFRegularizedSchNet" title="Link to this definition">¶</a></dt>
+<dd><p>This is a StandardSchNet model where the RBF components are weighted via Hadamard product with couple-specific
+vectors. Each tuple of bead types has its own vector.
+The models also adds the key radial_filters to the output dictionary, containing the regularization parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rbf_layer</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – radial basis function used to project the distances <span class="math notranslate nohighlight">\(r_{ij}\)</span>.</p></li>
+<li><p><strong>cutoff</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – smooth cutoff function to supply to the CFConv</p></li>
+<li><p><strong>output_hidden_layer_widths</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]</span>) – List giving the number of hidden nodes of each hidden layer of the MLP
+used to predict the target property from the learned representation.</p></li>
+<li><p><strong>hidden_channels</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – dimension of the learned representation, i.e. dimension of the embeding projection, convolution layers, and interaction block.</p></li>
+<li><p><strong>embedding_size</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – dimension of the input embeddings (should be larger than <code class="xref py py-obj docutils literal notranslate"><span class="pre">AtomicData.atom_types.max()+1</span></code>).</p></li>
+<li><p><strong>num_filters</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – number of nodes of the networks used to filter the projected distances</p></li>
+<li><p><strong>num_interactions</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – number of interaction blocks</p></li>
+<li><p><strong>activation</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – activation function</p></li>
+<li><p><strong>max_num_neighbors</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – The maximum number of neighbors to return for each atom in <code class="xref py py-obj docutils literal notranslate"><span class="pre">data</span></code>.
+If the number of actual neighbors is greater than
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">max_num_neighbors</span></code>, returned neighbors are picked randomly.</p></li>
+<li><p><strong>aggr</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – <p>Aggregation scheme for continuous filter output. For all options,
+see <a class="reference external" href="https://pytorch-geometric.readthedocs.io/en/latest/notes/create_gnn.html?highlight=MessagePassing#the-messagepassing-base-class">here</a>
+for more options.</p>
+</p></li>
+<li><p><strong>nls_distance_method</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Method for computing a neighbor list. Supported values are
+<cite>torch</cite>, <cite>nvalchemi_naive</cite>, <cite>nvalchemi_cell</cite>, <cite>nvalchemi_raw</cite>
+and <cite>custom_kernel</cite>.</p></li>
+<li><p><strong>-------------------------------------------------------------</strong> (<em>CLASS SPECIFIC PARAMETERS</em>)</p></li>
+<li><p><strong>independent_regularizations</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – If True each interaction block has its own set of regularization parameters,
+otherwise the regularization parameters are shared across all interaction blocks.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcg.nn.schnet.RBFRegularizedSchNet.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/schnet.html#RBFRegularizedSchNet.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.schnet.RBFRegularizedSchNet.forward" title="Link to this definition">¶</a></dt>
+<dd><p>Forward pass through the SchNet architecture with independent regularizations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="data/atom_data.html#mlcg.data.atomic_data.AtomicData" title="mlcg.data.atomic_data.AtomicData"><code class="xref py py-class docutils literal notranslate"><span class="pre">AtomicData</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="mlcg.nn.schnet.SchNet">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.nn.schnet.</span></span><span class="sig-name descname"><span class="pre">SchNet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">embedding_layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interaction_blocks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rbf_layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_network</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">self_interaction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_neighbors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nls_distance_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'torch'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/schnet.html#SchNet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.schnet.SchNet" title="Link to this definition">¶</a></dt>
 <dd><p>PyTorch Geometric implementation of SchNet
-Code adapted from <a class="reference internal" href="bibliography.html#pt-geom-schnet" id="id1"><span>[PT_geom_schnet]</span></a>  which is based on the architecture
-described in <a class="reference internal" href="bibliography.html#schnet" id="id2"><span>[Schnet]</span></a> .</p>
+Code adapted from <a class="reference internal" href="bibliography.html#pt-geom-schnet" id="id2"><span>[PT_geom_schnet]</span></a>  which is based on the architecture
+described in <a class="reference internal" href="bibliography.html#schnet" id="id3"><span>[Schnet]</span></a> .</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -946,7 +1007,8 @@ routine keyword max_num_neighbors, which normally defaults to 32.
 Users should set this to higher values if they are using higher upper
 distance cutoffs and expect more than 32 neighbors per node/atom.</p></li>
 <li><p><strong>nls_distance_method</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Method for computing a neighbor list. Supported values are
-<cite>torch</cite>, <cite>nvalchemi_naive</cite>, <cite>nvalchemi_cell</cite> and custom.</p></li>
+<cite>torch</cite>, <cite>nvalchemi_naive</cite>, <cite>nvalchemi_cell</cite>, <cite>nvalchemi_raw</cite>
+and <cite>custom_kernel</cite>.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1014,6 +1076,9 @@ If the number of actual neighbors is greater than
 see <a class="reference external" href="https://pytorch-geometric.readthedocs.io/en/latest/notes/create_gnn.html?highlight=MessagePassing#the-messagepassing-base-class">here</a>
 for more options.</p>
 </p></li>
+<li><p><strong>nls_distance_method</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Method for computing a neighbor list. Supported values are
+<cite>torch</cite>, <cite>nvalchemi_naive</cite>, <cite>nvalchemi_cell</cite>, <cite>nvalchemi_raw</cite>
+and <cite>custom_kernel</cite>.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1242,6 +1307,62 @@ are set to 0.</p>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="mlcg.nn.painn.RBFRegularizedPaiNN">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.nn.painn.</span></span><span class="sig-name descname"><span class="pre">RBFRegularizedPaiNN</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rbf_layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_hidden_layer_widths</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hidden_channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embedding_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_interactions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Tanh()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_neighbors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aggr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'add'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-08</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nls_distance_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'torch'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">independent_regularizations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/painn.html#RBFRegularizedPaiNN"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.painn.RBFRegularizedPaiNN" title="Link to this definition">¶</a></dt>
+<dd><p>This is a StandardSchNet model where the RBF components are weighted via Hadamard product with couple-specific
+vectors. Each tuple of bead types has its own vector.
+The models also adds the key radial_filters to the output dictionary, containing the regularization parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rbf_layer</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Radial basis function used to project the distances <span class="math notranslate nohighlight">\(r_{ij}\)</span>.</p></li>
+<li><p><strong>cutoff</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Smooth cutoff function to supply to the PaiNNInteraction.</p></li>
+<li><p><strong>output_hidden_layer_widths</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]</span>) – List giving the number of hidden nodes of each hidden layer of the MLP
+used to predict the target property from the learned scalar representation.</p></li>
+<li><p><strong>hidden_channels</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Dimension of the learned representation, i.e. dimension of the embedding projection, convolution layers, and interaction block.</p></li>
+<li><p><strong>embedding_size</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Dimension of the input embeddings (should be larger than <code class="xref py py-obj docutils literal notranslate"><span class="pre">AtomicData.atom_types.max()+1</span></code>).</p></li>
+<li><p><strong>num_interactions</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Number of interaction blocks.</p></li>
+<li><p><strong>activation</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Activation function.</p></li>
+<li><p><strong>max_num_neighbors</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – The maximum number of neighbors to return for each atom in <code class="xref py py-obj docutils literal notranslate"><span class="pre">data</span></code>.
+If the number of actual neighbors is greater than
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">max_num_neighbors</span></code>, returned neighbors are picked randomly.</p></li>
+<li><p><strong>aggr</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – <p>Aggregation scheme for continuous filter output. For all options,
+see <a class="reference external" href="https://pytorch-geometric.readthedocs.io/en/latest/notes/create_gnn.html?highlight=MessagePassing#the-messagepassing-base-class">here</a>
+for more options.</p>
+</p></li>
+<li><p><strong>epsilon</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – Stability constant added in norm to prevent numerical instabilities.</p></li>
+<li><p><strong>nls_distance_method</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Method for computing a neighbor list. Supported values are
+<cite>torch</cite>, <cite>nvalchemi_naive</cite>, <cite>nvalchemi_cell</cite>, <cite>nvalchemi_raw</cite>
+and <cite>custom_kernel</cite>.</p></li>
+<li><p><strong>-------------------------------------------------------------</strong> (<em>CLASS SPECIFIC PARAMETERS</em>)</p></li>
+<li><p><strong>independent_regularizations</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – If True each interaction block has its own set of regularization parameters,
+otherwise the regularization parameters are shared across all interaction blocks.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcg.nn.painn.RBFRegularizedPaiNN.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/painn.html#RBFRegularizedPaiNN.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.painn.RBFRegularizedPaiNN.forward" title="Link to this definition">¶</a></dt>
+<dd><p>Forward pass through the PaiNN architecture.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="data/atom_data.html#mlcg.data.atomic_data.AtomicData" title="mlcg.data.atomic_data.AtomicData"><code class="xref py py-class docutils literal notranslate"><span class="pre">AtomicData</span></code></a></span>) – Input data object containing batch atom/bead positions
+and atom/bead types.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Data dictionary, updated with predicted energy of shape
+(num_examples * num_atoms, 1), as well as neighbor list
+information.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>data</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="mlcg.nn.painn.StandardPaiNN">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.nn.painn.</span></span><span class="sig-name descname"><span class="pre">StandardPaiNN</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rbf_layer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_hidden_layer_widths</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hidden_channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embedding_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_interactions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Tanh()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_neighbors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aggr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'add'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-08</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nls_distance_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'torch'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/painn.html#StandardPaiNN"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.painn.StandardPaiNN" title="Link to this definition">¶</a></dt>
 <dd><p>Small wrapper class for <span class="xref std std-ref">PaiNN</span> to simplify the definition of the
@@ -1266,6 +1387,9 @@ see <a class="reference external" href="https://pytorch-geometric.readthedocs.io
 for more options.</p>
 </p></li>
 <li><p><strong>epsilon</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – Stability constant added in norm to prevent numerical instabilities.</p></li>
+<li><p><strong>nls_distance_method</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Method for computing a neighbor list. Supported values are
+<cite>torch</cite>, <cite>nvalchemi_naive</cite>, <cite>nvalchemi_cell</cite>, <cite>nvalchemi_raw</cite>
+and <cite>custom_kernel</cite>.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1316,8 +1440,13 @@ registered hooks while the latter silently ignores them.</p>
 <li><p><strong>r_max</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – Cutoff radius for neighbor list.</p></li>
 <li><p><strong>max_num_neighbors</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Maximum number of neighbors per atom.</p></li>
 <li><p><strong>pair_repulsion_fn</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Optional pairwise repulsion energy function.</p></li>
-<li><p><strong>nls_distance_method</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Method for computing a neighbor list. Supported values are
-<cite>torch</cite>, <cite>nvalchemi_naive</cite>, <cite>nvalchemi_cell</cite> and custom.</p></li>
+<li><p><strong>nls_distance_method</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>)</p></li>
+<li><p><strong>are</strong> (<em>Method for computing a neighbor list. Supported values</em>)</p></li>
+<li><p><strong>torch</strong></p></li>
+<li><p><strong>nvalchemi_naive</strong></p></li>
+<li><p><strong>nvalchemi_cell</strong></p></li>
+<li><p><strong>nvalchemi_raw</strong></p></li>
+<li><p><strong>custom_kernel.</strong> (<em>and</em>)</p></li>
 </ul>
 </dd>
 </dl>
@@ -1383,6 +1512,9 @@ also a vector representation is used can be “128x0e + 128x1o”.</p></li>
 <li><p><strong>radial_type</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]</span>) – Radial basis type.</p></li>
 <li><p><strong>cueq_config</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]</span>) – cuEquivariance configuration.</p></li>
 <li><p><strong>use_cueq</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>]</span>) – Whether to use cuEquivariance acceleration.</p></li>
+<li><p><strong>nls_distance_method</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Method for computing a neighbor list. Supported values are
+<cite>torch</cite>, <cite>nvalchemi_naive</cite>, <cite>nvalchemi_cell</cite>, <cite>nvalchemi_raw</cite>
+and <cite>custom_kernel</cite>.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1456,7 +1588,7 @@ supplied.</p></li>
 <dt class="sig sig-object py" id="mlcg.nn.radial_basis.exp_normal.ExpNormalBasis">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.nn.radial_basis.exp_normal.</span></span><span class="sig-name descname"><span class="pre">ExpNormalBasis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_rbf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/radial_basis/exp_normal.html#ExpNormalBasis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.radial_basis.exp_normal.ExpNormalBasis" title="Link to this definition">¶</a></dt>
 <dd><p>Class for generating a set of exponential normal radial basis functions,
-as described in <a class="reference internal" href="bibliography.html#physnet" id="id5"><span>[Physnet]</span></a> . The functions have the following form:</p>
+as described in <a class="reference internal" href="bibliography.html#physnet" id="id7"><span>[Physnet]</span></a> . The functions have the following form:</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
 \[f_n(r_{ij};\alpha, r_{low},r_{high}) = f_{cut}(r_{ij},r_{low},r_{high})
@@ -1489,6 +1621,27 @@ in an unoptimizable buffer.</p></li>
 </dd>
 </dl>
 <dl class="py method">
+<dt class="sig sig-object py" id="mlcg.nn.radial_basis.exp_normal.ExpNormalBasis.build_pruned_from_mask">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">build_pruned_from_mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lambda_mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_rbf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/radial_basis/exp_normal.html#ExpNormalBasis.build_pruned_from_mask"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.radial_basis.exp_normal.ExpNormalBasis.build_pruned_from_mask" title="Link to this definition">¶</a></dt>
+<dd><p>Constructor for ExpNormalBasis that only evaluates a subset of the basis functions
+selected by a boolean <code class="docutils literal notranslate"><span class="pre">lambda_filter</span></code> tensor of shape <code class="docutils literal notranslate"><span class="pre">(num_rbf,)</span></code>.</p>
+<p>The output of <a class="reference internal" href="#mlcg.nn.radial_basis.exp_normal.ExpNormalBasis.forward" title="mlcg.nn.radial_basis.exp_normal.ExpNormalBasis.forward"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward()</span></code></a> is a tensor of shape
+<code class="docutils literal notranslate"><span class="pre">(total_num_edges,</span> <span class="pre">lambda_filter.sum())</span></code> where only the basis functions
+whose corresponding <code class="docutils literal notranslate"><span class="pre">lambda_filter</span></code> entry is <code class="docutils literal notranslate"><span class="pre">True</span></code> are evaluated.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cutoff</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">_Cutoff</span></code>]</span>) – See <a class="reference internal" href="#mlcg.nn.radial_basis.exp_normal.ExpNormalBasis" title="mlcg.nn.radial_basis.exp_normal.ExpNormalBasis"><code class="xref py py-class docutils literal notranslate"><span class="pre">ExpNormalBasis</span></code></a>.</p></li>
+<li><p><strong>lambda_filter</strong> – Boolean tensor of shape <code class="docutils literal notranslate"><span class="pre">(num_rbf,)</span></code> selecting which basis functions
+are kept in the expansion.</p></li>
+<li><p><strong>num_rbf</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Total number of basis functions (before filtering).</p></li>
+<li><p><strong>trainable</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – See <a class="reference internal" href="#mlcg.nn.radial_basis.exp_normal.ExpNormalBasis" title="mlcg.nn.radial_basis.exp_normal.ExpNormalBasis"><code class="xref py py-class docutils literal notranslate"><span class="pre">ExpNormalBasis</span></code></a>. Only the kept means/betas are registered.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="mlcg.nn.radial_basis.exp_normal.ExpNormalBasis.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dist</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/radial_basis/exp_normal.html#ExpNormalBasis.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.radial_basis.exp_normal.ExpNormalBasis.forward" title="Link to this definition">¶</a></dt>
 <dd><p>Expansion of distances through the radial basis function set.
@@ -1517,7 +1670,7 @@ initial values.</p>
 <dt class="sig sig-object py" id="mlcg.nn.radial_basis.exp_normal.ExtendedExpNormalBasis">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.nn.radial_basis.exp_normal.</span></span><span class="sig-name descname"><span class="pre">ExtendedExpNormalBasis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">internal_cutoff_lower</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/radial_basis/exp_normal.html#ExtendedExpNormalBasis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.radial_basis.exp_normal.ExtendedExpNormalBasis" title="Link to this definition">¶</a></dt>
 <dd><p>ExpNormalBasis that allows for arbitrary lower cutoffs not tied to
-a supplied <cite>_Cutoff</cite>. This basis follows the definition in <a class="reference internal" href="bibliography.html#physnet" id="id6"><span>[Physnet]</span></a>.
+a supplied <cite>_Cutoff</cite>. This basis follows the definition in <a class="reference internal" href="bibliography.html#physnet" id="id8"><span>[Physnet]</span></a>.
 :param internal_cutoff: if specified, this lower cutoff overrides any supplied <cite>_Cutoff</cite> lower</p>
 <blockquote>
 <div><p>cutoff.</p>
@@ -1578,6 +1731,27 @@ instead fixed in an unoptimizable buffer.</p></li>
 </ul>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcg.nn.radial_basis.gaussian.GaussianBasis.build_pruned_from_mask">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">build_pruned_from_mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lambda_mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_rbf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/radial_basis/gaussian.html#GaussianBasis.build_pruned_from_mask"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.radial_basis.gaussian.GaussianBasis.build_pruned_from_mask" title="Link to this definition">¶</a></dt>
+<dd><p>Constructor for GaussianBasis that only evaluates a subset of the basis functions
+selected by a boolean <code class="docutils literal notranslate"><span class="pre">lambda_filter</span></code> tensor of shape <code class="docutils literal notranslate"><span class="pre">(num_rbf,)</span></code>.</p>
+<p>The output of <a class="reference internal" href="#mlcg.nn.radial_basis.gaussian.GaussianBasis.forward" title="mlcg.nn.radial_basis.gaussian.GaussianBasis.forward"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward()</span></code></a> is a tensor of shape
+<code class="docutils literal notranslate"><span class="pre">(total_num_edges,</span> <span class="pre">lambda_filter.sum())</span></code> where only the basis functions
+whose corresponding <code class="docutils literal notranslate"><span class="pre">lambda_filter</span></code> entry is <code class="docutils literal notranslate"><span class="pre">True</span></code> are evaluated.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cutoff</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">_Cutoff</span></code>]</span>) – See <a class="reference internal" href="#mlcg.nn.radial_basis.gaussian.GaussianBasis" title="mlcg.nn.radial_basis.gaussian.GaussianBasis"><code class="xref py py-class docutils literal notranslate"><span class="pre">GaussianBasis</span></code></a>.</p></li>
+<li><p><strong>lambda_filter</strong> – Boolean tensor of shape <code class="docutils literal notranslate"><span class="pre">(num_rbf,)</span></code> selecting which basis functions
+are kept in the expansion.</p></li>
+<li><p><strong>num_rbf</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Total number of basis functions (before filtering).</p></li>
+<li><p><strong>trainable</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – See <a class="reference internal" href="#mlcg.nn.radial_basis.gaussian.GaussianBasis" title="mlcg.nn.radial_basis.gaussian.GaussianBasis"><code class="xref py py-class docutils literal notranslate"><span class="pre">GaussianBasis</span></code></a>. Only the kept offsets are registered.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="mlcg.nn.radial_basis.gaussian.GaussianBasis.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dist</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/radial_basis/gaussian.html#GaussianBasis.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.radial_basis.gaussian.GaussianBasis.forward" title="Link to this definition">¶</a></dt>
@@ -1860,7 +2034,7 @@ one</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="mlcg.datasets.chignolin.ChignolinDataset">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.datasets.chignolin.</span></span><span class="sig-name descname"><span class="pre">ChignolinDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pre_transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pre_filter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mapping</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'slice_aggregate'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">terminal_embeds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_files</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/datasets/chignolin.html#ChignolinDataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.datasets.chignolin.ChignolinDataset" title="Link to this definition">¶</a></dt>
-<dd><p>Dataset for training a CG model of the chignolin protein following a Cα CG mapping using the all-atom data from <a class="reference internal" href="bibliography.html#cgnet" id="id7"><span>[CGnet]</span></a>.</p>
+<dd><p>Dataset for training a CG model of the chignolin protein following a Cα CG mapping using the all-atom data from <a class="reference internal" href="bibliography.html#cgnet" id="id9"><span>[CGnet]</span></a>.</p>
 <p>This Dataset produces delta forces for model training, in which the CG prior forces (harmonic bonds and angles and a repulsive term) have been subtracted from the full CG forces.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="mlcg.datasets.chignolin.ChignolinDataset.download">
@@ -2806,7 +2980,7 @@ when staring down bond jk:</p>
 </div>
 <p>For impropers: the angle is positive if when looking in plane ikj, l is rotated clockwise:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">k</span>
-</span><span data-line="2"> \
+</span><span data-line="2"> \\
 </span><span data-line="3">  <span class="n">l</span><span class="o">--</span><span class="n">j</span>
 </span><span data-line="4"> <span class="o">/</span>
 </span><span data-line="5"><span class="n">i</span>
@@ -2815,10 +2989,10 @@ when staring down bond jk:</p>
 <p>The angle is computed using the formula:</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
-\[\phi_{ijkl} &amp;=  ext{atan2}(-\mathbf{m} \cdot \mathbf{n}_2, \mathbf{n}_2 \cdot \mathbf{n}_1) \
-\mathbf{n}_1 &amp;= \mathbf{\hat{r}}_{ji}   imes \mathbf{\hat{r}}_{kj} \
-\mathbf{n}_2 &amp;= \mathbf{\hat{r}}_{kj}   imes \mathbf{\hat{r}}_{jl} \
-\mathbf{m} &amp;= \mathbf{n}_{1}    imes \mathbf{\hat{r}}_{kj}\]</div>
+\[\begin{split}\phi_{ijkl} &amp;= \text{atan2}(-\mathbf{m} \cdot \mathbf{n}_2, \mathbf{n}_2 \cdot \mathbf{n}_1) \\
+\mathbf{n}_1 &amp;= \mathbf{\hat{r}}_{ji} \times \mathbf{\hat{r}}_{kj} \\
+\mathbf{n}_2 &amp;= \mathbf{\hat{r}}_{kj} \times \mathbf{\hat{r}}_{jl} \\
+\mathbf{m} &amp;= \mathbf{n}_{1} \times \mathbf{\hat{r}}_{kj}\end{split}\]</div>
 </div>
 <p>Where the <span class="math notranslate nohighlight">\(\hat{u}\)</span> indicates a normalized vector in direction of <span class="math notranslate nohighlight">\(u\)</span>.
 The order and signs in the atan2 arguments are needed to obtain values consistent
@@ -2885,6 +3059,6 @@ the backpropagation</p>
       <script src="_static/documentation_options.js?v=360bc84d"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
-      <script src="_static/shibuya.js?v=cac61aee"></script>
+      <script src="_static/shibuya.js?v=50760d75"></script>
       <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script></body>
 </html>

@@ -6,7 +6,7 @@
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=31853864" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/shibuya.css?v=44020203" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/shibuya.css?v=9454f7d5" />
     <link media="print" rel="stylesheet" type="text/css" href="../../../_static/print.css?v=20ff2c19" />
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,7 +18,8 @@
   --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
 }
 </style>
-    <meta property="og:type" content="website"/><meta property="og:title" content="mlcg.nn.painn"/>
+    
+  <meta property="og:type" content="website"/><meta property="og:title" content="mlcg.nn.painn"/>
     <meta name="twitter:card" content="summary"/>
   </head>
 <body><div class="sy-head">
@@ -164,569 +165,725 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="18">    <span class="n">validate_neighborlist</span><span class="p">,</span>
 </span><span data-line="19"><span class="p">)</span>
 </span><span data-line="20">
-</span><span data-line="21">
+</span><span data-line="21"><span class="kn">from</span><span class="w"> </span><span class="nn">.radial_basis</span><span class="w"> </span><span class="kn">import</span> <span class="n">RegularizedBasis</span>
+</span><span data-line="22">
+</span><span data-line="23">
 <div class="viewcode-block" id="PaiNNInteraction">
 <a class="viewcode-back" href="../../../autodoc.html#mlcg.nn.painn.PaiNNInteraction">[docs]</a>
-</span><span data-line="22"><span class="k">class</span><span class="w"> </span><span class="nc">PaiNNInteraction</span><span class="p">(</span><span class="n">MessagePassing</span><span class="p">):</span>
-</span><span data-line="23"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;PyTorch Geometric implementation of PaiNN block for modeling equivariant interactions.</span>
-</span><span data-line="24"><span class="sd">    Code adapted from https://schnetpack.readthedocs.io/en/latest/api/generated/representation.PaiNN.html</span>
-</span><span data-line="25">
-</span><span data-line="26"><span class="sd">    Parameters</span>
-</span><span data-line="27"><span class="sd">    ----------</span>
-</span><span data-line="28"><span class="sd">    hidden_channels:</span>
-</span><span data-line="29"><span class="sd">        Hidden channel dimension, i.e. node feature size used for the node embedding.</span>
-</span><span data-line="30"><span class="sd">    edge_attr_dim:</span>
-</span><span data-line="31"><span class="sd">        Edge attributes dimension, i.e. number of radial basis functions.</span>
-</span><span data-line="32"><span class="sd">    cutoff:</span>
-</span><span data-line="33"><span class="sd">        Cutoff function</span>
-</span><span data-line="34"><span class="sd">    activation:</span>
-</span><span data-line="35"><span class="sd">        Activation function applied to linear layer outputs.</span>
-</span><span data-line="36"><span class="sd">    aggr:</span>
-</span><span data-line="37"><span class="sd">        Aggregation scheme for continuous filter output. For all options,</span>
-</span><span data-line="38"><span class="sd">        see `here &lt;https://pytorch-geometric.readthedocs.io/en/latest/notes/create_gnn.html?highlight=MessagePassing#the-messagepassing-base-class&gt;`.</span>
-</span><span data-line="39"><span class="sd">    &quot;&quot;&quot;</span>
-</span><span data-line="40">
-</span><span data-line="41">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-</span><span data-line="42">        <span class="bp">self</span><span class="p">,</span>
-</span><span data-line="43">        <span class="n">hidden_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-</span><span data-line="44">        <span class="n">edge_attr_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-</span><span data-line="45">        <span class="n">cutoff</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
-</span><span data-line="46">        <span class="n">activation</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
-</span><span data-line="47">        <span class="n">aggr</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;add&quot;</span><span class="p">,</span>
-</span><span data-line="48">    <span class="p">):</span>
-</span><span data-line="49">        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">aggr</span><span class="o">=</span><span class="n">aggr</span><span class="p">)</span>
-</span><span data-line="50">        <span class="bp">self</span><span class="o">.</span><span class="n">hidden_channels</span> <span class="o">=</span> <span class="n">hidden_channels</span>
-</span><span data-line="51">
-</span><span data-line="52">        <span class="bp">self</span><span class="o">.</span><span class="n">interatomic_context_net</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
-</span><span data-line="53">            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden_channels</span><span class="p">,</span> <span class="n">hidden_channels</span><span class="p">),</span>
-</span><span data-line="54">            <span class="n">activation</span><span class="p">,</span>
-</span><span data-line="55">            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden_channels</span><span class="p">,</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">hidden_channels</span><span class="p">),</span>
-</span><span data-line="56">        <span class="p">)</span>
-</span><span data-line="57">        <span class="bp">self</span><span class="o">.</span><span class="n">filter_network</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">edge_attr_dim</span><span class="p">,</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">hidden_channels</span><span class="p">)</span>
-</span><span data-line="58">        <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span> <span class="o">=</span> <span class="n">cutoff</span>
-</span><span data-line="59">
+</span><span data-line="24"><span class="k">class</span><span class="w"> </span><span class="nc">PaiNNInteraction</span><span class="p">(</span><span class="n">MessagePassing</span><span class="p">):</span>
+</span><span data-line="25"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;PyTorch Geometric implementation of PaiNN block for modeling equivariant interactions.</span>
+</span><span data-line="26"><span class="sd">    Code adapted from https://schnetpack.readthedocs.io/en/latest/api/generated/representation.PaiNN.html</span>
+</span><span data-line="27">
+</span><span data-line="28"><span class="sd">    Parameters</span>
+</span><span data-line="29"><span class="sd">    ----------</span>
+</span><span data-line="30"><span class="sd">    hidden_channels:</span>
+</span><span data-line="31"><span class="sd">        Hidden channel dimension, i.e. node feature size used for the node embedding.</span>
+</span><span data-line="32"><span class="sd">    edge_attr_dim:</span>
+</span><span data-line="33"><span class="sd">        Edge attributes dimension, i.e. number of radial basis functions.</span>
+</span><span data-line="34"><span class="sd">    cutoff:</span>
+</span><span data-line="35"><span class="sd">        Cutoff function</span>
+</span><span data-line="36"><span class="sd">    activation:</span>
+</span><span data-line="37"><span class="sd">        Activation function applied to linear layer outputs.</span>
+</span><span data-line="38"><span class="sd">    aggr:</span>
+</span><span data-line="39"><span class="sd">        Aggregation scheme for continuous filter output. For all options,</span>
+</span><span data-line="40"><span class="sd">        see `here &lt;https://pytorch-geometric.readthedocs.io/en/latest/notes/create_gnn.html?highlight=MessagePassing#the-messagepassing-base-class&gt;`.</span>
+</span><span data-line="41"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="42">
+</span><span data-line="43">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+</span><span data-line="44">        <span class="bp">self</span><span class="p">,</span>
+</span><span data-line="45">        <span class="n">hidden_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span data-line="46">        <span class="n">edge_attr_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span data-line="47">        <span class="n">cutoff</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+</span><span data-line="48">        <span class="n">activation</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+</span><span data-line="49">        <span class="n">aggr</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;add&quot;</span><span class="p">,</span>
+</span><span data-line="50">    <span class="p">):</span>
+</span><span data-line="51">        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">aggr</span><span class="o">=</span><span class="n">aggr</span><span class="p">)</span>
+</span><span data-line="52">        <span class="bp">self</span><span class="o">.</span><span class="n">hidden_channels</span> <span class="o">=</span> <span class="n">hidden_channels</span>
+</span><span data-line="53">
+</span><span data-line="54">        <span class="bp">self</span><span class="o">.</span><span class="n">interatomic_context_net</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+</span><span data-line="55">            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden_channels</span><span class="p">,</span> <span class="n">hidden_channels</span><span class="p">),</span>
+</span><span data-line="56">            <span class="n">activation</span><span class="p">,</span>
+</span><span data-line="57">            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden_channels</span><span class="p">,</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">hidden_channels</span><span class="p">),</span>
+</span><span data-line="58">        <span class="p">)</span>
+</span><span data-line="59">        <span class="bp">self</span><span class="o">.</span><span class="n">filter_network</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">edge_attr_dim</span><span class="p">,</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">hidden_channels</span><span class="p">)</span>
+</span><span data-line="60">        <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span> <span class="o">=</span> <span class="n">cutoff</span>
+</span><span data-line="61">
 <div class="viewcode-block" id="PaiNNInteraction.reset_parameters">
 <a class="viewcode-back" href="../../../autodoc.html#mlcg.nn.painn.PaiNNInteraction.reset_parameters">[docs]</a>
-</span><span data-line="60">    <span class="k">def</span><span class="w"> </span><span class="nf">reset_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="61"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Method for resetting the weights of the linear</span>
-</span><span data-line="62"><span class="sd">        layers and filter network according the the</span>
-</span><span data-line="63"><span class="sd">        Xavier uniform strategy. Biases</span>
-</span><span data-line="64"><span class="sd">        are set to 0.</span>
-</span><span data-line="65"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="66">
-</span><span data-line="67">        <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">interatomic_context_net</span><span class="p">:</span>
-</span><span data-line="68">            <span class="n">init_xavier_uniform</span><span class="p">(</span><span class="n">module</span><span class="p">)</span>
-</span><span data-line="69">        <span class="n">init_xavier_uniform</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filter_network</span><span class="p">)</span></div>
+</span><span data-line="62">    <span class="k">def</span><span class="w"> </span><span class="nf">reset_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span data-line="63"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Method for resetting the weights of the linear</span>
+</span><span data-line="64"><span class="sd">        layers and filter network according the the</span>
+</span><span data-line="65"><span class="sd">        Xavier uniform strategy. Biases</span>
+</span><span data-line="66"><span class="sd">        are set to 0.</span>
+</span><span data-line="67"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="68">
+</span><span data-line="69">        <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">interatomic_context_net</span><span class="p">:</span>
+</span><span data-line="70">            <span class="n">init_xavier_uniform</span><span class="p">(</span><span class="n">module</span><span class="p">)</span>
+</span><span data-line="71">        <span class="n">init_xavier_uniform</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filter_network</span><span class="p">)</span></div>
 
-</span><span data-line="70">
+</span><span data-line="72">
 <div class="viewcode-block" id="PaiNNInteraction.forward">
 <a class="viewcode-back" href="../../../autodoc.html#mlcg.nn.painn.PaiNNInteraction.forward">[docs]</a>
-</span><span data-line="71">    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span>
-</span><span data-line="72">        <span class="bp">self</span><span class="p">,</span>
-</span><span data-line="73">        <span class="n">scalar_node_features</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>  <span class="c1"># (n_nodes, 1, n_feat)</span>
-</span><span data-line="74">        <span class="n">vector_node_features</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>  <span class="c1"># (n_nodes, 3, n_feat)</span>
-</span><span data-line="75">        <span class="n">normdir</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>  <span class="c1"># (n_edges, 3)</span>
-</span><span data-line="76">        <span class="n">edge_index</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>  <span class="c1"># (2, n_edges)</span>
-</span><span data-line="77">        <span class="n">edge_weight</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>  <span class="c1"># (n_edges)</span>
-</span><span data-line="78">        <span class="n">edge_attr</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>  <span class="c1"># (n_edges, edge_attr_dim)</span>
-</span><span data-line="79">    <span class="p">):</span>
-</span><span data-line="80"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute interaction output.</span>
-</span><span data-line="81">
-</span><span data-line="82"><span class="sd">        Parameters</span>
-</span><span data-line="83"><span class="sd">        ----------</span>
-</span><span data-line="84"><span class="sd">        scalar_node_features:</span>
-</span><span data-line="85"><span class="sd">            Scalar input embedding per node with shape (n_nodes, 1, n_feat).</span>
-</span><span data-line="86"><span class="sd">        vector_node_features:</span>
-</span><span data-line="87"><span class="sd">            Vector input embedding per node with shape (n_nodes, 3, n_feat).</span>
-</span><span data-line="88"><span class="sd">        normdir:</span>
-</span><span data-line="89"><span class="sd">            Normalized directions for every edge with shape (total_num_edges, 3).</span>
-</span><span data-line="90"><span class="sd">        edge_index:</span>
-</span><span data-line="91"><span class="sd">            Graph edge index tensor of shape (2, total_num_edges).</span>
-</span><span data-line="92"><span class="sd">        edge_weight:</span>
-</span><span data-line="93"><span class="sd">            Scalar edge weight, i.e. distances, of shape (total_num_edges, 1).</span>
-</span><span data-line="94"><span class="sd">        edge_attr</span>
-</span><span data-line="95"><span class="sd">            Edge attributes, i.e. rbf projection, of shape (total_num_edges, edge_attr_dim).</span>
-</span><span data-line="96">
-</span><span data-line="97"><span class="sd">        Returns</span>
-</span><span data-line="98"><span class="sd">        -------</span>
-</span><span data-line="99"><span class="sd">        x_scalar:</span>
-</span><span data-line="100"><span class="sd">            Updated scalar embedding per node with shape (n_nodes, 1, n_feat).</span>
-</span><span data-line="101"><span class="sd">        x_vector:</span>
-</span><span data-line="102"><span class="sd">            Updated vector embedding per node with shape (n_nodes, 3, n_feat).</span>
-</span><span data-line="103"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="104">        <span class="n">C</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="p">(</span><span class="n">edge_weight</span><span class="p">)</span>
-</span><span data-line="105">        <span class="n">W</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter_network</span><span class="p">(</span><span class="n">edge_attr</span><span class="p">)</span> <span class="o">*</span> <span class="n">C</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-</span><span data-line="106">
-</span><span data-line="107">        <span class="n">x_scalar</span> <span class="o">=</span> <span class="n">scalar_node_features</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># (n_nodes, n_feat)</span>
-</span><span data-line="108">        <span class="n">n_nodes</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">x_scalar</span><span class="o">.</span><span class="n">shape</span>
-</span><span data-line="109">        <span class="n">x_vector</span> <span class="o">=</span> <span class="n">vector_node_features</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># (n_nodes, 3*n_feat)</span>
-</span><span data-line="110">        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interatomic_context_net</span><span class="p">(</span><span class="n">x_scalar</span><span class="p">)</span>
-</span><span data-line="111">
-</span><span data-line="112">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">propagate</span><span class="p">(</span>
-</span><span data-line="113">            <span class="n">edge_index</span><span class="p">,</span>
-</span><span data-line="114">            <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span>
-</span><span data-line="115">            <span class="n">x_scalar</span><span class="o">=</span><span class="n">x_scalar</span><span class="p">,</span>
-</span><span data-line="116">            <span class="n">x_vector</span><span class="o">=</span><span class="n">x_vector</span><span class="p">,</span>
-</span><span data-line="117">            <span class="n">W</span><span class="o">=</span><span class="n">W</span><span class="p">,</span>
-</span><span data-line="118">            <span class="n">normdir</span><span class="o">=</span><span class="n">normdir</span><span class="p">,</span>
-</span><span data-line="119">        <span class="p">)</span></div>
+</span><span data-line="73">    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span>
+</span><span data-line="74">        <span class="bp">self</span><span class="p">,</span>
+</span><span data-line="75">        <span class="n">scalar_node_features</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>  <span class="c1"># (n_nodes, 1, n_feat)</span>
+</span><span data-line="76">        <span class="n">vector_node_features</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>  <span class="c1"># (n_nodes, 3, n_feat)</span>
+</span><span data-line="77">        <span class="n">normdir</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>  <span class="c1"># (n_edges, 3)</span>
+</span><span data-line="78">        <span class="n">edge_index</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>  <span class="c1"># (2, n_edges)</span>
+</span><span data-line="79">        <span class="n">edge_weight</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>  <span class="c1"># (n_edges)</span>
+</span><span data-line="80">        <span class="n">edge_attr</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>  <span class="c1"># (n_edges, edge_attr_dim)</span>
+</span><span data-line="81">    <span class="p">):</span>
+</span><span data-line="82"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute interaction output.</span>
+</span><span data-line="83">
+</span><span data-line="84"><span class="sd">        Parameters</span>
+</span><span data-line="85"><span class="sd">        ----------</span>
+</span><span data-line="86"><span class="sd">        scalar_node_features:</span>
+</span><span data-line="87"><span class="sd">            Scalar input embedding per node with shape (n_nodes, 1, n_feat).</span>
+</span><span data-line="88"><span class="sd">        vector_node_features:</span>
+</span><span data-line="89"><span class="sd">            Vector input embedding per node with shape (n_nodes, 3, n_feat).</span>
+</span><span data-line="90"><span class="sd">        normdir:</span>
+</span><span data-line="91"><span class="sd">            Normalized directions for every edge with shape (total_num_edges, 3).</span>
+</span><span data-line="92"><span class="sd">        edge_index:</span>
+</span><span data-line="93"><span class="sd">            Graph edge index tensor of shape (2, total_num_edges).</span>
+</span><span data-line="94"><span class="sd">        edge_weight:</span>
+</span><span data-line="95"><span class="sd">            Scalar edge weight, i.e. distances, of shape (total_num_edges, 1).</span>
+</span><span data-line="96"><span class="sd">        edge_attr</span>
+</span><span data-line="97"><span class="sd">            Edge attributes, i.e. rbf projection, of shape (total_num_edges, edge_attr_dim).</span>
+</span><span data-line="98">
+</span><span data-line="99"><span class="sd">        Returns</span>
+</span><span data-line="100"><span class="sd">        -------</span>
+</span><span data-line="101"><span class="sd">        x_scalar:</span>
+</span><span data-line="102"><span class="sd">            Updated scalar embedding per node with shape (n_nodes, 1, n_feat).</span>
+</span><span data-line="103"><span class="sd">        x_vector:</span>
+</span><span data-line="104"><span class="sd">            Updated vector embedding per node with shape (n_nodes, 3, n_feat).</span>
+</span><span data-line="105"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="106">        <span class="n">C</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="p">(</span><span class="n">edge_weight</span><span class="p">)</span>
+</span><span data-line="107">        <span class="n">W</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter_network</span><span class="p">(</span><span class="n">edge_attr</span><span class="p">)</span> <span class="o">*</span> <span class="n">C</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</span><span data-line="108">
+</span><span data-line="109">        <span class="n">x_scalar</span> <span class="o">=</span> <span class="n">scalar_node_features</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># (n_nodes, n_feat)</span>
+</span><span data-line="110">        <span class="n">n_nodes</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">x_scalar</span><span class="o">.</span><span class="n">shape</span>
+</span><span data-line="111">        <span class="n">x_vector</span> <span class="o">=</span> <span class="n">vector_node_features</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># (n_nodes, 3*n_feat)</span>
+</span><span data-line="112">        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interatomic_context_net</span><span class="p">(</span><span class="n">x_scalar</span><span class="p">)</span>
+</span><span data-line="113">
+</span><span data-line="114">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">propagate</span><span class="p">(</span>
+</span><span data-line="115">            <span class="n">edge_index</span><span class="p">,</span>
+</span><span data-line="116">            <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span>
+</span><span data-line="117">            <span class="n">x_scalar</span><span class="o">=</span><span class="n">x_scalar</span><span class="p">,</span>
+</span><span data-line="118">            <span class="n">x_vector</span><span class="o">=</span><span class="n">x_vector</span><span class="p">,</span>
+</span><span data-line="119">            <span class="n">W</span><span class="o">=</span><span class="n">W</span><span class="p">,</span>
+</span><span data-line="120">            <span class="n">normdir</span><span class="o">=</span><span class="n">normdir</span><span class="p">,</span>
+</span><span data-line="121">        <span class="p">)</span></div>
 
-</span><span data-line="120">
+</span><span data-line="122">
 <div class="viewcode-block" id="PaiNNInteraction.message">
 <a class="viewcode-back" href="../../../autodoc.html#mlcg.nn.painn.PaiNNInteraction.message">[docs]</a>
-</span><span data-line="121">    <span class="k">def</span><span class="w"> </span><span class="nf">message</span><span class="p">(</span>
-</span><span data-line="122">        <span class="bp">self</span><span class="p">,</span>
-</span><span data-line="123">        <span class="n">x_j</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-</span><span data-line="124">        <span class="n">x_vector_j</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-</span><span data-line="125">        <span class="n">W</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-</span><span data-line="126">        <span class="n">normdir</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-</span><span data-line="127">    <span class="p">):</span>
-</span><span data-line="128"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Message passing operation to generate messages for</span>
-</span><span data-line="129"><span class="sd">        scalar and vectorial features.</span>
-</span><span data-line="130">
-</span><span data-line="131"><span class="sd">        Parameters</span>
-</span><span data-line="132"><span class="sd">        ----------</span>
-</span><span data-line="133"><span class="sd">        x_j:</span>
-</span><span data-line="134"><span class="sd">            Tensor of embedded features of shape</span>
-</span><span data-line="135"><span class="sd">            (total_num_edges,3*hidden_channels)</span>
-</span><span data-line="136"><span class="sd">        x_vector_j:</span>
-</span><span data-line="137"><span class="sd">            Tensor of vectorial features of shape</span>
-</span><span data-line="138"><span class="sd">            (total_num_edges,3*hidden_channels)</span>
-</span><span data-line="139"><span class="sd">        W:</span>
-</span><span data-line="140"><span class="sd">            Tensor of filter values of shape</span>
-</span><span data-line="141"><span class="sd">            (total_num_edges, 3*hidden_channels)</span>
-</span><span data-line="142"><span class="sd">        normdir:</span>
-</span><span data-line="143"><span class="sd">            Tensor of distances versors of shape</span>
-</span><span data-line="144"><span class="sd">            (total_num_edges, 3)</span>
-</span><span data-line="145">
-</span><span data-line="146"><span class="sd">        Returns</span>
-</span><span data-line="147"><span class="sd">        -------</span>
-</span><span data-line="148"><span class="sd">        dq:</span>
-</span><span data-line="149"><span class="sd">            Scalar updates for all nodes.</span>
-</span><span data-line="150"><span class="sd">        dmu:</span>
-</span><span data-line="151"><span class="sd">            Vectorial updates for all nodes</span>
-</span><span data-line="152"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="153">        <span class="n">x_j</span> <span class="o">=</span> <span class="n">x_j</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># reshape as (total_num_edges, 1, 3*n_feats)</span>
-</span><span data-line="154">        <span class="n">x_vector_j</span> <span class="o">=</span> <span class="n">x_vector_j</span><span class="o">.</span><span class="n">view</span><span class="p">(</span>
-</span><span data-line="155">            <span class="n">x_j</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span>
-</span><span data-line="156">        <span class="p">)</span>  <span class="c1"># reshape as (total_num_edges, 3, n_feats)</span>
-</span><span data-line="157">        <span class="n">x</span> <span class="o">=</span> <span class="n">W</span> <span class="o">*</span> <span class="n">x_j</span>
-</span><span data-line="158">        <span class="n">dq</span><span class="p">,</span> <span class="n">dmuR</span><span class="p">,</span> <span class="n">dmumu</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_channels</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-</span><span data-line="159">        <span class="n">dmu</span> <span class="o">=</span> <span class="n">dmuR</span> <span class="o">*</span> <span class="n">normdir</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">dmumu</span> <span class="o">*</span> <span class="n">x_vector_j</span>
-</span><span data-line="160">
-</span><span data-line="161">        <span class="k">return</span> <span class="n">dq</span><span class="p">,</span> <span class="n">dmu</span></div>
-
+</span><span data-line="123">    <span class="k">def</span><span class="w"> </span><span class="nf">message</span><span class="p">(</span>
+</span><span data-line="124">        <span class="bp">self</span><span class="p">,</span>
+</span><span data-line="125">        <span class="n">x_j</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+</span><span data-line="126">        <span class="n">x_vector_j</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+</span><span data-line="127">        <span class="n">W</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+</span><span data-line="128">        <span class="n">normdir</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+</span><span data-line="129">    <span class="p">):</span>
+</span><span data-line="130"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Message passing operation to generate messages for</span>
+</span><span data-line="131"><span class="sd">        scalar and vectorial features.</span>
+</span><span data-line="132">
+</span><span data-line="133"><span class="sd">        Parameters</span>
+</span><span data-line="134"><span class="sd">        ----------</span>
+</span><span data-line="135"><span class="sd">        x_j:</span>
+</span><span data-line="136"><span class="sd">            Tensor of embedded features of shape</span>
+</span><span data-line="137"><span class="sd">            (total_num_edges,3*hidden_channels)</span>
+</span><span data-line="138"><span class="sd">        x_vector_j:</span>
+</span><span data-line="139"><span class="sd">            Tensor of vectorial features of shape</span>
+</span><span data-line="140"><span class="sd">            (total_num_edges,3*hidden_channels)</span>
+</span><span data-line="141"><span class="sd">        W:</span>
+</span><span data-line="142"><span class="sd">            Tensor of filter values of shape</span>
+</span><span data-line="143"><span class="sd">            (total_num_edges, 3*hidden_channels)</span>
+</span><span data-line="144"><span class="sd">        normdir:</span>
+</span><span data-line="145"><span class="sd">            Tensor of distances versors of shape</span>
+</span><span data-line="146"><span class="sd">            (total_num_edges, 3)</span>
+</span><span data-line="147">
+</span><span data-line="148"><span class="sd">        Returns</span>
+</span><span data-line="149"><span class="sd">        -------</span>
+</span><span data-line="150"><span class="sd">        dq:</span>
+</span><span data-line="151"><span class="sd">            Scalar updates for all nodes.</span>
+</span><span data-line="152"><span class="sd">        dmu:</span>
+</span><span data-line="153"><span class="sd">            Vectorial updates for all nodes</span>
+</span><span data-line="154"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="155">        <span class="n">x_j</span> <span class="o">=</span> <span class="n">x_j</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># reshape as (total_num_edges, 1, 3*n_feats)</span>
+</span><span data-line="156">        <span class="n">x_vector_j</span> <span class="o">=</span> <span class="n">x_vector_j</span><span class="o">.</span><span class="n">view</span><span class="p">(</span>
+</span><span data-line="157">            <span class="n">x_j</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span>
+</span><span data-line="158">        <span class="p">)</span>  <span class="c1"># reshape as (total_num_edges, 3, n_feats)</span>
+</span><span data-line="159">        <span class="n">x</span> <span class="o">=</span> <span class="n">W</span> <span class="o">*</span> <span class="n">x_j</span>
+</span><span data-line="160">        <span class="n">dq</span><span class="p">,</span> <span class="n">dmuR</span><span class="p">,</span> <span class="n">dmumu</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_channels</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+</span><span data-line="161">        <span class="n">dmu</span> <span class="o">=</span> <span class="n">dmuR</span> <span class="o">*</span> <span class="n">normdir</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">dmumu</span> <span class="o">*</span> <span class="n">x_vector_j</span>
 </span><span data-line="162">
+</span><span data-line="163">        <span class="k">return</span> <span class="n">dq</span><span class="p">,</span> <span class="n">dmu</span></div>
+
+</span><span data-line="164">
 <div class="viewcode-block" id="PaiNNInteraction.aggregate">
 <a class="viewcode-back" href="../../../autodoc.html#mlcg.nn.painn.PaiNNInteraction.aggregate">[docs]</a>
-</span><span data-line="163">    <span class="k">def</span><span class="w"> </span><span class="nf">aggregate</span><span class="p">(</span>
-</span><span data-line="164">        <span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">dim_size</span><span class="p">:</span> <span class="nb">int</span>
-</span><span data-line="165">    <span class="p">):</span>
-</span><span data-line="166">        <span class="n">dq</span><span class="p">,</span> <span class="n">dmu</span> <span class="o">=</span> <span class="n">inputs</span>
-</span><span data-line="167">        <span class="n">dq</span> <span class="o">=</span> <span class="n">scatter</span><span class="p">(</span><span class="n">dq</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">dim_size</span><span class="o">=</span><span class="n">dim_size</span><span class="p">)</span>
-</span><span data-line="168">        <span class="n">dmu</span> <span class="o">=</span> <span class="n">scatter</span><span class="p">(</span><span class="n">dmu</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">dim_size</span><span class="o">=</span><span class="n">dim_size</span><span class="p">)</span>
-</span><span data-line="169">
-</span><span data-line="170">        <span class="k">return</span> <span class="n">dq</span><span class="p">,</span> <span class="n">dmu</span></div>
-
+</span><span data-line="165">    <span class="k">def</span><span class="w"> </span><span class="nf">aggregate</span><span class="p">(</span>
+</span><span data-line="166">        <span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">dim_size</span><span class="p">:</span> <span class="nb">int</span>
+</span><span data-line="167">    <span class="p">):</span>
+</span><span data-line="168">        <span class="n">dq</span><span class="p">,</span> <span class="n">dmu</span> <span class="o">=</span> <span class="n">inputs</span>
+</span><span data-line="169">        <span class="n">dq</span> <span class="o">=</span> <span class="n">scatter</span><span class="p">(</span><span class="n">dq</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">dim_size</span><span class="o">=</span><span class="n">dim_size</span><span class="p">)</span>
+</span><span data-line="170">        <span class="n">dmu</span> <span class="o">=</span> <span class="n">scatter</span><span class="p">(</span><span class="n">dmu</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">dim_size</span><span class="o">=</span><span class="n">dim_size</span><span class="p">)</span>
 </span><span data-line="171">
+</span><span data-line="172">        <span class="k">return</span> <span class="n">dq</span><span class="p">,</span> <span class="n">dmu</span></div>
+
+</span><span data-line="173">
 <div class="viewcode-block" id="PaiNNInteraction.update">
 <a class="viewcode-back" href="../../../autodoc.html#mlcg.nn.painn.PaiNNInteraction.update">[docs]</a>
-</span><span data-line="172">    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span>
-</span><span data-line="173">        <span class="bp">self</span><span class="p">,</span>
-</span><span data-line="174">        <span class="n">inputs</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-</span><span data-line="175">        <span class="n">x_scalar</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-</span><span data-line="176">        <span class="n">x_vector</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-</span><span data-line="177">    <span class="p">):</span>
-</span><span data-line="178">        <span class="n">dq</span><span class="p">,</span> <span class="n">dmu</span> <span class="o">=</span> <span class="n">inputs</span>
-</span><span data-line="179">        <span class="n">x_scalar</span> <span class="o">=</span> <span class="n">x_scalar</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">dq</span>
-</span><span data-line="180">        <span class="n">x_vector</span> <span class="o">=</span> <span class="n">x_vector</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">x_scalar</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">dmu</span>
-</span><span data-line="181">
-</span><span data-line="182">        <span class="k">return</span> <span class="n">x_scalar</span><span class="p">,</span> <span class="n">x_vector</span></div>
+</span><span data-line="174">    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span>
+</span><span data-line="175">        <span class="bp">self</span><span class="p">,</span>
+</span><span data-line="176">        <span class="n">inputs</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+</span><span data-line="177">        <span class="n">x_scalar</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+</span><span data-line="178">        <span class="n">x_vector</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+</span><span data-line="179">    <span class="p">):</span>
+</span><span data-line="180">        <span class="n">dq</span><span class="p">,</span> <span class="n">dmu</span> <span class="o">=</span> <span class="n">inputs</span>
+</span><span data-line="181">        <span class="n">x_scalar</span> <span class="o">=</span> <span class="n">x_scalar</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">dq</span>
+</span><span data-line="182">        <span class="n">x_vector</span> <span class="o">=</span> <span class="n">x_vector</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">x_scalar</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">dmu</span>
+</span><span data-line="183">
+</span><span data-line="184">        <span class="k">return</span> <span class="n">x_scalar</span><span class="p">,</span> <span class="n">x_vector</span></div>
 </div>
 
-</span><span data-line="183">
-</span><span data-line="184">
+</span><span data-line="185">
+</span><span data-line="186">
 <div class="viewcode-block" id="PaiNNMixing">
 <a class="viewcode-back" href="../../../autodoc.html#mlcg.nn.painn.PaiNNMixing">[docs]</a>
-</span><span data-line="185"><span class="k">class</span><span class="w"> </span><span class="nc">PaiNNMixing</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-</span><span data-line="186"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;PaiNN interaction block for mixing on scalar and vectorial atom features.</span>
-</span><span data-line="187"><span class="sd">    Code adapted from https://schnetpack.readthedocs.io/en/latest/api/generated/representation.PaiNN.html</span>
-</span><span data-line="188">
-</span><span data-line="189"><span class="sd">    Parameters</span>
-</span><span data-line="190"><span class="sd">    -----------</span>
-</span><span data-line="191"><span class="sd">    hidden_channels:</span>
-</span><span data-line="192"><span class="sd">        Hidden channel dimension, i.e. node feature size used for the node embedding.</span>
-</span><span data-line="193"><span class="sd">    activation:</span>
-</span><span data-line="194"><span class="sd">        Activation function applied to linear layer outputs.</span>
-</span><span data-line="195"><span class="sd">    epsilon:</span>
-</span><span data-line="196"><span class="sd">        Stability constant added in norm to prevent numerical instabilities.</span>
-</span><span data-line="197"><span class="sd">    &quot;&quot;&quot;</span>
-</span><span data-line="198">
-</span><span data-line="199">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-</span><span data-line="200">        <span class="bp">self</span><span class="p">,</span> <span class="n">hidden_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">activation</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-8</span>
-</span><span data-line="201">    <span class="p">):</span>
-</span><span data-line="202">        <span class="nb">super</span><span class="p">(</span><span class="n">PaiNNMixing</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-</span><span data-line="203">        <span class="bp">self</span><span class="o">.</span><span class="n">hidden_channels</span> <span class="o">=</span> <span class="n">hidden_channels</span>
-</span><span data-line="204">
-</span><span data-line="205">        <span class="bp">self</span><span class="o">.</span><span class="n">intraatomic_context_net</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
-</span><span data-line="206">            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">hidden_channels</span><span class="p">,</span> <span class="n">hidden_channels</span><span class="p">),</span>
-</span><span data-line="207">            <span class="n">activation</span><span class="p">,</span>
-</span><span data-line="208">            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden_channels</span><span class="p">,</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">hidden_channels</span><span class="p">),</span>
-</span><span data-line="209">        <span class="p">)</span>
-</span><span data-line="210">        <span class="bp">self</span><span class="o">.</span><span class="n">mu_channel_mix</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span>
-</span><span data-line="211">            <span class="n">hidden_channels</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">hidden_channels</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span>
-</span><span data-line="212">        <span class="p">)</span>
-</span><span data-line="213">        <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="n">epsilon</span>
-</span><span data-line="214">
+</span><span data-line="187"><span class="k">class</span><span class="w"> </span><span class="nc">PaiNNMixing</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+</span><span data-line="188"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;PaiNN interaction block for mixing on scalar and vectorial atom features.</span>
+</span><span data-line="189"><span class="sd">    Code adapted from https://schnetpack.readthedocs.io/en/latest/api/generated/representation.PaiNN.html</span>
+</span><span data-line="190">
+</span><span data-line="191"><span class="sd">    Parameters</span>
+</span><span data-line="192"><span class="sd">    -----------</span>
+</span><span data-line="193"><span class="sd">    hidden_channels:</span>
+</span><span data-line="194"><span class="sd">        Hidden channel dimension, i.e. node feature size used for the node embedding.</span>
+</span><span data-line="195"><span class="sd">    activation:</span>
+</span><span data-line="196"><span class="sd">        Activation function applied to linear layer outputs.</span>
+</span><span data-line="197"><span class="sd">    epsilon:</span>
+</span><span data-line="198"><span class="sd">        Stability constant added in norm to prevent numerical instabilities.</span>
+</span><span data-line="199"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="200">
+</span><span data-line="201">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+</span><span data-line="202">        <span class="bp">self</span><span class="p">,</span> <span class="n">hidden_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">activation</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-8</span>
+</span><span data-line="203">    <span class="p">):</span>
+</span><span data-line="204">        <span class="nb">super</span><span class="p">(</span><span class="n">PaiNNMixing</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+</span><span data-line="205">        <span class="bp">self</span><span class="o">.</span><span class="n">hidden_channels</span> <span class="o">=</span> <span class="n">hidden_channels</span>
+</span><span data-line="206">
+</span><span data-line="207">        <span class="bp">self</span><span class="o">.</span><span class="n">intraatomic_context_net</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+</span><span data-line="208">            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">hidden_channels</span><span class="p">,</span> <span class="n">hidden_channels</span><span class="p">),</span>
+</span><span data-line="209">            <span class="n">activation</span><span class="p">,</span>
+</span><span data-line="210">            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden_channels</span><span class="p">,</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">hidden_channels</span><span class="p">),</span>
+</span><span data-line="211">        <span class="p">)</span>
+</span><span data-line="212">        <span class="bp">self</span><span class="o">.</span><span class="n">mu_channel_mix</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span>
+</span><span data-line="213">            <span class="n">hidden_channels</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">hidden_channels</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span>
+</span><span data-line="214">        <span class="p">)</span>
+</span><span data-line="215">        <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="n">epsilon</span>
+</span><span data-line="216">
 <div class="viewcode-block" id="PaiNNMixing.reset_parameters">
 <a class="viewcode-back" href="../../../autodoc.html#mlcg.nn.painn.PaiNNMixing.reset_parameters">[docs]</a>
-</span><span data-line="215">    <span class="k">def</span><span class="w"> </span><span class="nf">reset_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="216"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Method for resetting the weights of the linear</span>
-</span><span data-line="217"><span class="sd">        layers and filter network according the the</span>
-</span><span data-line="218"><span class="sd">        Xavier uniform strategy. Biases</span>
-</span><span data-line="219"><span class="sd">        are set to 0.</span>
-</span><span data-line="220"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="221">        <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">intraatomic_context_net</span><span class="p">:</span>
-</span><span data-line="222">            <span class="n">init_xavier_uniform</span><span class="p">(</span><span class="n">module</span><span class="p">)</span>
-</span><span data-line="223">        <span class="n">init_xavier_uniform</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mu_channel_mix</span><span class="p">)</span></div>
+</span><span data-line="217">    <span class="k">def</span><span class="w"> </span><span class="nf">reset_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span data-line="218"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Method for resetting the weights of the linear</span>
+</span><span data-line="219"><span class="sd">        layers and filter network according the the</span>
+</span><span data-line="220"><span class="sd">        Xavier uniform strategy. Biases</span>
+</span><span data-line="221"><span class="sd">        are set to 0.</span>
+</span><span data-line="222"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="223">        <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">intraatomic_context_net</span><span class="p">:</span>
+</span><span data-line="224">            <span class="n">init_xavier_uniform</span><span class="p">(</span><span class="n">module</span><span class="p">)</span>
+</span><span data-line="225">        <span class="n">init_xavier_uniform</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mu_channel_mix</span><span class="p">)</span></div>
 
-</span><span data-line="224">
+</span><span data-line="226">
 <div class="viewcode-block" id="PaiNNMixing.forward">
 <a class="viewcode-back" href="../../../autodoc.html#mlcg.nn.painn.PaiNNMixing.forward">[docs]</a>
-</span><span data-line="225">    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span>
-</span><span data-line="226">        <span class="bp">self</span><span class="p">,</span>
-</span><span data-line="227">        <span class="n">scalar_node_features</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-</span><span data-line="228">        <span class="n">vector_node_features</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-</span><span data-line="229">    <span class="p">):</span>
-</span><span data-line="230"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute intraatomic mixing.</span>
-</span><span data-line="231">
-</span><span data-line="232"><span class="sd">        Parameters</span>
-</span><span data-line="233"><span class="sd">        ----------</span>
-</span><span data-line="234"><span class="sd">        scalar_node_features:</span>
-</span><span data-line="235"><span class="sd">            Tensor of scalar features of shape (n_nodes, 1, n_feat).</span>
-</span><span data-line="236"><span class="sd">        vector_node_features:</span>
-</span><span data-line="237"><span class="sd">            Tensor of vectorial features of shape (n_nodes, 3, n_feat).</span>
-</span><span data-line="238">
-</span><span data-line="239"><span class="sd">        Returns</span>
-</span><span data-line="240"><span class="sd">        -------</span>
-</span><span data-line="241"><span class="sd">        scalar_node_features:</span>
-</span><span data-line="242"><span class="sd">            Updated tensor of scalar features, mixed with vectorial features.</span>
-</span><span data-line="243"><span class="sd">        vector_node_features:</span>
-</span><span data-line="244"><span class="sd">            Updated tensor of vectorial features, mixed with scalar features.</span>
-</span><span data-line="245"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="246">
-</span><span data-line="247">        <span class="c1"># intra-atomic</span>
-</span><span data-line="248">        <span class="n">mu_mix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu_channel_mix</span><span class="p">(</span><span class="n">vector_node_features</span><span class="p">)</span>
-</span><span data-line="249">        <span class="n">mu_V</span><span class="p">,</span> <span class="n">mu_W</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">mu_mix</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_channels</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-</span><span data-line="250">        <span class="n">mu_Vn</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span>
-</span><span data-line="251">            <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">mu_V</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">,</span> <span class="n">keepdim</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span>
-</span><span data-line="252">        <span class="p">)</span>
-</span><span data-line="253">
-</span><span data-line="254">        <span class="n">ctx</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">scalar_node_features</span><span class="p">,</span> <span class="n">mu_Vn</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-</span><span data-line="255">        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">intraatomic_context_net</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span>
-</span><span data-line="256">
-</span><span data-line="257">        <span class="n">dq_intra</span><span class="p">,</span> <span class="n">dmu_intra</span><span class="p">,</span> <span class="n">dqmu_intra</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">split</span><span class="p">(</span>
-</span><span data-line="258">            <span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_channels</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span>
-</span><span data-line="259">        <span class="p">)</span>
-</span><span data-line="260">        <span class="n">dmu_intra</span> <span class="o">=</span> <span class="n">dmu_intra</span> <span class="o">*</span> <span class="n">mu_W</span>
-</span><span data-line="261">
-</span><span data-line="262">        <span class="n">dqmu_intra</span> <span class="o">=</span> <span class="n">dqmu_intra</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">mu_V</span> <span class="o">*</span> <span class="n">mu_W</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdim</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span data-line="227">    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span>
+</span><span data-line="228">        <span class="bp">self</span><span class="p">,</span>
+</span><span data-line="229">        <span class="n">scalar_node_features</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+</span><span data-line="230">        <span class="n">vector_node_features</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+</span><span data-line="231">    <span class="p">):</span>
+</span><span data-line="232"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute intraatomic mixing.</span>
+</span><span data-line="233">
+</span><span data-line="234"><span class="sd">        Parameters</span>
+</span><span data-line="235"><span class="sd">        ----------</span>
+</span><span data-line="236"><span class="sd">        scalar_node_features:</span>
+</span><span data-line="237"><span class="sd">            Tensor of scalar features of shape (n_nodes, 1, n_feat).</span>
+</span><span data-line="238"><span class="sd">        vector_node_features:</span>
+</span><span data-line="239"><span class="sd">            Tensor of vectorial features of shape (n_nodes, 3, n_feat).</span>
+</span><span data-line="240">
+</span><span data-line="241"><span class="sd">        Returns</span>
+</span><span data-line="242"><span class="sd">        -------</span>
+</span><span data-line="243"><span class="sd">        scalar_node_features:</span>
+</span><span data-line="244"><span class="sd">            Updated tensor of scalar features, mixed with vectorial features.</span>
+</span><span data-line="245"><span class="sd">        vector_node_features:</span>
+</span><span data-line="246"><span class="sd">            Updated tensor of vectorial features, mixed with scalar features.</span>
+</span><span data-line="247"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="248">
+</span><span data-line="249">        <span class="c1"># intra-atomic</span>
+</span><span data-line="250">        <span class="n">mu_mix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu_channel_mix</span><span class="p">(</span><span class="n">vector_node_features</span><span class="p">)</span>
+</span><span data-line="251">        <span class="n">mu_V</span><span class="p">,</span> <span class="n">mu_W</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">mu_mix</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_channels</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+</span><span data-line="252">        <span class="n">mu_Vn</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span>
+</span><span data-line="253">            <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">mu_V</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">,</span> <span class="n">keepdim</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span>
+</span><span data-line="254">        <span class="p">)</span>
+</span><span data-line="255">
+</span><span data-line="256">        <span class="n">ctx</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">scalar_node_features</span><span class="p">,</span> <span class="n">mu_Vn</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+</span><span data-line="257">        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">intraatomic_context_net</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span>
+</span><span data-line="258">
+</span><span data-line="259">        <span class="n">dq_intra</span><span class="p">,</span> <span class="n">dmu_intra</span><span class="p">,</span> <span class="n">dqmu_intra</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">split</span><span class="p">(</span>
+</span><span data-line="260">            <span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_channels</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span>
+</span><span data-line="261">        <span class="p">)</span>
+</span><span data-line="262">        <span class="n">dmu_intra</span> <span class="o">=</span> <span class="n">dmu_intra</span> <span class="o">*</span> <span class="n">mu_W</span>
 </span><span data-line="263">
-</span><span data-line="264">        <span class="n">scalar_node_features</span> <span class="o">=</span> <span class="n">scalar_node_features</span> <span class="o">+</span> <span class="n">dq_intra</span> <span class="o">+</span> <span class="n">dqmu_intra</span>
-</span><span data-line="265">        <span class="n">vector_node_features</span> <span class="o">=</span> <span class="n">vector_node_features</span> <span class="o">+</span> <span class="n">dmu_intra</span>
-</span><span data-line="266">        <span class="k">return</span> <span class="n">scalar_node_features</span><span class="p">,</span> <span class="n">vector_node_features</span></div>
+</span><span data-line="264">        <span class="n">dqmu_intra</span> <span class="o">=</span> <span class="n">dqmu_intra</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">mu_V</span> <span class="o">*</span> <span class="n">mu_W</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdim</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span data-line="265">
+</span><span data-line="266">        <span class="n">scalar_node_features</span> <span class="o">=</span> <span class="n">scalar_node_features</span> <span class="o">+</span> <span class="n">dq_intra</span> <span class="o">+</span> <span class="n">dqmu_intra</span>
+</span><span data-line="267">        <span class="n">vector_node_features</span> <span class="o">=</span> <span class="n">vector_node_features</span> <span class="o">+</span> <span class="n">dmu_intra</span>
+</span><span data-line="268">        <span class="k">return</span> <span class="n">scalar_node_features</span><span class="p">,</span> <span class="n">vector_node_features</span></div>
 </div>
 
-</span><span data-line="267">
-</span><span data-line="268">
+</span><span data-line="269">
+</span><span data-line="270">
 <div class="viewcode-block" id="PaiNN">
 <a class="viewcode-back" href="../../../models/mlip.html#mlcg.nn.painn.PaiNN">[docs]</a>
-</span><span data-line="269"><span class="k">class</span><span class="w"> </span><span class="nc">PaiNN</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-</span><span data-line="270"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Implementation of PaiNN - polarizable interaction neural network</span>
-</span><span data-line="271"><span class="sd">    Code adapted from https://schnetpack.readthedocs.io/en/latest/api/generated/representation.PaiNN.html</span>
-</span><span data-line="272"><span class="sd">    which is based on the architecture described in http://proceedings.mlr.press/v139/schutt21a.html</span>
-</span><span data-line="273">
-</span><span data-line="274"><span class="sd">    Parameters</span>
-</span><span data-line="275"><span class="sd">    ----------</span>
-</span><span data-line="276"><span class="sd">    embedding_layer:</span>
-</span><span data-line="277"><span class="sd">        Initial embedding layer that transforms atoms/coarse grain bead</span>
-</span><span data-line="278"><span class="sd">        types into embedded features</span>
-</span><span data-line="279"><span class="sd">    interaction_blocks:</span>
-</span><span data-line="280"><span class="sd">        list of PaiNNInteraction or single PaiNNInteraction block.</span>
-</span><span data-line="281"><span class="sd">        Sequential interaction blocks of the model, where each interaction</span>
-</span><span data-line="282"><span class="sd">        block applies.</span>
-</span><span data-line="283"><span class="sd">    mixing_blocks:</span>
-</span><span data-line="284"><span class="sd">        List of PaiNNMixing or single PaiNNMixing block.</span>
-</span><span data-line="285"><span class="sd">        Sequential mixing blocks of the model, where each mixing</span>
-</span><span data-line="286"><span class="sd">        applies after each interaction block.</span>
-</span><span data-line="287"><span class="sd">    rbf_layer:</span>
-</span><span data-line="288"><span class="sd">        The set of radial basis functions that expands pairwise distances</span>
-</span><span data-line="289"><span class="sd">        between atoms/CG beads.</span>
-</span><span data-line="290"><span class="sd">    output_network:</span>
-</span><span data-line="291"><span class="sd">        Output neural network that predicts scalar energies from scalar PaiNN</span>
-</span><span data-line="292"><span class="sd">        features. This network should transform (num_examples * num_atoms,</span>
-</span><span data-line="293"><span class="sd">        hidden_channels) to (num_examples * num atoms, 1).</span>
-</span><span data-line="294"><span class="sd">    max_num_neighbors:</span>
-</span><span data-line="295"><span class="sd">        Maximum number of neighbors to return for a</span>
-</span><span data-line="296"><span class="sd">        given node/atom when constructing the molecular graph during forward</span>
-</span><span data-line="297"><span class="sd">        passes. This attribute is passed to the torch_cluster radius_graph</span>
-</span><span data-line="298"><span class="sd">        routine keyword max_num_neighbors, which normally defaults to 32.</span>
-</span><span data-line="299"><span class="sd">        Users should set this to higher values if they are using higher upper</span>
-</span><span data-line="300"><span class="sd">        distance cutoffs and expect more than 32 neighbors per node/atom.</span>
-</span><span data-line="301"><span class="sd">    nls_distance_method:</span>
-</span><span data-line="302"><span class="sd">        Method for computing a neighbor list. Supported values are</span>
-</span><span data-line="303"><span class="sd">        `torch`, `nvalchemi_naive`, `nvalchemi_cell` and custom.</span>
-</span><span data-line="304"><span class="sd">    &quot;&quot;&quot;</span>
-</span><span data-line="305">
-</span><span data-line="306">    <span class="n">name</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;PaiNN&quot;</span>
+</span><span data-line="271"><span class="k">class</span><span class="w"> </span><span class="nc">PaiNN</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+</span><span data-line="272"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Implementation of PaiNN - polarizable interaction neural network</span>
+</span><span data-line="273"><span class="sd">    Code adapted from https://schnetpack.readthedocs.io/en/latest/api/generated/representation.PaiNN.html</span>
+</span><span data-line="274"><span class="sd">    which is based on the architecture described in http://proceedings.mlr.press/v139/schutt21a.html</span>
+</span><span data-line="275">
+</span><span data-line="276"><span class="sd">    Parameters</span>
+</span><span data-line="277"><span class="sd">    ----------</span>
+</span><span data-line="278"><span class="sd">    embedding_layer:</span>
+</span><span data-line="279"><span class="sd">        Initial embedding layer that transforms atoms/coarse grain bead</span>
+</span><span data-line="280"><span class="sd">        types into embedded features</span>
+</span><span data-line="281"><span class="sd">    interaction_blocks:</span>
+</span><span data-line="282"><span class="sd">        list of PaiNNInteraction or single PaiNNInteraction block.</span>
+</span><span data-line="283"><span class="sd">        Sequential interaction blocks of the model, where each interaction</span>
+</span><span data-line="284"><span class="sd">        block applies.</span>
+</span><span data-line="285"><span class="sd">    mixing_blocks:</span>
+</span><span data-line="286"><span class="sd">        List of PaiNNMixing or single PaiNNMixing block.</span>
+</span><span data-line="287"><span class="sd">        Sequential mixing blocks of the model, where each mixing</span>
+</span><span data-line="288"><span class="sd">        applies after each interaction block.</span>
+</span><span data-line="289"><span class="sd">    rbf_layer:</span>
+</span><span data-line="290"><span class="sd">        The set of radial basis functions that expands pairwise distances</span>
+</span><span data-line="291"><span class="sd">        between atoms/CG beads.</span>
+</span><span data-line="292"><span class="sd">    output_network:</span>
+</span><span data-line="293"><span class="sd">        Output neural network that predicts scalar energies from scalar PaiNN</span>
+</span><span data-line="294"><span class="sd">        features. This network should transform (num_examples * num_atoms,</span>
+</span><span data-line="295"><span class="sd">        hidden_channels) to (num_examples * num atoms, 1).</span>
+</span><span data-line="296"><span class="sd">    max_num_neighbors:</span>
+</span><span data-line="297"><span class="sd">        Maximum number of neighbors to return for a</span>
+</span><span data-line="298"><span class="sd">        given node/atom when constructing the molecular graph during forward</span>
+</span><span data-line="299"><span class="sd">        passes. This attribute is passed to the torch_cluster radius_graph</span>
+</span><span data-line="300"><span class="sd">        routine keyword max_num_neighbors, which normally defaults to 32.</span>
+</span><span data-line="301"><span class="sd">        Users should set this to higher values if they are using higher upper</span>
+</span><span data-line="302"><span class="sd">        distance cutoffs and expect more than 32 neighbors per node/atom.</span>
+</span><span data-line="303"><span class="sd">    nls_distance_method:</span>
+</span><span data-line="304"><span class="sd">        Method for computing a neighbor list. Supported values are</span>
+</span><span data-line="305"><span class="sd">        `torch`, `nvalchemi_naive`, `nvalchemi_cell` and custom.</span>
+</span><span data-line="306"><span class="sd">    &quot;&quot;&quot;</span>
 </span><span data-line="307">
-</span><span data-line="308">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-</span><span data-line="309">        <span class="bp">self</span><span class="p">,</span>
-</span><span data-line="310">        <span class="n">embedding_layer</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
-</span><span data-line="311">        <span class="n">interaction_blocks</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">PaiNNInteraction</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">PaiNNInteraction</span><span class="p">]],</span>
-</span><span data-line="312">        <span class="n">mixing_blocks</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">PaiNNMixing</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">PaiNNMixing</span><span class="p">]],</span>
-</span><span data-line="313">        <span class="n">rbf_layer</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
-</span><span data-line="314">        <span class="n">output_network</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
-</span><span data-line="315">        <span class="n">max_num_neighbors</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-</span><span data-line="316">        <span class="n">nls_distance_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;torch&quot;</span><span class="p">,</span>
-</span><span data-line="317">    <span class="p">):</span>
-</span><span data-line="318">        <span class="nb">super</span><span class="p">(</span><span class="n">PaiNN</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-</span><span data-line="319">
-</span><span data-line="320">        <span class="bp">self</span><span class="o">.</span><span class="n">embedding_layer</span> <span class="o">=</span> <span class="n">embedding_layer</span>
-</span><span data-line="321">        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">interaction_blocks</span><span class="p">,</span> <span class="n">List</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span>
-</span><span data-line="322">            <span class="n">interaction_blocks</span><span class="p">,</span> <span class="n">PaiNNInteraction</span>
-</span><span data-line="323">        <span class="p">):</span>
-</span><span data-line="324">            <span class="bp">self</span><span class="o">.</span><span class="n">interaction_blocks</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">(</span><span class="n">interaction_blocks</span><span class="p">)</span>
-</span><span data-line="325">        <span class="k">else</span><span class="p">:</span>
-</span><span data-line="326">            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-</span><span data-line="327">                <span class="s2">&quot;interaction_blocks must be a single PaiNNInteractionBlock or &quot;</span>
-</span><span data-line="328">                <span class="s2">&quot;a list of PaiNNInteractionBlocks.&quot;</span>
-</span><span data-line="329">            <span class="p">)</span>
-</span><span data-line="330">        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mixing_blocks</span><span class="p">,</span> <span class="n">List</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span>
-</span><span data-line="331">            <span class="n">mixing_blocks</span><span class="p">,</span> <span class="n">PaiNNMixing</span>
-</span><span data-line="332">        <span class="p">):</span>
-</span><span data-line="333">            <span class="bp">self</span><span class="o">.</span><span class="n">mixing_blocks</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">(</span><span class="n">mixing_blocks</span><span class="p">)</span>
-</span><span data-line="334">        <span class="k">else</span><span class="p">:</span>
-</span><span data-line="335">            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-</span><span data-line="336">                <span class="s2">&quot;mixing_blocks must be a single PaiNNMixing or &quot;</span>
-</span><span data-line="337">                <span class="s2">&quot;a list of PaiNNMixing.&quot;</span>
-</span><span data-line="338">            <span class="p">)</span>
-</span><span data-line="339">        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mixing_blocks</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interaction_blocks</span><span class="p">):</span>
-</span><span data-line="340">            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-</span><span data-line="341">                <span class="s2">&quot;The number of mixing and interaction blocks must be equal &quot;</span>
-</span><span data-line="342">                <span class="sa">f</span><span class="s2">&quot;but you provided </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mixing_blocks</span><span class="p">)</span><span class="si">}</span><span class="s2"> mixing &quot;</span>
-</span><span data-line="343">                <span class="sa">f</span><span class="s2">&quot;and </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interaction_blocks</span><span class="p">)</span><span class="si">}</span><span class="s2"> interactions&quot;</span>
-</span><span data-line="344">            <span class="p">)</span>
-</span><span data-line="345">        <span class="bp">self</span><span class="o">.</span><span class="n">output_network</span> <span class="o">=</span> <span class="n">output_network</span>
-</span><span data-line="346">        <span class="bp">self</span><span class="o">.</span><span class="n">rbf_layer</span> <span class="o">=</span> <span class="n">rbf_layer</span>
-</span><span data-line="347">        <span class="bp">self</span><span class="o">.</span><span class="n">max_num_neighbors</span> <span class="o">=</span> <span class="n">max_num_neighbors</span>
-</span><span data-line="348">        <span class="bp">self</span><span class="o">.</span><span class="n">nls_distance_method</span> <span class="o">=</span> <span class="n">nls_distance_method</span>
-</span><span data-line="349">
-</span><span data-line="350">        <span class="bp">self</span><span class="o">.</span><span class="n">reset_parameters</span><span class="p">()</span>
+</span><span data-line="308">    <span class="n">name</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;PaiNN&quot;</span>
+</span><span data-line="309">
+</span><span data-line="310">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+</span><span data-line="311">        <span class="bp">self</span><span class="p">,</span>
+</span><span data-line="312">        <span class="n">embedding_layer</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+</span><span data-line="313">        <span class="n">interaction_blocks</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">PaiNNInteraction</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">PaiNNInteraction</span><span class="p">]],</span>
+</span><span data-line="314">        <span class="n">mixing_blocks</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">PaiNNMixing</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">PaiNNMixing</span><span class="p">]],</span>
+</span><span data-line="315">        <span class="n">rbf_layer</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+</span><span data-line="316">        <span class="n">output_network</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+</span><span data-line="317">        <span class="n">max_num_neighbors</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span data-line="318">        <span class="n">nls_distance_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;torch&quot;</span><span class="p">,</span>
+</span><span data-line="319">    <span class="p">):</span>
+</span><span data-line="320">        <span class="nb">super</span><span class="p">(</span><span class="n">PaiNN</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+</span><span data-line="321">
+</span><span data-line="322">        <span class="bp">self</span><span class="o">.</span><span class="n">embedding_layer</span> <span class="o">=</span> <span class="n">embedding_layer</span>
+</span><span data-line="323">        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">interaction_blocks</span><span class="p">,</span> <span class="n">List</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span>
+</span><span data-line="324">            <span class="n">interaction_blocks</span><span class="p">,</span> <span class="n">PaiNNInteraction</span>
+</span><span data-line="325">        <span class="p">):</span>
+</span><span data-line="326">            <span class="bp">self</span><span class="o">.</span><span class="n">interaction_blocks</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">(</span><span class="n">interaction_blocks</span><span class="p">)</span>
+</span><span data-line="327">        <span class="k">else</span><span class="p">:</span>
+</span><span data-line="328">            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+</span><span data-line="329">                <span class="s2">&quot;interaction_blocks must be a single PaiNNInteractionBlock or &quot;</span>
+</span><span data-line="330">                <span class="s2">&quot;a list of PaiNNInteractionBlocks.&quot;</span>
+</span><span data-line="331">            <span class="p">)</span>
+</span><span data-line="332">        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mixing_blocks</span><span class="p">,</span> <span class="n">List</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span>
+</span><span data-line="333">            <span class="n">mixing_blocks</span><span class="p">,</span> <span class="n">PaiNNMixing</span>
+</span><span data-line="334">        <span class="p">):</span>
+</span><span data-line="335">            <span class="bp">self</span><span class="o">.</span><span class="n">mixing_blocks</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">(</span><span class="n">mixing_blocks</span><span class="p">)</span>
+</span><span data-line="336">        <span class="k">else</span><span class="p">:</span>
+</span><span data-line="337">            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+</span><span data-line="338">                <span class="s2">&quot;mixing_blocks must be a single PaiNNMixing or &quot;</span>
+</span><span data-line="339">                <span class="s2">&quot;a list of PaiNNMixing.&quot;</span>
+</span><span data-line="340">            <span class="p">)</span>
+</span><span data-line="341">        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mixing_blocks</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interaction_blocks</span><span class="p">):</span>
+</span><span data-line="342">            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+</span><span data-line="343">                <span class="s2">&quot;The number of mixing and interaction blocks must be equal &quot;</span>
+</span><span data-line="344">                <span class="sa">f</span><span class="s2">&quot;but you provided </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mixing_blocks</span><span class="p">)</span><span class="si">}</span><span class="s2"> mixing &quot;</span>
+</span><span data-line="345">                <span class="sa">f</span><span class="s2">&quot;and </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interaction_blocks</span><span class="p">)</span><span class="si">}</span><span class="s2"> interactions&quot;</span>
+</span><span data-line="346">            <span class="p">)</span>
+</span><span data-line="347">        <span class="bp">self</span><span class="o">.</span><span class="n">output_network</span> <span class="o">=</span> <span class="n">output_network</span>
+</span><span data-line="348">        <span class="bp">self</span><span class="o">.</span><span class="n">rbf_layer</span> <span class="o">=</span> <span class="n">rbf_layer</span>
+</span><span data-line="349">        <span class="bp">self</span><span class="o">.</span><span class="n">max_num_neighbors</span> <span class="o">=</span> <span class="n">max_num_neighbors</span>
+</span><span data-line="350">        <span class="bp">self</span><span class="o">.</span><span class="n">nls_distance_method</span> <span class="o">=</span> <span class="n">nls_distance_method</span>
 </span><span data-line="351">
+</span><span data-line="352">        <span class="bp">self</span><span class="o">.</span><span class="n">reset_parameters</span><span class="p">()</span>
+</span><span data-line="353">
 <div class="viewcode-block" id="PaiNN.reset_parameters">
 <a class="viewcode-back" href="../../../autodoc.html#mlcg.nn.painn.PaiNN.reset_parameters">[docs]</a>
-</span><span data-line="352">    <span class="k">def</span><span class="w"> </span><span class="nf">reset_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="353"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Method for resetting linear layers in each PaiNN component&quot;&quot;&quot;</span>
-</span><span data-line="354">        <span class="bp">self</span><span class="o">.</span><span class="n">embedding_layer</span><span class="o">.</span><span class="n">reset_parameters</span><span class="p">()</span>
-</span><span data-line="355">        <span class="bp">self</span><span class="o">.</span><span class="n">rbf_layer</span><span class="o">.</span><span class="n">reset_parameters</span><span class="p">()</span>
-</span><span data-line="356">        <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">interaction_blocks</span><span class="p">:</span>
-</span><span data-line="357">            <span class="n">block</span><span class="o">.</span><span class="n">reset_parameters</span><span class="p">()</span>
-</span><span data-line="358">        <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mixing_blocks</span><span class="p">:</span>
+</span><span data-line="354">    <span class="k">def</span><span class="w"> </span><span class="nf">reset_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span data-line="355"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Method for resetting linear layers in each PaiNN component&quot;&quot;&quot;</span>
+</span><span data-line="356">        <span class="bp">self</span><span class="o">.</span><span class="n">embedding_layer</span><span class="o">.</span><span class="n">reset_parameters</span><span class="p">()</span>
+</span><span data-line="357">        <span class="bp">self</span><span class="o">.</span><span class="n">rbf_layer</span><span class="o">.</span><span class="n">reset_parameters</span><span class="p">()</span>
+</span><span data-line="358">        <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">interaction_blocks</span><span class="p">:</span>
 </span><span data-line="359">            <span class="n">block</span><span class="o">.</span><span class="n">reset_parameters</span><span class="p">()</span>
-</span><span data-line="360">        <span class="bp">self</span><span class="o">.</span><span class="n">output_network</span><span class="o">.</span><span class="n">reset_parameters</span><span class="p">()</span></div>
+</span><span data-line="360">        <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mixing_blocks</span><span class="p">:</span>
+</span><span data-line="361">            <span class="n">block</span><span class="o">.</span><span class="n">reset_parameters</span><span class="p">()</span>
+</span><span data-line="362">        <span class="bp">self</span><span class="o">.</span><span class="n">output_network</span><span class="o">.</span><span class="n">reset_parameters</span><span class="p">()</span></div>
 
-</span><span data-line="361">
+</span><span data-line="363">
 <div class="viewcode-block" id="PaiNN.forward">
 <a class="viewcode-back" href="../../../autodoc.html#mlcg.nn.painn.PaiNN.forward">[docs]</a>
-</span><span data-line="362">    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">):</span>
-</span><span data-line="363"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Forward pass through the PaiNN architecture.</span>
-</span><span data-line="364">
-</span><span data-line="365"><span class="sd">        Parameters</span>
-</span><span data-line="366"><span class="sd">        ----------</span>
-</span><span data-line="367"><span class="sd">        data:</span>
-</span><span data-line="368"><span class="sd">            Input data object containing batch atom/bead positions</span>
-</span><span data-line="369"><span class="sd">            and atom/bead types.</span>
-</span><span data-line="370">
-</span><span data-line="371"><span class="sd">        Returns</span>
-</span><span data-line="372"><span class="sd">        -------</span>
-</span><span data-line="373"><span class="sd">        data:</span>
-</span><span data-line="374"><span class="sd">           Data dictionary, updated with predicted energy of shape</span>
-</span><span data-line="375"><span class="sd">           (num_examples * num_atoms, 1), as well as neighbor list</span>
-</span><span data-line="376"><span class="sd">           information.</span>
-</span><span data-line="377"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="378">        <span class="n">neighbor_list</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-</span><span data-line="379">
-</span><span data-line="380">        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_nl_compatible</span><span class="p">(</span><span class="n">neighbor_list</span><span class="p">):</span>
-</span><span data-line="381">            <span class="n">neighbor_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">(</span>
-</span><span data-line="382">                <span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rbf_layer</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_upper</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_num_neighbors</span>
-</span><span data-line="383">            <span class="p">)[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
-</span><span data-line="384">
-</span><span data-line="385">        <span class="n">edge_index</span> <span class="o">=</span> <span class="n">neighbor_list</span><span class="p">[</span><span class="s2">&quot;index_mapping&quot;</span><span class="p">]</span>
+</span><span data-line="364">    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">):</span>
+</span><span data-line="365"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Forward pass through the PaiNN architecture.</span>
+</span><span data-line="366">
+</span><span data-line="367"><span class="sd">        Parameters</span>
+</span><span data-line="368"><span class="sd">        ----------</span>
+</span><span data-line="369"><span class="sd">        data:</span>
+</span><span data-line="370"><span class="sd">            Input data object containing batch atom/bead positions</span>
+</span><span data-line="371"><span class="sd">            and atom/bead types.</span>
+</span><span data-line="372">
+</span><span data-line="373"><span class="sd">        Returns</span>
+</span><span data-line="374"><span class="sd">        -------</span>
+</span><span data-line="375"><span class="sd">        data:</span>
+</span><span data-line="376"><span class="sd">           Data dictionary, updated with predicted energy of shape</span>
+</span><span data-line="377"><span class="sd">           (num_examples * num_atoms, 1), as well as neighbor list</span>
+</span><span data-line="378"><span class="sd">           information.</span>
+</span><span data-line="379"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="380">        <span class="n">neighbor_list</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+</span><span data-line="381">
+</span><span data-line="382">        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_nl_compatible</span><span class="p">(</span><span class="n">neighbor_list</span><span class="p">):</span>
+</span><span data-line="383">            <span class="n">neighbor_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">(</span>
+</span><span data-line="384">                <span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rbf_layer</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_upper</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_num_neighbors</span>
+</span><span data-line="385">            <span class="p">)[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
 </span><span data-line="386">
-</span><span data-line="387">        <span class="n">distances</span><span class="p">,</span> <span class="n">normdir</span> <span class="o">=</span> <span class="n">compute_distance_vectors</span><span class="p">(</span>
-</span><span data-line="388">            <span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span>
-</span><span data-line="389">            <span class="n">edge_index</span><span class="p">,</span>
-</span><span data-line="390">            <span class="n">neighbor_list</span><span class="p">[</span><span class="s2">&quot;cell_shifts&quot;</span><span class="p">],</span>
-</span><span data-line="391">        <span class="p">)</span>
-</span><span data-line="392">
-</span><span data-line="393">        <span class="n">rbf_expansion</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rbf_layer</span><span class="p">(</span><span class="n">distances</span><span class="p">)</span>
+</span><span data-line="387">        <span class="n">edge_index</span> <span class="o">=</span> <span class="n">neighbor_list</span><span class="p">[</span><span class="s2">&quot;index_mapping&quot;</span><span class="p">]</span>
+</span><span data-line="388">
+</span><span data-line="389">        <span class="n">distances</span><span class="p">,</span> <span class="n">normdir</span> <span class="o">=</span> <span class="n">compute_distance_vectors</span><span class="p">(</span>
+</span><span data-line="390">            <span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span>
+</span><span data-line="391">            <span class="n">edge_index</span><span class="p">,</span>
+</span><span data-line="392">            <span class="n">neighbor_list</span><span class="p">[</span><span class="s2">&quot;cell_shifts&quot;</span><span class="p">],</span>
+</span><span data-line="393">        <span class="p">)</span>
 </span><span data-line="394">
-</span><span data-line="395">        <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_layer</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">atom_types</span><span class="p">)</span>  <span class="c1"># (n_atoms, n_features)</span>
-</span><span data-line="396">        <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># (n_atoms, 1, n_features)</span>
-</span><span data-line="397">        <span class="n">mu</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
-</span><span data-line="398">            <span class="p">(</span><span class="n">q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">3</span><span class="p">,</span> <span class="n">q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="n">device</span><span class="o">=</span><span class="n">q</span><span class="o">.</span><span class="n">device</span>
-</span><span data-line="399">        <span class="p">)</span>  <span class="c1"># (n_atoms, 3, n_features)</span>
-</span><span data-line="400">
-</span><span data-line="401">        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">interaction</span><span class="p">,</span> <span class="n">mixing</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span>
-</span><span data-line="402">            <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interaction_blocks</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mixing_blocks</span><span class="p">)</span>
-</span><span data-line="403">        <span class="p">):</span>
-</span><span data-line="404">            <span class="n">q</span><span class="p">,</span> <span class="n">mu</span> <span class="o">=</span> <span class="n">interaction</span><span class="p">(</span>
-</span><span data-line="405">                <span class="n">q</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">normdir</span><span class="p">,</span> <span class="n">edge_index</span><span class="p">,</span> <span class="n">distances</span><span class="p">,</span> <span class="n">rbf_expansion</span>
-</span><span data-line="406">            <span class="p">)</span>
-</span><span data-line="407">            <span class="n">q</span><span class="p">,</span> <span class="n">mu</span> <span class="o">=</span> <span class="n">mixing</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">mu</span><span class="p">)</span>
-</span><span data-line="408">        <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-</span><span data-line="409">
-</span><span data-line="410">        <span class="n">energy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_network</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
-</span><span data-line="411">        <span class="n">energy</span> <span class="o">=</span> <span class="n">scatter</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">batch</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">reduce</span><span class="o">=</span><span class="s2">&quot;sum&quot;</span><span class="p">)</span>
-</span><span data-line="412">        <span class="n">energy</span> <span class="o">=</span> <span class="n">energy</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
-</span><span data-line="413">        <span class="n">data</span><span class="o">.</span><span class="n">out</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">ENERGY_KEY</span><span class="p">:</span> <span class="n">energy</span><span class="p">}</span>
-</span><span data-line="414">
-</span><span data-line="415">        <span class="k">return</span> <span class="n">data</span></div>
-
+</span><span data-line="395">        <span class="n">rbf_expansion</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rbf_layer</span><span class="p">(</span><span class="n">distances</span><span class="p">)</span>
+</span><span data-line="396">
+</span><span data-line="397">        <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_layer</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">atom_types</span><span class="p">)</span>  <span class="c1"># (n_atoms, n_features)</span>
+</span><span data-line="398">        <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># (n_atoms, 1, n_features)</span>
+</span><span data-line="399">        <span class="n">mu</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+</span><span data-line="400">            <span class="p">(</span><span class="n">q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">3</span><span class="p">,</span> <span class="n">q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="n">device</span><span class="o">=</span><span class="n">q</span><span class="o">.</span><span class="n">device</span>
+</span><span data-line="401">        <span class="p">)</span>  <span class="c1"># (n_atoms, 3, n_features)</span>
+</span><span data-line="402">
+</span><span data-line="403">        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">interaction</span><span class="p">,</span> <span class="n">mixing</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span>
+</span><span data-line="404">            <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interaction_blocks</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mixing_blocks</span><span class="p">)</span>
+</span><span data-line="405">        <span class="p">):</span>
+</span><span data-line="406">            <span class="n">q</span><span class="p">,</span> <span class="n">mu</span> <span class="o">=</span> <span class="n">interaction</span><span class="p">(</span>
+</span><span data-line="407">                <span class="n">q</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">normdir</span><span class="p">,</span> <span class="n">edge_index</span><span class="p">,</span> <span class="n">distances</span><span class="p">,</span> <span class="n">rbf_expansion</span>
+</span><span data-line="408">            <span class="p">)</span>
+</span><span data-line="409">            <span class="n">q</span><span class="p">,</span> <span class="n">mu</span> <span class="o">=</span> <span class="n">mixing</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">mu</span><span class="p">)</span>
+</span><span data-line="410">        <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span><span data-line="411">
+</span><span data-line="412">        <span class="n">energy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_network</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+</span><span data-line="413">        <span class="n">energy</span> <span class="o">=</span> <span class="n">scatter</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">batch</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">reduce</span><span class="o">=</span><span class="s2">&quot;sum&quot;</span><span class="p">)</span>
+</span><span data-line="414">        <span class="n">energy</span> <span class="o">=</span> <span class="n">energy</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+</span><span data-line="415">        <span class="n">data</span><span class="o">.</span><span class="n">out</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">ENERGY_KEY</span><span class="p">:</span> <span class="n">energy</span><span class="p">}</span>
 </span><span data-line="416">
-</span><span data-line="417">    <span class="k">def</span><span class="w"> </span><span class="nf">is_nl_compatible</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nl</span><span class="p">):</span>
-</span><span data-line="418">        <span class="n">is_compatible</span> <span class="o">=</span> <span class="kc">False</span>
-</span><span data-line="419">        <span class="k">if</span> <span class="n">validate_neighborlist</span><span class="p">(</span><span class="n">nl</span><span class="p">):</span>
-</span><span data-line="420">            <span class="k">if</span> <span class="p">(</span>
-</span><span data-line="421">                <span class="n">nl</span><span class="p">[</span><span class="s2">&quot;order&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span>
-</span><span data-line="422">                <span class="ow">and</span> <span class="n">nl</span><span class="p">[</span><span class="s2">&quot;self_interaction&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">False</span>
-</span><span data-line="423">                <span class="ow">and</span> <span class="n">nl</span><span class="p">[</span><span class="s2">&quot;rcut&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_upper</span>
-</span><span data-line="424">            <span class="p">):</span>
-</span><span data-line="425">                <span class="n">is_compatible</span> <span class="o">=</span> <span class="kc">True</span>
-</span><span data-line="426">        <span class="k">return</span> <span class="n">is_compatible</span>
-</span><span data-line="427">
+</span><span data-line="417">        <span class="k">return</span> <span class="n">data</span></div>
+
+</span><span data-line="418">
+</span><span data-line="419">    <span class="k">def</span><span class="w"> </span><span class="nf">is_nl_compatible</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nl</span><span class="p">):</span>
+</span><span data-line="420">        <span class="n">is_compatible</span> <span class="o">=</span> <span class="kc">False</span>
+</span><span data-line="421">        <span class="k">if</span> <span class="n">validate_neighborlist</span><span class="p">(</span><span class="n">nl</span><span class="p">):</span>
+</span><span data-line="422">            <span class="k">if</span> <span class="p">(</span>
+</span><span data-line="423">                <span class="n">nl</span><span class="p">[</span><span class="s2">&quot;order&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span>
+</span><span data-line="424">                <span class="ow">and</span> <span class="n">nl</span><span class="p">[</span><span class="s2">&quot;self_interaction&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">False</span>
+</span><span data-line="425">                <span class="ow">and</span> <span class="n">nl</span><span class="p">[</span><span class="s2">&quot;rcut&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_upper</span>
+</span><span data-line="426">            <span class="p">):</span>
+</span><span data-line="427">                <span class="n">is_compatible</span> <span class="o">=</span> <span class="kc">True</span>
+</span><span data-line="428">        <span class="k">return</span> <span class="n">is_compatible</span>
+</span><span data-line="429">
 <div class="viewcode-block" id="PaiNN.neighbor_list">
 <a class="viewcode-back" href="../../../autodoc.html#mlcg.nn.painn.PaiNN.neighbor_list">[docs]</a>
-</span><span data-line="428">    <span class="k">def</span><span class="w"> </span><span class="nf">neighbor_list</span><span class="p">(</span>
-</span><span data-line="429">        <span class="bp">self</span><span class="p">,</span>
-</span><span data-line="430">        <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">,</span>
-</span><span data-line="431">        <span class="n">rcut</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-</span><span data-line="432">        <span class="n">max_num_neighbors</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
-</span><span data-line="433">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span data-line="434"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Computes the neighborlist for :obj:`data` using a strict cutoff of :obj:`rcut`.&quot;&quot;&quot;</span>
-</span><span data-line="435">        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;nls_distance_method&quot;</span><span class="p">):</span>
-</span><span data-line="436">            <span class="bp">self</span><span class="o">.</span><span class="n">nls_distance_method</span> <span class="o">=</span> <span class="s2">&quot;torch&quot;</span>
-</span><span data-line="437">        <span class="k">return</span> <span class="p">{</span>
-</span><span data-line="438">            <span class="n">PaiNN</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">atomic_data2neighbor_list</span><span class="p">(</span>
-</span><span data-line="439">                <span class="n">data</span><span class="p">,</span>
-</span><span data-line="440">                <span class="n">rcut</span><span class="p">,</span>
-</span><span data-line="441">                <span class="n">self_interaction</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-</span><span data-line="442">                <span class="n">max_num_neighbors</span><span class="o">=</span><span class="n">max_num_neighbors</span><span class="p">,</span>
-</span><span data-line="443">                <span class="n">nls_distance_method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nls_distance_method</span><span class="p">,</span>
-</span><span data-line="444">            <span class="p">)</span>
-</span><span data-line="445">        <span class="p">}</span></div>
+</span><span data-line="430">    <span class="k">def</span><span class="w"> </span><span class="nf">neighbor_list</span><span class="p">(</span>
+</span><span data-line="431">        <span class="bp">self</span><span class="p">,</span>
+</span><span data-line="432">        <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">,</span>
+</span><span data-line="433">        <span class="n">rcut</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+</span><span data-line="434">        <span class="n">max_num_neighbors</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
+</span><span data-line="435">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="436"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Computes the neighborlist for :obj:`data` using a strict cutoff of :obj:`rcut`.&quot;&quot;&quot;</span>
+</span><span data-line="437">        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;nls_distance_method&quot;</span><span class="p">):</span>
+</span><span data-line="438">            <span class="bp">self</span><span class="o">.</span><span class="n">nls_distance_method</span> <span class="o">=</span> <span class="s2">&quot;torch&quot;</span>
+</span><span data-line="439">        <span class="k">return</span> <span class="p">{</span>
+</span><span data-line="440">            <span class="n">PaiNN</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">atomic_data2neighbor_list</span><span class="p">(</span>
+</span><span data-line="441">                <span class="n">data</span><span class="p">,</span>
+</span><span data-line="442">                <span class="n">rcut</span><span class="p">,</span>
+</span><span data-line="443">                <span class="n">self_interaction</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+</span><span data-line="444">                <span class="n">max_num_neighbors</span><span class="o">=</span><span class="n">max_num_neighbors</span><span class="p">,</span>
+</span><span data-line="445">                <span class="n">nls_distance_method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nls_distance_method</span><span class="p">,</span>
+</span><span data-line="446">            <span class="p">)</span>
+</span><span data-line="447">        <span class="p">}</span></div>
 </div>
 
-</span><span data-line="446">
-</span><span data-line="447">
+</span><span data-line="448">
+</span><span data-line="449">
 <div class="viewcode-block" id="StandardPaiNN">
 <a class="viewcode-back" href="../../../models/mlip.html#mlcg.nn.painn.StandardPaiNN">[docs]</a>
-</span><span data-line="448"><span class="k">class</span><span class="w"> </span><span class="nc">StandardPaiNN</span><span class="p">(</span><span class="n">PaiNN</span><span class="p">):</span>
-</span><span data-line="449"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Small wrapper class for :ref:`PaiNN` to simplify the definition of the</span>
-</span><span data-line="450"><span class="sd">    PaiNN model through an input file. The upper distance cutoff attribute</span>
-</span><span data-line="451"><span class="sd">    in is set by default to match the upper cutoff value in the cutoff function.</span>
-</span><span data-line="452">
-</span><span data-line="453"><span class="sd">    Parameters</span>
-</span><span data-line="454"><span class="sd">    ----------</span>
-</span><span data-line="455"><span class="sd">    rbf_layer:</span>
-</span><span data-line="456"><span class="sd">        Radial basis function used to project the distances :math:`r_{ij}`.</span>
-</span><span data-line="457"><span class="sd">    cutoff:</span>
-</span><span data-line="458"><span class="sd">        Smooth cutoff function to supply to the PaiNNInteraction.</span>
-</span><span data-line="459"><span class="sd">    output_hidden_layer_widths:</span>
-</span><span data-line="460"><span class="sd">        List giving the number of hidden nodes of each hidden layer of the MLP</span>
-</span><span data-line="461"><span class="sd">        used to predict the target property from the learned scalar representation.</span>
-</span><span data-line="462"><span class="sd">    hidden_channels:</span>
-</span><span data-line="463"><span class="sd">        Dimension of the learned representation, i.e. dimension of the embedding projection, convolution layers, and interaction block.</span>
-</span><span data-line="464"><span class="sd">    embedding_size:</span>
-</span><span data-line="465"><span class="sd">        Dimension of the input embeddings (should be larger than :obj:`AtomicData.atom_types.max()+1`).</span>
-</span><span data-line="466"><span class="sd">    num_interactions:</span>
-</span><span data-line="467"><span class="sd">        Number of interaction blocks.</span>
-</span><span data-line="468"><span class="sd">    activation:</span>
-</span><span data-line="469"><span class="sd">        Activation function.</span>
-</span><span data-line="470"><span class="sd">    max_num_neighbors:</span>
-</span><span data-line="471"><span class="sd">        The maximum number of neighbors to return for each atom in :obj:`data`.</span>
-</span><span data-line="472"><span class="sd">        If the number of actual neighbors is greater than</span>
-</span><span data-line="473"><span class="sd">        :obj:`max_num_neighbors`, returned neighbors are picked randomly.</span>
-</span><span data-line="474"><span class="sd">    aggr:</span>
-</span><span data-line="475"><span class="sd">        Aggregation scheme for continuous filter output. For all options,</span>
-</span><span data-line="476"><span class="sd">        see `here &lt;https://pytorch-geometric.readthedocs.io/en/latest/notes/create_gnn.html?highlight=MessagePassing#the-messagepassing-base-class&gt;`_</span>
-</span><span data-line="477"><span class="sd">        for more options.</span>
-</span><span data-line="478"><span class="sd">    epsilon:</span>
-</span><span data-line="479"><span class="sd">        Stability constant added in norm to prevent numerical instabilities.</span>
-</span><span data-line="480"><span class="sd">    &quot;&quot;&quot;</span>
-</span><span data-line="481">
-</span><span data-line="482">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-</span><span data-line="483">        <span class="bp">self</span><span class="p">,</span>
-</span><span data-line="484">        <span class="n">rbf_layer</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
-</span><span data-line="485">        <span class="n">cutoff</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
-</span><span data-line="486">        <span class="n">output_hidden_layer_widths</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
-</span><span data-line="487">        <span class="n">hidden_channels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">128</span><span class="p">,</span>
-</span><span data-line="488">        <span class="n">embedding_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
-</span><span data-line="489">        <span class="n">num_interactions</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
-</span><span data-line="490">        <span class="n">activation</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Tanh</span><span class="p">(),</span>
-</span><span data-line="491">        <span class="n">max_num_neighbors</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
-</span><span data-line="492">        <span class="n">aggr</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;add&quot;</span><span class="p">,</span>
-</span><span data-line="493">        <span class="n">epsilon</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-8</span><span class="p">,</span>
-</span><span data-line="494">        <span class="n">nls_distance_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;torch&quot;</span><span class="p">,</span>
-</span><span data-line="495">    <span class="p">):</span>
-</span><span data-line="496">        <span class="k">if</span> <span class="n">num_interactions</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
-</span><span data-line="497">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;At least one interaction block must be specified&quot;</span><span class="p">)</span>
-</span><span data-line="498">
-</span><span data-line="499">        <span class="k">if</span> <span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_lower</span> <span class="o">!=</span> <span class="n">rbf_layer</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_lower</span><span class="p">:</span>
-</span><span data-line="500">            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-</span><span data-line="501">                <span class="s2">&quot;Cutoff function lower cutoff, </span><span class="si">{}</span><span class="s2">, and radial basis function &quot;</span>
-</span><span data-line="502">                <span class="s2">&quot; lower cutoff, </span><span class="si">{}</span><span class="s2">, do not match.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-</span><span data-line="503">                    <span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_lower</span><span class="p">,</span> <span class="n">rbf_layer</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_lower</span>
-</span><span data-line="504">                <span class="p">)</span>
-</span><span data-line="505">            <span class="p">)</span>
-</span><span data-line="506">        <span class="k">if</span> <span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_upper</span> <span class="o">!=</span> <span class="n">rbf_layer</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_upper</span><span class="p">:</span>
-</span><span data-line="507">            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-</span><span data-line="508">                <span class="s2">&quot;Cutoff function upper cutoff, </span><span class="si">{}</span><span class="s2">, and radial basis function &quot;</span>
-</span><span data-line="509">                <span class="s2">&quot; upper cutoff, </span><span class="si">{}</span><span class="s2">, do not match.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-</span><span data-line="510">                    <span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_upper</span><span class="p">,</span> <span class="n">rbf_layer</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_upper</span>
-</span><span data-line="511">                <span class="p">)</span>
-</span><span data-line="512">            <span class="p">)</span>
-</span><span data-line="513">
-</span><span data-line="514">        <span class="n">embedding_layer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span><span class="n">embedding_size</span><span class="p">,</span> <span class="n">hidden_channels</span><span class="p">)</span>
-</span><span data-line="515">
-</span><span data-line="516">        <span class="n">interaction_blocks</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span data-line="517">        <span class="n">mixing_blocks</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span data-line="518">        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_interactions</span><span class="p">):</span>
-</span><span data-line="519">            <span class="n">interaction_blocks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-</span><span data-line="520">                <span class="n">PaiNNInteraction</span><span class="p">(</span>
-</span><span data-line="521">                    <span class="n">hidden_channels</span><span class="p">,</span> <span class="n">rbf_layer</span><span class="o">.</span><span class="n">num_rbf</span><span class="p">,</span> <span class="n">cutoff</span><span class="p">,</span> <span class="n">activation</span><span class="p">,</span> <span class="n">aggr</span>
-</span><span data-line="522">                <span class="p">)</span>
-</span><span data-line="523">            <span class="p">)</span>
-</span><span data-line="524">            <span class="n">mixing_blocks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-</span><span data-line="525">                <span class="n">PaiNNMixing</span><span class="p">(</span><span class="n">hidden_channels</span><span class="p">,</span> <span class="n">activation</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">)</span>
-</span><span data-line="526">            <span class="p">)</span>
-</span><span data-line="527">
-</span><span data-line="528">        <span class="n">output_layer_widths</span> <span class="o">=</span> <span class="p">(</span>
-</span><span data-line="529">            <span class="p">[</span><span class="n">hidden_channels</span><span class="p">]</span> <span class="o">+</span> <span class="n">output_hidden_layer_widths</span> <span class="o">+</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-</span><span data-line="530">        <span class="p">)</span>
-</span><span data-line="531">        <span class="n">output_network</span> <span class="o">=</span> <span class="n">MLP</span><span class="p">(</span>
-</span><span data-line="532">            <span class="n">output_layer_widths</span><span class="p">,</span> <span class="n">activation_func</span><span class="o">=</span><span class="n">activation</span><span class="p">,</span> <span class="n">last_bias</span><span class="o">=</span><span class="kc">False</span>
-</span><span data-line="533">        <span class="p">)</span>
-</span><span data-line="534">        <span class="nb">super</span><span class="p">(</span><span class="n">StandardPaiNN</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-</span><span data-line="535">            <span class="n">embedding_layer</span><span class="p">,</span>
-</span><span data-line="536">            <span class="n">interaction_blocks</span><span class="p">,</span>
-</span><span data-line="537">            <span class="n">mixing_blocks</span><span class="p">,</span>
-</span><span data-line="538">            <span class="n">rbf_layer</span><span class="p">,</span>
-</span><span data-line="539">            <span class="n">output_network</span><span class="p">,</span>
-</span><span data-line="540">            <span class="n">max_num_neighbors</span><span class="p">,</span>
-</span><span data-line="541">            <span class="n">nls_distance_method</span><span class="o">=</span><span class="n">nls_distance_method</span><span class="p">,</span>
-</span><span data-line="542">        <span class="p">)</span></div>
+</span><span data-line="450"><span class="k">class</span><span class="w"> </span><span class="nc">StandardPaiNN</span><span class="p">(</span><span class="n">PaiNN</span><span class="p">):</span>
+</span><span data-line="451"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Small wrapper class for :ref:`PaiNN` to simplify the definition of the</span>
+</span><span data-line="452"><span class="sd">    PaiNN model through an input file. The upper distance cutoff attribute</span>
+</span><span data-line="453"><span class="sd">    in is set by default to match the upper cutoff value in the cutoff function.</span>
+</span><span data-line="454">
+</span><span data-line="455"><span class="sd">    Parameters</span>
+</span><span data-line="456"><span class="sd">    ----------</span>
+</span><span data-line="457"><span class="sd">    rbf_layer:</span>
+</span><span data-line="458"><span class="sd">        Radial basis function used to project the distances :math:`r_{ij}`.</span>
+</span><span data-line="459"><span class="sd">    cutoff:</span>
+</span><span data-line="460"><span class="sd">        Smooth cutoff function to supply to the PaiNNInteraction.</span>
+</span><span data-line="461"><span class="sd">    output_hidden_layer_widths:</span>
+</span><span data-line="462"><span class="sd">        List giving the number of hidden nodes of each hidden layer of the MLP</span>
+</span><span data-line="463"><span class="sd">        used to predict the target property from the learned scalar representation.</span>
+</span><span data-line="464"><span class="sd">    hidden_channels:</span>
+</span><span data-line="465"><span class="sd">        Dimension of the learned representation, i.e. dimension of the embedding projection, convolution layers, and interaction block.</span>
+</span><span data-line="466"><span class="sd">    embedding_size:</span>
+</span><span data-line="467"><span class="sd">        Dimension of the input embeddings (should be larger than :obj:`AtomicData.atom_types.max()+1`).</span>
+</span><span data-line="468"><span class="sd">    num_interactions:</span>
+</span><span data-line="469"><span class="sd">        Number of interaction blocks.</span>
+</span><span data-line="470"><span class="sd">    activation:</span>
+</span><span data-line="471"><span class="sd">        Activation function.</span>
+</span><span data-line="472"><span class="sd">    max_num_neighbors:</span>
+</span><span data-line="473"><span class="sd">        The maximum number of neighbors to return for each atom in :obj:`data`.</span>
+</span><span data-line="474"><span class="sd">        If the number of actual neighbors is greater than</span>
+</span><span data-line="475"><span class="sd">        :obj:`max_num_neighbors`, returned neighbors are picked randomly.</span>
+</span><span data-line="476"><span class="sd">    aggr:</span>
+</span><span data-line="477"><span class="sd">        Aggregation scheme for continuous filter output. For all options,</span>
+</span><span data-line="478"><span class="sd">        see `here &lt;https://pytorch-geometric.readthedocs.io/en/latest/notes/create_gnn.html?highlight=MessagePassing#the-messagepassing-base-class&gt;`_</span>
+</span><span data-line="479"><span class="sd">        for more options.</span>
+</span><span data-line="480"><span class="sd">    epsilon:</span>
+</span><span data-line="481"><span class="sd">        Stability constant added in norm to prevent numerical instabilities.</span>
+</span><span data-line="482"><span class="sd">    nls_distance_method:</span>
+</span><span data-line="483"><span class="sd">        Method for computing a neighbor list. Supported values are</span>
+</span><span data-line="484"><span class="sd">        `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`</span>
+</span><span data-line="485"><span class="sd">        and `custom_kernel`.</span>
+</span><span data-line="486"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="487">
+</span><span data-line="488">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+</span><span data-line="489">        <span class="bp">self</span><span class="p">,</span>
+</span><span data-line="490">        <span class="n">rbf_layer</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+</span><span data-line="491">        <span class="n">cutoff</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+</span><span data-line="492">        <span class="n">output_hidden_layer_widths</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+</span><span data-line="493">        <span class="n">hidden_channels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">128</span><span class="p">,</span>
+</span><span data-line="494">        <span class="n">embedding_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+</span><span data-line="495">        <span class="n">num_interactions</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+</span><span data-line="496">        <span class="n">activation</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Tanh</span><span class="p">(),</span>
+</span><span data-line="497">        <span class="n">max_num_neighbors</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
+</span><span data-line="498">        <span class="n">aggr</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;add&quot;</span><span class="p">,</span>
+</span><span data-line="499">        <span class="n">epsilon</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-8</span><span class="p">,</span>
+</span><span data-line="500">        <span class="n">nls_distance_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;torch&quot;</span><span class="p">,</span>
+</span><span data-line="501">    <span class="p">):</span>
+</span><span data-line="502">        <span class="k">if</span> <span class="n">num_interactions</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+</span><span data-line="503">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;At least one interaction block must be specified&quot;</span><span class="p">)</span>
+</span><span data-line="504">
+</span><span data-line="505">        <span class="k">if</span> <span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_lower</span> <span class="o">!=</span> <span class="n">rbf_layer</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_lower</span><span class="p">:</span>
+</span><span data-line="506">            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+</span><span data-line="507">                <span class="s2">&quot;Cutoff function lower cutoff, </span><span class="si">{}</span><span class="s2">, and radial basis function &quot;</span>
+</span><span data-line="508">                <span class="s2">&quot; lower cutoff, </span><span class="si">{}</span><span class="s2">, do not match.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+</span><span data-line="509">                    <span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_lower</span><span class="p">,</span> <span class="n">rbf_layer</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_lower</span>
+</span><span data-line="510">                <span class="p">)</span>
+</span><span data-line="511">            <span class="p">)</span>
+</span><span data-line="512">        <span class="k">if</span> <span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_upper</span> <span class="o">!=</span> <span class="n">rbf_layer</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_upper</span><span class="p">:</span>
+</span><span data-line="513">            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+</span><span data-line="514">                <span class="s2">&quot;Cutoff function upper cutoff, </span><span class="si">{}</span><span class="s2">, and radial basis function &quot;</span>
+</span><span data-line="515">                <span class="s2">&quot; upper cutoff, </span><span class="si">{}</span><span class="s2">, do not match.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+</span><span data-line="516">                    <span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_upper</span><span class="p">,</span> <span class="n">rbf_layer</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_upper</span>
+</span><span data-line="517">                <span class="p">)</span>
+</span><span data-line="518">            <span class="p">)</span>
+</span><span data-line="519">
+</span><span data-line="520">        <span class="n">embedding_layer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span><span class="n">embedding_size</span><span class="p">,</span> <span class="n">hidden_channels</span><span class="p">)</span>
+</span><span data-line="521">
+</span><span data-line="522">        <span class="n">interaction_blocks</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span data-line="523">        <span class="n">mixing_blocks</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span data-line="524">        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_interactions</span><span class="p">):</span>
+</span><span data-line="525">            <span class="n">interaction_blocks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+</span><span data-line="526">                <span class="n">PaiNNInteraction</span><span class="p">(</span>
+</span><span data-line="527">                    <span class="n">hidden_channels</span><span class="p">,</span> <span class="n">rbf_layer</span><span class="o">.</span><span class="n">num_rbf</span><span class="p">,</span> <span class="n">cutoff</span><span class="p">,</span> <span class="n">activation</span><span class="p">,</span> <span class="n">aggr</span>
+</span><span data-line="528">                <span class="p">)</span>
+</span><span data-line="529">            <span class="p">)</span>
+</span><span data-line="530">            <span class="n">mixing_blocks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+</span><span data-line="531">                <span class="n">PaiNNMixing</span><span class="p">(</span><span class="n">hidden_channels</span><span class="p">,</span> <span class="n">activation</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">)</span>
+</span><span data-line="532">            <span class="p">)</span>
+</span><span data-line="533">
+</span><span data-line="534">        <span class="n">output_layer_widths</span> <span class="o">=</span> <span class="p">(</span>
+</span><span data-line="535">            <span class="p">[</span><span class="n">hidden_channels</span><span class="p">]</span> <span class="o">+</span> <span class="n">output_hidden_layer_widths</span> <span class="o">+</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+</span><span data-line="536">        <span class="p">)</span>
+</span><span data-line="537">        <span class="n">output_network</span> <span class="o">=</span> <span class="n">MLP</span><span class="p">(</span>
+</span><span data-line="538">            <span class="n">output_layer_widths</span><span class="p">,</span> <span class="n">activation_func</span><span class="o">=</span><span class="n">activation</span><span class="p">,</span> <span class="n">last_bias</span><span class="o">=</span><span class="kc">False</span>
+</span><span data-line="539">        <span class="p">)</span>
+</span><span data-line="540">        <span class="nb">super</span><span class="p">(</span><span class="n">StandardPaiNN</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+</span><span data-line="541">            <span class="n">embedding_layer</span><span class="p">,</span>
+</span><span data-line="542">            <span class="n">interaction_blocks</span><span class="p">,</span>
+</span><span data-line="543">            <span class="n">mixing_blocks</span><span class="p">,</span>
+</span><span data-line="544">            <span class="n">rbf_layer</span><span class="p">,</span>
+</span><span data-line="545">            <span class="n">output_network</span><span class="p">,</span>
+</span><span data-line="546">            <span class="n">max_num_neighbors</span><span class="p">,</span>
+</span><span data-line="547">            <span class="n">nls_distance_method</span><span class="o">=</span><span class="n">nls_distance_method</span><span class="p">,</span>
+</span><span data-line="548">        <span class="p">)</span></div>
+
+</span><span data-line="549">
+</span><span data-line="550">
+<div class="viewcode-block" id="RBFRegularizedPaiNN">
+<a class="viewcode-back" href="../../../autodoc.html#mlcg.nn.painn.RBFRegularizedPaiNN">[docs]</a>
+</span><span data-line="551"><span class="k">class</span><span class="w"> </span><span class="nc">RBFRegularizedPaiNN</span><span class="p">(</span><span class="n">StandardPaiNN</span><span class="p">):</span>
+</span><span data-line="552"><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="553"><span class="sd">    This is a StandardSchNet model where the RBF components are weighted via Hadamard product with couple-specific</span>
+</span><span data-line="554"><span class="sd">    vectors. Each tuple of bead types has its own vector.</span>
+</span><span data-line="555"><span class="sd">    The models also adds the key radial_filters to the output dictionary, containing the regularization parameters.</span>
+</span><span data-line="556">
+</span><span data-line="557"><span class="sd">    Parameters</span>
+</span><span data-line="558"><span class="sd">    ----------</span>
+</span><span data-line="559"><span class="sd">    rbf_layer:</span>
+</span><span data-line="560"><span class="sd">        Radial basis function used to project the distances :math:`r_{ij}`.</span>
+</span><span data-line="561"><span class="sd">    cutoff:</span>
+</span><span data-line="562"><span class="sd">        Smooth cutoff function to supply to the PaiNNInteraction.</span>
+</span><span data-line="563"><span class="sd">    output_hidden_layer_widths:</span>
+</span><span data-line="564"><span class="sd">        List giving the number of hidden nodes of each hidden layer of the MLP</span>
+</span><span data-line="565"><span class="sd">        used to predict the target property from the learned scalar representation.</span>
+</span><span data-line="566"><span class="sd">    hidden_channels:</span>
+</span><span data-line="567"><span class="sd">        Dimension of the learned representation, i.e. dimension of the embedding projection, convolution layers, and interaction block.</span>
+</span><span data-line="568"><span class="sd">    embedding_size:</span>
+</span><span data-line="569"><span class="sd">        Dimension of the input embeddings (should be larger than :obj:`AtomicData.atom_types.max()+1`).</span>
+</span><span data-line="570"><span class="sd">    num_interactions:</span>
+</span><span data-line="571"><span class="sd">        Number of interaction blocks.</span>
+</span><span data-line="572"><span class="sd">    activation:</span>
+</span><span data-line="573"><span class="sd">        Activation function.</span>
+</span><span data-line="574"><span class="sd">    max_num_neighbors:</span>
+</span><span data-line="575"><span class="sd">        The maximum number of neighbors to return for each atom in :obj:`data`.</span>
+</span><span data-line="576"><span class="sd">        If the number of actual neighbors is greater than</span>
+</span><span data-line="577"><span class="sd">        :obj:`max_num_neighbors`, returned neighbors are picked randomly.</span>
+</span><span data-line="578"><span class="sd">    aggr:</span>
+</span><span data-line="579"><span class="sd">        Aggregation scheme for continuous filter output. For all options,</span>
+</span><span data-line="580"><span class="sd">        see `here &lt;https://pytorch-geometric.readthedocs.io/en/latest/notes/create_gnn.html?highlight=MessagePassing#the-messagepassing-base-class&gt;`_</span>
+</span><span data-line="581"><span class="sd">        for more options.</span>
+</span><span data-line="582"><span class="sd">    epsilon:</span>
+</span><span data-line="583"><span class="sd">        Stability constant added in norm to prevent numerical instabilities.</span>
+</span><span data-line="584"><span class="sd">    nls_distance_method:</span>
+</span><span data-line="585"><span class="sd">        Method for computing a neighbor list. Supported values are</span>
+</span><span data-line="586"><span class="sd">        `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`</span>
+</span><span data-line="587"><span class="sd">        and `custom_kernel`.</span>
+</span><span data-line="588">
+</span><span data-line="589"><span class="sd">    CLASS SPECIFIC PARAMETERS -------------------------------------------------------------</span>
+</span><span data-line="590">
+</span><span data-line="591"><span class="sd">    independent_regularizations: bool</span>
+</span><span data-line="592"><span class="sd">        If True each interaction block has its own set of regularization parameters,</span>
+</span><span data-line="593"><span class="sd">        otherwise the regularization parameters are shared across all interaction blocks.</span>
+</span><span data-line="594">
+</span><span data-line="595"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="596">
+</span><span data-line="597">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+</span><span data-line="598">        <span class="bp">self</span><span class="p">,</span>
+</span><span data-line="599">        <span class="n">rbf_layer</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+</span><span data-line="600">        <span class="n">cutoff</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+</span><span data-line="601">        <span class="n">output_hidden_layer_widths</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+</span><span data-line="602">        <span class="n">hidden_channels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">128</span><span class="p">,</span>
+</span><span data-line="603">        <span class="n">embedding_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+</span><span data-line="604">        <span class="n">num_interactions</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+</span><span data-line="605">        <span class="n">activation</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Tanh</span><span class="p">(),</span>
+</span><span data-line="606">        <span class="n">max_num_neighbors</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
+</span><span data-line="607">        <span class="n">aggr</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;add&quot;</span><span class="p">,</span>
+</span><span data-line="608">        <span class="n">epsilon</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-8</span><span class="p">,</span>
+</span><span data-line="609">        <span class="n">nls_distance_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;torch&quot;</span><span class="p">,</span>
+</span><span data-line="610">        <span class="n">independent_regularizations</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span data-line="611">    <span class="p">):</span>
+</span><span data-line="612">        <span class="n">rbf_layer</span> <span class="o">=</span> <span class="n">RegularizedBasis</span><span class="p">(</span>
+</span><span data-line="613">            <span class="n">basis_function</span><span class="o">=</span><span class="n">rbf_layer</span><span class="p">,</span>
+</span><span data-line="614">            <span class="n">types</span><span class="o">=</span><span class="n">embedding_size</span><span class="p">,</span>
+</span><span data-line="615">            <span class="n">n_basis_set</span><span class="o">=</span><span class="n">num_interactions</span><span class="p">,</span>
+</span><span data-line="616">            <span class="n">independent_regularizations</span><span class="o">=</span><span class="n">independent_regularizations</span><span class="p">,</span>
+</span><span data-line="617">        <span class="p">)</span>
+</span><span data-line="618">        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+</span><span data-line="619">            <span class="n">rbf_layer</span><span class="o">=</span><span class="n">rbf_layer</span><span class="p">,</span>
+</span><span data-line="620">            <span class="n">cutoff</span><span class="o">=</span><span class="n">cutoff</span><span class="p">,</span>
+</span><span data-line="621">            <span class="n">output_hidden_layer_widths</span><span class="o">=</span><span class="n">output_hidden_layer_widths</span><span class="p">,</span>
+</span><span data-line="622">            <span class="n">hidden_channels</span><span class="o">=</span><span class="n">hidden_channels</span><span class="p">,</span>
+</span><span data-line="623">            <span class="n">embedding_size</span><span class="o">=</span><span class="n">embedding_size</span><span class="p">,</span>
+</span><span data-line="624">            <span class="n">num_interactions</span><span class="o">=</span><span class="n">num_interactions</span><span class="p">,</span>
+</span><span data-line="625">            <span class="n">activation</span><span class="o">=</span><span class="n">activation</span><span class="p">,</span>
+</span><span data-line="626">            <span class="n">max_num_neighbors</span><span class="o">=</span><span class="n">max_num_neighbors</span><span class="p">,</span>
+</span><span data-line="627">            <span class="n">aggr</span><span class="o">=</span><span class="n">aggr</span><span class="p">,</span>
+</span><span data-line="628">            <span class="n">epsilon</span><span class="o">=</span><span class="n">epsilon</span><span class="p">,</span>
+</span><span data-line="629">            <span class="n">nls_distance_method</span><span class="o">=</span><span class="n">nls_distance_method</span><span class="p">,</span>
+</span><span data-line="630">        <span class="p">)</span>
+</span><span data-line="631">
+<div class="viewcode-block" id="RBFRegularizedPaiNN.forward">
+<a class="viewcode-back" href="../../../autodoc.html#mlcg.nn.painn.RBFRegularizedPaiNN.forward">[docs]</a>
+</span><span data-line="632">    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">):</span>
+</span><span data-line="633"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Forward pass through the PaiNN architecture.</span>
+</span><span data-line="634">
+</span><span data-line="635"><span class="sd">        Parameters</span>
+</span><span data-line="636"><span class="sd">        ----------</span>
+</span><span data-line="637"><span class="sd">        data:</span>
+</span><span data-line="638"><span class="sd">            Input data object containing batch atom/bead positions</span>
+</span><span data-line="639"><span class="sd">            and atom/bead types.</span>
+</span><span data-line="640">
+</span><span data-line="641"><span class="sd">        Returns</span>
+</span><span data-line="642"><span class="sd">        -------</span>
+</span><span data-line="643"><span class="sd">        data:</span>
+</span><span data-line="644"><span class="sd">           Data dictionary, updated with predicted energy of shape</span>
+</span><span data-line="645"><span class="sd">           (num_examples * num_atoms, 1), as well as neighbor list</span>
+</span><span data-line="646"><span class="sd">           information.</span>
+</span><span data-line="647"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="648">        <span class="n">neighbor_list</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+</span><span data-line="649">
+</span><span data-line="650">        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_nl_compatible</span><span class="p">(</span><span class="n">neighbor_list</span><span class="p">):</span>
+</span><span data-line="651">            <span class="n">neighbor_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">(</span>
+</span><span data-line="652">                <span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rbf_layer</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_upper</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_num_neighbors</span>
+</span><span data-line="653">            <span class="p">)[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+</span><span data-line="654">
+</span><span data-line="655">        <span class="n">edge_index</span> <span class="o">=</span> <span class="n">neighbor_list</span><span class="p">[</span><span class="s2">&quot;index_mapping&quot;</span><span class="p">]</span>
+</span><span data-line="656">
+</span><span data-line="657">        <span class="n">distances</span><span class="p">,</span> <span class="n">normdir</span> <span class="o">=</span> <span class="n">compute_distance_vectors</span><span class="p">(</span>
+</span><span data-line="658">            <span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span>
+</span><span data-line="659">            <span class="n">edge_index</span><span class="p">,</span>
+</span><span data-line="660">            <span class="n">neighbor_list</span><span class="p">[</span><span class="s2">&quot;cell_shifts&quot;</span><span class="p">],</span>
+</span><span data-line="661">        <span class="p">)</span>
+</span><span data-line="662">
+</span><span data-line="663">        <span class="n">rbf_expansion</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rbf_layer</span><span class="p">(</span>
+</span><span data-line="664">            <span class="n">distances</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+</span><span data-line="665">            <span class="n">data</span><span class="o">.</span><span class="n">atom_types</span><span class="p">[</span><span class="n">edge_index</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span>
+</span><span data-line="666">            <span class="n">data</span><span class="o">.</span><span class="n">atom_types</span><span class="p">[</span><span class="n">edge_index</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span>
+</span><span data-line="667">        <span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span>
+</span><span data-line="668">
+</span><span data-line="669">        <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_layer</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">atom_types</span><span class="p">)</span>  <span class="c1"># (n_atoms, n_features)</span>
+</span><span data-line="670">        <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># (n_atoms, 1, n_features)</span>
+</span><span data-line="671">        <span class="n">mu</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+</span><span data-line="672">            <span class="p">(</span><span class="n">q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">3</span><span class="p">,</span> <span class="n">q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="n">device</span><span class="o">=</span><span class="n">q</span><span class="o">.</span><span class="n">device</span>
+</span><span data-line="673">        <span class="p">)</span>  <span class="c1"># (n_atoms, 3, n_features)</span>
+</span><span data-line="674">
+</span><span data-line="675">        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">interaction</span><span class="p">,</span> <span class="n">mixing</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span>
+</span><span data-line="676">            <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interaction_blocks</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mixing_blocks</span><span class="p">)</span>
+</span><span data-line="677">        <span class="p">):</span>
+</span><span data-line="678">            <span class="n">q</span><span class="p">,</span> <span class="n">mu</span> <span class="o">=</span> <span class="n">interaction</span><span class="p">(</span>
+</span><span data-line="679">                <span class="n">q</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">normdir</span><span class="p">,</span> <span class="n">edge_index</span><span class="p">,</span> <span class="n">distances</span><span class="p">,</span> <span class="n">rbf_expansion</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+</span><span data-line="680">            <span class="p">)</span>
+</span><span data-line="681">            <span class="n">q</span><span class="p">,</span> <span class="n">mu</span> <span class="o">=</span> <span class="n">mixing</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">mu</span><span class="p">)</span>
+</span><span data-line="682">        <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span><span data-line="683">
+</span><span data-line="684">        <span class="n">energy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_network</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+</span><span data-line="685">        <span class="n">energy</span> <span class="o">=</span> <span class="n">scatter</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">batch</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">reduce</span><span class="o">=</span><span class="s2">&quot;sum&quot;</span><span class="p">)</span>
+</span><span data-line="686">        <span class="n">energy</span> <span class="o">=</span> <span class="n">energy</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+</span><span data-line="687">        <span class="n">data</span><span class="o">.</span><span class="n">out</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+</span><span data-line="688">            <span class="n">ENERGY_KEY</span><span class="p">:</span> <span class="n">energy</span><span class="p">,</span>
+</span><span data-line="689">            <span class="s2">&quot;radial_filters&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">rbf_layer</span><span class="o">.</span><span class="n">get_regularization_parameters</span><span class="p">(),</span>
+</span><span data-line="690">        <span class="p">}</span>
+</span><span data-line="691">
+</span><span data-line="692">        <span class="k">return</span> <span class="n">data</span></div>
+</div>
 
 </span></pre></div>
         </article><button class="back-to-top" type="button">
@@ -758,5 +915,5 @@ data-aria-dark="Switch to auto color mode">
       <script src="../../../_static/documentation_options.js?v=360bc84d"></script>
       <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
-      <script src="../../../_static/shibuya.js?v=cac61aee"></script></body>
+      <script src="../../../_static/shibuya.js?v=50760d75"></script></body>
 </html>

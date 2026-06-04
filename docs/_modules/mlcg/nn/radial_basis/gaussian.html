@@ -6,7 +6,7 @@
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=31853864" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=44020203" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
     <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,7 +18,8 @@
   --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
 }
 </style>
-    <meta property="og:type" content="website"/><meta property="og:title" content="mlcg.nn.radial_basis.gaussian"/>
+    
+  <meta property="og:type" content="website"/><meta property="og:title" content="mlcg.nn.radial_basis.gaussian"/>
     <meta name="twitter:card" content="summary"/>
   </head>
 <body><div class="sy-head">
@@ -253,6 +254,60 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="100">            <span class="bp">self</span><span class="o">.</span><span class="n">coeff</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="n">dist</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
 </span><span data-line="101">        <span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="p">(</span><span class="n">dist</span><span class="p">)</span>
 </span><span data-line="102">        <span class="k">return</span> <span class="n">expanded_distances</span></div>
+
+</span><span data-line="103">
+<div class="viewcode-block" id="GaussianBasis.build_pruned_from_mask">
+<a class="viewcode-back" href="../../../../autodoc.html#mlcg.nn.radial_basis.gaussian.GaussianBasis.build_pruned_from_mask">[docs]</a>
+</span><span data-line="104">    <span class="nd">@classmethod</span>
+</span><span data-line="105">    <span class="k">def</span><span class="w"> </span><span class="nf">build_pruned_from_mask</span><span class="p">(</span>
+</span><span data-line="106">        <span class="bp">cls</span><span class="p">,</span>
+</span><span data-line="107">        <span class="n">cutoff</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">_Cutoff</span><span class="p">],</span>
+</span><span data-line="108">        <span class="n">lambda_mask</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+</span><span data-line="109">        <span class="n">num_rbf</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
+</span><span data-line="110">        <span class="n">trainable</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span data-line="111">    <span class="p">):</span>
+</span><span data-line="112"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="113"><span class="sd">        Constructor for GaussianBasis that only evaluates a subset of the basis functions</span>
+</span><span data-line="114"><span class="sd">        selected by a boolean ``lambda_filter`` tensor of shape ``(num_rbf,)``.</span>
+</span><span data-line="115">
+</span><span data-line="116"><span class="sd">        The output of :meth:`forward` is a tensor of shape</span>
+</span><span data-line="117"><span class="sd">        ``(total_num_edges, lambda_filter.sum())`` where only the basis functions</span>
+</span><span data-line="118"><span class="sd">        whose corresponding ``lambda_filter`` entry is ``True`` are evaluated.</span>
+</span><span data-line="119">
+</span><span data-line="120"><span class="sd">        Parameters</span>
+</span><span data-line="121"><span class="sd">        ----------</span>
+</span><span data-line="122"><span class="sd">        cutoff:</span>
+</span><span data-line="123"><span class="sd">            See :class:`GaussianBasis`.</span>
+</span><span data-line="124"><span class="sd">        lambda_filter:</span>
+</span><span data-line="125"><span class="sd">            Boolean tensor of shape ``(num_rbf,)`` selecting which basis functions</span>
+</span><span data-line="126"><span class="sd">            are kept in the expansion.</span>
+</span><span data-line="127"><span class="sd">        num_rbf:</span>
+</span><span data-line="128"><span class="sd">            Total number of basis functions (before filtering).</span>
+</span><span data-line="129"><span class="sd">        trainable:</span>
+</span><span data-line="130"><span class="sd">            See :class:`GaussianBasis`. Only the kept offsets are registered.</span>
+</span><span data-line="131"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="132">
+</span><span data-line="133">        <span class="k">if</span> <span class="n">lambda_mask</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">!=</span> <span class="n">num_rbf</span><span class="p">:</span>
+</span><span data-line="134">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+</span><span data-line="135">                <span class="sa">f</span><span class="s2">&quot;lambda_filter must have </span><span class="si">{</span><span class="n">num_rbf</span><span class="si">}</span><span class="s2"> elements, got </span><span class="si">{</span><span class="n">lambda_mask</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span data-line="136">            <span class="p">)</span>
+</span><span data-line="137">        <span class="n">obj</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">cutoff</span><span class="p">,</span> <span class="n">num_rbf</span><span class="p">,</span> <span class="n">trainable</span><span class="p">)</span>
+</span><span data-line="138">
+</span><span data-line="139">        <span class="n">lambda_mask</span> <span class="o">=</span> <span class="n">lambda_mask</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+</span><span data-line="140">        <span class="n">lambda_mask</span> <span class="o">=</span> <span class="n">lambda_mask</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">offset</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+</span><span data-line="141">
+</span><span data-line="142">        <span class="n">offset</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">offset</span><span class="p">[</span><span class="n">lambda_mask</span><span class="p">]</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+</span><span data-line="143">
+</span><span data-line="144">        <span class="k">del</span> <span class="n">obj</span><span class="o">.</span><span class="n">offset</span>
+</span><span data-line="145">
+</span><span data-line="146">        <span class="k">if</span> <span class="n">trainable</span><span class="p">:</span>
+</span><span data-line="147">            <span class="n">obj</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">offset</span><span class="p">)</span>
+</span><span data-line="148">        <span class="k">else</span><span class="p">:</span>
+</span><span data-line="149">            <span class="n">obj</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">&quot;offset&quot;</span><span class="p">,</span> <span class="n">offset</span><span class="p">)</span>
+</span><span data-line="150">
+</span><span data-line="151">        <span class="n">obj</span><span class="o">.</span><span class="n">num_rbf</span> <span class="o">=</span> <span class="n">lambda_mask</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span>
+</span><span data-line="152">
+</span><span data-line="153">        <span class="k">return</span> <span class="n">obj</span></div>
 </div>
 
 </span></pre></div>
@@ -285,5 +340,5 @@ data-aria-dark="Switch to auto color mode">
       <script src="../../../../_static/documentation_options.js?v=360bc84d"></script>
       <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
-      <script src="../../../../_static/shibuya.js?v=cac61aee"></script></body>
+      <script src="../../../../_static/shibuya.js?v=50760d75"></script></body>
 </html>

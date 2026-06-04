@@ -6,7 +6,7 @@
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=31853864" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=44020203" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
     <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,7 +18,8 @@
   --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
 }
 </style>
-    <meta property="og:type" content="website"/><meta property="og:title" content="mlcg.nn.radial_basis.exp_normal"/>
+    
+  <meta property="og:type" content="website"/><meta property="og:title" content="mlcg.nn.radial_basis.exp_normal"/>
     <meta name="twitter:card" content="summary"/>
   </head>
 <body><div class="sy-head">
@@ -275,101 +276,158 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="122">            <span class="p">)</span>
 </span><span data-line="123">            <span class="o">**</span> <span class="mi">2</span>
 </span><span data-line="124">        <span class="p">)</span></div>
-</div>
 
 </span><span data-line="125">
-</span><span data-line="126">
+<div class="viewcode-block" id="ExpNormalBasis.build_pruned_from_mask">
+<a class="viewcode-back" href="../../../../autodoc.html#mlcg.nn.radial_basis.exp_normal.ExpNormalBasis.build_pruned_from_mask">[docs]</a>
+</span><span data-line="126">    <span class="nd">@classmethod</span>
+</span><span data-line="127">    <span class="k">def</span><span class="w"> </span><span class="nf">build_pruned_from_mask</span><span class="p">(</span>
+</span><span data-line="128">        <span class="bp">cls</span><span class="p">,</span>
+</span><span data-line="129">        <span class="n">cutoff</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">_Cutoff</span><span class="p">],</span>
+</span><span data-line="130">        <span class="n">lambda_mask</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+</span><span data-line="131">        <span class="n">num_rbf</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
+</span><span data-line="132">        <span class="n">trainable</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+</span><span data-line="133">    <span class="p">):</span>
+</span><span data-line="134"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="135"><span class="sd">        Constructor for ExpNormalBasis that only evaluates a subset of the basis functions</span>
+</span><span data-line="136"><span class="sd">        selected by a boolean ``lambda_filter`` tensor of shape ``(num_rbf,)``.</span>
+</span><span data-line="137">
+</span><span data-line="138"><span class="sd">        The output of :meth:`forward` is a tensor of shape</span>
+</span><span data-line="139"><span class="sd">        ``(total_num_edges, lambda_filter.sum())`` where only the basis functions</span>
+</span><span data-line="140"><span class="sd">        whose corresponding ``lambda_filter`` entry is ``True`` are evaluated.</span>
+</span><span data-line="141">
+</span><span data-line="142"><span class="sd">        Parameters</span>
+</span><span data-line="143"><span class="sd">        ----------</span>
+</span><span data-line="144"><span class="sd">        cutoff:</span>
+</span><span data-line="145"><span class="sd">            See :class:`ExpNormalBasis`.</span>
+</span><span data-line="146"><span class="sd">        lambda_filter:</span>
+</span><span data-line="147"><span class="sd">            Boolean tensor of shape ``(num_rbf,)`` selecting which basis functions</span>
+</span><span data-line="148"><span class="sd">            are kept in the expansion.</span>
+</span><span data-line="149"><span class="sd">        num_rbf:</span>
+</span><span data-line="150"><span class="sd">            Total number of basis functions (before filtering).</span>
+</span><span data-line="151"><span class="sd">        trainable:</span>
+</span><span data-line="152"><span class="sd">            See :class:`ExpNormalBasis`. Only the kept means/betas are registered.</span>
+</span><span data-line="153"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="154">        <span class="k">if</span> <span class="n">lambda_mask</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">!=</span> <span class="n">num_rbf</span><span class="p">:</span>
+</span><span data-line="155">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+</span><span data-line="156">                <span class="sa">f</span><span class="s2">&quot;lambda_filter must have </span><span class="si">{</span><span class="n">num_rbf</span><span class="si">}</span><span class="s2"> elements, got </span><span class="si">{</span><span class="n">lambda_mask</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span data-line="157">            <span class="p">)</span>
+</span><span data-line="158">        <span class="n">obj</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">cutoff</span><span class="p">,</span> <span class="n">num_rbf</span><span class="p">,</span> <span class="n">trainable</span><span class="p">)</span>
+</span><span data-line="159">
+</span><span data-line="160">        <span class="n">lambda_mask</span> <span class="o">=</span> <span class="n">lambda_mask</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+</span><span data-line="161">        <span class="n">lambda_mask</span> <span class="o">=</span> <span class="n">lambda_mask</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">means</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+</span><span data-line="162">
+</span><span data-line="163">        <span class="n">means</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">means</span><span class="p">[</span><span class="n">lambda_mask</span><span class="p">]</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+</span><span data-line="164">        <span class="n">betas</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">betas</span><span class="p">[</span><span class="n">lambda_mask</span><span class="p">]</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+</span><span data-line="165">
+</span><span data-line="166">        <span class="k">del</span> <span class="n">obj</span><span class="o">.</span><span class="n">means</span>
+</span><span data-line="167">        <span class="k">del</span> <span class="n">obj</span><span class="o">.</span><span class="n">betas</span>
+</span><span data-line="168">
+</span><span data-line="169">        <span class="k">if</span> <span class="n">trainable</span><span class="p">:</span>
+</span><span data-line="170">            <span class="n">obj</span><span class="o">.</span><span class="n">means</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">means</span><span class="p">)</span>
+</span><span data-line="171">            <span class="n">obj</span><span class="o">.</span><span class="n">betas</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">betas</span><span class="p">)</span>
+</span><span data-line="172">        <span class="k">else</span><span class="p">:</span>
+</span><span data-line="173">            <span class="n">obj</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">&quot;means&quot;</span><span class="p">,</span> <span class="n">means</span><span class="p">)</span>
+</span><span data-line="174">            <span class="n">obj</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">&quot;betas&quot;</span><span class="p">,</span> <span class="n">betas</span><span class="p">)</span>
+</span><span data-line="175">
+</span><span data-line="176">        <span class="n">obj</span><span class="o">.</span><span class="n">num_rbf</span> <span class="o">=</span> <span class="n">lambda_mask</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span>
+</span><span data-line="177">
+</span><span data-line="178">        <span class="k">return</span> <span class="n">obj</span></div>
+</div>
+
+</span><span data-line="179">
+</span><span data-line="180">
 <div class="viewcode-block" id="ExtendedExpNormalBasis">
 <a class="viewcode-back" href="../../../../autodoc.html#mlcg.nn.radial_basis.exp_normal.ExtendedExpNormalBasis">[docs]</a>
-</span><span data-line="127"><span class="k">class</span><span class="w"> </span><span class="nc">ExtendedExpNormalBasis</span><span class="p">(</span><span class="n">ExpNormalBasis</span><span class="p">):</span>
-</span><span data-line="128"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;ExpNormalBasis that allows for arbitrary lower cutoffs not tied to</span>
-</span><span data-line="129"><span class="sd">    a supplied `_Cutoff`. This basis follows the definition in [Physnet]_.</span>
-</span><span data-line="130"><span class="sd">    Parameters</span>
-</span><span data-line="131"><span class="sd">    ----------</span>
-</span><span data-line="132"><span class="sd">    internal_cutoff:</span>
-</span><span data-line="133"><span class="sd">        if specified, this lower cutoff overrides any supplied `_Cutoff` lower</span>
-</span><span data-line="134"><span class="sd">        cutoff.</span>
-</span><span data-line="135"><span class="sd">    trainable:</span>
-</span><span data-line="136"><span class="sd">        If True, the parameters of the basis (the centers and widths of each</span>
-</span><span data-line="137"><span class="sd">        function) are registered as optimizable parameters that will be updated</span>
-</span><span data-line="138"><span class="sd">        during backpropagation. If False, these parameters will be instead fixed</span>
-</span><span data-line="139"><span class="sd">        in an unoptimizable buffer.</span>
-</span><span data-line="140"><span class="sd">    &quot;&quot;&quot;</span>
-</span><span data-line="141">
-</span><span data-line="142">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-</span><span data-line="143">        <span class="bp">self</span><span class="p">,</span>
-</span><span data-line="144">        <span class="o">*</span><span class="n">args</span><span class="p">,</span>
-</span><span data-line="145">        <span class="n">internal_cutoff_lower</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="146">        <span class="n">trainable</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-</span><span data-line="147">        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-</span><span data-line="148">    <span class="p">):</span>
-</span><span data-line="149">        <span class="nb">super</span><span class="p">(</span><span class="n">ExtendedExpNormalBasis</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-</span><span data-line="150">
-</span><span data-line="151">        <span class="k">if</span> <span class="n">internal_cutoff_lower</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="152">            <span class="bp">self</span><span class="o">.</span><span class="n">internal_cutoff_lower</span> <span class="o">=</span> <span class="n">internal_cutoff_lower</span>
-</span><span data-line="153">        <span class="k">else</span><span class="p">:</span>
-</span><span data-line="154">            <span class="bp">self</span><span class="o">.</span><span class="n">internal_cutoff_lower</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_lower</span>
-</span><span data-line="155">
-</span><span data-line="156">        <span class="bp">self</span><span class="o">.</span><span class="n">internal_cutoff_upper</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_upper</span>
-</span><span data-line="157">        <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="mf">5.0</span> <span class="o">/</span> <span class="p">(</span>
-</span><span data-line="158">            <span class="bp">self</span><span class="o">.</span><span class="n">internal_cutoff_upper</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">internal_cutoff_lower</span>
-</span><span data-line="159">        <span class="p">)</span>
-</span><span data-line="160">        <span class="n">means</span><span class="p">,</span> <span class="n">betas</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extended_initial_params</span><span class="p">()</span>
-</span><span data-line="161">
-</span><span data-line="162">        <span class="c1"># reset attributes</span>
-</span><span data-line="163">        <span class="k">if</span> <span class="n">trainable</span><span class="p">:</span>
-</span><span data-line="164">            <span class="nb">delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;means&quot;</span><span class="p">)</span>
-</span><span data-line="165">            <span class="nb">delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;betas&quot;</span><span class="p">)</span>
-</span><span data-line="166">            <span class="bp">self</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="s2">&quot;means&quot;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">means</span><span class="p">))</span>
-</span><span data-line="167">            <span class="bp">self</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="s2">&quot;betas&quot;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">betas</span><span class="p">))</span>
-</span><span data-line="168">        <span class="k">else</span><span class="p">:</span>
-</span><span data-line="169">            <span class="nb">delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;means&quot;</span><span class="p">)</span>
-</span><span data-line="170">            <span class="nb">delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;betas&quot;</span><span class="p">)</span>
-</span><span data-line="171">            <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">&quot;means&quot;</span><span class="p">,</span> <span class="n">means</span><span class="p">)</span>
-</span><span data-line="172">            <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">&quot;betas&quot;</span><span class="p">,</span> <span class="n">betas</span><span class="p">)</span>
-</span><span data-line="173">
+</span><span data-line="181"><span class="k">class</span><span class="w"> </span><span class="nc">ExtendedExpNormalBasis</span><span class="p">(</span><span class="n">ExpNormalBasis</span><span class="p">):</span>
+</span><span data-line="182"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;ExpNormalBasis that allows for arbitrary lower cutoffs not tied to</span>
+</span><span data-line="183"><span class="sd">    a supplied `_Cutoff`. This basis follows the definition in [Physnet]_.</span>
+</span><span data-line="184"><span class="sd">    Parameters</span>
+</span><span data-line="185"><span class="sd">    ----------</span>
+</span><span data-line="186"><span class="sd">    internal_cutoff:</span>
+</span><span data-line="187"><span class="sd">        if specified, this lower cutoff overrides any supplied `_Cutoff` lower</span>
+</span><span data-line="188"><span class="sd">        cutoff.</span>
+</span><span data-line="189"><span class="sd">    trainable:</span>
+</span><span data-line="190"><span class="sd">        If True, the parameters of the basis (the centers and widths of each</span>
+</span><span data-line="191"><span class="sd">        function) are registered as optimizable parameters that will be updated</span>
+</span><span data-line="192"><span class="sd">        during backpropagation. If False, these parameters will be instead fixed</span>
+</span><span data-line="193"><span class="sd">        in an unoptimizable buffer.</span>
+</span><span data-line="194"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="195">
+</span><span data-line="196">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+</span><span data-line="197">        <span class="bp">self</span><span class="p">,</span>
+</span><span data-line="198">        <span class="o">*</span><span class="n">args</span><span class="p">,</span>
+</span><span data-line="199">        <span class="n">internal_cutoff_lower</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="200">        <span class="n">trainable</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+</span><span data-line="201">        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+</span><span data-line="202">    <span class="p">):</span>
+</span><span data-line="203">        <span class="nb">super</span><span class="p">(</span><span class="n">ExtendedExpNormalBasis</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</span><span data-line="204">
+</span><span data-line="205">        <span class="k">if</span> <span class="n">internal_cutoff_lower</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="206">            <span class="bp">self</span><span class="o">.</span><span class="n">internal_cutoff_lower</span> <span class="o">=</span> <span class="n">internal_cutoff_lower</span>
+</span><span data-line="207">        <span class="k">else</span><span class="p">:</span>
+</span><span data-line="208">            <span class="bp">self</span><span class="o">.</span><span class="n">internal_cutoff_lower</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_lower</span>
+</span><span data-line="209">
+</span><span data-line="210">        <span class="bp">self</span><span class="o">.</span><span class="n">internal_cutoff_upper</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_upper</span>
+</span><span data-line="211">        <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="mf">5.0</span> <span class="o">/</span> <span class="p">(</span>
+</span><span data-line="212">            <span class="bp">self</span><span class="o">.</span><span class="n">internal_cutoff_upper</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">internal_cutoff_lower</span>
+</span><span data-line="213">        <span class="p">)</span>
+</span><span data-line="214">        <span class="n">means</span><span class="p">,</span> <span class="n">betas</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extended_initial_params</span><span class="p">()</span>
+</span><span data-line="215">
+</span><span data-line="216">        <span class="c1"># reset attributes</span>
+</span><span data-line="217">        <span class="k">if</span> <span class="n">trainable</span><span class="p">:</span>
+</span><span data-line="218">            <span class="nb">delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;means&quot;</span><span class="p">)</span>
+</span><span data-line="219">            <span class="nb">delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;betas&quot;</span><span class="p">)</span>
+</span><span data-line="220">            <span class="bp">self</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="s2">&quot;means&quot;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">means</span><span class="p">))</span>
+</span><span data-line="221">            <span class="bp">self</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="s2">&quot;betas&quot;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">betas</span><span class="p">))</span>
+</span><span data-line="222">        <span class="k">else</span><span class="p">:</span>
+</span><span data-line="223">            <span class="nb">delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;means&quot;</span><span class="p">)</span>
+</span><span data-line="224">            <span class="nb">delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;betas&quot;</span><span class="p">)</span>
+</span><span data-line="225">            <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">&quot;means&quot;</span><span class="p">,</span> <span class="n">means</span><span class="p">)</span>
+</span><span data-line="226">            <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">&quot;betas&quot;</span><span class="p">,</span> <span class="n">betas</span><span class="p">)</span>
+</span><span data-line="227">
 <div class="viewcode-block" id="ExtendedExpNormalBasis.extended_initial_params">
 <a class="viewcode-back" href="../../../../autodoc.html#mlcg.nn.radial_basis.exp_normal.ExtendedExpNormalBasis.extended_initial_params">[docs]</a>
-</span><span data-line="174">    <span class="k">def</span><span class="w"> </span><span class="nf">extended_initial_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="175"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Method for initializing the basis function parameters, as described in</span>
-</span><span data-line="176"><span class="sd">        https://pubs.acs.org/doi/10.1021/acs.jctc.9b00181 .</span>
-</span><span data-line="177"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="178">
-</span><span data-line="179">        <span class="n">start_value</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
-</span><span data-line="180">            <span class="n">torch</span><span class="o">.</span><span class="n">scalar_tensor</span><span class="p">(</span>
-</span><span data-line="181">                <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">internal_cutoff_upper</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">internal_cutoff_lower</span>
-</span><span data-line="182">            <span class="p">)</span>
-</span><span data-line="183">        <span class="p">)</span>
-</span><span data-line="184">        <span class="n">means</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">start_value</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_rbf</span><span class="p">)</span>
-</span><span data-line="185">        <span class="n">betas</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
-</span><span data-line="186">            <span class="p">[(</span><span class="mi">2</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_rbf</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">start_value</span><span class="p">))</span> <span class="o">**</span> <span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_rbf</span>
-</span><span data-line="187">        <span class="p">)</span>
-</span><span data-line="188">        <span class="k">return</span> <span class="n">means</span><span class="p">,</span> <span class="n">betas</span></div>
+</span><span data-line="228">    <span class="k">def</span><span class="w"> </span><span class="nf">extended_initial_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span data-line="229"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Method for initializing the basis function parameters, as described in</span>
+</span><span data-line="230"><span class="sd">        https://pubs.acs.org/doi/10.1021/acs.jctc.9b00181 .</span>
+</span><span data-line="231"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="232">
+</span><span data-line="233">        <span class="n">start_value</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
+</span><span data-line="234">            <span class="n">torch</span><span class="o">.</span><span class="n">scalar_tensor</span><span class="p">(</span>
+</span><span data-line="235">                <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">internal_cutoff_upper</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">internal_cutoff_lower</span>
+</span><span data-line="236">            <span class="p">)</span>
+</span><span data-line="237">        <span class="p">)</span>
+</span><span data-line="238">        <span class="n">means</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">start_value</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_rbf</span><span class="p">)</span>
+</span><span data-line="239">        <span class="n">betas</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
+</span><span data-line="240">            <span class="p">[(</span><span class="mi">2</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_rbf</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">start_value</span><span class="p">))</span> <span class="o">**</span> <span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_rbf</span>
+</span><span data-line="241">        <span class="p">)</span>
+</span><span data-line="242">        <span class="k">return</span> <span class="n">means</span><span class="p">,</span> <span class="n">betas</span></div>
 
-</span><span data-line="189">
+</span><span data-line="243">
 <div class="viewcode-block" id="ExtendedExpNormalBasis.forward">
 <a class="viewcode-back" href="../../../../autodoc.html#mlcg.nn.radial_basis.exp_normal.ExtendedExpNormalBasis.forward">[docs]</a>
-</span><span data-line="190">    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dist</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-</span><span data-line="191"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Expansion of distances through the radial basis function set.</span>
-</span><span data-line="192"><span class="sd">        Parameters</span>
-</span><span data-line="193"><span class="sd">        ----------</span>
-</span><span data-line="194"><span class="sd">        dist: torch.Tensor</span>
-</span><span data-line="195"><span class="sd">            Input pairwise distances of shape (total_num_edges)</span>
-</span><span data-line="196"><span class="sd">        Return</span>
-</span><span data-line="197"><span class="sd">        ------</span>
-</span><span data-line="198"><span class="sd">        expanded_distances: torch.Tensor</span>
-</span><span data-line="199"><span class="sd">            Distances expanded in the radial basis with shape (total_num_edges, num_rbf)</span>
-</span><span data-line="200"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="201">
-</span><span data-line="202">        <span class="n">dist</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-</span><span data-line="203">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="p">(</span><span class="n">dist</span><span class="p">)</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
-</span><span data-line="204">            <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">betas</span>
-</span><span data-line="205">            <span class="o">*</span> <span class="p">(</span>
-</span><span data-line="206">                <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><span class="n">dist</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">internal_cutoff_lower</span><span class="p">))</span>
-</span><span data-line="207">                <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">means</span>
-</span><span data-line="208">            <span class="p">)</span>
-</span><span data-line="209">            <span class="o">**</span> <span class="mi">2</span>
-</span><span data-line="210">        <span class="p">)</span></div>
+</span><span data-line="244">    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dist</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+</span><span data-line="245"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Expansion of distances through the radial basis function set.</span>
+</span><span data-line="246"><span class="sd">        Parameters</span>
+</span><span data-line="247"><span class="sd">        ----------</span>
+</span><span data-line="248"><span class="sd">        dist: torch.Tensor</span>
+</span><span data-line="249"><span class="sd">            Input pairwise distances of shape (total_num_edges)</span>
+</span><span data-line="250"><span class="sd">        Return</span>
+</span><span data-line="251"><span class="sd">        ------</span>
+</span><span data-line="252"><span class="sd">        expanded_distances: torch.Tensor</span>
+</span><span data-line="253"><span class="sd">            Distances expanded in the radial basis with shape (total_num_edges, num_rbf)</span>
+</span><span data-line="254"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="255">
+</span><span data-line="256">        <span class="n">dist</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</span><span data-line="257">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="p">(</span><span class="n">dist</span><span class="p">)</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
+</span><span data-line="258">            <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">betas</span>
+</span><span data-line="259">            <span class="o">*</span> <span class="p">(</span>
+</span><span data-line="260">                <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><span class="n">dist</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">internal_cutoff_lower</span><span class="p">))</span>
+</span><span data-line="261">                <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">means</span>
+</span><span data-line="262">            <span class="p">)</span>
+</span><span data-line="263">            <span class="o">**</span> <span class="mi">2</span>
+</span><span data-line="264">        <span class="p">)</span></div>
 </div>
 
 </span></pre></div>
@@ -402,5 +460,5 @@ data-aria-dark="Switch to auto color mode">
       <script src="../../../../_static/documentation_options.js?v=360bc84d"></script>
       <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
-      <script src="../../../../_static/shibuya.js?v=cac61aee"></script></body>
+      <script src="../../../../_static/shibuya.js?v=50760d75"></script></body>
 </html>

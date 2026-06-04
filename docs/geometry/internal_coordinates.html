@@ -6,7 +6,7 @@
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=31853864" />
-    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=44020203" />
+    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=9454f7d5" />
     <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
     <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,7 +18,8 @@
   --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
 }
 </style>
-    <meta property="og:type" content="website"/><meta property="og:title" content="Internal Coordinate Functions"/>
+    
+  <meta property="og:type" content="website"/><meta property="og:title" content="Internal Coordinate Functions"/>
     <meta name="twitter:card" content="summary"/>
   </head>
 <body><div class="sy-head">
@@ -289,7 +290,7 @@ when staring down bond jk:</p>
 </div>
 <p>For impropers: the angle is positive if when looking in plane ikj, l is rotated clockwise:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">k</span>
-</span><span data-line="2"> \
+</span><span data-line="2"> \\
 </span><span data-line="3">  <span class="n">l</span><span class="o">--</span><span class="n">j</span>
 </span><span data-line="4"> <span class="o">/</span>
 </span><span data-line="5"><span class="n">i</span>
@@ -298,10 +299,10 @@ when staring down bond jk:</p>
 <p>The angle is computed using the formula:</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
-\[\phi_{ijkl} &amp;=  ext{atan2}(-\mathbf{m} \cdot \mathbf{n}_2, \mathbf{n}_2 \cdot \mathbf{n}_1) \
-\mathbf{n}_1 &amp;= \mathbf{\hat{r}}_{ji}   imes \mathbf{\hat{r}}_{kj} \
-\mathbf{n}_2 &amp;= \mathbf{\hat{r}}_{kj}   imes \mathbf{\hat{r}}_{jl} \
-\mathbf{m} &amp;= \mathbf{n}_{1}    imes \mathbf{\hat{r}}_{kj}\]</div>
+\[\begin{split}\phi_{ijkl} &amp;= \text{atan2}(-\mathbf{m} \cdot \mathbf{n}_2, \mathbf{n}_2 \cdot \mathbf{n}_1) \\
+\mathbf{n}_1 &amp;= \mathbf{\hat{r}}_{ji} \times \mathbf{\hat{r}}_{kj} \\
+\mathbf{n}_2 &amp;= \mathbf{\hat{r}}_{kj} \times \mathbf{\hat{r}}_{jl} \\
+\mathbf{m} &amp;= \mathbf{n}_{1} \times \mathbf{\hat{r}}_{kj}\end{split}\]</div>
 </div>
 <p>Where the <span class="math notranslate nohighlight">\(\hat{u}\)</span> indicates a normalized vector in direction of <span class="math notranslate nohighlight">\(u\)</span>.
 The order and signs in the atan2 arguments are needed to obtain values consistent
@@ -1016,6 +1017,6 @@ defaults to the greatest value in the input feature</p></li>
       <script src="../_static/documentation_options.js?v=360bc84d"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
-      <script src="../_static/shibuya.js?v=cac61aee"></script>
+      <script src="../_static/shibuya.js?v=50760d75"></script>
       <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script></body>
 </html>

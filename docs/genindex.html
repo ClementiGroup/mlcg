@@ -6,7 +6,7 @@
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="_static/pygments.css?v=31853864" />
-    <link rel="stylesheet" type="text/css" href="_static/shibuya.css?v=44020203" />
+    <link rel="stylesheet" type="text/css" href="_static/shibuya.css?v=9454f7d5" />
     <link media="print" rel="stylesheet" type="text/css" href="_static/print.css?v=20ff2c19" />
     <link rel="stylesheet" type="text/css" href="_static/custom.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -139,14 +139,20 @@ data-aria-dark="Switch to auto color mode">
 </li>
       <li><a href="geometry/internal_coordinates.html#mlcg.geometry.topology.Topology.bonds_from_edge_index">bonds_from_edge_index() (mlcg.geometry.topology.Topology method)</a>, <a href="geometry/topology.html#mlcg.geometry.topology.Topology.bonds_from_edge_index">[1]</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="autodoc.html#mlcg.cg.projection.build_cg_matrix">build_cg_matrix() (in module mlcg.cg.projection)</a>, <a href="misc/coarse_graining.html#mlcg.cg.projection.build_cg_matrix">[1]</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="autodoc.html#mlcg.cg.projection.build_cg_topology">build_cg_topology() (in module mlcg.cg.projection)</a>, <a href="misc/coarse_graining.html#mlcg.cg.projection.build_cg_topology">[1]</a>
 </li>
       <li><a href="autodoc.html#mlcg.cg.projection.build_opeps_connectivity_matrix">build_opeps_connectivity_matrix() (in module mlcg.cg.projection)</a>
 </li>
+      <li><a href="autodoc.html#mlcg.nn.radial_basis.exp_normal.ExpNormalBasis.build_pruned_from_mask">build_pruned_from_mask() (mlcg.nn.radial_basis.exp_normal.ExpNormalBasis class method)</a>
+
+      <ul>
+        <li><a href="autodoc.html#mlcg.nn.radial_basis.gaussian.GaussianBasis.build_pruned_from_mask">(mlcg.nn.radial_basis.gaussian.GaussianBasis class method)</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
@@ -268,6 +274,8 @@ data-aria-dark="Switch to auto color mode">
 </li>
         <li><a href="autodoc.html#mlcg.nn.painn.PaiNNMixing.forward">(mlcg.nn.painn.PaiNNMixing method)</a>
 </li>
+        <li><a href="autodoc.html#mlcg.nn.painn.RBFRegularizedPaiNN.forward">(mlcg.nn.painn.RBFRegularizedPaiNN method)</a>
+</li>
         <li><a href="autodoc.html#mlcg.nn.radial_basis.exp_normal.ExpNormalBasis.forward">(mlcg.nn.radial_basis.exp_normal.ExpNormalBasis method)</a>
 </li>
         <li><a href="autodoc.html#mlcg.nn.radial_basis.exp_normal.ExtendedExpNormalBasis.forward">(mlcg.nn.radial_basis.exp_normal.ExtendedExpNormalBasis method)</a>
@@ -281,6 +289,8 @@ data-aria-dark="Switch to auto color mode">
         <li><a href="autodoc.html#mlcg.nn.schnet.CFConv.forward">(mlcg.nn.schnet.CFConv method)</a>
 </li>
         <li><a href="autodoc.html#mlcg.nn.schnet.InteractionBlock.forward">(mlcg.nn.schnet.InteractionBlock method)</a>
+</li>
+        <li><a href="autodoc.html#mlcg.nn.schnet.RBFRegularizedSchNet.forward">(mlcg.nn.schnet.RBFRegularizedSchNet method)</a>
 </li>
         <li><a href="autodoc.html#mlcg.nn.schnet.SchNet.forward">(mlcg.nn.schnet.SchNet method)</a>
 </li>
@@ -704,6 +714,10 @@ data-aria-dark="Switch to auto color mode">
         <li><a href="autodoc.html#mlcg.datasets.chignolin.ChignolinDataset.raw_file_names">(mlcg.datasets.chignolin.ChignolinDataset property)</a>, <a href="data/fixed_datasets.html#mlcg.datasets.chignolin.ChignolinDataset.raw_file_names">[1]</a>
 </li>
       </ul></li>
+      <li><a href="autodoc.html#mlcg.nn.painn.RBFRegularizedPaiNN">RBFRegularizedPaiNN (class in mlcg.nn.painn)</a>
+</li>
+      <li><a href="autodoc.html#mlcg.nn.schnet.RBFRegularizedSchNet">RBFRegularizedSchNet (class in mlcg.nn.schnet)</a>
+</li>
       <li><a href="geometry/internal_coordinates.html#mlcg.geometry.topology.Topology.remove_angle">remove_angle() (mlcg.geometry.topology.Topology method)</a>, <a href="geometry/topology.html#mlcg.geometry.topology.Topology.remove_angle">[1]</a>
 </li>
       <li><a href="geometry/internal_coordinates.html#mlcg.geometry.topology.Topology.remove_bond">remove_bond() (mlcg.geometry.topology.Topology method)</a>, <a href="geometry/topology.html#mlcg.geometry.topology.Topology.remove_bond">[1]</a>
@@ -922,5 +936,5 @@ data-aria-dark="Switch to auto color mode">
       <script src="_static/documentation_options.js?v=360bc84d"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
-      <script src="_static/shibuya.js?v=cac61aee"></script></body>
+      <script src="_static/shibuya.js?v=50760d75"></script></body>
 </html>
