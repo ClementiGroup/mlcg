@@ -226,13 +226,8 @@ class QuarticRawAngles(Polynomial):
         pbc = getattr(data, "pbc", None)
         cell = getattr(data, "cell", None)
         return self.compute_features(
-            pos=data.pos,
-            mapping=mapping,
-            pbc=pbc,
-            cell=cell,
-            batch=data.batch
+            pos=data.pos, mapping=mapping, pbc=pbc, cell=cell, batch=data.batch
         )
-    
 
     @staticmethod
     def compute_features(
@@ -245,8 +240,5 @@ class QuarticRawAngles(Polynomial):
 
         cell_shifts = _Prior._get_cell_shifts(pos, mapping, pbc, cell, batch)
         return compute_angles_raw(
-            pos=pos,
-            mapping=mapping,
-            cell_shifts=cell_shifts
+            pos=pos, mapping=mapping, cell_shifts=cell_shifts
         )
-
