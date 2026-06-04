@@ -7,6 +7,7 @@ from .base import _Prior
 from ...data.atomic_data import AtomicData
 from ...geometry.internal_coordinates import (
     compute_angles_cos,
+    compute_angles_raw,
 )
 
 
@@ -197,3 +198,55 @@ class QuarticAngles(Polynomial):
         else:
             cell_shifts = None
         return compute_angles_cos(pos, mapping, cell_shifts)
+
+
+class QuarticRawAngles(Polynomial):
+    """Wrapper class for angle priors
+    (order 3 Polynomial priors of degree 4)
+    """
+
+    def __init__(self, statistics, name="angles", n_degs: int = 4) -> None:
+        super(QuarticRawAngles, self).__init__(
+            statistics, name, order=3, n_degs=n_degs
+        )
+
+    def data2features(self, data: AtomicData) -> torch.Tensor:
+        r"""Computes features for the QuarticAngle interaction from
+        an AtomicData instance)
+        Parameters
+        ----------
+        data:
+            Input `AtomicData` instance
+        Returns
+        -------
+        torch.Tensor:
+            Tensor of computed features
+        """
+        mapping = data.neighbor_list[self.name]["index_mapping"]
+        pbc = getattr(data, "pbc", None)
+        cell = getattr(data, "cell", None)
+        return self.compute_features(
+            pos=data.pos,
+            mapping=mapping,
+            pbc=pbc,
+            cell=cell,
+            batch=data.batch
+        )
+    
+
+    @staticmethod
+    def compute_features(
+        pos: torch.Tensor,
+        mapping: torch.Tensor,
+        pbc: Optional[torch.Tensor] = None,
+        cell: Optional[torch.Tensor] = None,
+        batch: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+
+        cell_shifts = _Prior._get_cell_shifts(pos, mapping, pbc, cell, batch)
+        return compute_angles_raw(
+            pos=pos,
+            mapping=mapping,
+            cell_shifts=cell_shifts
+        )
+
