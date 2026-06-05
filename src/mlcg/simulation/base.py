@@ -12,11 +12,7 @@ import time
 from copy import deepcopy
 from jsonargparse.typing import Path_fr
 import logging
-from ..nn.quantization import (
-    apply_gptq_w16a16_to_model,
-    validate_gptq_w16a16,
-    GPTQW16A16FilterNetwork,
-)
+
 from ..nn.gradients import SumOut
 from ..utils import tqdm
 
@@ -144,8 +140,6 @@ class _Simulation(object):
         simulations. This should be used with extreme caution since it may
         expose known issues with scatter operations and may produce invalid
         outputs or NaN gradients.
-    gptq:
-        Quantization method parameter. Current accepted values are "w16a16"
     convert_to_flash:
         If set to True, the script will attempt to convert the loaded model to its flash counterpart,
         which may provide significant speedups for some models. This option is fully compatible with
@@ -180,15 +174,9 @@ class _Simulation(object):
         compile: bool = False,
         compile_mode: str = "default",
         force_compile: bool = False,
-        gptq: Optional[str] = None,
         convert_to_flash: bool = False,
     ):
         self.model = None
-        self.gptq = gptq
-        if gptq is not None and gptq not in ["w16a16"]:
-            raise ValueError(
-                f"Unsupported GPTQ mode: {gptq}. Supported: 'w16a16'"
-            )
         self.initial_data = None
         self.specialize_priors = specialize_priors
         self.save_forces = save_forces
@@ -282,63 +270,10 @@ class _Simulation(object):
         model : torch.nn.Module
             Trained model used to generate simulation data
         """
-        if self.convert_to_flash:
-            print("Converting model to flash")
-            from ..nn.kernels.converter import convert_standard_model_to_flash
-            model = convert_standard_model_to_flash(model)
         self.model = model.eval().to(device=self.device, dtype=self.dtype)
         for param in self.model.parameters():
             param.requires_grad_(False)
-        if self.gptq is not None:
-            print("Applying quantization")
-            self._apply_gptq_quantization()
 
-    def _apply_gptq_quantization(self):
-        """Apply GPTQ quantization to the model's filter networks."""
-        if self.gptq == "w16a16":
-            if isinstance(self.model, SumOut):
-                for name, sub_model in self.model.models.items():
-                    if name == "SchNet":
-                        print("Found SchNet candidate for quantization")
-                        sub_model = apply_gptq_w16a16_to_model(sub_model)
-                        # Validate that quantization was applied correctly (no fallback!)
-                        validate_gptq_w16a16(sub_model)
-                        self.model.models[name] = sub_model.to(self.device)
-                        # Warm up Triton kernels (autotuning takes ~10s on first call)
-                        self._warmup_gptq_kernels()
-
-    def _warmup_gptq_kernels(self):
-        """Warm up Triton kernels to trigger autotuning before simulation."""
-
-        # Find a GPTQ filter network to warm up
-
-        gptq_filter = None
-        for module in self.model.modules():
-            if isinstance(module, GPTQW16A16FilterNetwork):
-                gptq_filter = module
-                break
-
-        if gptq_filter is None:
-            return
-
-        # Create dummy input with typical simulation size
-        # Use a range of M values to trigger autotuning for all configurations
-        K = gptq_filter.in_features
-        device = gptq_filter.weight0.device
-
-        # Warmup with a few different M values to cover autotuning
-        for M in [100_000, 500_000, 900_000]:
-            x = torch.randn(
-                M, K, device=device, dtype=torch.float32, requires_grad=True
-            )
-            try:
-                y = gptq_filter(x)
-                # Also trigger backward (for force computation)
-                # torch.autograd.grad(y.sum(), x)[0]
-            except Exception as e:
-                warnings.warn(f"GPTQ Warmup failed for M={M}: {e}")
-
-        torch.cuda.synchronize()
 
     def _attach_configurations(
         self,
@@ -481,8 +416,6 @@ class _Simulation(object):
                 if (t + 1) % self.sim_subroutine_interval == 0:
                     data = self.sim_subroutine(data)
 
-            # reset data outputs to collect the new forces/energies
-            data.out = {}
             if prof:
                 prof.step()
         # if relevant, save the remainder of the simulation
@@ -515,6 +448,13 @@ class _Simulation(object):
 
     def compile_model(self, data):
         """Compiles the model for faster execution"""
+        # Populate data.out to vaoid some graph breaks during compilation
+        data = self.model(data)
+        if self.convert_to_flash:
+            from ..nn.kernels.converter import convert_standard_model_to_flash
+            model = convert_standard_model_to_flash(self.model)
+            self._attach_model(model)
+
         if self.compile:
             if (data.batch.max() == 0) and not self.force_compile:
                 warnings.warn(
