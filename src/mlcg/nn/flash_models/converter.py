@@ -5,12 +5,14 @@ Set of utilities to convert standard models to flash models.
 import torch
 from warnings import warn
 from ..schnet import StandardSchNet
-from ..flash_schnet import StandardFlashSchNet
-from ..prior import (
+from .flash_schnet import StandardFlashSchNet
+from .prior import (
     FlashDihedral,
     FlashRepulsion,
     FlashHarmonicBonds,
     FlashHarmonicAngles,
+)
+from ..prior import (
     Repulsion,
     HarmonicBonds,
     HarmonicAngles,

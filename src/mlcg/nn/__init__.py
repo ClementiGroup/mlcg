@@ -1,6 +1,5 @@
 from .gradients import GradientsOut, SumOut, EnergyOut
 from .schnet import SchNet, StandardSchNet
-from .flash_schnet import FlashSchNet, StandardFlashSchNet
 from .radial_basis import GaussianBasis, ExpNormalBasis
 from .cutoff import CosineCutoff, IdentityCutoff
 from .losses import ForceMSE, ForceRMSE, Loss, EnergyMSE
@@ -28,6 +27,14 @@ from .so3krates import So3krates, StandardSo3krates
 from .lr_scheduler import CustomStepLR
 from .utils import sparsify_prior_module, desparsify_prior_module
 from .allegro import StandardAllegro
+from .flash_models import (
+    FlashSchNet,
+    StandardFlashSchNet,
+    FlashHarmonicBonds,
+    FlashHarmonicAngles,
+    FlashDihedral,
+    FlashRepulsion
+)
 
 __all__ = [
     "GradientsOut",
@@ -47,6 +54,9 @@ __all__ = [
     "HarmonicAngles",
     "HarmonicBonds",
     "Repulsion",
+    "Dihedral",
+    "Polynomial",
+    "QuarticAngles",
     "MLP",
     "TypesMLP",
     "Attention",
@@ -61,6 +71,8 @@ __all__ = [
     "refresh_module_",
     "load_and_adapt_old_checkpoint",
     "fixed_pyg_inspector",
+    "sparsify_prior_module", 
+    "desparsify_prior_module",
     "PaiNN",
     "StandardPaiNN",
     "MACE",
@@ -71,4 +83,10 @@ __all__ = [
     "StandardSo3krates",
     "CustomStepLR",
     "StandardAllegro",
+    "FlashSchNet",
+    "StandardFlashSchNet",
+    "FlashHarmonicBonds",
+    "FlashHarmonicAngles",
+    "FlashDihedral",
+    "FlashRepulsion",
 ]

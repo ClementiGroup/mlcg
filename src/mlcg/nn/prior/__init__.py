@@ -6,10 +6,8 @@ from .harmonic import (
     HarmonicBonds,
     GeneralAngles,
     GeneralBonds,
-    FlashHarmonicBonds,
-    FlashHarmonicAngles,
 )
-from .repulsion import Repulsion, FlashRepulsion
-from .fourier_series import FourierSeries, Dihedral, FlashDihedral
+from .repulsion import Repulsion
+from .fourier_series import FourierSeries, Dihedral
 from .polynomial import Polynomial, QuarticAngles
 from .restricted_bending import RestrictedQuartic
