@@ -238,4 +238,3 @@ class Repulsion(_Prior):
                 Repulsion._neighbor_list_name
             )
         }
-

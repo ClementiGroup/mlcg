@@ -274,7 +274,6 @@ class _Simulation(object):
         for param in self.model.parameters():
             param.requires_grad_(False)
 
-
     def _attach_configurations(
         self,
         configurations: List[AtomicData],
@@ -451,7 +450,10 @@ class _Simulation(object):
         # Populate data.out to vaoid some graph breaks during compilation
         data = self.model(data)
         if self.convert_to_flash:
-            from ..nn.flash_models.converter import convert_standard_model_to_flash
+            from ..nn.flash_models.converter import (
+                convert_standard_model_to_flash,
+            )
+
             model = convert_standard_model_to_flash(self.model)
             self._attach_model(model)
 

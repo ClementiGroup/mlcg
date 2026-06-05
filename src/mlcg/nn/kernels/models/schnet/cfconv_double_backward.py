@@ -9,21 +9,22 @@ from ...utils import ensure_contiguous
 
 def filter_configs(configs, named_args, **kwargs):
     feature_dim = named_args["feature_dim"]
-    filtered = [
-        cfg for cfg in configs
-        if cfg.kwargs["BLOCK_F"] <= feature_dim
-    ]
-    return filtered if filtered else [min(configs, key=lambda c: c.kwargs["BLOCK_F"])]
+    filtered = [cfg for cfg in configs if cfg.kwargs["BLOCK_F"] <= feature_dim]
+    return (
+        filtered
+        if filtered
+        else [min(configs, key=lambda c: c.kwargs["BLOCK_F"])]
+    )
 
 
 @triton.autotune(
     configs=[
-        triton.Config({"BLOCK_F": 8},   num_warps=2, num_stages=2),
-        triton.Config({"BLOCK_F": 16},  num_warps=2, num_stages=2),
-        triton.Config({"BLOCK_F": 32},  num_warps=2, num_stages=2),
-        triton.Config({"BLOCK_F": 32},  num_warps=4, num_stages=3),
-        triton.Config({"BLOCK_F": 64},  num_warps=4, num_stages=2),
-        triton.Config({"BLOCK_F": 64},  num_warps=8, num_stages=3),
+        triton.Config({"BLOCK_F": 8}, num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 16}, num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 32}, num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 32}, num_warps=4, num_stages=3),
+        triton.Config({"BLOCK_F": 64}, num_warps=4, num_stages=2),
+        triton.Config({"BLOCK_F": 64}, num_warps=8, num_stages=3),
         triton.Config({"BLOCK_F": 128}, num_warps=4, num_stages=2),
         triton.Config({"BLOCK_F": 128}, num_warps=8, num_stages=3),
     ],
@@ -32,7 +33,7 @@ def filter_configs(configs, named_args, **kwargs):
 )
 @triton.jit
 def double_grad_filters_grad_weight_cfconv_kernel(
-    grad_grad_x_ptr, # [num_nodes, feature_dim]
+    grad_grad_x_ptr,  # [num_nodes, feature_dim]
     grad_grad_filters_ptr,  # [num_edges, feature_dim]
     grad_grad_edge_weight_ptr,  # [num_edges]
     grad_output_ptr,  # [num_nodes, feature_dim]
@@ -45,8 +46,8 @@ def double_grad_filters_grad_weight_cfconv_kernel(
     grad_edge_weight_ptr,  # [num_edges]
     num_edges,
     feature_dim: tl.constexpr,
-    NEED_GRAD_FILTERS: tl.constexpr,  
-    NEED_GRAD_EDGE_WEIGHT: tl.constexpr,  
+    NEED_GRAD_FILTERS: tl.constexpr,
+    NEED_GRAD_EDGE_WEIGHT: tl.constexpr,
     BLOCK_F: tl.constexpr,
 ):
     """
@@ -54,8 +55,8 @@ def double_grad_filters_grad_weight_cfconv_kernel(
     This kernel computes the double grad component grad_filters and grad_weights
 
     Computes:
-        grad_filters[e] = grad_grad_edge_weight[e] * grad_output[dst[e]] * x[src[e]] 
-                          + grad_grad_x[src[e]] * grad_output[dst[e]] * edge_weight[e] 
+        grad_filters[e] = grad_grad_edge_weight[e] * grad_output[dst[e]] * x[src[e]]
+                          + grad_grad_x[src[e]] * grad_output[dst[e]] * edge_weight[e]
         grad_edge_weight[e] = (
             grad_grad_filters[e] * grad_output[dst[e]] * x[src[e]]
             + grad_grad_x[src[e]] * grad_output[dst[e]] * filters[e]
@@ -93,7 +94,10 @@ def double_grad_filters_grad_weight_cfconv_kernel(
         )
 
         grad_grad_x_src = tl.load(
-            grad_grad_x_ptr + src_node * feature_dim + f_offsets, mask=f_mask, other=0.0)
+            grad_grad_x_ptr + src_node * feature_dim + f_offsets,
+            mask=f_mask,
+            other=0.0,
+        )
 
         if NEED_GRAD_EDGE_WEIGHT:
             filters = tl.load(
@@ -106,10 +110,12 @@ def double_grad_filters_grad_weight_cfconv_kernel(
                 mask=f_mask,
                 other=0.0,
             )
-            acc_grad_edge_weight += (grad_grad_filters * x_src + grad_grad_x_src * filters) * grad_output_dst
-            
+            acc_grad_edge_weight += (
+                grad_grad_filters * x_src + grad_grad_x_src * filters
+            ) * grad_output_dst
+
         if NEED_GRAD_FILTERS:
-            grad_filters = (ggC * x_src +  grad_grad_x_src * C) * grad_output_dst            
+            grad_filters = (ggC * x_src + grad_grad_x_src * C) * grad_output_dst
             tl.store(
                 grad_filters_ptr + edge_idx * feature_dim + f_offsets,
                 grad_filters,
@@ -117,20 +123,17 @@ def double_grad_filters_grad_weight_cfconv_kernel(
             )
 
     if NEED_GRAD_EDGE_WEIGHT:
-        tl.store(
-            grad_edge_weight_ptr + edge_idx,
-            tl.sum(acc_grad_edge_weight) 
-        )
+        tl.store(grad_edge_weight_ptr + edge_idx, tl.sum(acc_grad_edge_weight))
 
 
 @triton.autotune(
     configs=[
-        triton.Config({"BLOCK_F": 8},   num_warps=2, num_stages=2),
-        triton.Config({"BLOCK_F": 16},  num_warps=2, num_stages=2),
-        triton.Config({"BLOCK_F": 32},  num_warps=2, num_stages=2),
-        triton.Config({"BLOCK_F": 32},  num_warps=4, num_stages=3),
-        triton.Config({"BLOCK_F": 64},  num_warps=4, num_stages=2),
-        triton.Config({"BLOCK_F": 64},  num_warps=8, num_stages=3),
+        triton.Config({"BLOCK_F": 8}, num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 16}, num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 32}, num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 32}, num_warps=4, num_stages=3),
+        triton.Config({"BLOCK_F": 64}, num_warps=4, num_stages=2),
+        triton.Config({"BLOCK_F": 64}, num_warps=8, num_stages=3),
         triton.Config({"BLOCK_F": 128}, num_warps=4, num_stages=2),
         triton.Config({"BLOCK_F": 128}, num_warps=8, num_stages=3),
     ],
@@ -151,7 +154,6 @@ def double_grad_x_cfconv_kernel(
     num_nodes,
     feature_dim: tl.constexpr,
     BLOCK_F: tl.constexpr,
-
 ):
     """
     Kernel for computation of double backward of `fused_cfconv`.
@@ -213,12 +215,12 @@ def double_grad_x_cfconv_kernel(
 
 @triton.autotune(
     configs=[
-        triton.Config({"BLOCK_F": 8},   num_warps=2, num_stages=2),
-        triton.Config({"BLOCK_F": 16},  num_warps=2, num_stages=2),
-        triton.Config({"BLOCK_F": 32},  num_warps=2, num_stages=2),
-        triton.Config({"BLOCK_F": 32},  num_warps=4, num_stages=3),
-        triton.Config({"BLOCK_F": 64},  num_warps=4, num_stages=2),
-        triton.Config({"BLOCK_F": 64},  num_warps=8, num_stages=3),
+        triton.Config({"BLOCK_F": 8}, num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 16}, num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 32}, num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 32}, num_warps=4, num_stages=3),
+        triton.Config({"BLOCK_F": 64}, num_warps=4, num_stages=2),
+        triton.Config({"BLOCK_F": 64}, num_warps=8, num_stages=3),
         triton.Config({"BLOCK_F": 128}, num_warps=4, num_stages=2),
         triton.Config({"BLOCK_F": 128}, num_warps=8, num_stages=3),
     ],
@@ -227,10 +229,10 @@ def double_grad_x_cfconv_kernel(
 )
 @triton.jit
 def double_grad_grad_out_cfconv_kernel(
-    grad_grad_x_ptr, # [num_nodes, feature_dim]
+    grad_grad_x_ptr,  # [num_nodes, feature_dim]
     grad_grad_filters_ptr,  # [num_edges, feature_dim]
     grad_grad_edge_weight_ptr,  # [num_edges]
-    x_ptr,  #[num_nodes, feature_dim]
+    x_ptr,  # [num_nodes, feature_dim]
     filters_ptr,  # [num_edges, feature_dim]
     edge_weight_ptr,  # [num_edges]
     edge_src_ptr,  # [num_edges]
@@ -240,7 +242,6 @@ def double_grad_grad_out_cfconv_kernel(
     num_nodes,
     feature_dim: tl.constexpr,
     BLOCK_F: tl.constexpr,
-
 ):
     """
     Kernel for computation of double backward of `fused_cfconv`.
@@ -294,10 +295,13 @@ def double_grad_grad_out_cfconv_kernel(
             grad_grad_x_src = tl.load(
                 grad_grad_x_ptr + src_node * feature_dim + f_offsets,
                 mask=f_mask,
-                other=0.0
+                other=0.0,
             )
 
-            acc += grad_grad_filters * x_src * C + (ggC * x_src + grad_grad_x_src * C) * filters
+            acc += (
+                grad_grad_filters * x_src * C
+                + (ggC * x_src + grad_grad_x_src * C) * filters
+            )
 
         tl.store(
             grad_grad_output_ptr + dst_node * feature_dim + f_offsets,
@@ -334,9 +338,19 @@ def double_backward_fused_cfconv(
     num_edges = edge_src.shape[0]
     feature_dim = x.shape[1]
 
-    grad_grad_output = torch.zeros_like(grad_output) if need_grad_grad_output else torch.empty(0)
-    grad_filters = torch.zeros_like(filters) if need_grad_filters else torch.empty(0)
-    grad_edge_weight = torch.zeros_like(edge_weight) if need_grad_edge_weight else torch.empty(0)
+    grad_grad_output = (
+        torch.zeros_like(grad_output)
+        if need_grad_grad_output
+        else torch.empty(0)
+    )
+    grad_filters = (
+        torch.zeros_like(filters) if need_grad_filters else torch.empty(0)
+    )
+    grad_edge_weight = (
+        torch.zeros_like(edge_weight)
+        if need_grad_edge_weight
+        else torch.empty(0)
+    )
     grad_x = torch.zeros_like(x) if need_grad_x else torch.empty(0)
 
     if need_grad_filters or need_grad_edge_weight:
@@ -358,7 +372,7 @@ def double_backward_fused_cfconv(
             need_grad_filters,
             need_grad_edge_weight,
         )
-    
+
     if need_grad_x:
         grid = (num_nodes,)
         wrap_triton(double_grad_x_cfconv_kernel)[grid](
@@ -416,7 +430,6 @@ def _(
     need_grad_edge_weight: bool,
     need_grad_grad_output: bool,
 ) -> List[torch.Tensor]:
-     
     """
     CPU fallback for double_backward_fused_cfconv
     """
@@ -426,17 +439,15 @@ def _(
     grad_edge_weight = torch.zeros_like(edge_weight)
 
     if need_grad_filters:
-         grad_filters = (
-              grad_grad_edge_weight.unsqueeze(-1) * x[edge_src]
-              + grad_grad_x[edge_src] * edge_weight.unsqueeze(-1)
-         ) * grad_output[edge_dst]
+        grad_filters = (
+            grad_grad_edge_weight.unsqueeze(-1) * x[edge_src]
+            + grad_grad_x[edge_src] * edge_weight.unsqueeze(-1)
+        ) * grad_output[edge_dst]
 
     if need_grad_edge_weight:
         grad_edge_weight = (
-            (
-                grad_grad_filters * x[edge_src]
-                + grad_grad_x[edge_src] * filters
-            ) * grad_output[edge_dst]
+            (grad_grad_filters * x[edge_src] + grad_grad_x[edge_src] * filters)
+            * grad_output[edge_dst]
         ).sum(-1)
 
     if need_grad_x:
@@ -452,6 +463,6 @@ def _(
             + grad_grad_edge_weight.unsqueeze(-1) * x[edge_src] * filters
             + grad_grad_x[edge_src] * filters * edge_weight.unsqueeze(-1)
         )
-        grad_grad_output.index_add_(0, edge_dst, gg_o)       
+        grad_grad_output.index_add_(0, edge_dst, gg_o)
 
     return [grad_grad_output, grad_x, grad_filters, grad_edge_weight]

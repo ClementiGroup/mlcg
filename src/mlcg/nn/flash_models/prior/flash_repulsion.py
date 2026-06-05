@@ -5,6 +5,7 @@ from ...prior.base import _Prior
 from ...prior.repulsion import Repulsion
 from ...kernels.models.prior import flash_repulsion
 
+
 class FlashRepulsion(_Prior):
     """
     Computes per-graph repulsion energy:

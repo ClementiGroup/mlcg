@@ -567,4 +567,3 @@ class GeneralAngles(Harmonic):
         else:
             cell_shifts = None
         return compute_angles_cos(pos, mapping, cell_shifts)
-

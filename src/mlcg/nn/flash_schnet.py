@@ -80,6 +80,7 @@ class FlashSchNet(SchNet):
         data.out.setdefault(self.name, {}).update({ENERGY_KEY: energy})
         return data
 
+
 class FlashInteractionBlock(InteractionBlock):
     r"""
     See :class:`InteractionBlock` for the full API documentation.
@@ -87,6 +88,7 @@ class FlashInteractionBlock(InteractionBlock):
     This implementation is used within :class:`FlashSchNet` to
     pass csr_data dictionary to FlashCFConv layer.
     """
+
     def forward(
         self,
         x: torch.Tensor,
@@ -131,7 +133,7 @@ class FlashCFConv(CFConv):
     r"""
     See :class:`CFConv` for the full API documentation.
 
-    This implementation use :func:`fused_cfconv` to fuse 
+    This implementation use :func:`fused_cfconv` to fuse
     the message passing operation performed by SchNet without
     materializing intermediate expanded representations.
     """

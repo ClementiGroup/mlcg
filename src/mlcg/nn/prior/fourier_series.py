@@ -483,4 +483,3 @@ class Dihedral(FourierSeries):
         else:
             cell_shifts = None
         return compute_torsions(pos, mapping, cell_shifts)
-

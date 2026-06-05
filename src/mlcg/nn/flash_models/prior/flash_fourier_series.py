@@ -5,6 +5,7 @@ from ...prior.base import _Prior
 from ...prior.fourier_series import FourierSeries, Dihedral
 from ...kernels.models.prior import flash_dihedral
 
+
 class FlashDihedral(_Prior):
     """
     Computes per-graph dihedral energy:

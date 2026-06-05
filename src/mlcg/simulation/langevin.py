@@ -364,7 +364,7 @@ class LangevinBenchmark(LangevinSimulation):
                             torch.cuda.synchronize()
                             ms = start_ev.elapsed_time(end_ev)  # milliseconds
                             self.times_ms.append(ms)
-                            self.peak_mems_gb.append(peak_mem / 1e9) # Gb
+                            self.peak_mems_gb.append(peak_mem / 1e9)  # Gb
 
                 # log if relevant; this can be indented here because
                 # it only happens when time when time points are also recorded
@@ -400,7 +400,9 @@ class LangevinBenchmark(LangevinSimulation):
         super().write()
         if self.started_benchmarking:
             np.save(f"{self.filename}_times_ms.npy", np.array(self.times_ms))
-            np.save(f"{self.filename}_peak_mems_gb.npy", np.array(self.peak_mems_gb))
+            np.save(
+                f"{self.filename}_peak_mems_gb.npy", np.array(self.peak_mems_gb)
+            )
 
 
 class OverdampedSimulation(_Simulation):

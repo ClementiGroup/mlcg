@@ -33,7 +33,7 @@ from .flash_models import (
     FlashHarmonicBonds,
     FlashHarmonicAngles,
     FlashDihedral,
-    FlashRepulsion
+    FlashRepulsion,
 )
 
 __all__ = [
@@ -71,7 +71,7 @@ __all__ = [
     "refresh_module_",
     "load_and_adapt_old_checkpoint",
     "fixed_pyg_inspector",
-    "sparsify_prior_module", 
+    "sparsify_prior_module",
     "desparsify_prior_module",
     "PaiNN",
     "StandardPaiNN",

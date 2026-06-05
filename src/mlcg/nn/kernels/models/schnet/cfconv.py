@@ -11,22 +11,25 @@ from torch.library import triton_op, wrap_triton
 from ...utils import ensure_contiguous
 from .cfconv_backward import backward_fused_cfconv
 
+
 def filter_configs(configs, named_args, **kwargs):
     feature_dim = named_args["feature_dim"]
-    filtered = [
-        cfg for cfg in configs
-        if cfg.kwargs["BLOCK_F"] <= feature_dim
-    ]
-    return filtered if filtered else [min(configs, key=lambda c: c.kwargs["BLOCK_F"])]
+    filtered = [cfg for cfg in configs if cfg.kwargs["BLOCK_F"] <= feature_dim]
+    return (
+        filtered
+        if filtered
+        else [min(configs, key=lambda c: c.kwargs["BLOCK_F"])]
+    )
+
 
 @triton.autotune(
     configs=[
-        triton.Config({"BLOCK_F": 8},   num_warps=2, num_stages=2),
-        triton.Config({"BLOCK_F": 16},  num_warps=2, num_stages=2),
-        triton.Config({"BLOCK_F": 32},  num_warps=2, num_stages=2),
-        triton.Config({"BLOCK_F": 32},  num_warps=4, num_stages=3),
-        triton.Config({"BLOCK_F": 64},  num_warps=4, num_stages=2),
-        triton.Config({"BLOCK_F": 64},  num_warps=8, num_stages=3),
+        triton.Config({"BLOCK_F": 8}, num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 16}, num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 32}, num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 32}, num_warps=4, num_stages=3),
+        triton.Config({"BLOCK_F": 64}, num_warps=4, num_stages=2),
+        triton.Config({"BLOCK_F": 64}, num_warps=8, num_stages=3),
         triton.Config({"BLOCK_F": 128}, num_warps=4, num_stages=2),
         triton.Config({"BLOCK_F": 128}, num_warps=8, num_stages=3),
     ],

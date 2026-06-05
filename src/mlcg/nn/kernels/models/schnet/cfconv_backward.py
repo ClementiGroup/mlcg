@@ -10,22 +10,22 @@ from .cfconv_double_backward import double_backward_fused_cfconv
 
 def filter_configs(configs, named_args, **kwargs):
     feature_dim = named_args["feature_dim"]
-    filtered = [
-        cfg for cfg in configs
-        if cfg.kwargs["BLOCK_F"] <= feature_dim
-    ]
-    return filtered if filtered else [min(configs, key=lambda c: c.kwargs["BLOCK_F"])]
-
+    filtered = [cfg for cfg in configs if cfg.kwargs["BLOCK_F"] <= feature_dim]
+    return (
+        filtered
+        if filtered
+        else [min(configs, key=lambda c: c.kwargs["BLOCK_F"])]
+    )
 
 
 @triton.autotune(
     configs=[
-        triton.Config({"BLOCK_F": 8},   num_warps=2, num_stages=2),
-        triton.Config({"BLOCK_F": 16},  num_warps=2, num_stages=2),
-        triton.Config({"BLOCK_F": 32},  num_warps=2, num_stages=2),
-        triton.Config({"BLOCK_F": 32},  num_warps=4, num_stages=3),
-        triton.Config({"BLOCK_F": 64},  num_warps=4, num_stages=2),
-        triton.Config({"BLOCK_F": 64},  num_warps=8, num_stages=3),
+        triton.Config({"BLOCK_F": 8}, num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 16}, num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 32}, num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 32}, num_warps=4, num_stages=3),
+        triton.Config({"BLOCK_F": 64}, num_warps=4, num_stages=2),
+        triton.Config({"BLOCK_F": 64}, num_warps=8, num_stages=3),
         triton.Config({"BLOCK_F": 128}, num_warps=4, num_stages=2),
         triton.Config({"BLOCK_F": 128}, num_warps=8, num_stages=3),
     ],
@@ -44,8 +44,8 @@ def grad_filters_grad_weight_cfconv_kernel(
     grad_edge_weight_ptr,  # [num_edges]
     num_edges,
     feature_dim: tl.constexpr,
-    NEED_GRAD_FILTERS: tl.constexpr,  
-    NEED_GRAD_EDGE_WEIGHT: tl.constexpr,  
+    NEED_GRAD_FILTERS: tl.constexpr,
+    NEED_GRAD_EDGE_WEIGHT: tl.constexpr,
     BLOCK_F: tl.constexpr,
 ):
     """
@@ -103,20 +103,17 @@ def grad_filters_grad_weight_cfconv_kernel(
             )
 
     if NEED_GRAD_EDGE_WEIGHT:
-        tl.store(
-            grad_edge_weight_ptr + edge_idx,
-            tl.sum(acc_grad_edge_weight) 
-        )
+        tl.store(grad_edge_weight_ptr + edge_idx, tl.sum(acc_grad_edge_weight))
 
 
 @triton.autotune(
     configs=[
-        triton.Config({"BLOCK_F": 8},   num_warps=2, num_stages=2),
-        triton.Config({"BLOCK_F": 16},  num_warps=2, num_stages=2),
-        triton.Config({"BLOCK_F": 32},  num_warps=2, num_stages=2),
-        triton.Config({"BLOCK_F": 32},  num_warps=4, num_stages=3),
-        triton.Config({"BLOCK_F": 64},  num_warps=4, num_stages=2),
-        triton.Config({"BLOCK_F": 64},  num_warps=8, num_stages=3),
+        triton.Config({"BLOCK_F": 8}, num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 16}, num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 32}, num_warps=2, num_stages=2),
+        triton.Config({"BLOCK_F": 32}, num_warps=4, num_stages=3),
+        triton.Config({"BLOCK_F": 64}, num_warps=4, num_stages=2),
+        triton.Config({"BLOCK_F": 64}, num_warps=8, num_stages=3),
         triton.Config({"BLOCK_F": 128}, num_warps=4, num_stages=2),
         triton.Config({"BLOCK_F": 128}, num_warps=8, num_stages=3),
     ],
@@ -135,10 +132,9 @@ def grad_x_cfconv_kernel(
     num_nodes,
     feature_dim: tl.constexpr,
     BLOCK_F: tl.constexpr,
-
 ):
     """
-    Kernel for computation of grad_x for CFConv backward pass using 
+    Kernel for computation of grad_x for CFConv backward pass using
     CSR format for efficient aggregation without atomics.
 
     Computes:
@@ -182,6 +178,7 @@ def grad_x_cfconv_kernel(
             mask=f_mask,
         )
 
+
 @triton_op("mlcg_kernels::backward_fused_cfconv", mutates_args={})
 @ensure_contiguous
 def backward_fused_cfconv(
@@ -206,8 +203,16 @@ def backward_fused_cfconv(
     num_edges = edge_src.shape[0]
     feature_dim = x.shape[1]
 
-    grad_filters = torch.zeros_like(filters).contiguous() if need_grad_filters else torch.empty(0)
-    grad_edge_weight = torch.zeros_like(edge_weight).contiguous() if need_grad_edge_weight else torch.empty(0)
+    grad_filters = (
+        torch.zeros_like(filters).contiguous()
+        if need_grad_filters
+        else torch.empty(0)
+    )
+    grad_edge_weight = (
+        torch.zeros_like(edge_weight).contiguous()
+        if need_grad_edge_weight
+        else torch.empty(0)
+    )
     grad_x = torch.zeros_like(x).contiguous() if need_grad_x else torch.empty(0)
 
     if need_grad_edge_weight or need_grad_filters:
@@ -298,25 +303,27 @@ def backward(ctx, grad_output):
     need_grad_filters = ctx.needs_input_grad[2]
     need_grad_edge_weight = ctx.needs_input_grad[3]
 
-    grad_grad_output, grad_x, grad_filters, grad_edge_weight = double_backward_fused_cfconv(
-        grad_grad_x,
-        grad_grad_filters,
-        grad_grad_edge_weight,
-        grad_out,
-        x,
-        filters,
-        edge_weight,
-        edge_src,
-        edge_dst,
-        src_ptr,
-        src_perm,
-        dst_ptr,
-        dst_perm,
-        num_nodes,
-        need_grad_x,
-        need_grad_filters,
-        need_grad_edge_weight,
-        need_grad_grad_output,
+    grad_grad_output, grad_x, grad_filters, grad_edge_weight = (
+        double_backward_fused_cfconv(
+            grad_grad_x,
+            grad_grad_filters,
+            grad_grad_edge_weight,
+            grad_out,
+            x,
+            filters,
+            edge_weight,
+            edge_src,
+            edge_dst,
+            src_ptr,
+            src_perm,
+            dst_ptr,
+            dst_perm,
+            num_nodes,
+            need_grad_x,
+            need_grad_filters,
+            need_grad_edge_weight,
+            need_grad_grad_output,
+        )
     )
 
     if not need_grad_grad_output:
@@ -374,9 +381,10 @@ def _(
     grad_edge_weight = torch.zeros_like(edge_weight)
     grad_x = torch.zeros_like(x)
 
-
     if need_grad_filters:
-        grad_filters = grad_output[edge_dst] * x[edge_src] * edge_weight.unsqueeze(-1)
+        grad_filters = (
+            grad_output[edge_dst] * x[edge_src] * edge_weight.unsqueeze(-1)
+        )
     if need_grad_edge_weight:
         grad_edge_weight = (grad_output[edge_dst] * x[edge_src] * filters).sum(
             -1
@@ -384,6 +392,5 @@ def _(
     if need_grad_x:
         gx = grad_output[edge_dst] * filters * edge_weight.unsqueeze(-1)
         grad_x.index_add_(0, edge_src, gx)
-    
 
     return [grad_x, grad_filters, grad_edge_weight]

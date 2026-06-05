@@ -4,7 +4,7 @@ from .flash_repulsion import FlashRepulsion
 
 __all__ = [
     "FlashDihedral",
-    "FlashHarmonicBonds", 
+    "FlashHarmonicBonds",
     "FlashHarmonicAngles",
     "FlashRepulsion",
 ]

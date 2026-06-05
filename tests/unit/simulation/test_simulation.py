@@ -282,4 +282,3 @@ def flash_cgschnet_model():
         standard_basis, standard_cutoff, [128, 128]
     )
     return GradientsOut(test_flash_schnet, targets=[FORCE_KEY])
-

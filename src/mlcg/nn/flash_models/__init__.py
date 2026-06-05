@@ -3,19 +3,18 @@ from .prior import (
     FlashDihedral,
     FlashHarmonicBonds,
     FlashHarmonicAngles,
-    FlashRepulsion
+    FlashRepulsion,
 )
 from .converter import (
     convert_single_standard_model_to_flash,
-    convert_standard_model_to_flash
+    convert_standard_model_to_flash,
 )
 
-
 __all__ = [
-    "FlashSchNet", 
+    "FlashSchNet",
     "StandardFlashSchNet",
     "FlashDihedral",
-    "FlashHarmonicBonds", 
+    "FlashHarmonicBonds",
     "FlashHarmonicAngles",
     "FlashRepulsion",
     "convert_single_standard_model_to_flash",

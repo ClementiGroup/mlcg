@@ -3,7 +3,12 @@ import torch
 from typing import Union
 
 from ...prior.base import _Prior
-from ...prior.harmonic import HarmonicBonds, HarmonicAngles, GeneralBonds, GeneralAngles
+from ...prior.harmonic import (
+    HarmonicBonds,
+    HarmonicAngles,
+    GeneralBonds,
+    GeneralAngles,
+)
 from ...kernels.models.prior import flash_harmonic_bonds, flash_harmonic_angles
 
 

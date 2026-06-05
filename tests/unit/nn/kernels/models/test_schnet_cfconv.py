@@ -138,7 +138,9 @@ def test_standard_vs_flash_cfconv(device, graph_type):
     edge_attr = rbf(distances)
     zero_grad(standard_cfconv)
 
-    out_torch = (activation(standard_cfconv(x, edge_index, distances, edge_attr)))**2
+    out_torch = (
+        activation(standard_cfconv(x, edge_index, distances, edge_attr))
+    ) ** 2
     grad_torch = grad(
         out_torch.sum(),
         [x, distances, edge_attr] + list(standard_cfconv.parameters()),
@@ -158,15 +160,17 @@ def test_standard_vs_flash_cfconv(device, graph_type):
     edge_attr = rbf(distances)
     zero_grad(flash_cfconv)
 
-    out_triton = (activation(
-        flash_cfconv(
-            x,
-            edge_index,
-            distances,
-            edge_attr,
-            csr_data,
+    out_triton = (
+        activation(
+            flash_cfconv(
+                x,
+                edge_index,
+                distances,
+                edge_attr,
+                csr_data,
+            )
         )
-    )) ** 2
+    ) ** 2
     grad_triton = grad(
         out_triton.sum(),
         [x, distances, edge_attr] + list(flash_cfconv.parameters()),
@@ -230,7 +234,9 @@ def test_compiled_standard_vs_flash_cfconv(device, graph_type):
     edge_attr = rbf(distances)
     zero_grad(standard_cfconv)
 
-    out_torch = (activation(standard_cfconv(x, edge_index, distances, edge_attr))) ** 2
+    out_torch = (
+        activation(standard_cfconv(x, edge_index, distances, edge_attr))
+    ) ** 2
     grad_torch = grad(
         out_torch.sum(),
         [x, distances, edge_attr] + list(standard_cfconv.parameters()),
@@ -241,15 +247,17 @@ def test_compiled_standard_vs_flash_cfconv(device, graph_type):
     edge_attr = rbf(distances)
     zero_grad(flash_cfconv)
 
-    out_triton = (activation(
-        flash_cfconv(
-            x,
-            edge_index,
-            distances,
-            edge_attr,
-            csr_data,
+    out_triton = (
+        activation(
+            flash_cfconv(
+                x,
+                edge_index,
+                distances,
+                edge_attr,
+                csr_data,
+            )
         )
-    )) ** 2
+    ) ** 2
     grad_triton = grad(
         out_triton.sum(),
         [x, distances, edge_attr] + list(flash_cfconv.parameters()),
