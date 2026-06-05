@@ -1,20 +1,16 @@
 """
-CSR-based segment reduce kernels for efficient scatter-add operations.
+Utilities for CSR-based segment reduction kernels.
 
-This module provides:
-1. CSR build kernels: Convert COO edge_index to CSR format using bucket sort
-2. CSR segment reduce: Perform scatter-add with one block per destination node
+This module provides utilities to construct a CSR index from COO-formatted
+edge destination indices. The CSR index enables efficient scatter-reduce
+kernels by grouping edges by destination node and reducing the need for
+feature-level atomic operations.
 
-The key insight is that CSR build uses O(E) atomics (for counting), while
-the original COO scatter uses O(E×F) atomics. This is a massive reduction
-when F=128 features.
+The CSR construction implemented here uses a bucket-sort-style algorithm
+with two GPU kernels:
 
-Usage:
-    # Build CSR (once per neighbor list update)
-    dst_ptr, csr_perm = build_csr_index(edge_dst, num_nodes)
-
-    # Use CSR for scatter-add (replaces atomic scatter)
-    output = csr_segment_reduce(msg, dst_ptr, csr_perm, num_nodes)
+1. Histogram: count edges per destination node.
+2. Fill: scatter edge indices into CSR order using atomic cursors.
 """
 
 import torch
@@ -34,12 +30,11 @@ def histogram_kernel(
     BLOCK_SIZE: tl.constexpr,
 ):
     """
-    Count edges per destination node (histogram).
+    Build a histogram of destination node degrees.
 
-    Each thread block processes BLOCK_SIZE edges and atomically increments
-    the count for each destination node.
-
-    Total atomics: O(E) - much better than O(E×F) for scatter-add!
+    Each thread block processes a tile of edge indices and atomically
+    increments the count for each destination node in the histogram buffer.
+    The output is the number of incoming edges for every destination node.
     """
     pid = tl.program_id(0)
     offset = pid * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE)
@@ -58,11 +53,11 @@ def csr_fill_kernel(
     BLOCK_SIZE: tl.constexpr,
 ):
     """
-    Fill CSR permutation array using atomic cursors.
+    Scatter COO edges into CSR order using per-node cursors.
 
-    For each edge, atomically get a position in the CSR array and store
-    the original edge index there. This effectively sorts edges by destination
-    node and is the final phase of CSR build. Total atomics: O(E).
+    For each edge, atomically reserve a position in the CSR permutation
+    array based on the destination node cursor and store the original
+    edge index. This produces a permutation that orders edges by destination.
     """
     pid = tl.program_id(0)
     offset = pid * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE)
@@ -80,34 +75,32 @@ def build_csr_index(
     num_nodes: int,
 ) -> List[torch.Tensor]:
     """
-    Build CSR index from COO edge_dst using bucket sort.
-
-    This converts edge indices from COO format (unsorted) to CSR format
-    (sorted by destination node). The key benefit is that CSR enables
-    scatter-add without atomics in the main kernel.
+    Build a CSR index from COO destination indices.
 
     Parameters
     ----------
     edge_dst : torch.Tensor
-        Destination node indices [num_edges], dtype int64
+        Destination node indices of shape [num_edges], dtype int64.
     num_nodes : int
-        Number of nodes
+        Number of destination nodes.
 
     Returns
     -------
     dst_ptr : torch.Tensor
-        CSR row pointers [num_nodes + 1], dtype int64
+        CSR row pointers of shape [num_nodes + 1], dtype int64.
     csr_perm : torch.Tensor
-        Permutation from CSR position to original edge index [num_edges]
+        CSR permutation array of shape [num_edges], dtype int64.
 
-    Algorithm
-    ---------
-    1. Histogram: count edges per destination node
-    2. Prefix sum: compute dst_ptr from counts
-    3. Fill: scatter edges into CSR order using atomic cursors
+    Notes
+    -----
+    The CSR construction proceeds in three stages:
 
-    Complexity: O(E) atomics for build, vs O(E×F) atomics for scatter-add.
-    For E=1.9M and F=128, this is 128× fewer atomics!
+    1. Histogram: count edges per destination node.
+    2. Prefix sum: compute CSR row pointers from node counts.
+    3. Fill: place edge indices into CSR order using atomic cursors.
+
+    The result is a CSR index suitable for scatter-reduce kernels that
+    avoid per-feature atomic updates.
     """
     num_edges = edge_dst.shape[0]
     device = edge_dst.device
@@ -157,10 +150,11 @@ def _(
     num_nodes: int,
 ) -> List[torch.Tensor]:
     """
-    CPU fallback implementation using pure PyTorch operations.
+    CPU fallback implementation for CSR index construction.
 
-    Much slower than GPU version - only use for testing or small graphs.
-    Uses argsort and bincount which are CPU-optimized PyTorch operations.
+    This implementation uses PyTorch operations and is suitable for
+    testing or small graphs only. It sorts edges by destination and
+    computes node degrees via `torch.bincount`.
     """
     num_edges = edge_dst.shape[0]
     device = edge_dst.device
