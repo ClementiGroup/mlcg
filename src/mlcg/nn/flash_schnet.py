@@ -1,110 +1,23 @@
 import warnings
 import copy
-from typing import Optional, List, Final
+from typing import List
 import torch
 from torch_geometric.utils import scatter
-from ..neighbor_list.neighbor_list import (
-    atomic_data2neighbor_list,
-    validate_neighborlist,
-)
 from ..data.atomic_data import AtomicData, ENERGY_KEY
 from .mlp import MLP
-from .schnet import StandardSchNet
-from ._module_init import init_xavier_uniform
-from .kernels.radial_basis import fused_distance_exp_norm_rbf_cosinecutoff
+from .schnet import SchNet, StandardSchNet, InteractionBlock, CFConv
 from .kernels.csr import build_csr_representation_from_edges
 from .kernels.models.schnet import fused_cfconv
-from .kernels.models.linear import (
-    fused_tanh_linear,
-)  # FIXME: remove to avoid numerical problems
-
-FUSED_RBF_EDGE_THRESHOLD = 100
+from ..geometry.internal_coordinates import compute_distances
 
 
-class FlashSchNet(torch.nn.Module):
-    r"""PyTorch Geometric implementation of SchNet
-    Code adapted from [PT_geom_schnet]_  which is based on the architecture
-    described in [Schnet]_ .
+class FlashSchNet(SchNet):
+    r"""
+    See :class:`SchNet` for the full API documentation.
 
-    Parameters
-    ----------
-    embedding_layer:
-        Initial embedding layer that transforms atoms/coarse grain bead
-        types into embedded features
-    interaction_blocks: list of torch.nn.Module or torch.nn.Sequential
-        Sequential interaction blocks of the model, where each interaction
-        block applies
-    rbf_layer:
-        The set of radial basis functions that expands pairwise distances
-        between atoms/CG beads.
-    output_network:
-        Output neural network that predicts scalar energies from SchNet
-        features. This network should transform (num_examples * num_atoms,
-        hidden_channels) to (num_examples * num atoms, 1).
-    upper_distance_cutoff:
-        Upper distance cutoff used for making neighbor lists.
-    self_interaction:
-        If True, self interactions/distancess are calculated. But it never
-        had a function due to a bug in the implementation (see static method
-        `neighbor_list`). Should be kept False. This option shall not be
-        deleted for compatibility.
-    max_num_neighbors:
-        Maximum number of neighbors to return for a
-        given node/atom when constructing the molecular graph during forward
-        passes. This attribute is passed to the torch_cluster radius_graph
-        routine keyword max_num_neighbors, which normally defaults to 32.
-        Users should set this to higher values if they are using higher upper
-        distance cutoffs and expect more than 32 neighbors per node/atom.
+    This implementation replaces the standard message-passing kernels
+    with fused Triton kernels.
     """
-
-    name: Final[str] = "SchNet"
-
-    def __init__(
-        self,
-        embedding_layer: torch.nn.Module,
-        interaction_blocks: List[torch.nn.Module],
-        rbf_layer: torch.nn.Module,
-        output_network: torch.nn.Module,
-        self_interaction: bool = False,
-        max_num_neighbors: int = 1000,
-        nls_distance_method: str = "torch",
-    ):
-        super().__init__()
-
-        self.embedding_layer = embedding_layer
-        self.rbf_layer = rbf_layer
-        self.max_num_neighbors = max_num_neighbors
-        if self_interaction:
-            raise NotImplementedError(
-                "The option `self_interaction` did not have function due to a bug. It only exists for compatibility and should stay `False`."
-            )
-        self.self_interaction = self_interaction
-
-        if isinstance(interaction_blocks, List):
-            self.interaction_blocks = torch.nn.Sequential(*interaction_blocks)
-        elif isinstance(interaction_blocks, InteractionBlock):
-            self.interaction_blocks = torch.nn.Sequential(interaction_blocks)
-        else:
-            raise RuntimeError(
-                "interaction_blocks must be a single InteractionBlock or "
-                "a list of InteractionBlocks."
-            )
-
-        self.nls_distance_method = nls_distance_method
-        self.output_network = output_network
-        self.reset_parameters()
-
-        # Cache gamma value to avoid GPU-CPU sync in forward
-        # coeff is a buffer (not trainable), so this is safe to cache at init
-        self._cached_alpha = None
-
-    def reset_parameters(self):
-        """Method for resetting linear layers in each SchNet component"""
-        self.embedding_layer.reset_parameters()
-        self.rbf_layer.reset_parameters()
-        for block in self.interaction_blocks:
-            block.reset_parameters()
-        self.output_network.reset_parameters()
 
     def forward(self, data: AtomicData) -> AtomicData:
         r"""Forward pass through the SchNet architecture.
@@ -134,33 +47,15 @@ class FlashSchNet(torch.nn.Module):
                 self.max_num_neighbors,
             )[self.name]
 
-        edge_index = neighbor_list["index_mapping"]
-        edge_src = edge_index[0].contiguous()
-        edge_dst = edge_index[1].contiguous()
-        pos_contiguous = data.pos.contiguous()
-
-        # Extract ExpNorm parameters
-        betas = self.rbf_layer.betas
-        means = self.rbf_layer.means
-        # Use cached alpha to avoid GPU-CPU sync
-        if self._cached_alpha is None:
-            self._cached_alpha = self.rbf_layer.alpha
-        alpha = self._cached_alpha
-
-        cutoff_upper = self.rbf_layer.cutoff.cutoff_upper
-
-        # FIXME: add check on minimum number of edges for fused kernel or
-        # non fused one
-        distances, rbf_expansion = fused_distance_exp_norm_rbf_cosinecutoff(
-            pos_contiguous,
-            edge_src,
-            edge_dst,
-            means,
-            betas,
-            alpha,
-            cutoff_upper,
+        # Saving edge index as contiguous array for speed up triton calls
+        edge_index = neighbor_list["index_mapping"].contiguous()
+        distances = compute_distances(
+            data.pos,
+            edge_index,
+            neighbor_list["cell_shifts"],
         )
 
+        rbf_expansion = self.rbf_layer(distances)
         num_graphs = data.ptr.numel() - 1 if hasattr(data, "ptr") else None
 
         csr_data = build_csr_representation_from_edges(edge_index, x.shape[0])
@@ -172,8 +67,6 @@ class FlashSchNet(torch.nn.Module):
                 edge_index,
                 distances,
                 rbf_expansion,
-                num_graphs,
-                data.batch,
                 csr_data=csr_data,
             )
 
@@ -184,70 +77,16 @@ class FlashSchNet(torch.nn.Module):
         )
 
         energy = energy.flatten()
-
-        data.out[self.name] = {ENERGY_KEY: energy}
-
+        data.out.setdefault(self.name, {}).update({ENERGY_KEY: energy})
         return data
 
-    def is_nl_compatible(self, nl):
-        is_compatible = False
-        if validate_neighborlist(nl):
-            if (
-                nl["order"] == 2
-                and nl["self_interaction"] == False
-                and nl["rcut"] == self.cutoff.cutoff_upper
-            ):
-                is_compatible = True
-        return is_compatible
+class FlashInteractionBlock(InteractionBlock):
+    r"""
+    See :class:`InteractionBlock` for the full API documentation.
 
-    @staticmethod
-    def neighbor_list(
-        data: AtomicData, rcut: float, max_num_neighbors: int = 1000
-    ) -> dict:
-        """Computes the neighborlist for :obj:`data` using a strict cutoff of :obj:`rcut`."""
-        return {
-            FlashSchNet.name: atomic_data2neighbor_list(
-                data,
-                rcut,
-                self_interaction=False,
-                max_num_neighbors=max_num_neighbors,
-            )
-        }
-
-
-class InteractionBlock(torch.nn.Module):
-    r"""Interaction blocks for SchNet. Consists of atomwise
-    transformations of embedded features that are continuously
-    convolved with filters generated from radial basis function-expanded
-    pairwise distances.
-
-    Parameters
-    ----------
-    cfconv_layer:
-        Continuous filter convolution layer for convolutions of radial basis
-        function-expanded distances with embedded features
-    hidden_channels:
-        Hidden dimension of embedded features
-    activation:
-        Activation function applied to linear layer outputs
+    This implementation is used within :class:`FlashSchNet` to
+    pass csr_data dictionary to FlashCFConv layer.
     """
-
-    def __init__(
-        self,
-        cfconv_layer: torch.nn.Module,
-        hidden_channels: int = 128,
-        activation: torch.nn.Module = torch.nn.Tanh(),
-    ):
-        super(InteractionBlock, self).__init__()
-        self.conv = cfconv_layer
-        self.activation = activation
-        self.lin = torch.nn.Linear(hidden_channels, hidden_channels)
-        self.reset_parameters()
-
-    def reset_parameters(self):
-        self.conv.reset_parameters()
-        init_xavier_uniform(self.lin)
-
     def forward(
         self,
         x: torch.Tensor,
@@ -283,64 +122,19 @@ class InteractionBlock(torch.nn.Module):
         """
 
         x = self.conv(x, edge_index, edge_weight, edge_attr, csr_data=csr_data)
-        # Linear layer weight is [out_features, in_features], need to transpose
-        weight = self.lin.weight.t().contiguous()
-        bias = self.lin.bias
-        x = fused_tanh_linear(
-            x.contiguous(), weight, bias
-        )  # FIXME: remove to match numerical results in forwar
+        x = self.activation(x)
+        x = self.lin(x)
         return x
 
 
-class CFConv(torch.nn.Module):
-    r"""Continuous filter convolutions for `SchNet`.
+class FlashCFConv(CFConv):
+    r"""
+    See :class:`CFConv` for the full API documentation.
 
-    Parameters
-    ----------
-    filter_net:
-        Neural network for generating filters from expanded pairwise distances
-    cutoff:
-        Cutoff envelope to apply to the output of the filter generating network.
-    in_channels:
-        Hidden input dimensions
-    out_channels:
-        Hidden output dimensions
-    num_filters:
-        Number of filters
-    aggr:
-        Aggregation for continous filter convolution. This argument is not used
-        as the aggregation is hardcoded to "add", its only left for API compatibility
-    use_triton:
-        Whether to use the fused Triton kernel for message passing (default: True).
+    This implementation use :func:`fused_cfconv` to fuse 
+    the message passing operation performed by SchNet without
+    materializing intermediate expanded representations.
     """
-
-    def __init__(
-        self,
-        filter_network: torch.nn.Module,
-        cutoff: torch.nn.Module,
-        in_channels: int = 128,
-        out_channels: int = 128,
-        num_filters: int = 128,
-        aggr="add",
-        use_triton: bool = True,
-    ):
-        super(CFConv, self).__init__()
-        self.lin1 = torch.nn.Linear(in_channels, num_filters, bias=False)
-        self.lin2 = torch.nn.Linear(num_filters, out_channels)
-        self.filter_network = filter_network
-        self.cutoff = cutoff
-        self.reset_parameters()
-
-    def reset_parameters(self):
-        r"""Method for resetting the weights of the linear
-        layers and filter network according the the
-        Xavier uniform strategy. Biases
-        are set to 0.
-        """
-
-        self.filter_network.reset_parameters()
-        init_xavier_uniform(self.lin1)
-        init_xavier_uniform(self.lin2)
 
     def forward(
         self,
@@ -366,7 +160,7 @@ class CFConv(torch.nn.Module):
             (total_num_edges, num_rbf)
         csr_data:
             Optional dict with CSR data for segment reduce:
-            {"dst_ptr", "csr_perm", "edge_src", "edge_dst"}
+            {"dst_ptr", "csr_perm", "src_ptr", "src_perm"}
 
         Returns
         -------
@@ -374,48 +168,26 @@ class CFConv(torch.nn.Module):
             Updated embedded features of shape (num_examples * num_atoms,
             hidden_channels)
         """
-        # ===== CFConv Computational Flow =====
-        # Input shapes:
-        #   x: [num_nodes, hidden_channels]
-        #   edge_index: [2, num_edges] - (src, dst) pairs
-        #   edge_weight: [num_edges] - distances
-        #   edge_attr: [num_edges, num_rbf] - RBF expanded distances
-        #
-        # Step 1: Linear projection
 
-        x = self.lin1(x)  # [num_nodes, num_filters]
-
-        # Step 2-5: Message passing (propagate_type: x: Tensor, W: Tensor)
-
-        # === CSR Segment Reduce Path ===
-        # Uses CSR format to avoid atomics in scatter-add
+        x = self.lin1(x)
         num_nodes = x.shape[0]
-
-        # Step 2a: Filter network (MLP, not fused)
         filter_out = self.filter_network(edge_attr)
-
-        # Steps 2b-5: CSR segment reduce (no atomics!)
-        cutoff_upper = self.cutoff.cutoff_upper
-
-        # Get src-CSR for backward if available (USE_SRC_CSR_GRAD_X=1)
-        src_ptr = csr_data.get("src_ptr")
-        src_perm = csr_data.get("src_perm")
+        edge_weight = self.cutoff(edge_weight)
 
         x = fused_cfconv(
-            x.contiguous(),
-            filter_out.contiguous(),
-            edge_weight.contiguous(),
-            csr_data["edge_src"],
-            csr_data["edge_dst"],
+            x,
+            filter_out,
+            edge_weight,
+            edge_index[0],
+            edge_index[1],
             csr_data["dst_ptr"],
             csr_data["csr_perm"],
             num_nodes,
-            cutoff_upper,
-            src_ptr,
-            src_perm,
+            csr_data["src_ptr"],
+            csr_data["src_perm"],
         )
 
-        x = self.lin2(x)  # [num_nodes, out_channels]
+        x = self.lin2(x)
         return x
 
 
@@ -423,6 +195,9 @@ class StandardFlashSchNet(FlashSchNet):
     """Small wrapper class for :ref:`SchNet` to simplify the definition of the
     SchNet model through an input file. The upper distance cutoff attribute
     in is set by default to match the upper cutoff value in the cutoff function.
+    This class uses custom triton operations to speed up the messages computation
+    in the model CFConv and to reduce the memory associated with materialization
+    of intermediate tensors.
 
     Parameters
     ----------
@@ -485,6 +260,11 @@ class StandardFlashSchNet(FlashSchNet):
                 )
             )
 
+        if aggr != "add":
+            raise NotImplementedError(
+                f"Only aggr='add' is supported for FlashSchNet, you provided {aggr}"
+            )
+
         embedding_layer = torch.nn.Embedding(embedding_size, hidden_channels)
 
         interaction_blocks = []
@@ -495,14 +275,14 @@ class StandardFlashSchNet(FlashSchNet):
                 last_bias=False,
             )
 
-            cfconv = CFConv(
+            cfconv = FlashCFConv(
                 filter_network,
                 cutoff=cutoff,
                 num_filters=num_filters,
                 in_channels=hidden_channels,
                 out_channels=hidden_channels,
             )
-            block = InteractionBlock(cfconv, hidden_channels, activation)
+            block = FlashInteractionBlock(cfconv, hidden_channels, activation)
             interaction_blocks.append(block)
         output_layer_widths = (
             [hidden_channels] + output_hidden_layer_widths + [1]
