@@ -7,7 +7,7 @@ from mlcg.nn import GradientsOut
 
 from mlcg.mol_utils import MolDatabase, _ASE_prior_model
 from mlcg.neighbor_list.neighbor_list import atomic_data2neighbor_list
-from mlcg.nn.kernels.converter import convert_standard_model_to_flash
+from mlcg.nn.flash_models.converter import convert_standard_model_to_flash
 
 CUTOFF_UPPER = 4.0
 DEVICES = ["cpu"] + (["cuda"] if torch.cuda.is_available() else [])
