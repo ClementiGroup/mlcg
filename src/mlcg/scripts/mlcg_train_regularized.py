@@ -11,7 +11,6 @@ from mlcg.pl import RegularizedPLModel, DataModule, LightningCLI
 
 
 def main():
-    torch.jit.set_fusion_strategy([("DYNAMIC", 3)])
     # to levarage the tensor core if available
     torch.set_float32_matmul_precision("high")
     git = {
