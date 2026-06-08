@@ -1,2 +1,7 @@
 from .exp_normal import fused_distance_exp_norm_rbf_cosinecutoff
 from .gaussian import fused_distance_gaussian_rbf_cosinecutoff
+
+__all__ = [
+    "fused_distance_exp_norm_rbf_cosinecutoff",
+    "fused_distance_gaussian_rbf_cosinecutoff"
+]
