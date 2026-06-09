@@ -1,8 +1,7 @@
 #! /usr/bin/env python
 
 import torch
-from mlcg.nn.kernels.converter import convert_standard_model_to_flash
-
+from mlcg.nn.flash_models import convert_standard_model_to_flash
 from mlcg.nn.gradients import SumOut
 from mlcg.pl.utils import (
     extract_model_from_checkpoint,
