@@ -7,7 +7,12 @@ from .harmonic import (
     GeneralAngles,
     GeneralBonds,
 )
-from .repulsion import Repulsion
+from .repulsion import (
+    Repulsion,
+    CutoffRepulsion,
+    ExpRepulsion,
+    CutoffExpRepulsion,
+)
 from .fourier_series import FourierSeries, Dihedral
-from .polynomial import Polynomial, QuarticAngles
+from .polynomial import Polynomial, QuarticAngles, QuarticRawAngles
 from .restricted_bending import RestrictedQuartic
