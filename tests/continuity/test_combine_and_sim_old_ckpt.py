@@ -4,6 +4,7 @@ import pytest
 from shutil import rmtree
 from pathlib import Path
 from mlcg.utils import load_yaml, dump_yaml
+import torch
 
 _here = Path(__file__).parent
 _ckpt_config_dir = _here / "model_ckpts"
@@ -78,6 +79,7 @@ def test_train_simulation_pipeline(model_ckpt, prior, structures, test_dir):
     ## Prepare simulation config
     sim_config = load_yaml(_here / "base_sim_config.yaml")
     sim_config["structure_file"] = str(structures)
+    sim_config["simulation"]["device"] = "cuda" if torch.cuda.is_available() else "cpu"
     dump_yaml(test_dir / "sim_config.yaml", sim_config)
 
     _cmd = [

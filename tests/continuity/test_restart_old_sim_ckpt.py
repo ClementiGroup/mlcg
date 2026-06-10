@@ -1,11 +1,12 @@
 import subprocess
 import os
 import pytest
-from shutil import rmtree, copy2
+from shutil import rmtree
 from pathlib import Path
 from torch import save as tsave
 from mlcg.utils import load_yaml, dump_yaml
 from mlcg.nn import load_and_adapt_old_checkpoint
+import torch
 
 _here = Path(__file__).parent
 _ckpt_config_dir = _here / "simulation_ckpts"
@@ -62,6 +63,7 @@ def test_restart_simulation(model_and_config_ckpt, sim_checkpoint, test_dir):
     ## Prepare simulation config
     sim_config = load_yaml(_here / "base_sim_config.yaml")
     sim_config["structure_file"] = "old_configurations.pt"
+    sim_config["simulation"]["device"] = "cuda" if torch.cuda.is_available() else "cpu"
     sim_config["simulation"]["read_checkpoint_file"] = True
     new_final_time = (
         sim_config["simulation"]["n_timesteps"]
