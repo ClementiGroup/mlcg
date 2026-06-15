@@ -79,7 +79,9 @@ def test_train_simulation_pipeline(model_ckpt, prior, structures, test_dir):
     ## Prepare simulation config
     sim_config = load_yaml(_here / "base_sim_config.yaml")
     sim_config["structure_file"] = str(structures)
-    sim_config["simulation"]["device"] = "cuda" if torch.cuda.is_available() else "cpu"
+    sim_config["simulation"]["device"] = (
+        "cuda" if torch.cuda.is_available() else "cpu"
+    )
     dump_yaml(test_dir / "sim_config.yaml", sim_config)
 
     _cmd = [

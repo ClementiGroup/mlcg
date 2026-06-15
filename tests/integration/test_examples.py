@@ -96,7 +96,6 @@ def test_architecture(model_yaml, test_dir):
     else:
         training_yaml["trainer"].pop("devices")
         training_yaml["trainer"]["accelerator"] = "cpu"
-        
 
     dump_yaml(test_dir / "pytest_training.yaml", training_yaml)
 
@@ -150,7 +149,9 @@ def test_architecture(model_yaml, test_dir):
     simulation_yaml = load_yaml(sim_yaml)
     simulation_yaml["model_file"] = str(test_dir / "model_with_prior.pt")
     simulation_yaml["structure_file"] = struct
-    simulation_yaml["simulation"]["device"] = "cuda" if torch.cuda.is_available() else "cpu"
+    simulation_yaml["simulation"]["device"] = (
+        "cuda" if torch.cuda.is_available() else "cpu"
+    )
     simulation_yaml["simulation"]["n_timesteps"] = 100
     simulation_yaml["simulation"]["export_interval"] = 50
     simulation_yaml["simulation"]["log_interval"] = 50
