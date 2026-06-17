@@ -1,6 +1,5 @@
-from typing import Dict, Union
+from typing import Union
 import torch
-import numpy as np
 import pytest
 from copy import deepcopy
 
@@ -9,7 +8,6 @@ from mlcg.simulation.langevin import (
     OverdampedSimulation,
 )
 from mlcg.simulation.parallel_tempering import PTSimulation
-from mlcg.data.atomic_data import AtomicData
 from mlcg.data._keys import FORCE_KEY
 from mlcg.nn import (
     StandardSchNet,
@@ -20,14 +18,6 @@ from mlcg.nn import (
     CosineCutoff,
     GaussianBasis,
 )
-from ase.build import molecule
-
-from mlcg.geometry.topology import get_connectivity_matrix, get_n_paths
-from mlcg.geometry import Topology
-from mlcg.neighbor_list.neighbor_list import make_neighbor_list
-from mlcg.nn.prior import HarmonicBonds, HarmonicAngles, Dihedral
-from torch_geometric.data.collate import collate
-from mlcg.geometry.statistics import fit_baseline_models
 
 from mlcg.mol_utils import _get_initial_data, _ASE_prior_model
 
