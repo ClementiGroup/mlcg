@@ -194,6 +194,7 @@ class MolData:
         exclusion_pairs: np.ndarray = None,
         cell: np.ndarray = None,
         pbc: np.ndarray = None,
+        energy: np.ndarray = None,
     ):
         self._name = name
         self._embeds = embeds
@@ -201,11 +202,14 @@ class MolData:
         self._forces = forces
         self._cell = cell
         self._pbc = pbc
+        self._energy = energy
 
         assert (
             len(self._embeds) == self._coords.shape[1] == self._forces.shape[1]
         )
         assert self._coords.shape == self._forces.shape
+        if self._energy is not None:
+            assert len(self._coords) == len(self._energy)
 
         self._weights = weights
         if self._weights is not None:
@@ -258,12 +262,18 @@ class MolData:
     def pbc(self):
         return self._pbc
 
+    @property
+    def energy(self):
+        return self._energy
+
     def __repr__(self):
         return f"""MolData(name={self.name}", N_beads={self.n_beads}, N_frames={self.n_frames})"""
 
     def sub_sample(self, indices):
         self._coords = self._coords[indices]
         self._forces = self._forces[indices]
+        if self._energy is not None:
+            self._energy = self._energy[indices]
 
         if self.weights is not None:
             self._weights = self._weights[indices]
@@ -402,6 +412,7 @@ class MetaSet:
             selection = select_for_rank(par_range)
             cell = None  # cell is none by default
             pbc = None  # pbc is none by default
+            energy = None  # energy is none by default
             if not split_per_index:
                 coords = MetaSet.retrieve_hdf(
                     hdf5_group[mol_name], keys["coords"]
@@ -425,6 +436,13 @@ class MetaSet:
                     try:
                         pbc = MetaSet.retrieve_hdf(
                             hdf5_group[mol_name], keys["pbc"]
+                        )[selection]
+                    except Exception:
+                        pass
+                if "energy" in hdf_key_mapping:
+                    try:
+                        energy = MetaSet.retrieve_hdf(
+                            hdf5_group[mol_name], keys["energy"]
                         )[selection]
                     except Exception:
                         pass
@@ -456,6 +474,13 @@ class MetaSet:
                         )[:][selection]
                     except Exception:
                         pass
+                if "energy" in hdf_key_mapping:
+                    try:
+                        energy = MetaSet.retrieve_hdf(
+                            hdf5_group[mol_name], keys["energy"]
+                        )[:][selection]
+                    except Exception:
+                        pass
             output.insert_mol(
                 MolData(
                     mol_name,
@@ -466,6 +491,7 @@ class MetaSet:
                     exclusion_pairs=exclusion_pairs,
                     cell=cell,
                     pbc=pbc,
+                    energy=energy,
                 )
             )
         output._exclude_listed_pairs = exclude_listed_pairs
@@ -575,6 +601,11 @@ class MetaSet:
             if self._mol_dataset[dataset_id].pbc is not None
             else None
         )
+        energy_frame = (
+            np.reshape(self._mol_dataset[dataset_id].energy[data_id], (1,))
+            if self._mol_dataset[dataset_id].energy is not None
+            else None
+        )
 
         atd = AtomicData.from_points(
             pos=self._mol_dataset[dataset_id].coords[data_id],
@@ -582,6 +613,7 @@ class MetaSet:
             atom_types=self._mol_dataset[dataset_id].embeds,
             cell=cell_frame,
             pbc=pbc_frame,
+            energy=energy_frame,
         )
         if self._exclude_listed_pairs:
             atd.exc_pair_index = torch.tensor(
