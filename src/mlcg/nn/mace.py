@@ -329,7 +329,7 @@ class MACE(torch.nn.Module):
         contributions = torch.stack(energies, dim=-1)
         total_energy = torch.sum(contributions, dim=-1)  # [n_graphs, ]
 
-        data.out.setdefault(self.name, {}).update({ENERGY_KEY: energy})
+        data.out.setdefault(self.name, {}).update({ENERGY_KEY: total_energy})
 
         return data
 
