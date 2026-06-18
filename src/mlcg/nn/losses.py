@@ -184,7 +184,6 @@ class ForceMSE(_Loss):
 class RegL1(_Loss):
     def __init__(
         self,
-        regularization_factor: float,
         reg_kwd: str = "regL1",
         size_average: Optional[bool] = None,
         reduce: Optional[bool] = None,
@@ -195,7 +194,6 @@ class RegL1(_Loss):
         )
 
         self.reg_kwd = reg_kwd
-        self.reg_factor = regularization_factor
 
     """
     Computes the L1 regularization loss for a given property.
@@ -229,7 +227,7 @@ class RegL1(_Loss):
                 f"target property {self.reg_kwd} has not been computed in data.out {list(data.out.keys())}"
             )
 
-        return self.reg_factor * torch.nn.functional.l1_loss(
+        return torch.nn.functional.l1_loss(
             data.out[self.reg_kwd],
             torch.zeros_like(data.out[self.reg_kwd]),
             reduction=self.reduction,

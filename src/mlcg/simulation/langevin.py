@@ -368,6 +368,15 @@ class OverdampedSimulation(_Simulation):
         )
         self._attach_configurations(configurations, beta)
 
+    def input_option_checks(self):
+        super(OverdampedSimulation, self).input_option_checks()
+        if self.save_velocities:
+            raise ValueError(
+                "save_velocities=True is not supported for OverdampedSimulation "
+                "because overdamped dynamics has no velocities. Use "
+                "LangevinSimulation if velocity output is needed."
+            )
+
 
 # pipe the doc from the base class into the child class so that it's properly
 # displayed by sphinx

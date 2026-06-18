@@ -38,6 +38,7 @@ from pathlib import Path
 import pytest
 import os
 from shutil import rmtree
+import torch
 
 _here = Path(__file__).parent
 _example_dir = _here.parent.parent / "examples"
@@ -88,9 +89,13 @@ def test_architecture(model_yaml, test_dir):
         data_path.parent / "small_partition_demo.yaml"
     )
     training_yaml["trainer"]["max_epochs"] = 2
-    training_yaml["trainer"].pop("devices")
     training_yaml["trainer"]["default_root_dir"] = str(test_dir)
-    training_yaml["trainer"]["accelerator"] = "cpu"
+    if torch.cuda.is_available():
+        training_yaml["trainer"]["devices"] = 1
+        training_yaml["trainer"]["accelerator"] = "gpu"
+    else:
+        training_yaml["trainer"].pop("devices")
+        training_yaml["trainer"]["accelerator"] = "cpu"
 
     dump_yaml(test_dir / "pytest_training.yaml", training_yaml)
 
@@ -144,7 +149,9 @@ def test_architecture(model_yaml, test_dir):
     simulation_yaml = load_yaml(sim_yaml)
     simulation_yaml["model_file"] = str(test_dir / "model_with_prior.pt")
     simulation_yaml["structure_file"] = struct
-    simulation_yaml["simulation"]["device"] = "cpu"
+    simulation_yaml["simulation"]["device"] = (
+        "cuda" if torch.cuda.is_available() else "cpu"
+    )
     simulation_yaml["simulation"]["n_timesteps"] = 100
     simulation_yaml["simulation"]["export_interval"] = 50
     simulation_yaml["simulation"]["log_interval"] = 50
