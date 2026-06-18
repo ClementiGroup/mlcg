@@ -43,17 +43,18 @@ This will likely rise an error due to some dependency issue about `e3nn` that yo
 
 .. end-install
 
-CLI
----
 
-The models defined in this library can be conveniently trained using the pytorch-lightning
-`CLI <https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_cli.html>`_ utilities.
 
 Examples
 --------
 
 Please take a look into the ``examples`` folder of the repository to see how to use this code to train a model over an existing dataset.
 
+CLI
+====
+
+The models defined in this library can be conveniently trained using the pytorch-lightning
+`CLI <https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_cli.html>`_ utilities.
 
 .. end-intro
 
@@ -65,7 +66,7 @@ Documentation
 Documentation is available `here <https://clementigroup.github.io/mlcg/>`_ and here are some references on how to work with it.
 
 Dependencies
-~~~~~~~~~~~~
+-------------
 
 .. code:: bash
 
@@ -73,7 +74,7 @@ Dependencies
 
 
 How to build
-~~~~~~~~~~~~
+------------
 
 .. code:: bash
 
@@ -81,7 +82,7 @@ How to build
     sphinx-build -b html source build
 
 How to update the online documentation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------------------
 
 This update should be done after any update of the `main` branch so that the
 documentation is synchronized with the main version of the repository.
