@@ -3,14 +3,8 @@ stages:
 
 test_job:
   stage: test
-  cache:
-    key:
-      files:
-        - env_with_hashes.in
-    paths:
-      - .venv
   before_script:
-    - "[[ ! -d .venv ]] && uv venv || :"
+    - uv venv
     - uv pip install -r env_with_hashes.in
     - uv pip install --no-deps git+https://github.com/ACEsuit/mace.git@v0.3.13
     - uv pip install --no-deps nequip==0.12.1 nequip-allegro==0.7.0
@@ -21,7 +15,7 @@ test_job:
     - pytest -m "unit" --verbose --junitxml="tests${CI_NODE_INDEX}.xml" --durations-path tests/.test_durations --splits "$CI_NODE_TOTAL" --group "$CI_NODE_INDEX" --splitting-algorithm least_duration
     - pytest -m "continuity" --verbose --junitxml="tests${CI_NODE_INDEX}.xml" --durations-path tests/.test_durations --splits "$CI_NODE_TOTAL" --group "$CI_NODE_INDEX" --splitting-algorithm least_duration
     - pytest -m "integration" --verbose --junitxml="tests${CI_NODE_INDEX}.xml" --durations-path tests/.test_durations --splits "$CI_NODE_TOTAL" --group "$CI_NODE_INDEX" --splitting-algorithm least_duration
-  parallel: 5
+  parallel: 4
   artifacts:
     when: always
     paths:
