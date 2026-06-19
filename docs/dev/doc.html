@@ -95,6 +95,9 @@ data-aria-dark="Switch to auto color mode">
 </li>
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">Developer Documentation</a><ul class="current">
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#dependencies">Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#how-to-build">How to build</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#how-to-update-the-online-documentation">How to update the online documentation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tests.html">Tests</a></li>
 </ul>
 </li>
@@ -112,6 +115,7 @@ data-aria-dark="Switch to auto color mode">
       <i class="i-lucide close"></i>
     </button>
     <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#">Documentation</a></li>
 <li><a class="reference internal" href="#dependencies">Dependencies</a></li>
 <li><a class="reference internal" href="#how-to-build">How to build</a></li>
 <li><a class="reference internal" href="#how-to-update-the-online-documentation">How to update the online documentation</a></li>
@@ -152,21 +156,22 @@ data-aria-dark="Switch to auto color mode">
           <section id="documentation">
 <h1>Documentation<a class="headerlink" href="#documentation" title="Link to this heading">¶</a></h1>
 <p>Documentation is available <a class="reference external" href="https://clementigroup.github.io/mlcg/">here</a> and here are some references on how to work with it.</p>
+</section>
 <section id="dependencies">
-<h2>Dependencies<a class="headerlink" href="#dependencies" title="Link to this heading">¶</a></h2>
+<h1>Dependencies<a class="headerlink" href="#dependencies" title="Link to this heading">¶</a></h1>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">pip<span class="w"> </span>install<span class="w"> </span>sphinx<span class="w"> </span>shibuya<span class="w"> </span>sphinx-autodoc-typehints
 </span></pre></div>
 </div>
 </section>
 <section id="how-to-build">
-<h2>How to build<a class="headerlink" href="#how-to-build" title="Link to this heading">¶</a></h2>
+<h1>How to build<a class="headerlink" href="#how-to-build" title="Link to this heading">¶</a></h1>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="nb">cd</span><span class="w"> </span>docs
 </span><span data-line="2">sphinx-build<span class="w"> </span>-b<span class="w"> </span>html<span class="w"> </span><span class="nb">source</span><span class="w"> </span>build
 </span></pre></div>
 </div>
 </section>
 <section id="how-to-update-the-online-documentation">
-<h2>How to update the online documentation<a class="headerlink" href="#how-to-update-the-online-documentation" title="Link to this heading">¶</a></h2>
+<h1>How to update the online documentation<a class="headerlink" href="#how-to-update-the-online-documentation" title="Link to this heading">¶</a></h1>
 <p>This update should be done after any update of the <cite>main</cite> branch so that the
 documentation is synchronized with the main version of the repository.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">git<span class="w"> </span>checkout<span class="w"> </span>gh-pages
@@ -177,7 +182,6 @@ documentation is synchronized with the main version of the repository.</p>
 </span><span data-line="6">git<span class="w"> </span>push
 </span></pre></div>
 </div>
-</section>
 </section>
 
         </article><button class="back-to-top" type="button">
