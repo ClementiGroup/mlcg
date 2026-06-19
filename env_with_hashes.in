@@ -1599,7 +1599,7 @@ pure-eval==0.2.3 \
     --hash=sha256:5f4e983f40564c576c7c8635ae88db5956bb2229d7e9237d03b3c0b0190eaf42
     # via stack-data
 pyg-lib==0.4.0+pt28cu128 \
-    --hash=sha256:bc06b1b6f73e02432656f1c06e2b56ee16bfc87bdf096cb07dca170dd31ad110
+    --hash=sha256:77729fc04cee1c4dc70a11dd6811617a44f9f0781e9772da1955fb6d7fd03f2b
 pygments==2.19.2 \
     --hash=sha256:636cb2477cec7f8952536970bc533bc43743542f70392ae026374600add5b887 \
     --hash=sha256:86540386c03d588bb81d44bc3928634ff26449851e99741617ecb9037ee5ec0b
@@ -1797,7 +1797,7 @@ torch==2.8.0 \
     #   -r mlcg-torch28-requirements.in
     #   nvalchemi-toolkit-ops
 torch-cluster==1.6.3+pt28cu128 \
-    --hash=sha256:a80b3870dd2ceff2b05f751306014e14de469754b862cc2448360d7958a337ca
+    --hash=sha256:81da25326077c49c89af5b8b42313fab21ef8f8159ef98d7437553da76c68f98
 torch-geometric==2.6.1 \
     --hash=sha256:1f18f9d0fc4d2239d526221e4f22606a4a3895b5d965a9856d27610a3df662c6 \
     --hash=sha256:8faeb353f9655f7dbec44c5e0b44c721773bdfb279994da96b9b8b12fd30f427
