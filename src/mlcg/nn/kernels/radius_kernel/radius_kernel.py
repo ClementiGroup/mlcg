@@ -51,14 +51,12 @@ def radius_kernel(
     out_src_ptr,  # (max_out,) int64
     out_dst_ptr,  # (max_out,) int64
     out_dist_ptr,  # (max_out,) float32
-    out_disp_ptr,  # (max_out, 3) float32 — only used when return_displacements
+    out_disp_ptr,  # (max_out, 3) float32
     global_count_ptr,  # (1,) int64 — atomic write counter
     cutoff_sq: tl.constexpr,
     max_out: int,  # Size of the allocated output
     N: int,  # Number of atoms (positions.shape[0])
-    compute_self_loops: tl.constexpr,
     apply_pbc: tl.constexpr,
-    return_displacements: tl.constexpr,
     BLOCK_I: tl.constexpr,
     BLOCK_J: tl.constexpr,
 ):
@@ -73,12 +71,12 @@ def radius_kernel(
 
     mol_i = tl.load(batch_ptr + i_off, mask=i_ok, other=-1)
     mol_j = tl.load(batch_ptr + j_off, mask=j_ok, other=-2)
-    active = (mol_i[:, None] == mol_j[None, :]) & i_ok[:, None] & j_ok[None, :]
-
-    if compute_self_loops:
-        active = active & (j_off[None, :] >= i_off[:, None])
-    else:
-        active = active & (j_off[None, :] > i_off[:, None])
+    active = (
+        (mol_i[:, None] == mol_j[None, :])
+        & i_ok[:, None]
+        & j_ok[None, :]
+        & (j_off[None, :] > i_off[:, None])
+    )
 
     px_i = tl.load(
         pos_ptr + i_off * 3 + 0,
@@ -202,22 +200,21 @@ def radius_kernel(
     tl.store(out_src_ptr + slots, src_flat.to(tl.int64), mask=write)
     tl.store(out_dst_ptr + slots, dst_flat.to(tl.int64), mask=write)
     tl.store(out_dist_ptr + slots, tl.sqrt(dsq_flat), mask=write)
-    if return_displacements:
-        tl.store(
-            out_disp_ptr + slots * 3 + 0,
-            tl.reshape(dx, [BLOCK_I * BLOCK_J]),
-            mask=write,
-        )
-        tl.store(
-            out_disp_ptr + slots * 3 + 1,
-            tl.reshape(dy, [BLOCK_I * BLOCK_J]),
-            mask=write,
-        )
-        tl.store(
-            out_disp_ptr + slots * 3 + 2,
-            tl.reshape(dz, [BLOCK_I * BLOCK_J]),
-            mask=write,
-        )
+    tl.store(
+        out_disp_ptr + slots * 3 + 0,
+        tl.reshape(dx, [BLOCK_I * BLOCK_J]),
+        mask=write,
+    )
+    tl.store(
+        out_disp_ptr + slots * 3 + 1,
+        tl.reshape(dy, [BLOCK_I * BLOCK_J]),
+        mask=write,
+    )
+    tl.store(
+        out_disp_ptr + slots * 3 + 2,
+        tl.reshape(dz, [BLOCK_I * BLOCK_J]),
+        mask=write,
+    )
 
 
 @triton_op("mlcg_kernels::radius", mutates_args={})
@@ -229,8 +226,6 @@ def radius(
     pbc: torch.Tensor = None,
     cell: torch.Tensor = None,
     avg_max_num_neigh: int = 32,
-    self_loops: bool = False,
-    return_displacements: bool = False,
 ) -> List[torch.Tensor]:
     """Build a radius graph using a Triton kernel, returning full bidirectional edges.
 
@@ -268,13 +263,6 @@ def radius(
         exceeds ``max_out``. Set it to a value slightly above the expected
         maximum neighbour count for your system to avoid reallocation.
         Default: ``32``.
-    self_loops : bool, optional
-        If True, include edges from each atom to itself (distance 0). These
-        are not duplicated when mirroring. Default: ``False``.
-    return_displacements : bool, optional
-        If True, also return the displacement vectors ``r_j - r_i`` (wrapped
-        into the minimum image when PBC is active) for each edge.
-        Default: ``False``.
 
     Returns
     -------
@@ -288,8 +276,7 @@ def radius(
     displacements : torch.Tensor
         Float32 tensor of shape ``(E, 3)`` with the displacement vector
         ``pos[dst] - pos[src]`` for each edge (minimum-image corrected when
-        PBC is active). Only present in the return list when
-        ``return_displacements=True``.
+        PBC is active).
 
     Raises
     ------
@@ -322,8 +309,7 @@ def radius(
     >>> cell = torch.eye(3, device="cuda") * 10.0   # 10 Å cubic box
     >>> pbc = torch.tensor([True, True, True], device="cuda")
     >>> edge_index, distances, displacements = radius(
-    ...     pos, batch, cutoff=5.0, cell=cell, pbc=pbc,
-    ...     return_displacements=True,
+    ...     pos, batch, cutoff=5.0, cell=cell, pbc=pbc
     ... )
 
     Batched systems:
@@ -352,11 +338,7 @@ def radius(
     out_src = torch.empty(max_out, dtype=torch.int64, device=pos.device)
     out_dst = torch.empty(max_out, dtype=torch.int64, device=pos.device)
     out_dist = torch.empty(max_out, dtype=torch.float32, device=pos.device)
-    out_disp = (
-        torch.empty((max_out, 3), dtype=torch.float32, device=pos.device)
-        if return_displacements
-        else torch.empty(0, device=pos.device)
-    )
+    out_disp = torch.empty((max_out, 3), dtype=torch.float32, device=pos.device)
     global_count = torch.zeros(1, dtype=torch.int64, device=pos.device)
 
     def grid(META):
@@ -379,9 +361,7 @@ def radius(
         cutoff_sq=cutoff * cutoff,
         max_out=max_out,
         N=N,
-        compute_self_loops=self_loops,
         apply_pbc=apply_pbc,
-        return_displacements=return_displacements,
     )
 
     E_half = int(global_count.item())
@@ -395,89 +375,47 @@ def radius(
     dist_half = out_dist[:E_half]
 
     # Mirror the upper-triangular half to get full bidirectional edges.
-    # Self-loops (diagonal tile, src == dst) must not be duplicated.
-    if self_loops:
-        is_self = src == dst
-        edge_index = torch.stack(
-            [torch.cat([src, dst[~is_self]]), torch.cat([dst, src[~is_self]])],
-            dim=0,
-        )
-        distances = torch.cat([dist_half, dist_half[~is_self]])
-        if return_displacements:
-            d = out_disp[:E_half]
-            return [edge_index, distances, torch.cat([d, -d[~is_self]])]
-    else:
-        edge_index = torch.stack(
-            [torch.cat([src, dst]), torch.cat([dst, src])], dim=0
-        )
-        distances = dist_half.repeat(2)
-        if return_displacements:
-            d = out_disp[:E_half]
-            return [edge_index, distances, torch.cat([d, -d])]
+    edge_index = torch.stack(
+        [torch.cat([src, dst]), torch.cat([dst, src])], dim=0
+    )
+    distances = dist_half.repeat(2)
+    d = out_disp[:E_half]
+    displacements = torch.cat([d, -d])
 
-    return [edge_index, distances]
+    return [edge_index, distances, displacements]
 
 
 def setup_context(ctx, inputs, output):
-    (
-        pos,
-        batch,
-        cutoff,
-        pbc,
-        cell,
-        avg_max_num_neigh,
-        self_loops,
-        return_displacements,
-    ) = inputs
-    edge_index = output[0]
-    distances = output[1]
-    ctx.had_pbc = pbc is not None and pbc.numel() > 0
-    ctx.had_cell = cell is not None and cell.numel() > 0
-    ctx.return_displacements = return_displacements
-    displacements = (
-        output[2] if return_displacements else torch.empty(0)
-    )
+    pos, _, _, _, _, _ = inputs
+    edge_index, distances, displacements = output
     ctx.save_for_backward(pos, edge_index, distances, displacements)
 
 
 def backward(ctx, grads):
     grad_distances = grads[1]
-    grad_displacements = grads[2] if ctx.return_displacements else 0
+    grad_displacements = grads[2]
     grad_pos = None
 
     if ctx.needs_input_grad[0]:
         pos, edge_index, distances, displacements = ctx.saved_tensors
-        if not ctx.return_displacements:
-            displacements = pos[edge_index[0]] - pos[edge_index[1]]
 
-        unit_vec = torch.div(displacements, distances.unsqueeze(1))
+        # when distance~0 then d/d_pos ||0|| = 0, so adding clamping plus masking
+        # for actual 0.0 values to avoid NaN from the division.
+        unit_vec = torch.where(
+            distances.unsqueeze(1) > 0,
+            displacements / distances.unsqueeze(1).clamp(min=1e-10),
+            torch.zeros_like(displacements),
+        )
         expanded_pos_grad = (
             grad_distances.unsqueeze(1) * unit_vec + grad_displacements
         )
 
-        grad_pos = torch.zeros_like(pos).index_add(0, edge_index[0], expanded_pos_grad)
+        grad_pos = torch.zeros_like(pos).index_add(
+            0, edge_index[0], expanded_pos_grad
+        )
         grad_pos = grad_pos.index_add(0, edge_index[1], -expanded_pos_grad)
 
-        # grad_pos = torch.zeros_like(pos)
-        # grad_pos.index_add_(0, edge_index[0], expanded_pos_grad)
-        # grad_pos.index_add_(0, edge_index[1], -expanded_pos_grad)
-
-    return (grad_pos, None, None, None, None, None)
-    # grads_out = [
-    #     grad_pos,
-    #     None,   # batch
-    #     None,   # cutoff
-    # ]
-    # if ctx.had_pbc:
-    #     grads_out.append(None)  # pbc
-    # if ctx.had_cell:
-    #     grads_out.append(None)  # cell
-    # grads_out.extend([
-    #     None,   # avg_max_num_neigh
-    #     None,   # self_loops
-    #     None,   # return_displacements
-    # ])
-    # return tuple(grads_out)
+    return (grad_pos,) + (None,) * (len(ctx.needs_input_grad) - 1)
 
 
 radius.register_autograd(backward, setup_context=setup_context)
@@ -491,8 +429,6 @@ def _(
     pbc: torch.Tensor = None,
     cell: torch.Tensor = None,
     avg_max_num_neigh: int = 32,
-    self_loops: bool = False,
-    return_displacements: bool = False,
 ) -> List[torch.Tensor]:
     N = pos.shape[0]
     cutoff_sq = cutoff * cutoff
@@ -512,8 +448,7 @@ def _(
 
     dist_sq = (d * d).sum(dim=-1)
     same_mol = batch.unsqueeze(0) == batch.unsqueeze(1)
-    if not self_loops:
-        same_mol = same_mol & ~torch.eye(N, dtype=torch.bool, device=pos.device)
+    same_mol = same_mol & ~torch.eye(N, dtype=torch.bool, device=pos.device)
 
     valid = same_mol & (dist_sq < cutoff_sq)
     max_out = pos.shape[0] * avg_max_num_neigh
@@ -528,6 +463,4 @@ def _(
     distances = torch.sqrt(dist_sq[src, dst])
     edge_index = torch.stack([src, dst], dim=0)
 
-    if return_displacements:
-        return [edge_index, distances, d[dst, src]]
-    return [edge_index, distances]
+    return [edge_index, distances, d[dst, src]]
