@@ -1,19 +1,3 @@
-"""
-Triton kernel: fixed-radius neighbor list construction.
-
-Given:
-    pos        : (N, 3)  float32  – atomic positions
-    batch      : (N,)    int32    – molecule index per atom (contiguous/sorted)
-    cutoff     : float            – distance threshold
-    max_neigh  : int              – max neighbors stored per atom
-
-Returns:
-    edge_index : (2, E)  int64   – [src, dst] pairs (dst is the query atom)
-    rel_pos    : (E, 3)  float32 – pos[src] - pos[dst]  (displacement vectors)
-    num_neigh  : (N,)    int32   – actual neighbor count per atom
-                                   (capped at max_neigh; use to detect overflow)
-"""
-
 import torch
 import triton
 import triton.language as tl
@@ -24,220 +8,412 @@ from typing import List
 from ..utils import ensure_contiguous
 
 
+def _reset_count(args):
+    """Reset global_count_ptr to zero before each autotune trial."""
+    args["global_count_ptr"].zero_()
+
+
+def _make_config(block_i, block_j, num_warps, num_stages):
+    return triton.Config(
+        {"BLOCK_I": block_i, "BLOCK_J": block_j},
+        num_warps=num_warps,
+        num_stages=num_stages,
+        pre_hook=_reset_count,
+    )
+
+
 @triton.autotune(
     configs=[
-        triton.Config({"BLOCK": 16}, num_warps=2, num_stages=1),
-        triton.Config({"BLOCK": 32}, num_warps=2, num_stages=1),
-        triton.Config({"BLOCK": 32}, num_warps=4, num_stages=2),
-        triton.Config({"BLOCK": 64}, num_warps=4, num_stages=2),
-        triton.Config({"BLOCK": 64}, num_warps=4, num_stages=3),
-        triton.Config({"BLOCK": 64}, num_warps=8, num_stages=2),
-        triton.Config({"BLOCK": 128}, num_warps=4, num_stages=2),
-        triton.Config({"BLOCK": 128}, num_warps=8, num_stages=3),
-        triton.Config({"BLOCK": 128}, num_warps=8, num_stages=4),
-        triton.Config({"BLOCK": 256}, num_warps=8, num_stages=3),
-        triton.Config({"BLOCK": 256}, num_warps=16, num_stages=4),
+        _make_config(16, 16, 2, 1),
+        _make_config(32, 32, 4, 1),
+        _make_config(16, 128, 4, 1),
+        _make_config(16, 256, 8, 1),
+        _make_config(32, 128, 4, 1),
+        _make_config(32, 64, 4, 1),
+        _make_config(64, 32, 4, 1),
+        _make_config(64, 64, 8, 1),
+        _make_config(64, 128, 4, 1),
+        _make_config(128, 64, 4, 1),
+        _make_config(128, 32, 4, 1),
+        _make_config(128, 128, 8, 1),
+        _make_config(256, 64, 8, 1),
+        _make_config(64, 256, 8, 1),
     ],
     key=[],
 )
 @triton.jit
-def neighbor_list_kernel(
+def radius_kernel(
     pos_ptr,  # (N, 3) float32
-    batch_ptr,  # (N,) int32
-    mol_idxs_ptr,  # (M+1,) int32
+    batch_ptr,  # (N,)   int32
     cell_ptr,  # (M, 3, 3) float32
     cell_inv_ptr,  # (M, 3, 3) float32
     need_pbc_ptr,  # (M, 3) bool
-    neigh_idx_ptr,  # (N, max_neigh) int32  – neighbor atom indices (-1 = empty)
-    num_neigh_ptr,  # (N,) int32  – count of valid neighbors
-    squared_distances_ptr,  # (N, max_neigh) float32
-    displacement_ptr,  # (N, max_neigh, 3) float32
+    out_src_ptr,  # (max_out,) int64
+    out_dst_ptr,  # (max_out,) int64
+    out_dist_ptr,  # (max_out,) float32
+    out_disp_ptr,  # (max_out, 3) float32 — only used when return_displacements
+    global_count_ptr,  # (1,) int64 — atomic write counter
     cutoff_sq: tl.constexpr,
-    max_neigh: tl.constexpr,
+    max_out: int,  # Size of the allocated output
+    N: int,  # Number of atoms (positions.shape[0])
     compute_self_loops: tl.constexpr,
     apply_pbc: tl.constexpr,
     return_displacements: tl.constexpr,
-    BLOCK: tl.constexpr,
+    BLOCK_I: tl.constexpr,
+    BLOCK_J: tl.constexpr,
 ):
-    """Each program handles exactly one query atom."""
-    atom_idx = tl.program_id(0)
+    pid_i = tl.program_id(0)
+    pid_j = tl.program_id(1)
 
-    p1x = tl.load(pos_ptr + atom_idx * 3 + 0)
-    p1y = tl.load(pos_ptr + atom_idx * 3 + 1)
-    p1z = tl.load(pos_ptr + atom_idx * 3 + 2)
+    i_off = pid_i * BLOCK_I + tl.arange(0, BLOCK_I)
+    j_off = pid_i * BLOCK_I + pid_j * BLOCK_J + tl.arange(0, BLOCK_J)
 
-    mol = tl.load(batch_ptr + atom_idx)
-    mol_start = tl.load(mol_idxs_ptr + mol)
-    mol_end = tl.load(mol_idxs_ptr + mol + 1)
+    i_ok = i_off < N
+    j_ok = j_off < N
+
+    mol_i = tl.load(batch_ptr + i_off, mask=i_ok, other=-1)
+    mol_j = tl.load(batch_ptr + j_off, mask=j_ok, other=-2)
+    active = (mol_i[:, None] == mol_j[None, :]) & i_ok[:, None] & j_ok[None, :]
+
+    if compute_self_loops:
+        active = active & (j_off[None, :] >= i_off[:, None])
+    else:
+        active = active & (j_off[None, :] > i_off[:, None])
+
+    px_i = tl.load(
+        pos_ptr + i_off * 3 + 0,
+        mask=i_ok,
+        other=0.0,
+        eviction_policy="evict_last",
+    )
+    py_i = tl.load(
+        pos_ptr + i_off * 3 + 1,
+        mask=i_ok,
+        other=0.0,
+        eviction_policy="evict_last",
+    )
+    pz_i = tl.load(
+        pos_ptr + i_off * 3 + 2,
+        mask=i_ok,
+        other=0.0,
+        eviction_policy="evict_last",
+    )
+    px_j = tl.load(
+        pos_ptr + j_off * 3 + 0,
+        mask=j_ok,
+        other=0.0,
+        eviction_policy="evict_first",
+    )
+    py_j = tl.load(
+        pos_ptr + j_off * 3 + 1,
+        mask=j_ok,
+        other=0.0,
+        eviction_policy="evict_first",
+    )
+    pz_j = tl.load(
+        pos_ptr + j_off * 3 + 2,
+        mask=j_ok,
+        other=0.0,
+        eviction_policy="evict_first",
+    )
+
+    dx = px_j[None, :] - px_i[:, None]
+    dy = py_j[None, :] - py_i[:, None]
+    dz = pz_j[None, :] - pz_i[:, None]
 
     if apply_pbc:
-        cell_base = cell_ptr + mol * 9
-        cell_inv_base = cell_inv_ptr + mol * 9
+        H_inv00 = tl.load(cell_inv_ptr + mol_i * 9 + 0, mask=i_ok, other=0.0)
+        H_inv01 = tl.load(cell_inv_ptr + mol_i * 9 + 1, mask=i_ok, other=0.0)
+        H_inv02 = tl.load(cell_inv_ptr + mol_i * 9 + 2, mask=i_ok, other=0.0)
+        H_inv10 = tl.load(cell_inv_ptr + mol_i * 9 + 3, mask=i_ok, other=0.0)
+        H_inv11 = tl.load(cell_inv_ptr + mol_i * 9 + 4, mask=i_ok, other=0.0)
+        H_inv12 = tl.load(cell_inv_ptr + mol_i * 9 + 5, mask=i_ok, other=0.0)
+        H_inv20 = tl.load(cell_inv_ptr + mol_i * 9 + 6, mask=i_ok, other=0.0)
+        H_inv21 = tl.load(cell_inv_ptr + mol_i * 9 + 7, mask=i_ok, other=0.0)
+        H_inv22 = tl.load(cell_inv_ptr + mol_i * 9 + 8, mask=i_ok, other=0.0)
+        H00 = tl.load(cell_ptr + mol_i * 9 + 0, mask=i_ok, other=0.0)
+        H01 = tl.load(cell_ptr + mol_i * 9 + 1, mask=i_ok, other=0.0)
+        H02 = tl.load(cell_ptr + mol_i * 9 + 2, mask=i_ok, other=0.0)
+        H10 = tl.load(cell_ptr + mol_i * 9 + 3, mask=i_ok, other=0.0)
+        H11 = tl.load(cell_ptr + mol_i * 9 + 4, mask=i_ok, other=0.0)
+        H12 = tl.load(cell_ptr + mol_i * 9 + 5, mask=i_ok, other=0.0)
+        H20 = tl.load(cell_ptr + mol_i * 9 + 6, mask=i_ok, other=0.0)
+        H21 = tl.load(cell_ptr + mol_i * 9 + 7, mask=i_ok, other=0.0)
+        H22 = tl.load(cell_ptr + mol_i * 9 + 8, mask=i_ok, other=0.0)
+        pbc_x = tl.load(need_pbc_ptr + mol_i * 3 + 0, mask=i_ok, other=0).to(
+            tl.int1
+        )
+        pbc_y = tl.load(need_pbc_ptr + mol_i * 3 + 1, mask=i_ok, other=0).to(
+            tl.int1
+        )
+        pbc_z = tl.load(need_pbc_ptr + mol_i * 3 + 2, mask=i_ok, other=0).to(
+            tl.int1
+        )
 
-        H00 = tl.load(cell_base + 0)
-        H01 = tl.load(cell_base + 1)
-        H02 = tl.load(cell_base + 2)
-        H10 = tl.load(cell_base + 3)
-        H11 = tl.load(cell_base + 4)
-        H12 = tl.load(cell_base + 5)
-        H20 = tl.load(cell_base + 6)
-        H21 = tl.load(cell_base + 7)
-        H22 = tl.load(cell_base + 8)
+        # Cartesian to fractional
+        fx = (
+            H_inv00[:, None] * dx
+            + H_inv01[:, None] * dy
+            + H_inv02[:, None] * dz
+        )
+        fy = (
+            H_inv10[:, None] * dx
+            + H_inv11[:, None] * dy
+            + H_inv12[:, None] * dz
+        )
+        fz = (
+            H_inv20[:, None] * dx
+            + H_inv21[:, None] * dy
+            + H_inv22[:, None] * dz
+        )
 
-        H_inv00 = tl.load(cell_inv_base + 0)
-        H_inv01 = tl.load(cell_inv_base + 1)
-        H_inv02 = tl.load(cell_inv_base + 2)
-        H_inv10 = tl.load(cell_inv_base + 3)
-        H_inv11 = tl.load(cell_inv_base + 4)
-        H_inv12 = tl.load(cell_inv_base + 5)
-        H_inv20 = tl.load(cell_inv_base + 6)
-        H_inv21 = tl.load(cell_inv_base + 7)
-        H_inv22 = tl.load(cell_inv_base + 8)
+        # Minimum image in fractional space
+        fx = tl.where(pbc_x[:, None], fx - libdevice.round(fx), fx)
+        fy = tl.where(pbc_y[:, None], fy - libdevice.round(fy), fy)
+        fz = tl.where(pbc_z[:, None], fz - libdevice.round(fz), fz)
 
-        pbc_x = tl.load(need_pbc_ptr + mol * 3 + 0).to(tl.int1)
-        pbc_y = tl.load(need_pbc_ptr + mol * 3 + 1).to(tl.int1)
-        pbc_z = tl.load(need_pbc_ptr + mol * 3 + 2).to(tl.int1)
+        # Fractional to cartesian
+        dx = H00[:, None] * fx + H01[:, None] * fy + H02[:, None] * fz
+        dy = H10[:, None] * fx + H11[:, None] * fy + H12[:, None] * fz
+        dz = H20[:, None] * fx + H21[:, None] * fy + H22[:, None] * fz
 
-    count = 0
-    cand_base = mol_start
+    dist_sq = dx * dx + dy * dy + dz * dz
+    is_edge = active & (dist_sq < cutoff_sq)
 
-    for block_start in range(0, mol_end - mol_start, BLOCK):
-        offsets = cand_base + block_start + tl.arange(0, BLOCK)
-        mask = offsets < mol_end
-        if not compute_self_loops:
-            mask = mask & (offsets != atom_idx)
+    is_flat = tl.reshape(is_edge, [BLOCK_I * BLOCK_J])
+    n_out = tl.sum(is_flat.to(tl.int32))
+    if n_out == 0:
+        return
 
-        p2x = tl.load(pos_ptr + offsets * 3 + 0, mask=mask, other=0.0)
-        p2y = tl.load(pos_ptr + offsets * 3 + 1, mask=mask, other=0.0)
-        p2z = tl.load(pos_ptr + offsets * 3 + 2, mask=mask, other=0.0)
+    base = tl.atomic_add(global_count_ptr, n_out.to(tl.int64))
+    rank = tl.cumsum(is_flat.to(tl.int32), axis=0) - is_flat.to(tl.int32)
+    slots = base + rank.to(tl.int64)
+    write = is_flat & (slots < max_out)
 
-        dx = p2x - p1x
-        dy = p2y - p1y
-        dz = p2z - p1z
+    src_flat = tl.reshape(
+        tl.broadcast_to(j_off[None, :], [BLOCK_I, BLOCK_J]), [BLOCK_I * BLOCK_J]
+    )
+    dst_flat = tl.reshape(
+        tl.broadcast_to(i_off[:, None], [BLOCK_I, BLOCK_J]), [BLOCK_I * BLOCK_J]
+    )
+    dsq_flat = tl.reshape(dist_sq, [BLOCK_I * BLOCK_J])
 
-        if apply_pbc:
-            # cartesian to fractional: f = H_inv @ d
-            fx = H_inv00 * dx + H_inv01 * dy + H_inv02 * dz
-            fy = H_inv10 * dx + H_inv11 * dy + H_inv12 * dz
-            fz = H_inv20 * dx + H_inv21 * dy + H_inv22 * dz
-
-            # minimum image in fractional space
-            fx = tl.where(pbc_x, fx - libdevice.round(fx), fx)
-            fy = tl.where(pbc_y, fy - libdevice.round(fy), fy)
-            fz = tl.where(pbc_z, fz - libdevice.round(fz), fz)
-
-            # fractional to cartesian: d = H @ f
-            dx = H00 * fx + H01 * fy + H02 * fz
-            dy = H10 * fx + H11 * fy + H12 * fz
-            dz = H20 * fx + H21 * fy + H22 * fz
-
-        dist_sq = dx * dx + dy * dy + dz * dz
-        is_neigh = mask & (dist_sq < cutoff_sq)
-
-        # ── scatter valid neighbors into output ──────────────────────────────
-        # Compute exclusive rank of each valid lane within this block via
-        # prefix sum, then store all valid neighbors in one vectorized pass.
-        is_neigh_i32 = is_neigh.to(tl.int32)
-        rank = tl.cumsum(is_neigh_i32, axis=0) - is_neigh_i32  # 0-based rank
-        within_budget = is_neigh & (rank + count < max_neigh)
-        slots = atom_idx * max_neigh + count + rank
-        tl.store(neigh_idx_ptr + slots, offsets, mask=within_budget)
-        tl.store(squared_distances_ptr + slots, dist_sq, mask=within_budget)
-        if return_displacements:
-            tl.store(displacement_ptr + slots * 3 + 0, dx, mask=within_budget)
-            tl.store(displacement_ptr + slots * 3 + 1, dy, mask=within_budget)
-            tl.store(displacement_ptr + slots * 3 + 2, dz, mask=within_budget)
-        count += tl.sum(within_budget.to(tl.int32))
-
-    tl.store(num_neigh_ptr + atom_idx, count)
+    # FIXME: check if here cast to int64 is ok or if we need to keep it also internally
+    tl.store(out_src_ptr + slots, src_flat.to(tl.int64), mask=write)
+    tl.store(out_dst_ptr + slots, dst_flat.to(tl.int64), mask=write)
+    tl.store(out_dist_ptr + slots, tl.sqrt(dsq_flat), mask=write)
+    if return_displacements:
+        tl.store(
+            out_disp_ptr + slots * 3 + 0,
+            tl.reshape(dx, [BLOCK_I * BLOCK_J]),
+            mask=write,
+        )
+        tl.store(
+            out_disp_ptr + slots * 3 + 1,
+            tl.reshape(dy, [BLOCK_I * BLOCK_J]),
+            mask=write,
+        )
+        tl.store(
+            out_disp_ptr + slots * 3 + 2,
+            tl.reshape(dz, [BLOCK_I * BLOCK_J]),
+            mask=write,
+        )
 
 
 @triton_op("mlcg_kernels::radius", mutates_args={})
 @ensure_contiguous
 def radius(
-    pos: torch.Tensor,  # (N, 3)  float32
-    batch: torch.Tensor,  # (N,)    int32 / int64
+    pos: torch.Tensor,
+    batch: torch.Tensor,
     cutoff: float,
     pbc: torch.Tensor = None,
     cell: torch.Tensor = None,
-    max_neigh: int = 32,
+    avg_max_num_neigh: int = 32,
     self_loops: bool = False,
     return_displacements: bool = False,
 ) -> List[torch.Tensor]:
-    """
-    Add Docs
-    """
-    assert pos.ndim == 2 and pos.shape[1] == 3, "pos must be (N, 3)"
+    """Build a radius graph using a Triton kernel, returning full bidirectional edges.
 
+    For each pair of atoms (i, j) in the same batch that are within ``cutoff``
+    distance, both directed edges (i→j) and (j→i) are included in the output.
+    The kernel operates on upper-triangular atom pairs and then mirrors them to
+    produce a symmetric edge list.
+
+    Parameters
+    ----------
+    pos : torch.Tensor
+        Atom positions of shape ``(N, 3)``, where N is the total number of atoms
+        across all systems in the batch. Must be ``float32`` and contiguous.
+    batch : torch.Tensor
+        Batch assignment vector of shape ``(N,)`` mapping each atom to its
+        system index. Values must be non-negative ordered integers in ``[0, B-1]``,
+        where B is the number of systems in the batch.
+    cutoff : float
+        Distance cutoff in the same units as ``pos``. Pairs with distance
+        strictly less than ``cutoff`` are included.
+    pbc : torch.Tensor, optional
+        Boolean tensor of shape ``(3,)`` indicating which Cartesian directions
+        have periodic boundary conditions (True = periodic). Must be provided
+        together with ``cell``; ignored if ``cell`` is None.
+    cell : torch.Tensor, optional
+        Unit cell matrix of shape ``(3, 3)`` whose rows are the lattice
+        vectors. Must be provided together with ``pbc``; ignored if ``pbc``
+        is None. When both are given, periodic minimum-image distances are
+        computed via the fractional-coordinate convention.
+    avg_max_num_neigh : int, optional
+        Estimated upper bound on the number of neighbours per atom, used
+        exclusively to size the output buffer: ``max_out = N * avg_max_num_neigh``
+        edge slots are pre-allocated. It is not a hard per-atom cap — the
+        kernel raises a ``RuntimeError`` only if the *total* edge count
+        exceeds ``max_out``. Set it to a value slightly above the expected
+        maximum neighbour count for your system to avoid reallocation.
+        Default: ``32``.
+    self_loops : bool, optional
+        If True, include edges from each atom to itself (distance 0). These
+        are not duplicated when mirroring. Default: ``False``.
+    return_displacements : bool, optional
+        If True, also return the displacement vectors ``r_j - r_i`` (wrapped
+        into the minimum image when PBC is active) for each edge.
+        Default: ``False``.
+
+    Returns
+    -------
+    edge_index : torch.Tensor
+        Long tensor of shape ``(2, E)`` containing source and destination atom
+        indices for each of the E directed edges. Row 0 is the source, row 1
+        is the destination.
+    distances : torch.Tensor
+        Float32 tensor of shape ``(E,)`` with the Euclidean distance (minimum
+        image distance under PBC) for each edge.
+    displacements : torch.Tensor
+        Float32 tensor of shape ``(E, 3)`` with the displacement vector
+        ``pos[dst] - pos[src]`` for each edge (minimum-image corrected when
+        PBC is active). Only present in the return list when
+        ``return_displacements=True``.
+
+    Raises
+    ------
+    RuntimeError
+        If the total number of discovered edges exceeds
+        ``N * avg_max_num_neigh``. Increase ``avg_max_num_neigh`` to resolve.
+    AssertionError
+        If ``pos`` is not a 2-D tensor with exactly 3 columns.
+
+    Notes
+    -----
+    - The kernel autotuned over ``BLOCK_I`` × ``BLOCK_J`` tile sizes; the
+      best config is cached per (N, cutoff, device) configuration.
+    - All atoms in a batch element are assumed to be contiguous in ``pos``
+      (i.e. ``batch`` is sorted). Cross-system pairs are never considered.
+    - Gradients flow through ``pos`` via a registered backward pass; all
+      other arguments are treated as non-differentiable.
+
+    Examples
+    --------
+    Simple non-periodic graph for a single system:
+
+    >>> pos = torch.randn(100, 3, device="cuda")
+    >>> batch = torch.zeros(100, dtype=torch.long, device="cuda")
+    >>> edge_index, distances = radius(pos, batch, cutoff=5.0)
+    >>> edge_index.shape  # (2, E)
+
+    With PBC and displacement vectors:
+
+    >>> cell = torch.eye(3, device="cuda") * 10.0   # 10 Å cubic box
+    >>> pbc = torch.tensor([True, True, True], device="cuda")
+    >>> edge_index, distances, displacements = radius(
+    ...     pos, batch, cutoff=5.0, cell=cell, pbc=pbc,
+    ...     return_displacements=True,
+    ... )
+
+    Batched systems:
+
+    >>> pos = torch.randn(300, 3, device="cuda")
+    >>> batch = torch.repeat_interleave(torch.arange(3, device="cuda"), 100)
+    >>> edge_index, distances = radius(pos, batch, cutoff=3.0, avg_max_num_neigh=64)
+    """
+    assert pos.ndim == 2 and pos.shape[1] == 3
     N = pos.shape[0]
-    M = batch.max() + 1
+    _batch = batch.to(torch.int32).contiguous()
+    M_max = int(torch.bincount(batch).max().item())
+    max_out = N * avg_max_num_neigh
 
-    _, counts = torch.unique(batch, sorted=True, return_counts=True)
-    mol_idxs = torch.zeros(M + 1, device=pos.device, dtype=batch.dtype)
-    mol_idxs[1:] = counts.cumsum(0)
-
-    neigh_idx = torch.full(
-        (N, max_neigh), -1, dtype=torch.int32, device=pos.device
-    ).contiguous()
-    num_neigh = torch.zeros(
-        N, dtype=torch.int32, device=pos.device
-    ).contiguous()
-    squared_distances = torch.full(
-        (N, max_neigh), -1, dtype=torch.float32, device=pos.device
-    ).contiguous()
-
-    if return_displacements:
-        displacements = torch.zeros(
-            (N, max_neigh, 3), dtype=torch.float32, device=pos.device
-        ).contiguous()
-    else:
-        displacements = torch.empty(0)
-
-    apply_pbc = False
-    inv_cell = torch.empty(0)
     if (cell is not None) and (pbc is not None):
         apply_pbc = True
-        pbc = pbc.to(torch.bool).contiguous()
-        batch = batch.to(torch.int32).contiguous()
+        _pbc = pbc.to(torch.bool).contiguous()
+        _cell = cell
         inv_cell = torch.linalg.inv(cell)
     else:
         apply_pbc = False
-        cell = torch.empty(0)
-        pbc = torch.empty(0)
-        inv_cell = torch.empty(0)
+        _cell = torch.empty(0, device=pos.device)
+        _pbc = torch.empty(0, device=pos.device)
+        inv_cell = torch.empty(0, device=pos.device)
 
-    grid = (N,)
-    wrap_triton(neighbor_list_kernel)[grid](
+    out_src = torch.empty(max_out, dtype=torch.int64, device=pos.device)
+    out_dst = torch.empty(max_out, dtype=torch.int64, device=pos.device)
+    out_dist = torch.empty(max_out, dtype=torch.float32, device=pos.device)
+    out_disp = (
+        torch.empty((max_out, 3), dtype=torch.float32, device=pos.device)
+        if return_displacements
+        else torch.empty(0, device=pos.device)
+    )
+    global_count = torch.zeros(1, dtype=torch.int64, device=pos.device)
+
+    def grid(META):
+        return (
+            triton.cdiv(N, META["BLOCK_I"]),
+            triton.cdiv(M_max + META["BLOCK_I"] - 1, META["BLOCK_J"]),
+        )
+
+    wrap_triton(radius_kernel)[grid](
         pos,
-        batch,
-        mol_idxs,
-        cell,
+        _batch,
+        _cell,
         inv_cell,
-        pbc,
-        neigh_idx,
-        num_neigh,
-        squared_distances,
-        displacements,
+        _pbc,
+        out_src,
+        out_dst,
+        out_dist,
+        out_disp,
+        global_count,
         cutoff_sq=cutoff * cutoff,
-        max_neigh=max_neigh,
+        max_out=max_out,
+        N=N,
         compute_self_loops=self_loops,
         apply_pbc=apply_pbc,
         return_displacements=return_displacements,
     )
 
-    valid_mask = neigh_idx >= 0
-    dst_idx = (
-        torch.arange(N, device=pos.device).unsqueeze(1).expand_as(neigh_idx)
-    )
+    E_half = int(global_count.item())
+    if E_half > max_out:
+        raise RuntimeError(
+            f"radius_edges: output buffer overflow: {E_half} edges found but "
+            f"available are N_atoms*avg_max_num_neigh={max_out}. Increase avg_max_num_neigh."
+        )
+    src = out_src[:E_half]
+    dst = out_dst[:E_half]
+    dist_half = out_dist[:E_half]
 
-    src = neigh_idx[valid_mask].to(torch.int64)
-    dst = dst_idx[valid_mask].to(torch.int64)
-    edge_index = torch.stack([src, dst], dim=0)
-    distances = torch.sqrt(squared_distances[valid_mask])
-
-    if return_displacements:
-        displacements = displacements[valid_mask]
-        return [edge_index, distances, displacements]
+    # Mirror the upper-triangular half to get full bidirectional edges.
+    # Self-loops (diagonal tile, src == dst) must not be duplicated.
+    if self_loops:
+        is_self = src == dst
+        edge_index = torch.stack(
+            [torch.cat([src, dst[~is_self]]), torch.cat([dst, src[~is_self]])],
+            dim=0,
+        )
+        distances = torch.cat([dist_half, dist_half[~is_self]])
+        if return_displacements:
+            d = out_disp[:E_half]
+            return [edge_index, distances, torch.cat([d, -d[~is_self]])]
+    else:
+        edge_index = torch.stack(
+            [torch.cat([src, dst]), torch.cat([dst, src])], dim=0
+        )
+        distances = dist_half.repeat(2)
+        if return_displacements:
+            d = out_disp[:E_half]
+            return [edge_index, distances, torch.cat([d, -d])]
 
     return [edge_index, distances]
 
@@ -249,24 +425,19 @@ def setup_context(ctx, inputs, output):
         cutoff,
         pbc,
         cell,
-        max_neigh,
+        avg_max_num_neigh,
         self_loops,
         return_displacements,
     ) = inputs
     edge_index = output[0]
     distances = output[1]
+    ctx.had_pbc = pbc is not None and pbc.numel() > 0
+    ctx.had_cell = cell is not None and cell.numel() > 0
     ctx.return_displacements = return_displacements
-    if ctx.return_displacements:
-        displacements = output[2]
-    else:
-        displacements = torch.empty(0)
-    ctx.apply_pbc = cell is not None and pbc is not None
-    if ctx.apply_pbc:
-        ctx.save_for_backward(
-            pos, batch, cell, pbc, edge_index, distances, displacements
-        )
-    else:
-        ctx.save_for_backward(pos, edge_index, distances, displacements)
+    displacements = (
+        output[2] if return_displacements else torch.empty(0)
+    )
+    ctx.save_for_backward(pos, edge_index, distances, displacements)
 
 
 def backward(ctx, grads):
@@ -275,43 +446,38 @@ def backward(ctx, grads):
     grad_pos = None
 
     if ctx.needs_input_grad[0]:
-        if ctx.apply_pbc:
-            pos, batch, cell, pbc, edge_index, distances, displacements = (
-                ctx.saved_tensors
-            )
-        else:
-            pos, edge_index, distances, displacements = ctx.saved_tensors
-            cell = pbc = None
-
-        src = edge_index[0]
-        dst = edge_index[1]
+        pos, edge_index, distances, displacements = ctx.saved_tensors
         if not ctx.return_displacements:
-            displacements = pos[src] - pos[dst]  # (E, 3), not yet PBC-corrected
+            displacements = pos[edge_index[0]] - pos[edge_index[1]]
 
-            if ctx.apply_pbc:
-                inv_cell = torch.linalg.inv(cell)
-                batch_dst = batch[dst]
-                inv_cell_e = inv_cell[batch_dst]  # (E, 3, 3)
-                cell_e = cell[batch_dst]  # (E, 3, 3)
-                pbc_e = pbc.bool()[batch_dst]  # (E, 3)
-                f = torch.einsum(
-                    "eij,ej->ei", inv_cell_e, displacements
-                )  # fractional
-                f = torch.where(pbc_e, f - torch.round(f), f)  # minimum image
-                displacements = torch.einsum(
-                    "eij,ej->ei", cell_e, f
-                )  # back to cartesian
-
-        unit_vec = displacements / distances.unsqueeze(1)  # (E, 3)
-        weighted = (
+        unit_vec = torch.div(displacements, distances.unsqueeze(1))
+        expanded_pos_grad = (
             grad_distances.unsqueeze(1) * unit_vec + grad_displacements
-        )  # (E, 3)
+        )
 
-        grad_pos = torch.zeros_like(pos)
-        grad_pos.index_add_(0, src, weighted)
-        grad_pos.index_add_(0, dst, -weighted)
+        grad_pos = torch.zeros_like(pos).index_add(0, edge_index[0], expanded_pos_grad)
+        grad_pos = grad_pos.index_add(0, edge_index[1], -expanded_pos_grad)
 
-    return grad_pos, None, None, None, None, None, None, None
+        # grad_pos = torch.zeros_like(pos)
+        # grad_pos.index_add_(0, edge_index[0], expanded_pos_grad)
+        # grad_pos.index_add_(0, edge_index[1], -expanded_pos_grad)
+
+    return (grad_pos, None, None, None, None, None)
+    # grads_out = [
+    #     grad_pos,
+    #     None,   # batch
+    #     None,   # cutoff
+    # ]
+    # if ctx.had_pbc:
+    #     grads_out.append(None)  # pbc
+    # if ctx.had_cell:
+    #     grads_out.append(None)  # cell
+    # grads_out.extend([
+    #     None,   # avg_max_num_neigh
+    #     None,   # self_loops
+    #     None,   # return_displacements
+    # ])
+    # return tuple(grads_out)
 
 
 radius.register_autograd(backward, setup_context=setup_context)
@@ -324,45 +490,39 @@ def _(
     cutoff: float,
     pbc: torch.Tensor = None,
     cell: torch.Tensor = None,
-    max_neigh: int = 32,
+    avg_max_num_neigh: int = 32,
     self_loops: bool = False,
     return_displacements: bool = False,
 ) -> List[torch.Tensor]:
     N = pos.shape[0]
     cutoff_sq = cutoff * cutoff
-
     apply_pbc = (cell is not None) and (pbc is not None)
     if apply_pbc:
         pbc = pbc.to(torch.bool)
-        inv_cell = torch.linalg.inv(cell)  # (M, 3, 3)
+        inv_cell = torch.linalg.inv(cell)
 
     d = pos.unsqueeze(0) - pos.unsqueeze(1)
-
     if apply_pbc:
         H = cell[batch].unsqueeze(0)
         H_inv = inv_cell[batch].unsqueeze(0)
         pbc_n = pbc[batch].unsqueeze(0)
-
-        # cartesian to fractional: f[i,j] = H_inv_dst[j] @ d[i,j]
         f = torch.einsum("ijc,ijcd->ijd", d, H_inv.expand(N, N, 3, 3))
-        # minimum image
         f = torch.where(pbc_n.expand(N, N, 3), f - torch.round(f), f)
-        # fractional to cartesian: d = H @ f
         d = torch.einsum("ijc,ijcd->ijd", f, H.expand(N, N, 3, 3))
 
     dist_sq = (d * d).sum(dim=-1)
     same_mol = batch.unsqueeze(0) == batch.unsqueeze(1)
-
     if not self_loops:
-        not_self = ~torch.eye(N, dtype=torch.bool, device=pos.device)
-        same_mol = same_mol & not_self
+        same_mol = same_mol & ~torch.eye(N, dtype=torch.bool, device=pos.device)
 
     valid = same_mol & (dist_sq < cutoff_sq)
-
-    neigh_count = valid.sum(dim=0)
-    if (neigh_count > max_neigh).any():
-        rank = valid.cumsum(dim=0)
-        valid = valid & (rank <= max_neigh)
+    max_out = pos.shape[0] * avg_max_num_neigh
+    E_half = int(valid.triu().sum().item())
+    if E_half > max_out:
+        raise RuntimeError(
+            f"radius_edges: output buffer overflow: {E_half} edges found but "
+            f"available are N_atoms*avg_max_num_neigh={max_out}. Increase avg_max_num_neigh."
+        )
 
     src, dst = valid.nonzero(as_tuple=True)
     distances = torch.sqrt(dist_sq[src, dst])
@@ -370,5 +530,4 @@ def _(
 
     if return_displacements:
         return [edge_index, distances, d[dst, src]]
-
     return [edge_index, distances]
