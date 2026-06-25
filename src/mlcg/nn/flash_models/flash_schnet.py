@@ -6,8 +6,7 @@ from torch_geometric.utils import scatter
 from ...data.atomic_data import AtomicData, ENERGY_KEY
 from ..mlp import MLP
 from ..schnet import SchNet, StandardSchNet, InteractionBlock, CFConv
-from ..kernels.csr import build_csr_representation_from_edges
-from ..kernels.models.schnet import fused_cfconv
+from ..kernels import build_csr_representation_from_edges, fused_cfconv, radius
 from ...geometry.internal_coordinates import compute_distances
 
 
@@ -38,21 +37,13 @@ class FlashSchNet(SchNet):
 
         x = self.embedding_layer(data.atom_types)
 
-        neighbor_list = data.neighbor_list.get(self.name)
-
-        if not self.is_nl_compatible(neighbor_list):
-            neighbor_list = self.neighbor_list(
-                data,
-                self.rbf_layer.cutoff.cutoff_upper,
-                self.max_num_neighbors,
-            )[self.name]
-
-        # Saving edge index as contiguous array for speed up triton calls
-        edge_index = neighbor_list["index_mapping"].contiguous()
-        distances = compute_distances(
-            data.pos,
-            edge_index,
-            neighbor_list["cell_shifts"],
+        edge_index, distances, _ = radius(
+            data.pos, 
+            data.batch, 
+            self.rbf_layer.cutoff.cutoff_upper,
+            data.get("pbc"),
+            data.get("cell"),
+            self.max_num_neighbors
         )
 
         rbf_expansion = self.rbf_layer(distances)
