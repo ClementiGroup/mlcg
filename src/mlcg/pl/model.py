@@ -132,3 +132,10 @@ class PLModel(pl.LightningModule):
 
     def get_model(self) -> torch.nn.Module:
         return deepcopy(self.model)
+    
+    def on_load_checkpoint(self, checkpoint):
+        # inject missing keys from current model before PL loads it
+        current_sd = self.state_dict()
+        for k, v in current_sd.items():
+            if k not in checkpoint["state_dict"]:
+                checkpoint["state_dict"][k] = v
