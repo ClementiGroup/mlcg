@@ -7,7 +7,7 @@ name = "mlcg"
 version = "0.1.4"
 description = "A collection of tools for processing raw simulation data for use in training machine-learned, coarse-grained (CG) force fields using the MLCG library"
 readme = { file = "README.md", content-type = "text/markdown" }
-requires-python = ">=3.12"
+requires-python = "==3.12.*"
 authors = [
     {name = "Félix Musil"},
     {name = "Nick Charron"},
@@ -75,7 +75,7 @@ cu128 = [
     "cuequivariance",
     "cuequivariance-torch",
     "cuequivariance-ops-torch-cu12",
-    "nvalchemi-toolkit-ops[torch-cu12]",
+    "nvalchemi-toolkit-ops[torch]",
 ]
 cu130 = [
     "torch==2.11.0",
@@ -137,19 +137,26 @@ no-build-isolation-package = ["torch-cluster"]
 index-strategy = "unsafe-best-match"
 # unsafe-best-match needed so torch's transitive deps (e.g. nvidia-cudnn-cu12)
 # can be resolved across multiple indexes.
-# PyG pages are find-links HTML pages (not PEP 503 indexes), so they go here.
-# Update the torch version when upgrading torch.
-find-links = [
-    "https://data.pyg.org/whl/torch-2.11.0+cpu.html",
-    "https://data.pyg.org/whl/torch-2.11.0+cu128.html",
-    "https://data.pyg.org/whl/torch-2.11.0+cu130.html",
+# cpu/cu128/cu130 are mutually exclusive: declare conflicts so uv doesn't try
+# to resolve them simultaneously and hit conflicting torch indexes.
+conflicts = [
+    [
+        { extra="cpu" },
+        { extra="cu128" },
+        { extra="cu130" },
+    ],
 ]
 
 [tool.uv.sources]
 torch = [
-    { index = "torch-cpu",   extra = "cpu"   },
-    { index = "torch-cu128", extra = "cu128" },
-    { index = "torch-cu130", extra = "cu130" },
+    { index="torch-cpu", extra="cpu" },
+    { index="torch-cu128", extra="cu128" },
+    { index="torch-cu130", extra="cu130" },
+]
+torch-cluster = [
+    { index="pyg-cpu", extra="cpu" },
+    { index="pyg-cu128", extra="cu128" },
+    { index="pyg-cu130", extra="cu130" },
 ]
 
 [[tool.uv.index]]
@@ -163,3 +170,18 @@ url = "https://download.pytorch.org/whl/cu128"
 [[tool.uv.index]]
 name = "torch-cu130"
 url = "https://download.pytorch.org/whl/cu130"
+
+[[tool.uv.index]]
+name = "pyg-cpu"
+url = "https://data.pyg.org/whl/torch-2.11.0+cpu.html"
+format = "flat"
+
+[[tool.uv.index]]
+name = "pyg-cu128"
+url = "https://data.pyg.org/whl/torch-2.11.0+cu128.html"
+format = "flat"
+
+[[tool.uv.index]]
+name = "pyg-cu130"
+url = "https://data.pyg.org/whl/torch-2.11.0+cu130.html"
+format = "flat"
