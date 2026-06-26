@@ -4,11 +4,7 @@ stages:
 test_job:
   stage: test
   before_script:
-    - uv venv
-    - uv pip install -r env_with_hashes.in
-    - uv pip install --no-deps git+https://github.com/ACEsuit/mace.git@v0.3.13
-    - uv pip install --no-deps nequip==0.12.1 nequip-allegro==0.7.0
-    - uv pip install .
+    - uv sync --extra cu130
     - uv pip install pytest-split
   script:
     - source .venv/bin/activate
