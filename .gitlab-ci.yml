@@ -1,20 +1,9 @@
 stages:
   - test
 
-test_job:
+
+.test_base: &test_base
   stage: test
-  before_script:
-    - uv venv
-    - uv pip install -r env_with_hashes.in
-    - uv pip install --no-deps git+https://github.com/ACEsuit/mace.git@v0.3.13
-    - uv pip install --no-deps nequip==0.12.1 nequip-allegro==0.7.0
-    - uv pip install .
-    - uv pip install pytest-split
-  script:
-    - source .venv/bin/activate
-    - pytest -m "unit" --verbose --junitxml="tests${CI_NODE_INDEX}.xml" --durations-path tests/.test_durations --splits "$CI_NODE_TOTAL" --group "$CI_NODE_INDEX" --splitting-algorithm least_duration
-    - pytest -m "continuity" --verbose --junitxml="tests${CI_NODE_INDEX}.xml" --durations-path tests/.test_durations --splits "$CI_NODE_TOTAL" --group "$CI_NODE_INDEX" --splitting-algorithm least_duration
-    - pytest -m "integration" --verbose --junitxml="tests${CI_NODE_INDEX}.xml" --durations-path tests/.test_durations --splits "$CI_NODE_TOTAL" --group "$CI_NODE_INDEX" --splitting-algorithm least_duration
   parallel: 4
   artifacts:
     when: always
@@ -22,3 +11,42 @@ test_job:
       - "tests${CI_NODE_INDEX}.xml"
     reports:
       junit: "tests${CI_NODE_INDEX}.xml"
+
+# --- PUSH: all tests, cu130 only ---
+
+test_push:
+  <<: *test_base
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+  before_script:
+    - uv sync --extra cu130 --group dev
+  script:
+    - source .venv/bin/activate
+    - pytest -m "unit" --verbose --junitxml="tests${CI_NODE_INDEX}.xml" --durations-path tests/.test_durations --splits "$CI_NODE_TOTAL" --group "$CI_NODE_INDEX" --splitting-algorithm least_duration
+    - pytest -m "continuity" --verbose --junitxml="tests${CI_NODE_INDEX}.xml" --durations-path tests/.test_durations --splits "$CI_NODE_TOTAL" --group "$CI_NODE_INDEX" --splitting-algorithm least_duration
+    - pytest -m "integration" --verbose --junitxml="tests${CI_NODE_INDEX}.xml" --durations-path tests/.test_durations --splits "$CI_NODE_TOTAL" --group "$CI_NODE_INDEX" --splitting-algorithm least_duration
+
+# --- PR: unit tests across all extras, then heavy tests on cu130 only ---
+
+test_pr_unit:
+  <<: *test_base
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "external_pull_request_event"'
+  parallel:
+    matrix:
+      - UV_EXTRA: ["cpu", "cu128", "cu130"]
+  before_script:
+    - uv sync --extra $UV_EXTRA --group dev
+  script:
+    - source .venv/bin/activate
+    - pytest -m "unit" --verbose --junitxml="tests${CI_NODE_INDEX}.xml" --durations-path tests/.test_durations --splits "$CI_NODE_TOTAL" --group "$CI_NODE_INDEX" --splitting-algorithm least_duration
+
+test_pr_heavy:
+  <<: *test_base
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "external_pull_request_event"'
+  before_script:
+    - uv sync --extra cu130 --group dev
+  script:
+    - source .venv/bin/activate
+    - pytest -m "continuity or integration" --verbose --junitxml="tests${CI_NODE_INDEX}.xml" --durations-path tests/.test_durations --splits "$CI_NODE_TOTAL" --group "$CI_NODE_INDEX" --splitting-algorithm least_duration

@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mlcg"
-version = "0.1.3"
+version = "0.1.4"
 description = "A collection of tools for processing raw simulation data for use in training machine-learned, coarse-grained (CG) force fields using the MLCG library"
 readme = { file = "README.md", content-type = "text/markdown" }
-requires-python = ">=3.12"
+requires-python = "==3.12.*"
 authors = [
     {name = "Félix Musil"},
     {name = "Nick Charron"},
@@ -25,61 +25,84 @@ dependencies = [
     "aggforce @ git+https://github.com/noegroup/aggforce.git",
     "ase",
     "e3nn==0.5.3",
-    "h5py",
+    "h5py>=3.15.1",
     "ipython",
     "ipywidgets",
-    "h5py>=3.15.1",
     "jsonargparse[signatures]>=4.42.0",
     "matplotlib>=3.10.7",
     "mdtraj>=1.11.0",
-    "mpmath",
-    "networkx",
     "nglview",
     "natsort>=8.4.0",
     "networkx>=3.3",
     "numpy>=1.26.4",
-    "packaging",
     "pandas>=2.3.3",
     "pytorch_lightning==2.2.1",
     "pyyaml>=6.0.3",
-    "requests",
     "ruamel.yaml",
     "scikit-learn>=1.7.2",
     "scipy>=1.16.2",
     "sympy",
     "seaborn",
-    "torch>=2.6.0",
+    "tensorboard",
     "torch-geometric>=2.6.1",
-    "torch-cluster",
     "torchist>=1.0.1",
-    "torch_optimizer<=1.5.1",
-    "cuequivariance",
-    "cuequivariance-torch",
-    "cuequivariance-ops-torch-cu12",
-    "tqdm>=4.67.1",
-    # developer tools
-    "black[jupyter]",
-    "coverage[toml]",
-    "pytest",
+    "torchtnt",
+    "tqdm",
     # by mlcg_opt_radius
     "ninja",
-    # extra dependencies for mace 
-    "opt_einsum",
-    "torch-ema",
-    "prettytable",
-    "python-hostlist",
-    "configargparse",
-    "GitPython",
-    "orjson",
-    "lmdb",
-    # extra dependencies for allegro
-    "matscipy",
-    "hydra-core",
+    # extra deps for mlcg models
+    "mace-torch==0.3.16",
+    "nequip==0.12.1",
+    "nequip-allegro==0.7.0",
 ]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Programming Language :: Python :: 3.12",
 ]
+
+[project.optional-dependencies]
+cpu = [
+    "torch==2.11.0",
+    "torch-cluster",
+]
+cu128 = [
+    "torch==2.11.0",
+    "torch-cluster",
+    "cuequivariance",
+    "cuequivariance-torch",
+    "cuequivariance-ops-torch-cu12",
+    "nvalchemi-toolkit-ops[torch]",
+]
+cu130 = [
+    "torch==2.11.0",
+    "torch-cluster",
+    "cuequivariance",
+    "cuequivariance-torch",
+    "cuequivariance-ops-torch-cu13",
+    "nvalchemi-toolkit-ops[torch]",
+]
+rocm72 = [
+    "torch==2.11.0",
+    "torch-cluster-rocm",
+    "openequivariance",
+    "triton-rocm",
+]
+
+[dependency-groups]
+dev = [
+  "black[jupyter]",
+  "coverage[toml]",
+  "pytest",
+  "pytest-split",
+]
+docs = [
+  "sphinx",
+  "shibuya",
+  "sphinx-autodoc-typehints",
+]
+
+[tool.uv.extra-build-dependencies]
+mlcg = ["setuptools"]
 
 [tool.setuptools]
 package-dir = {"mlcg" = "src/mlcg"}
@@ -123,3 +146,71 @@ filterwarnings = [
     "ignore::DeprecationWarning"
 ]
 
+[tool.uv]
+override-dependencies = ["e3nn==0.5.3"]
+# Keep no-build-isolation-package as a fallback: if no pre-built PyG wheel is
+# found for this platform, torch-cluster will be built from source and needs
+# to see the already-installed torch without build isolation.
+no-build-isolation-package = ["torch-cluster"]
+index-strategy = "unsafe-best-match"
+# unsafe-best-match needed so torch's transitive deps (e.g. nvidia-cudnn-cu12)
+# can be resolved across multiple indexes.
+# cpu/cu128/cu130 are mutually exclusive: declare conflicts so uv doesn't try
+# to resolve them simultaneously and hit conflicting torch indexes.
+conflicts = [
+    [
+        { extra="cpu" },
+        { extra="cu128" },
+        { extra="cu130" },
+        { extra="rocm72" },
+    ],
+]
+
+[tool.uv.sources]
+torch = [
+    { index="torch-cpu", extra="cpu" },
+    { index="torch-cu128", extra="cu128" },
+    { index="torch-cu130", extra="cu130" },
+    { index="torch-rocm72", extra="rocm72" },
+]
+torch-cluster = [
+    { index="pyg-cpu", extra="cpu" },
+    { index="pyg-cu128", extra="cu128" },
+    { index="pyg-cu130", extra="cu130" },
+]
+triton-rocm = { index = "torch-rocm72" }
+
+[[tool.uv.index]]
+name = "torch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[[tool.uv.index]]
+name = "torch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[[tool.uv.index]]
+name = "torch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true
+
+[[tool.uv.index]]
+name = "pyg-cpu"
+url = "https://data.pyg.org/whl/torch-2.11.0+cpu.html"
+format = "flat"
+
+[[tool.uv.index]]
+name = "pyg-cu128"
+url = "https://data.pyg.org/whl/torch-2.11.0+cu128.html"
+format = "flat"
+
+[[tool.uv.index]]
+name = "pyg-cu130"
+url = "https://data.pyg.org/whl/torch-2.11.0+cu130.html"
+format = "flat"
+
+[[tool.uv.index]]
+name = "torch-rocm72"
+url = "https://download.pytorch.org/whl/rocm7.2"
+explicit = true

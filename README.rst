@@ -21,25 +21,80 @@ Installation
 ------------
 .. start-install
 
-First we suggest to create a new clean empty virtual environment with **python 3.12**, then clone the repo and 
-install the following prerequisites:
+Requires **Python 3.12**. Clone the repo:
 
 .. code:: bash
 
     git clone git@github.com:ClementiGroup/mlcg.git
     cd mlcg
-    pip install -r env_with_hashes.in
-    pip install --no-deps git+https://github.com/ACEsuit/mace.git@v0.3.13
-    pip install --no-deps nequip==0.12.1 nequip-allegro==0.7.0
 
-Then install this repository with:
+**With uv (recommended)**
+
+Install `uv <https://docs.astral.sh/uv/>`_, then run ``uv sync`` with the
+extra matching your hardware:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 25 75
+
+   * - Hardware
+     - Command
+   * - NVIDIA CUDA 13.0
+     - ``uv sync --extra cu130``
+   * - NVIDIA CUDA 12.8
+     - ``uv sync --extra cu128``
+   * - AMD ROCm 7.2
+     - ``uv sync --extra rocm72``
+   * - CPU only
+     - ``uv sync --extra cpu``
+
+This creates a ``.venv`` in the repo root and installs everything, including
+``torch 2.11.0`` and ``torch-cluster``, from the correct pre-built wheel pages.
+It is also possible to install tools useful for developers by adding ``--dev`` flag.
+
+If you manage your own ``uv``-created virtual environment (e.g. via ``uv venv`` and ``uv pip install``),
+use ``uv pip`` in place of ``pip`` in the instructions below.
+
+**With pip (lockfile-based)**
+
+Per-platform lockfiles are provided for reproducible pip installs (requires ``pip >= 26.1``).
+Run both steps — the first installs binary packages with build isolation
+disabled, the second installs the remaining dependencies:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 25 40 35
+
+   * - Hardware
+     - Step 1
+     - Step 2
+   * - NVIDIA CUDA 13.0
+     - ``pip install -r pylock.cu130.toml``
+     - ``pip install -r pylock.no_hashes.toml``
+   * - NVIDIA CUDA 12.8
+     - ``pip install -r pylock.cu128.toml``
+     - ``pip install -r pylock.no_hashes.toml``
+   * - AMD ROCm 7.2
+     - ``pip install -r pylock.rocm72.toml``
+     - ``pip install -r pylock.no_hashes.toml``
+   * - CPU only
+     - ``pip install -r pylock.cpu.toml``
+     - ``pip install -r pylock.no_hashes.toml``
+
+**For developers**
+
+To include development tools (``black``, ``pytest``, ``coverage``), add ``--group dev``
+to your install command. Using ``uv sync``:
 
 .. code:: bash
 
-    pip install .
+    uv sync --extra cu130 --group dev
 
+Using a self-managed ``uv`` virtual environment:
 
-This will likely rise an error due to some dependency issue about `e3nn` that you can safely ignore.
+.. code:: bash
+
+    uv pip install -e ".[cu130]" --group dev
 
 .. end-install
 
@@ -70,7 +125,7 @@ Dependencies
 
 .. code:: bash
 
-    pip install sphinx shibuya sphinx-autodoc-typehints
+    uv sync --group docs
 
 
 How to build
@@ -121,13 +176,11 @@ For quick local development testing, it is also possible to exclude the large te
 Troubleshooting
 ---------------
 
-If it is not possible to install an environment with `pip install -r env_with_hashes.in`, the
-following commands can do a similar job.
+If your hardware is not listed above, we recommend installing ``torch``, ``torch-cluster``,
+and any desired GPU acceleration libraries (``cuequivariance-torch``,
+``cuequivariance-ops-torch``, ``nvalchemi-toolkit-ops``, ``openequivariance``)
+manually into a uv environment first, then install the package with:
 
 .. code:: bash
 
-    pip install --extra-index-url=https://download.pytorch.org/whl/cu128 torch==2.8.0
-    pip install torch_geometric
-    pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.8.0+cu128.html
-    pip install lightning tensorboard torchtnt
-    pip install cuequivariance-torch==0.8.1 cuequivariance-ops-torch-cu12==0.8.1 nvalchemi-toolkit-ops==0.2.0
+    uv pip install -e .
