@@ -55,7 +55,7 @@ use ``uv pip`` in place of ``pip`` in the instructions below.
 
 **With pip (lockfile-based)**
 
-Per-platform lockfiles are provided for reproducible pip installs.
+Per-platform lockfiles are provided for reproducible pip installs (requires ``pip >= 26.1``).
 Run both steps — the first installs binary packages with build isolation
 disabled, the second installs the remaining dependencies:
 
