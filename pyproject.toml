@@ -81,6 +81,12 @@ cu130 = [
     "cuequivariance-ops-torch-cu13",
     "nvalchemi-toolkit-ops[torch]",
 ]
+rocm72 = [
+    "torch==2.11.0",
+    "torch-cluster-rocm",
+    "openequivariance",
+    "triton-rocm",
+]
 
 [dependency-groups]
 dev = [
@@ -151,6 +157,7 @@ conflicts = [
         { extra="cpu" },
         { extra="cu128" },
         { extra="cu130" },
+        { extra="rocm72" },
     ],
 ]
 
@@ -159,12 +166,14 @@ torch = [
     { index="torch-cpu", extra="cpu" },
     { index="torch-cu128", extra="cu128" },
     { index="torch-cu130", extra="cu130" },
+    { index="torch-rocm72", extra="rocm72" },
 ]
 torch-cluster = [
     { index="pyg-cpu", extra="cpu" },
     { index="pyg-cu128", extra="cu128" },
     { index="pyg-cu130", extra="cu130" },
 ]
+triton-rocm = { index = "torch-rocm72" }
 
 [[tool.uv.index]]
 name = "torch-cpu"
@@ -195,3 +204,8 @@ format = "flat"
 name = "pyg-cu130"
 url = "https://data.pyg.org/whl/torch-2.11.0+cu130.html"
 format = "flat"
+
+[[tool.uv.index]]
+name = "torch-rocm72"
+url = "https://download.pytorch.org/whl/rocm7.2"
+explicit = true

@@ -39,10 +39,12 @@ extra matching your hardware:
 
    * - Hardware
      - Command
-   * - NVIDIA CUDA 12.8
-     - ``uv sync --extra cu128``
    * - NVIDIA CUDA 13.0
      - ``uv sync --extra cu130``
+   * - NVIDIA CUDA 12.8
+     - ``uv sync --extra cu128``
+   * - AMD ROCm 7.2
+     - ``uv sync --extra rocm72``
    * - CPU only
      - ``uv sync --extra cpu``
 
@@ -66,11 +68,14 @@ disabled, the second installs the remaining dependencies:
    * - Hardware
      - Step 1
      - Step 2
+   * - NVIDIA CUDA 13.0
+     - ``pip install -r pylock.cu130.toml``
+     - ``pip install -r pylock.no_hashes.toml``
    * - NVIDIA CUDA 12.8
      - ``pip install -r pylock.cu128.toml``
      - ``pip install -r pylock.no_hashes.toml``
-   * - NVIDIA CUDA 13.0
-     - ``pip install -r pylock.cu130.toml``
+   * - AMD ROCm 7.2
+     - ``pip install -r pylock.rocm72.toml``
      - ``pip install -r pylock.no_hashes.toml``
    * - CPU only
      - ``pip install -r pylock.cpu.toml``
