@@ -4,12 +4,7 @@ stages:
 test_job:
   stage: test
   before_script:
-    - uv venv
-    - uv pip install -r env_with_hashes.in
-    - uv pip install --no-deps git+https://github.com/ACEsuit/mace.git@v0.3.13
-    - uv pip install --no-deps nequip==0.12.1 nequip-allegro==0.7.0
-    - uv pip install .
-    - uv pip install pytest-split
+    - uv sync --extra cu130 --group dev
   script:
     - source .venv/bin/activate
     - pytest -m "unit" --verbose --junitxml="tests${CI_NODE_INDEX}.xml" --durations-path tests/.test_durations --splits "$CI_NODE_TOTAL" --group "$CI_NODE_INDEX" --splitting-algorithm least_duration
