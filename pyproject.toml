@@ -90,6 +90,9 @@ dev = [
   "pytest-split",
 ]
 
+[tool.uv.extra-build-dependencies]
+mlcg = ["setuptools"]
+
 [tool.setuptools]
 package-dir = {"mlcg" = "src/mlcg"}
 
@@ -166,14 +169,17 @@ torch-cluster = [
 [[tool.uv.index]]
 name = "torch-cpu"
 url = "https://download.pytorch.org/whl/cpu"
+explicit = true
 
 [[tool.uv.index]]
 name = "torch-cu128"
 url = "https://download.pytorch.org/whl/cu128"
+explicit = true
 
 [[tool.uv.index]]
 name = "torch-cu130"
 url = "https://download.pytorch.org/whl/cu130"
+explicit = true
 
 [[tool.uv.index]]
 name = "pyg-cpu"

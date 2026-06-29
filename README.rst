@@ -67,14 +67,29 @@ disabled, the second installs the remaining dependencies:
      - Step 1
      - Step 2
    * - NVIDIA CUDA 12.8
-     - ``pip install --no-deps --no-build-isolation pylock_cu128.toml``
-     - ``pip install --no-deps pylock_no_hashes.toml``
+     - ``pip install -r pylock.cu128.toml``
+     - ``pip install -r pylock.no_hashes.toml``
    * - NVIDIA CUDA 13.0
-     - ``pip install --no-deps --no-build-isolation pylock_cu130.toml``
-     - ``pip install --no-deps pylock_no_hashes.toml``
+     - ``pip install -r pylock.cu130.toml``
+     - ``pip install -r pylock.no_hashes.toml``
    * - CPU only
-     - ``pip install --no-deps --no-build-isolation pylock_cpu.toml``
-     - ``pip install --no-deps pylock_no_hashes.toml``
+     - ``pip install -r pylock.cpu.toml``
+     - ``pip install -r pylock.no_hashes.toml``
+
+**For developers**
+
+To include development tools (``black``, ``pytest``, ``coverage``), add ``--group dev``
+to your install command. Using ``uv sync``:
+
+.. code:: bash
+
+    uv sync --extra cu130 --group dev
+
+Using a self-managed ``uv`` virtual environment:
+
+.. code:: bash
+
+    uv pip install -e ".[cu130]" --group dev
 
 .. end-install
 
