@@ -125,7 +125,7 @@ Dependencies
 
 .. code:: bash
 
-    pip install sphinx shibuya sphinx-autodoc-typehints
+    uv sync --group docs
 
 
 How to build

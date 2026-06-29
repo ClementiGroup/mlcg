@@ -95,6 +95,11 @@ dev = [
   "pytest",
   "pytest-split",
 ]
+docs = [
+  "sphinx",
+  "shibuya",
+  "sphinx-autodoc-typehints",
+]
 
 [tool.uv.extra-build-dependencies]
 mlcg = ["setuptools"]
