@@ -2,7 +2,6 @@ import os.path as osp
 import torch
 import pytorch_lightning.cli as plc
 from torch_geometric.data.makedirs import makedirs
-import torch_optimizer as optim
 import warnings
 
 
