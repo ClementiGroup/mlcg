@@ -3,7 +3,7 @@ mlcg
 
 .. start-intro
 
-|Docs badge| |License| |Circleci|
+|Docs badge| |License| |Pipeline|
 
 .. |Docs badge| image:: https://img.shields.io/badge/mlcg-docs-blue.svg
    :target: https://clementigroup.github.io/mlcg/
@@ -11,8 +11,9 @@ mlcg
 .. |License| image:: https://img.shields.io/github/license/Naereen/StrapDown.js.svg
    :target: https://opensource.org/licenses/MIT
 
-.. |Circleci| image:: https://dl.circleci.com/status-badge/img/gh/ClementiGroup/mlcg/tree/main.svg?style=shield
-    :target: https://dl.circleci.com/status-badge/redirect/gh/ClementiGroup/mlcg/tree/main
+.. |Pipeline| image:: https://git.imp.fu-berlin.de/ag-clementi/mlcg/badges/main/pipeline.svg
+   :target: https://git.imp.fu-berlin.de/ag-clementi/mlcg/-/commits/main
+   :alt: pipeline status
 
 This repository collects a set of tools to apply machine learning techniques to coarse grain atomic systems.
 
