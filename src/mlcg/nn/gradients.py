@@ -130,12 +130,11 @@ class SumOut(torch.nn.Module):
         for target in self.targets:
             data.out[target] = 0.00
 
-        original_neighbor_list = (
-            data.neighbor_list if self.own_nl_models else None
-        )
+        own_nl_models = getattr(self, "own_nl_models", frozenset())
+        original_neighbor_list = data.neighbor_list if own_nl_models else None
 
         for name in self.models.keys():
-            if name in self.own_nl_models:
+            if name in own_nl_models:
                 data.neighbor_list = {}
                 data = self.models[name](data)
                 data.neighbor_list = original_neighbor_list
