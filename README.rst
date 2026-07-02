@@ -233,11 +233,3 @@ Full example for a machine with CUDA 13.0 (``cu130``)
 
 Adapt the index URLs and ``cuequivariance-ops`` package name to your platform
 (CPU, ``cu128``, ``cu130``, or ROCm) as needed.
-
-After installation, we recommend running:
-
-.. code-block:: bash
-
-   pip check
-
-to confirm no dependency conflicts remain in your environment.
