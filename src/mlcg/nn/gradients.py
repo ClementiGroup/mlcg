@@ -13,6 +13,16 @@ class SumOut(torch.nn.Module):
         Dictionary of predictors models keyed by their name attribute
     targets:
         List of prediction targets that will be pooled
+    dynamic_nl_models:
+        Optional collection of model keys (matching keys in ``models``) whose
+        neighbor list is coordinate-dependent and must be recomputed on every
+        forward call (e.g. a radius-cutoff graph network), rather than reusing
+        the shared/static neighbor list supplied via ``data.neighbor_list``.
+        For these models, ``data.neighbor_list`` is temporarily cleared before
+        the call and restored immediately afterwards, so other models (e.g.
+        bonded priors relying on a fixed topology) are unaffected. Defaults to
+        ``None``, which preserves the previous behavior (no model is treated
+        specially).
 
     Example
     -------
@@ -40,6 +50,15 @@ class SumOut(torch.nn.Module):
                  }
         full_model = SumOut(models, targets=[ENERGY_KEY, FORCE_KEY])
 
+        # If SchNet should rebuild its own (coordinate-dependent) neighbor
+        # list on every call instead of reusing the static one used by the
+        # bonded priors:
+        full_model = SumOut(
+            models,
+            targets=[ENERGY_KEY, FORCE_KEY],
+            dynamic_nl_models=["SchNet"],
+        )
+
 
     """
 
@@ -49,12 +68,16 @@ class SumOut(torch.nn.Module):
         self,
         models: torch.nn.ModuleDict,
         targets: List[str] = None,
+        dynamic_nl_models: Sequence[str] = None,
     ):
         super(SumOut, self).__init__()
         if targets is None:
             targets = [ENERGY_KEY, FORCE_KEY]
         self.targets = targets
         self.models = models
+        self.dynamic_nl_models = (
+            frozenset(dynamic_nl_models) if dynamic_nl_models else frozenset()
+        )
 
     def forward(self, data: AtomicData) -> AtomicData:
         r"""Sums output properties from individual models into global
@@ -110,8 +133,16 @@ class SumOut(torch.nn.Module):
         """
         for target in self.targets:
             data.out[target] = 0.00
+
+        original_neighbor_list = data.neighbor_list if self.dynamic_nl_models else None
+
         for name in self.models.keys():
-            data = self.models[name](data)
+            if name in self.dynamic_nl_models:
+                data.neighbor_list = {}
+                data = self.models[name](data)
+                data.neighbor_list = original_neighbor_list
+            else:
+                data = self.models[name](data)
             for target in self.targets:
                 data.out[target] += data.out[name][target]
         return data
