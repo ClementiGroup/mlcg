@@ -196,28 +196,29 @@ class MACE(torch.nn.Module):
     """
     Implementation of MACE neural network model from https://github.com/ACEsuit/mace
 
-    Args:
-        atomic_numbers (torch.Tensor):
-            Tensor of atomic numbers present in the system.
-        node_embedding (torch.nn.Module):
-            Module for embedding node (atom) attributes.
-        radial_embedding (torch.nn.Module):
-            Module for embedding radial (distance) features.
-        spherical_harmonics (torch.nn.Module):
-            Module for computing spherical harmonics of edge vectors.
-        interactions (List[torch.nn.Module]):
-            List of interaction blocks.
-        products (List[torch.nn.Module]):
-            List of product basis blocks.
-        readouts (List[torch.nn.Module]):
-            List of readout blocks.
-        r_max (float):
-            Cutoff radius for neighbor list.
-        max_num_neighbors (int):
-            Maximum number of neighbors per atom.
-        pair_repulsion_fn (torch.nn.Module, optional):
-            Optional pairwise repulsion energy function.
-        nls_distance_method:
+    Parameters
+    ----------
+    atomic_numbers (torch.Tensor):
+        Tensor of atomic numbers present in the system.
+    node_embedding (torch.nn.Module):
+        Module for embedding node (atom) attributes.
+    radial_embedding (torch.nn.Module):
+        Module for embedding radial (distance) features.
+    spherical_harmonics (torch.nn.Module):
+        Module for computing spherical harmonics of edge vectors.
+    interactions (List[torch.nn.Module]):
+        List of interaction blocks.
+    products (List[torch.nn.Module]):
+        List of product basis blocks.
+    readouts (List[torch.nn.Module]):
+        List of readout blocks.
+    r_max (float):
+        Cutoff radius for neighbor list.
+    max_num_neighbors (int):
+        Maximum number of neighbors per atom.
+    pair_repulsion_fn (torch.nn.Module, optional):
+        Optional pairwise repulsion energy function.
+    nls_distance_method:
         Method for computing a neighbor list. Supported values are
         `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`
         and `custom_kernel`.
@@ -265,13 +266,15 @@ class MACE(torch.nn.Module):
         """
         Forward pass of the MACE model.
 
-        Args:
-            data (AtomicData):
-                Input atomic data object.
+        Parameters
+        ----------
+        data (AtomicData):
+            Input atomic data object.
 
-        Returns:
-            AtomicData:
-                Output data with predicted energies in `data.out`.
+        Returns
+        -------
+        AtomicData:
+            Output data with predicted energies in `data.out`.
         """
         # Setup
         num_atoms_arange = torch.arange(data.pos.shape[0])
@@ -398,75 +401,76 @@ class StandardMACE(MACE):
     with typical settings and block choices, including embedding, interaction,
     and readout modules.
 
-    Args:
-        r_max (float):
-            Cutoff radius for neighbor list.
-        num_bessel (int):
-            Number of Bessel functions for radial basis.
-        num_polynomial_cutoff (int):
-            Number of polynomial cutoff functions.
-        max_ell (int):
-            Maximum angular momentum for spherical harmonics.
-        interaction_cls (str):
-            Class name for interaction blocks.
-        interaction_cls_first (str):
-            Class name for the first interaction block.
-        num_interactions (int):
-            Number of interaction blocks.
-        hidden_irreps (str):
-            Irreducible representations for hidden features. For example if only
-            a scalar representation with 128 channels is used can be "128x0e". If
-            also a vector representation is used can be "128x0e + 128x1o".
-        MLP_irreps (str):
-            Irreducible representations for MLP layers.
-        avg_num_neighbors (float):
-            Average number of neighbors per atom used for normalization and numerical stability.
-        atomic_numbers (List[int]):
-            List of atomic numbers in the system.
-        correlation (Union[int, List[int]]):
-            Correlation order(s) for product blocks.
-        gate (Optional[Callable]):
-            Activation function for non-linearities.
-        max_num_neighbors (int, optional):
-            Maximum number of neighbors per atom.
-        pair_repulsion (bool, optional):
-            Whether to use pairwise repulsion.
-        distance_transform (str, optional):
-            Distance transformation type.
-        radial_MLP (Optional[List[int]], optional):
-            Radial MLP architecture.
-        radial_type (Optional[str], optional):
-            Radial basis type.
-        apply_cutoff (bool, optional):
-            Whether to apply an envelope cutoff to the radial embedding.
-        use_reduced_cg (bool, optional):
-            Whether to use reduced Clebsch-Gordan coefficients in the product blocks.
-        use_so3 (bool, optional):
-            Whether to use SO(3) spherical harmonics (parity +1 only) instead of O(3).
-        use_agnostic_product (bool, optional):
-            Whether to use element-agnostic symmetric contraction in product blocks.
-        edge_irreps (Optional[o3.Irreps], optional):
-            Custom irreps for edge features in interaction blocks (all layers except first).
-            If None, defaults to the standard interaction irreps.
-        use_edge_irreps_first (bool, optional):
-            Whether to apply `edge_irreps` also to the first interaction block's scalar channels.
-        cueq_config (Optional[Dict[str, Any]], optional):
-            cuEquivariance configuration.
-        use_cueq (Optional[bool], optional):
-            Whether to use cuEquivariance acceleration.
-        oeq_config (Optional[Dict[str, Any]], optional):
-            openequivariance configuration.
-        use_oeq (Optional[bool], optional):
-            Whether to use openequivariance acceleration.
-        readout_cls (Optional[Type[NonLinearReadoutBlock]], optional):
-            Class to use for the final (non-linear) readout block.
-        keep_last_layer_irreps (bool, optional):
-            If False, the last interaction layer outputs only scalar irreps, reducing
-            parameters. Defaults to True for backward compatibility.
-        nls_distance_method:
-            Method for computing a neighbor list. Supported values are
-            `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`
-            and `custom_kernel`.
+    Parameters
+    ----------
+    r_max (float):
+        Cutoff radius for neighbor list.
+    num_bessel (int):
+        Number of Bessel functions for radial basis.
+    num_polynomial_cutoff (int):
+        Number of polynomial cutoff functions.
+    max_ell (int):
+        Maximum angular momentum for spherical harmonics.
+    interaction_cls (str):
+        Class name for interaction blocks.
+    interaction_cls_first (str):
+        Class name for the first interaction block.
+    num_interactions (int):
+        Number of interaction blocks.
+    hidden_irreps (str):
+        Irreducible representations for hidden features. For example if only
+        a scalar representation with 128 channels is used can be "128x0e". If
+        also a vector representation is used can be "128x0e + 128x1o".
+    MLP_irreps (str):
+        Irreducible representations for MLP layers.
+    avg_num_neighbors (float):
+        Average number of neighbors per atom used for normalization and numerical stability.
+    atomic_numbers (List[int]):
+        List of atomic numbers in the system.
+    correlation (Union[int, List[int]]):
+        Correlation order(s) for product blocks.
+    gate (Optional[Callable]):
+        Activation function for non-linearities.
+    max_num_neighbors (int, optional):
+        Maximum number of neighbors per atom.
+    pair_repulsion (bool, optional):
+        Whether to use pairwise repulsion.
+    distance_transform (str, optional):
+        Distance transformation type.
+    radial_MLP (Optional[List[int]], optional):
+        Radial MLP architecture.
+    radial_type (Optional[str], optional):
+        Radial basis type.
+    apply_cutoff (bool, optional):
+        Whether to apply an envelope cutoff to the radial embedding.
+    use_reduced_cg (bool, optional):
+        Whether to use reduced Clebsch-Gordan coefficients in the product blocks.
+    use_so3 (bool, optional):
+        Whether to use SO(3) spherical harmonics (parity +1 only) instead of O(3).
+    use_agnostic_product (bool, optional):
+        Whether to use element-agnostic symmetric contraction in product blocks.
+    edge_irreps (Optional[o3.Irreps], optional):
+        Custom irreps for edge features in interaction blocks (all layers except first).
+        If None, defaults to the standard interaction irreps.
+    use_edge_irreps_first (bool, optional):
+        Whether to apply `edge_irreps` also to the first interaction block's scalar channels.
+    cueq_config (Optional[Dict[str, Any]], optional):
+        cuEquivariance configuration.
+    use_cueq (Optional[bool], optional):
+        Whether to use cuEquivariance acceleration.
+    oeq_config (Optional[Dict[str, Any]], optional):
+        openequivariance configuration.
+    use_oeq (Optional[bool], optional):
+        Whether to use openequivariance acceleration.
+    readout_cls (Optional[Type[NonLinearReadoutBlock]], optional):
+        Class to use for the final (non-linear) readout block.
+    keep_last_layer_irreps (bool, optional):
+        If False, the last interaction layer outputs only scalar irreps, reducing
+        parameters. Defaults to True for backward compatibility.
+    nls_distance_method:
+        Method for computing a neighbor list. Supported values are
+        `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`
+        and `custom_kernel`.
     """
 
     def __init__(
@@ -720,67 +724,24 @@ class StandardMACE(MACE):
             nls_distance_method=nls_distance_method,
         )
 
+
 class RBFRegularizedMACE(StandardMACE):
-    """
+    __doc = StandardMACE.__doc__
+    __params_onwards = __doc[__doc.index("Parameters") :]
+    __doc__ = (
+        """
     This is a StandardMACE model where the RBF components are weighted via Hadamard product with couple-specific
     vectors. Each tuple of bead types has its own vector.
     The models also adds the key radial_filters to the output dictionary, containing the regularization parameters.
 
-    Args:
-        r_max (float):
-            Cutoff radius for neighbor list.
-        num_bessel (int):
-            Number of Bessel functions for radial basis.
-        num_polynomial_cutoff (int):
-            Number of polynomial cutoff functions.
-        max_ell (int):
-            Maximum angular momentum for spherical harmonics.
-        interaction_cls (str):
-            Class name for interaction blocks.
-        interaction_cls_first (str):
-            Class name for the first interaction block.
-        num_interactions (int):
-            Number of interaction blocks.
-        hidden_irreps (str):
-            Irreducible representations for hidden features. For example if only
-            a scalar representation with 128 channels is used can be "128x0e". If
-            also a vector representation is used can be "128x0e + 128x1o".
-        MLP_irreps (str):
-            Irreducible representations for MLP layers.
-        avg_num_neighbors (float):
-            Average number of neighbors per atom used for normalization and numerical stability.
-        atomic_numbers (List[int]):
-            List of atomic numbers in the system.
-        correlation (Union[int, List[int]]):
-            Correlation order(s) for product blocks.
-        gate (Optional[Callable]):
-            Activation function for non-linearities.
-        max_num_neighbors (int, optional):
-            Maximum number of neighbors per atom.
-        pair_repulsion (bool, optional):
-            Whether to use pairwise repulsion.
-        distance_transform (str, optional):
-            Distance transformation type.
-        radial_MLP (Optional[List[int]], optional):
-            Radial MLP architecture.
-        radial_type (Optional[str], optional):
-            Radial basis type.
-        cueq_config (Optional[Dict[str, Any]], optional):
-            cuEquivariance configuration.
-        use_cueq (Optional[bool], optional):
-            Whether to use cuEquivariance acceleration.
-        nls_distance_method:
-            Method for computing a neighbor list. Supported values are
-            `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`
-            and `custom_kernel`.
-
-        CLASS SPECIFIC PARAMETERS -------------------------------------------------------------
-
-        independent_regularizations: bool
-            If True each interaction block has its own set of regularization parameters,
-            otherwise the regularization parameters are shared across all interaction blocks.
-
     """
+        + __params_onwards
+        + """
+    independent_regularizations (bool):
+        If True each interaction block has its own set of regularization parameters,
+        otherwise the regularization parameters are shared across all interaction blocks.
+    """
+    )
 
     def __init__(
         self,
@@ -870,13 +831,15 @@ class RBFRegularizedMACE(StandardMACE):
         """
         Forward pass of the MACE model.
 
-        Args:
-            data (AtomicData):
-                Input atomic data object.
+        Parameters
+        ----------
+        data (AtomicData):
+            Input atomic data object.
 
-        Returns:
-            AtomicData:
-                Output data with predicted energies in `data.out`.
+        Returns
+        -------
+        AtomicData:
+            Output data with predicted energies in `data.out`.
         """
         # Setup
         num_atoms_arange = torch.arange(data.pos.shape[0])
@@ -932,19 +895,22 @@ class RBFRegularizedMACE(StandardMACE):
 
         # Interactions
         energies = [pair_energy]
-        for block_id, (interaction, product, readout) in enumerate(zip(
-            self.interactions, self.products, self.readouts
-        )):
+        for i, (interaction, product, readout) in enumerate(
+            zip(self.interactions, self.products, self.readouts)
+        ):
             node_feats, sc = interaction(
                 node_attrs=node_attrs,
                 node_feats=node_feats,
                 edge_attrs=edge_attrs,
-                edge_feats=edge_feats[block_id],
+                edge_feats=edge_feats[i],
                 edge_index=edge_index,
                 cutoff=cutoff,
+                first_layer=(i == 0),
             )
             node_feats = product(
-                node_feats=node_feats, sc=sc, node_attrs=node_attrs
+                node_feats=node_feats,
+                sc=sc,
+                node_attrs=node_attrs.to(dtype=node_feats.dtype),
             )
             node_energies = readout(node_feats, node_heads)[
                 num_atoms_arange, node_heads
