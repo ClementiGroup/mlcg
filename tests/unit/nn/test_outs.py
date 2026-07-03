@@ -1,6 +1,7 @@
 from copy import deepcopy
 from typing import Dict, Union, List
 import torch
+import torch._functorch.config
 import pytest
 import numpy as np
 from torch_geometric.data.collate import collate
@@ -163,4 +164,88 @@ def test_sum_outs(ASE_prior_model, network_model, out_targets):
             target_totals[target].detach().numpy(),
             collated_data_2.out[target].detach().numpy(),
             atol=1e-5,
+        )
+
+
+DEVICES = ["cpu"] + (["cuda"] if torch.cuda.is_available() else [])
+
+
+@pytest.mark.parametrize("device", DEVICES)
+@pytest.mark.parametrize(
+    "ASE_prior_model, network_model, out_targets",
+    [
+        (ASE_prior_model, schnet_force_model, [ENERGY_KEY, FORCE_KEY]),
+        (ASE_prior_model, mace_force_model, [ENERGY_KEY, FORCE_KEY]),
+    ],
+    indirect=["ASE_prior_model"],
+)
+def test_sum_outs_own_nl_models(
+    ASE_prior_model, network_model, out_targets, device
+):
+    """Tests that withholding the shared ``data.neighbor_list`` from a
+    network model via ``SumOut(..., own_nl_models=[...])`` leaves the
+    aggregated predictions unchanged, since the withheld model builds its
+    own coordinate-dependent neighbor list on the fly. This is checked
+    against a reference model that shares the neighbor list with every
+    model, both in eager mode and after compiling the aggregate model with
+    ``torch.compile``, on CPU and, when available, on GPU.
+    """
+    if network_model.name == "mace" and HAS_MACE == False:
+        pytest.skip("Skipping test, MACE installation not found...")
+
+    torch._functorch.config.donated_buffer = False
+
+    data_dictionary = ASE_prior_model(sum_out=False, device=device)
+    prior_model = data_dictionary["model"]
+    collated_data = data_dictionary["collated_prior_data"].to(device)
+
+    def build_module_collection():
+        module_collection = torch.nn.ModuleDict()
+        for key in prior_model.keys():
+            module_collection[key] = deepcopy(prior_model[key])
+        module_collection[network_model.name] = deepcopy(network_model).to(
+            device
+        )
+        return module_collection
+
+    reference_model = SumOut(build_module_collection(), out_targets)
+    reference_data = reference_model(deepcopy(collated_data))
+
+    # Eager: withholding the shared neighbor list from the network model
+    # should not change the aggregated predictions.
+    eager_model = SumOut(
+        build_module_collection(),
+        out_targets,
+        own_nl_models=[network_model.name],
+    )
+    eager_data = eager_model(deepcopy(collated_data))
+
+    for target in out_targets:
+        np.testing.assert_allclose(
+            reference_data.out[target].detach().cpu().numpy(),
+            eager_data.out[target].detach().cpu().numpy(),
+            atol=1e-5,
+        )
+
+    # Compiled: the same equivalence should hold once the aggregate model
+    # (including the own_nl_models bookkeeping) is compiled. A looser
+    # tolerance is used here since torch.compile's Inductor backend fuses
+    # and reorders reductions and does not preserve float64 precision in
+    # all kernels, so it will not match eager execution bit-for-bit.
+    compiled_model = torch.compile(
+        SumOut(
+            build_module_collection(),
+            out_targets,
+            own_nl_models=[network_model.name],
+        ),
+        dynamic=True,
+    )
+    compiled_data = compiled_model(deepcopy(collated_data))
+
+    for target in out_targets:
+        np.testing.assert_allclose(
+            reference_data.out[target].detach().cpu().numpy(),
+            compiled_data.out[target].detach().cpu().numpy(),
+            atol=1e-3,
+            rtol=1e-3,
         )

@@ -71,9 +71,7 @@ class SumOut(torch.nn.Module):
             targets = [ENERGY_KEY, FORCE_KEY]
         self.targets = targets
         self.models = models
-        self.own_nl_models = (
-            frozenset(own_nl_models) if own_nl_models else frozenset()
-        )
+        self.own_nl_models = set(own_nl_models) if own_nl_models else set()
 
     def forward(self, data: AtomicData) -> AtomicData:
         r"""Sums output properties from individual models into global
@@ -130,7 +128,7 @@ class SumOut(torch.nn.Module):
         for target in self.targets:
             data.out[target] = 0.00
 
-        own_nl_models = getattr(self, "own_nl_models", frozenset())
+        own_nl_models = getattr(self, "own_nl_models", set())
         original_neighbor_list = data.neighbor_list if own_nl_models else None
 
         for name in self.models.keys():
