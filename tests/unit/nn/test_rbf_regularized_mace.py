@@ -125,6 +125,7 @@ def test_prediction(collated_data, out_keys, expected_shapes):
         assert key in collated_data.out[model.name].keys()
         assert collated_data.out[model.name][key].shape == shape
 
+
 @pytest.mark.parametrize(
     "collated_data, independent_regularizations",
     [
@@ -158,4 +159,3 @@ def test_regularization(collated_data, independent_regularizations):
             n_types * (n_types + 1) // 2,
             num_rbf,
         )
-
