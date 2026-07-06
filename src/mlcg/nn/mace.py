@@ -240,6 +240,32 @@ class MACE(torch.nn.Module):
             atomic_numbers.shape[0]
         )
 
+    def get_node_feats_and_attrs(
+        self, data: AtomicData
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Compute the initial node features and the node attribute tags.
+
+        Returns a tuple ``(node_feats, node_attrs)`` where:
+
+        * ``node_feats`` is the initial per-node hidden representation that is
+          propagated and *updated* through the interaction/product blocks (the
+          MACE analogue of SchNet's ``x``).
+        * ``node_attrs`` is the *fixed* per-node identity tag, a one-hot over
+          ``atomic_numbers`` of shape ``(n_nodes, num_elements)``, re-injected
+          unchanged at every layer to select the element-indexed weights of the
+          product and interaction blocks.
+
+        Subclasses override this to source the initial features from something
+        other than a learned type embedding (e.g. a frozen per-type table or
+        precomputed per-bead embeddings); see
+        :ref:`mlcg.nn.FrozenTypEmbeddingMACE` and
+        :ref:`mlcg.nn.FrozenResEmbeddingMACE`.
+        """
+        types_ids = self.types_mapping[data.atom_types].view(-1, 1)
+        node_attrs = to_one_hot(types_ids, self.atomic_numbers.shape[0])
+        node_feats = self.node_embedding(node_attrs)
+        return node_feats, node_attrs
+
     def forward(self, data: AtomicData) -> AtomicData:
         """
         Forward pass of the MACE model.
@@ -257,11 +283,8 @@ class MACE(torch.nn.Module):
         num_graphs = data.ptr.numel() - 1  # data.batch.max()
         node_heads = torch.zeros_like(data.batch)
 
-        types_ids = self.types_mapping[data.atom_types].view(-1, 1)
-        node_attrs = to_one_hot(types_ids, self.atomic_numbers.shape[0])
-
-        # Embeddings
-        node_feats = self.node_embedding(node_attrs)
+        # Embeddings (see get_node_feats_and_attrs; overridable by subclasses)
+        node_feats, node_attrs = self.get_node_feats_and_attrs(data)
 
         neighbor_list = data.neighbor_list.get(self.name)
 
@@ -602,3 +625,221 @@ class StandardMACE(MACE):
             pair_repulsion_fn,
             nls_distance_method=nls_distance_method,
         )
+
+
+@compile_mode("script")
+class FrozenTypEmbeddingMACE(StandardMACE):
+    """MACE variant whose initial node features come from a frozen, pretrained
+    **per-type** embedding table instead of the learned
+    :class:`LinearNodeEmbeddingBlock`.
+
+    This is the MACE analogue of :ref:`mlcg.nn.FrozenTypEmbeddingSchNet`: every
+    bead of the same type receives the same fixed feature vector, kept **frozen**
+    (``requires_grad=False``) for the whole training. The one-hot ``node_attrs``
+    are left unchanged, so MACE's element-indexed product and interaction weights
+    remain per bead type exactly as in :ref:`mlcg.nn.StandardMACE` -- only the
+    *initial* node features are frozen. For fixed per-bead (residue) embeddings
+    that differ within a type, use :ref:`mlcg.nn.FrozenResEmbeddingMACE` instead.
+
+    The table is built one of two ways:
+
+    * If ``embedding_path`` is given, it is loaded from disk (a tensor of shape
+      ``(n_types, num_features)``, where ``num_features`` is the scalar (``0e``)
+      channel count of ``hidden_irreps``) and frozen.
+    * Otherwise a fresh ``torch.nn.Embedding(n_types, num_features)`` is randomly
+      initialized (under the active ``seed_everything``) and frozen.
+
+    ``n_types`` is the number of entries in ``atomic_numbers``. All other
+    arguments are identical to :ref:`mlcg.nn.StandardMACE`.
+
+    Parameters
+    ----------
+    embedding_path:
+        Optional path to a ``(n_types, num_features)`` tensor used as the frozen
+        embedding table. If empty, the table is randomly initialized and frozen.
+    """
+
+    def __init__(
+        self,
+        r_max: float,
+        num_bessel: int,
+        num_polynomial_cutoff: int,
+        max_ell: int,
+        interaction_cls: str,
+        interaction_cls_first: str,
+        num_interactions: int,
+        hidden_irreps: str,
+        MLP_irreps: str,
+        avg_num_neighbors: float,
+        atomic_numbers: List[int],
+        correlation: Union[int, List[int]],
+        gate: Optional[Callable],
+        max_num_neighbors: int = 1000,
+        pair_repulsion: bool = False,
+        distance_transform: str = "None",
+        radial_MLP: Optional[List[int]] = None,
+        radial_type: Optional[str] = "bessel",
+        cueq_config: Optional[Any] = None,
+        use_cueq: Optional[bool] = False,
+        nls_distance_method: str = "torch",
+        embedding_path: str = "",
+    ):
+        super().__init__(
+            r_max=r_max,
+            num_bessel=num_bessel,
+            num_polynomial_cutoff=num_polynomial_cutoff,
+            max_ell=max_ell,
+            interaction_cls=interaction_cls,
+            interaction_cls_first=interaction_cls_first,
+            num_interactions=num_interactions,
+            hidden_irreps=hidden_irreps,
+            MLP_irreps=MLP_irreps,
+            avg_num_neighbors=avg_num_neighbors,
+            atomic_numbers=atomic_numbers,
+            correlation=correlation,
+            gate=gate,
+            max_num_neighbors=max_num_neighbors,
+            pair_repulsion=pair_repulsion,
+            distance_transform=distance_transform,
+            radial_MLP=radial_MLP,
+            radial_type=radial_type,
+            cueq_config=cueq_config,
+            use_cueq=use_cueq,
+            nls_distance_method=nls_distance_method,
+        )
+
+        num_features = o3.Irreps(hidden_irreps).count(o3.Irrep(0, 1))
+        num_elements = int(self.atomic_numbers.shape[0])
+
+        if embedding_path:
+            table = torch.load(embedding_path)
+            table = torch.as_tensor(table, dtype=torch.get_default_dtype())
+            assert tuple(table.shape) == (num_elements, num_features), (
+                f"frozen type-embedding table has shape {tuple(table.shape)} "
+                f"but expected ({num_elements}, {num_features})"
+            )
+            frozen_embedding = torch.nn.Embedding.from_pretrained(
+                table, freeze=True
+            )
+        else:
+            frozen_embedding = torch.nn.Embedding(num_elements, num_features)
+
+        # Freeze the type-embedding table: it is never trained. This replaces the
+        # learned LinearNodeEmbeddingBlock built by StandardMACE (which is no
+        # longer referenced, avoiding unused-parameter errors under DDP).
+        frozen_embedding.weight.requires_grad_(False)
+        self.node_embedding = frozen_embedding
+
+    def get_node_feats_and_attrs(
+        self, data: AtomicData
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        types_ids = self.types_mapping[data.atom_types].view(-1, 1)
+        node_attrs = to_one_hot(types_ids, self.atomic_numbers.shape[0])
+        node_feats = self.node_embedding(types_ids.squeeze(-1))
+        return node_feats, node_attrs
+
+
+@compile_mode("script")
+class FrozenResEmbeddingMACE(StandardMACE):
+    """MACE variant whose initial node features come from frozen, precomputed
+    **per-residue/bead** embeddings carried on the input
+    (``data.precomputed_embeddings``) rather than from a learned type embedding.
+
+    This is the MACE analogue of :ref:`mlcg.nn.FrozenResEmbeddingSchNet`. Each
+    individual bead gets its own fixed vector, mapped into the network's scalar
+    node-feature channels by a learned linear projection, so ``embedding_dim``
+    and ``hidden_irreps`` may differ.
+
+    Unlike the SchNet version, MACE re-injects the fixed node identity tag
+    (``node_attrs``) at every layer. Here that tag is collapsed to a **single
+    dummy element** (``node_attrs = ones(n_nodes, 1)``, ``num_elements = 1``), so
+    *all* residue/bead identity enters the model exclusively through the
+    precomputed embedding and the product/interaction blocks are
+    element-agnostic. ``atomic_numbers`` is therefore not an argument: it is
+    fixed internally to a single dummy element. Keep ``pair_repulsion=False``
+    (ZBL repulsion is keyed on physical atomic numbers, which are meaningless
+    here).
+
+    The ``data.precomputed_embeddings`` consumed here are populated upstream by
+    the dataset/simulation: during training a per-bead embedding is drawn from a
+    randomly sampled frame of the same molecule (data augmentation), while
+    validation, inference and simulation use a single fixed frame.
+
+    Parameters
+    ----------
+    embedding_dim:
+        Dimension of the precomputed per-bead embeddings supplied in
+        ``data.precomputed_embeddings`` (shape ``(n_beads, embedding_dim)``).
+
+    All remaining arguments are identical to :ref:`mlcg.nn.StandardMACE`, except
+    that ``atomic_numbers`` is omitted (fixed to a single dummy element).
+    """
+
+    def __init__(
+        self,
+        r_max: float,
+        num_bessel: int,
+        num_polynomial_cutoff: int,
+        max_ell: int,
+        interaction_cls: str,
+        interaction_cls_first: str,
+        num_interactions: int,
+        hidden_irreps: str,
+        MLP_irreps: str,
+        avg_num_neighbors: float,
+        embedding_dim: int,
+        correlation: Union[int, List[int]],
+        gate: Optional[Callable],
+        max_num_neighbors: int = 1000,
+        pair_repulsion: bool = False,
+        distance_transform: str = "None",
+        radial_MLP: Optional[List[int]] = None,
+        radial_type: Optional[str] = "bessel",
+        cueq_config: Optional[Any] = None,
+        use_cueq: Optional[bool] = False,
+        nls_distance_method: str = "torch",
+    ):
+        # A single dummy element: node_attrs carry no type information, so
+        # products/interactions are element-agnostic and identity comes entirely
+        # from the precomputed embedding projected below.
+        super().__init__(
+            r_max=r_max,
+            num_bessel=num_bessel,
+            num_polynomial_cutoff=num_polynomial_cutoff,
+            max_ell=max_ell,
+            interaction_cls=interaction_cls,
+            interaction_cls_first=interaction_cls_first,
+            num_interactions=num_interactions,
+            hidden_irreps=hidden_irreps,
+            MLP_irreps=MLP_irreps,
+            avg_num_neighbors=avg_num_neighbors,
+            atomic_numbers=[1],
+            correlation=correlation,
+            gate=gate,
+            max_num_neighbors=max_num_neighbors,
+            pair_repulsion=pair_repulsion,
+            distance_transform=distance_transform,
+            radial_MLP=radial_MLP,
+            radial_type=radial_type,
+            cueq_config=cueq_config,
+            use_cueq=use_cueq,
+            nls_distance_method=nls_distance_method,
+        )
+
+        num_features = o3.Irreps(hidden_irreps).count(o3.Irrep(0, 1))
+        # Learned projection of the (frozen) precomputed embedding into the
+        # scalar node-feature channels; replaces StandardMACE's
+        # LinearNodeEmbeddingBlock as the initial-feature source.
+        self.node_embedding = torch.nn.Linear(embedding_dim, num_features)
+
+    def get_node_feats_and_attrs(
+        self, data: AtomicData
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        emb = data.precomputed_embeddings.to(self.node_embedding.weight.dtype)
+        node_feats = self.node_embedding(emb)
+        node_attrs = torch.ones(
+            (node_feats.shape[0], 1),
+            dtype=node_feats.dtype,
+            device=node_feats.device,
+        )
+        return node_feats, node_attrs
