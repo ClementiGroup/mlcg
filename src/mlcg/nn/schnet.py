@@ -941,6 +941,11 @@ class FrozenResEmbeddingSchNet(SchNet):
     ``embedding_dim`` and ``hidden_channels`` may differ. Everything downstream
     of the initial features is identical to :ref:`mlcg.nn.StandardSchNet`.
 
+    The ``data.precomputed_embeddings`` consumed here are populated upstream by
+    the dataset/simulation: during training a per-bead embedding is drawn from a
+    randomly sampled frame of the same molecule (data augmentation), while
+    validation, inference and simulation use a single fixed frame.
+
     Parameters
     ----------
     embedding_dim:

@@ -183,12 +183,16 @@ class MolData:
         Unit cell of the atomic structure, of shape `(n_frames, 3, 3)`
     pbc:
         Periodic boundary conditions, of shape `(n_frames, 3)`
-    embeddings_mean:
-        Externally loaded per-residue embeddings averaged on the training set,
-        of shape `(n_atoms, embedding_size)`
-    embeddings_std:
-        Externally loaded standard deviation of per-residue embeddings calculated
-        on the training set, of shape `(n_beads, embed_dim)`
+    embeddings:
+        Externally loaded per-frame, per-bead node embeddings of shape
+        `(n_emb_frames, n_beads, embed_dim)`. A single frame is drawn from this
+        pool as the node embedding (randomly during training, a fixed frame
+        otherwise); see :meth:`sample_embedding`. The frame axis is decoupled
+        from the coordinate frame axis, so ``n_emb_frames`` need not equal
+        ``n_frames``.
+    fixed_emb_idx:
+        Index of the embedding frame returned in deterministic ("fixed")
+        sampling mode, e.g. for validation and inference.
     """
 
     def __init__(
@@ -201,8 +205,8 @@ class MolData:
         exclusion_pairs: np.ndarray = None,
         cell: np.ndarray = None,
         pbc: np.ndarray = None,
-        embeddings_mean: np.ndarray = None,
-        embeddings_std: np.ndarray = None,
+        embeddings: np.ndarray = None,
+        fixed_emb_idx: int = 0,
     ):
         self._name = name
         self._embeds = embeds
@@ -216,25 +220,24 @@ class MolData:
         )
         assert self._coords.shape == self._forces.shape
 
-        # Precomputed per-bead node embeddings (mean and std dev over training set).
-        # Optional tensors of shape (n_beads, embed_dim).
-        self._embeddings_mean = (
-            torch.as_tensor(embeddings_mean, dtype=torch.float32)
-            if embeddings_mean is not None
+        # Precomputed per-frame, per-bead node embeddings, an optional tensor of
+        # shape (n_emb_frames, n_beads, embed_dim) used as a pool to sample from.
+        self._embeddings = (
+            torch.as_tensor(embeddings, dtype=torch.float32)
+            if embeddings is not None
             else None
         )
-        self._embeddings_std = (
-            torch.as_tensor(embeddings_std, dtype=torch.float32)
-            if embeddings_std is not None
-            else None
-        )
-        if self._embeddings_mean is not None:
-            assert self._embeddings_mean.shape[0] == self.n_beads, (
-                f"{name}: embedding has {self._embeddings_mean.shape[0]} beads "
+        self._fixed_emb_idx = fixed_emb_idx
+        if self._embeddings is not None:
+            assert self._embeddings.ndim == 3, (
+                f"{name}: embeddings must have shape (n_emb_frames, n_beads, "
+                f"embed_dim) but got {tuple(self._embeddings.shape)}"
+            )
+            assert self._embeddings.shape[1] == self.n_beads, (
+                f"{name}: embedding has {self._embeddings.shape[1]} beads "
                 f"but coords have {self.n_beads}"
             )
-            if self._embeddings_std is not None:
-                assert self._embeddings_std.shape == self._embeddings_mean.shape
+            assert 0 <= self._fixed_emb_idx < self._embeddings.shape[0]
 
         self._weights = weights
         if self._weights is not None:
@@ -288,12 +291,25 @@ class MolData:
         return self._pbc
 
     @property
-    def embeddings_mean(self):
-        return self._embeddings_mean
+    def embeddings(self):
+        return self._embeddings
 
-    @property
-    def embeddings_std(self):
-        return self._embeddings_std
+    def sample_embedding(self, mode: str = "fixed") -> Optional[torch.Tensor]:
+        """Return a single per-bead embedding frame of shape (n_beads, embed_dim).
+
+        ``mode="random"`` draws a uniformly random frame from the embedding pool
+        (training-time augmentation: the embedding is decoupled from the
+        coordinate frame). Any other value returns the deterministic
+        ``fixed_emb_idx`` frame (validation/inference). Returns ``None`` when no
+        embeddings were loaded for this molecule.
+        """
+        if self._embeddings is None:
+            return None
+        if mode == "random":
+            idx = int(torch.randint(self._embeddings.shape[0], (1,)).item())
+        else:
+            idx = self._fixed_emb_idx
+        return self._embeddings[idx].clone()
 
     def __repr__(self):
         return f"""MolData(name={self.name}", N_beads={self.n_beads}, N_frames={self.n_frames})"""
@@ -323,9 +339,10 @@ class MetaSet:
         self._n_mol_samples = []
         self._cumulate_indices = [0]
         self._exclude_listed_pairs = False
-        # std-scaling for the Gaussian noise added to precomputed embeddings;
-        # >0 for training augmentation, 0 (default) reproduces the frozen mean
-        self._embedding_noise_scale = 0.0
+        # how a per-bead embedding frame is drawn from each molecule's pool:
+        # "random" => a fresh random frame per sample (training augmentation),
+        # "fixed" (default) => a single deterministic frame (validation/inference)
+        self._embedding_sampling = "fixed"
 
     @staticmethod
     def retrieve_hdf(hdf_grp, hdf_key):
@@ -371,16 +388,23 @@ class MetaSet:
         subsample_using_weights=False,
         exclude_listed_pairs=False,
         embeddings_dir=None,
-        embedding_noise_scale=0.0,
+        embedding_sampling="fixed",
+        embedding_seed=42,
     ):
         r"""initiate a Metaset by loading data from given HDF-group.
         mol_list, detailed_indices, hdf_key_mapping, stride and parallel can control which subset is loaded to the Metaset (details see the description of "H5Dataset")
 
-        embeddings_dir, if given, is a directory of per-molecule ``{mol_name}.npz``
-        files (each with ``mean`` and ``std`` arrays of shape ``(n_beads, embed_dim)``)
-        holding precomputed node embeddings. embedding_noise_scale scales the
-        Gaussian noise added around the mean at sampling time (training augmentation;
-        use 0.0 for validation/inference).
+        embeddings_dir, if given, is a directory of per-molecule ``{mol_name}.npy``
+        files (each a per-frame, per-bead array of shape
+        ``(n_emb_frames, n_beads, embed_dim)``) holding precomputed node
+        embeddings. This is a *decoupled* augmentation pool: its frame axis is
+        independent of the coordinate frames, so ``n_emb_frames`` need not equal
+        the trajectory length and the pool is used as-is (it is NOT sliced by the
+        coordinate ``stride``/rank ``selection``). ``embedding_sampling`` selects
+        how a frame is drawn from that pool: ``"random"`` (a fresh random frame
+        per sample, for training augmentation) or ``"fixed"`` (a single
+        deterministic frame, for validation/inference). ``embedding_seed`` seeds
+        the per-molecule choice of that fixed frame.
         """
 
         def select_for_rank(length_or_indices):
@@ -413,7 +437,9 @@ class MetaSet:
 
         output = MetaSet(hdf5_group.name.split("/")[-1])
         keys = hdf_key_mapping
-        for mol_name in tqdm(mol_list, leave=False, desc="loading molecules"):
+        for mol_i, mol_name in enumerate(
+            tqdm(mol_list, leave=False, desc="loading molecules")
+        ):
             if mol_name not in hdf5_group:
                 raise KeyError(
                     "`mol_list` includes moleucle %s,"
@@ -421,13 +447,12 @@ class MetaSet:
                     % (mol_name, hdf5_group.name)
                 )
             embeds = MetaSet.retrieve_hdf(hdf5_group[mol_name], keys["embeds"])
-            embeddings_mean = None
-            embeddings_std = None
+            # per-frame, per-bead embedding pool; selection is applied below so
+            # it matches the coordinate frames loaded for this partition/rank.
+            embeddings_raw = None
             if embeddings_dir is not None:
-                emb_file = os.path.join(embeddings_dir, f"{mol_name}.npz")
-                with np.load(emb_file) as emb_npz:
-                    embeddings_mean = emb_npz["mean"]
-                    embeddings_std = emb_npz["std"]
+                emb_file = os.path.join(embeddings_dir, f"{mol_name}.npy")
+                embeddings_raw = np.load(emb_file)
             if exclude_listed_pairs:
                 if "exclusion_pairs" not in keys:
                     raise ValueError(
@@ -455,6 +480,23 @@ class MetaSet:
                 )
                 split_per_index = False
             selection = select_for_rank(par_range)
+            # Use the whole embedding pool exactly as provided in the .npy: it is
+            # a decoupled augmentation pool whose frame axis is independent of the
+            # coordinate frames, so it is NOT sliced by the coordinate
+            # `selection` (which carries absolute trajectory indices and may be
+            # far larger than the pool). The pool may therefore be much smaller
+            # than the trajectory. A frame is always drawn from
+            # range(len(embeddings_raw)); pick a reproducible fixed frame for
+            # "fixed" sampling mode.
+            embeddings = None
+            fixed_emb_idx = 0
+            if embeddings_raw is not None:
+                embeddings = embeddings_raw
+                fixed_emb_idx = int(
+                    np.random.default_rng([embedding_seed, mol_i]).integers(
+                        embeddings.shape[0]
+                    )
+                )
             cell = None  # cell is none by default
             pbc = None  # pbc is none by default
             if not split_per_index:
@@ -521,12 +563,12 @@ class MetaSet:
                     exclusion_pairs=exclusion_pairs,
                     cell=cell,
                     pbc=pbc,
-                    embeddings_mean=embeddings_mean,
-                    embeddings_std=embeddings_std,
+                    embeddings=embeddings,
+                    fixed_emb_idx=fixed_emb_idx,
                 )
             )
         output._exclude_listed_pairs = exclude_listed_pairs
-        output._embedding_noise_scale = embedding_noise_scale
+        output._embedding_sampling = embedding_sampling
         return output
 
     def insert_mol(self, mol_data):
@@ -645,15 +687,10 @@ class MetaSet:
             atd.exc_pair_index = torch.tensor(
                 self._mol_dataset[dataset_id].exclusion_pairs
             )
-        mean = self._mol_dataset[dataset_id].embeddings_mean
-        if mean is not None:
-            std = self._mol_dataset[dataset_id].embeddings_std
-            if self._embedding_noise_scale > 0.0 and std is not None:
-                emb = mean + self._embedding_noise_scale * std * torch.randn_like(
-                    mean
-                )
-            else:
-                emb = mean.clone()
+        emb = self._mol_dataset[dataset_id].sample_embedding(
+            self._embedding_sampling
+        )
+        if emb is not None:
             atd.precomputed_embeddings = emb
         return atd
 
@@ -842,14 +879,16 @@ class H5Dataset:
                 "world_size": 1,
             },
         )  # if no parallel entry, then target for single process
-        # directory of per-molecule `{mol_name}.npz` precomputed embeddings (global)
+        # directory of per-molecule `{mol_name}.npy` precomputed embeddings (global)
         embeddings_dir = loading_options.get("embeddings_dir", None)
         for part_name in partition_options:
             ## create a partition, typical names are train/val
             part = Partition(part_name)
             part_info = partition_options[part_name]
-            # noise std-scaling is per-partition: e.g. >0 for train, 0 for val
-            embedding_noise_scale = part_info.get("embedding_noise_scale", 0.0)
+            # embedding frame sampling is per-partition: e.g. "random" for
+            # train (augmentation), "fixed" for val/inference
+            embedding_sampling = part_info.get("embedding_sampling", "fixed")
+            embedding_seed = part_info.get("subsample_random_seed", 42)
             # TODO: check option consistency
             for metaset_name in part_info["metasets"]:
                 if metaset_name not in self._metaset_entries:
@@ -900,7 +939,8 @@ class H5Dataset:
                         subsample_using_weights=self._subsample_using_weights,
                         exclude_listed_pairs=self._exclude_listed_pairs,
                         embeddings_dir=embeddings_dir,
-                        embedding_noise_scale=embedding_noise_scale,
+                        embedding_sampling=embedding_sampling,
+                        embedding_seed=embedding_seed,
                     ),
                 )
             ## trim the metasets to fit the need of sampling
@@ -1060,7 +1100,8 @@ class H5SimpleDataset(H5Dataset):
         subsample_using_weights: Optional[bool] = False,
         exclude_listed_pairs: bool = False,
         embeddings_dir: Optional[str] = None,
-        embedding_noise_scale: float = 0.0,
+        embedding_sampling: str = "fixed",
+        embedding_seed: int = 42,
     ):
         # input checking
         if not isinstance(stride, int) and stride > 0:
@@ -1108,7 +1149,8 @@ class H5SimpleDataset(H5Dataset):
             subsample_using_weights=subsample_using_weights,
             exclude_listed_pairs=exclude_listed_pairs,
             embeddings_dir=embeddings_dir,
-            embedding_noise_scale=embedding_noise_scale,
+            embedding_sampling=embedding_sampling,
+            embedding_seed=embedding_seed,
         )
 
     def get_dataloader(

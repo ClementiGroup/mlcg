@@ -42,33 +42,35 @@ def attach_precomputed_embeddings(
 ) -> List[AtomicData]:
     """Attach fixed precomputed per-bead embeddings to simulation configurations.
 
-    Loads the ``mean`` array from a ``.npz`` produced by the joint-embedding model
-    (shape ``(n_beads, embedding_dim)``) and sets it — without noise — as
-    ``config.precomputed_embeddings`` on every :obj:`AtomicData` in
-    ``configurations``. A :ref:`mlcg.nn.FrozenResEmbeddingSchNet` then reads
-    this same fixed embedding at every timestep of the simulation.
+    Loads the per-frame embedding array from a ``.npy`` produced by the
+    joint-embedding model (shape ``(n_frames, n_beads, embedding_dim)``) and sets
+    its **first frame** as ``config.precomputed_embeddings`` on every
+    :obj:`AtomicData` in ``configurations``. A
+    :ref:`mlcg.nn.FrozenResEmbeddingSchNet` then reads this same fixed embedding
+    at every timestep of the simulation.
 
     Parameters
     ----------
     configurations:
         Initial structures for the simulation. Modified in place.
     embeddings_path:
-        Path to a ``.npz`` with a ``mean`` array of shape ``(n_beads, embedding_dim)``.
+        Path to a ``.npy`` with a per-frame array of shape
+        ``(n_frames, n_beads, embedding_dim)``. The first frame is used.
 
     Returns
     -------
     The same ``configurations`` list, with ``precomputed_embeddings`` attached.
     """
-    with np.load(embeddings_path) as npz:
-        mean = torch.as_tensor(npz["mean"], dtype=torch.float32)
+    embeddings = np.load(embeddings_path)
+    first = torch.as_tensor(embeddings[0], dtype=torch.float32)
     for frame, config in enumerate(configurations):
-        if config.pos.shape[0] != mean.shape[0]:
+        if config.pos.shape[0] != first.shape[0]:
             raise ValueError(
                 "Embedding has {} beads but configuration {} has {} atoms.".format(
-                    mean.shape[0], frame, config.pos.shape[0]
+                    first.shape[0], frame, config.pos.shape[0]
                 )
             )
-        config.precomputed_embeddings = mean.clone()
+        config.precomputed_embeddings = first.clone()
     return configurations
 
 
