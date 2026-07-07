@@ -64,7 +64,7 @@ try:
         "atomic_numbers": unique_test_types,
     }
     mace_model = StandardMACE(**mace_config)
-    mace_force_model = GradientsOut(mace_model, targets=[FORCE_KEY])#.float()
+    mace_force_model = GradientsOut(mace_model, targets=[FORCE_KEY])  # .float()
 except Exception as e:
     print(e)
     mace_force_model = DummyGradientModel("mace")
@@ -85,7 +85,7 @@ schnet = StandardSchNet(
     num_interactions=1,
     max_num_neighbors=1000,
 )
-schnet_force_model = GradientsOut(schnet, targets=[FORCE_KEY])#.double()
+schnet_force_model = GradientsOut(schnet, targets=[FORCE_KEY])  # .double()
 
 
 @pytest.mark.parametrize(
