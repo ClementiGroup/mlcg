@@ -13,6 +13,14 @@ class SumOut(torch.nn.Module):
         Dictionary of predictors models keyed by their name attribute
     targets:
         List of prediction targets that will be pooled
+    own_nl_models:
+        Optional model keys that should not receive the shared
+        ``data.neighbor_list``. Useful in cases where a model needs to
+        build its own coordinate-dependent neighbor list and in compilation
+        cases. For each key listed here, ``data.neighbor_list``
+        is temporarily cleared right before that model's call and restored
+        immediately after, leaving the other models unaffected. Defaults to
+        ``None``.
 
     Example
     -------
@@ -40,6 +48,13 @@ class SumOut(torch.nn.Module):
                  }
         full_model = SumOut(models, targets=[ENERGY_KEY, FORCE_KEY])
 
+        # Withhold the shared neighbor_list from SchNet's call:
+        full_model = SumOut(
+            models,
+            targets=[ENERGY_KEY, FORCE_KEY],
+            own_nl_models=["SchNet"],
+        )
+
 
     """
 
@@ -49,12 +64,14 @@ class SumOut(torch.nn.Module):
         self,
         models: torch.nn.ModuleDict,
         targets: List[str] = None,
+        own_nl_models: Sequence[str] = None,
     ):
         super(SumOut, self).__init__()
         if targets is None:
             targets = [ENERGY_KEY, FORCE_KEY]
         self.targets = targets
         self.models = models
+        self.own_nl_models = set(own_nl_models) if own_nl_models else set()
 
     def forward(self, data: AtomicData) -> AtomicData:
         r"""Sums output properties from individual models into global
@@ -110,8 +127,17 @@ class SumOut(torch.nn.Module):
         """
         for target in self.targets:
             data.out[target] = 0.00
+
+        own_nl_models = getattr(self, "own_nl_models", set())
+        original_neighbor_list = data.neighbor_list if own_nl_models else None
+
         for name in self.models.keys():
-            data = self.models[name](data)
+            if name in own_nl_models:
+                data.neighbor_list = {}
+                data = self.models[name](data)
+                data.neighbor_list = original_neighbor_list
+            else:
+                data = self.models[name](data)
             for target in self.targets:
                 data.out[target] += data.out[name][target]
         return data
