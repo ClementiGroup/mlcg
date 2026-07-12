@@ -326,7 +326,7 @@ class MACE(torch.nn.Module):
             zip(self.interactions, self.products, self.readouts)
         ):
             node_feats, sc = interaction(
-                node_attrs=node_attrs,
+                node_attrs=node_attrs.to(dtype=node_feats.dtype),
                 node_feats=node_feats,
                 edge_attrs=edge_attrs,
                 edge_feats=edge_feats,
