@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout 🛎️
-        uses: actions/checkout@v2
+        uses: actions/checkout@v6
         with:
           ref: gh-pages
       - name: Merge main -> gh-pages
@@ -18,22 +18,18 @@ jobs:
           from_branch: main
           target_branch: gh-pages
           github_token: ${{ github.token }}
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
-          python-version: 3.12.0
-      - name: Install mlcg requirements
-        run: pip install --extra-index-url https://download.pytorch.org/whl/cpu -r  ${{ github.workspace }}/env_cpu_with_hashes.in
-      - name: Install mace
-        run: pip install --no-deps git+https://github.com/ACEsuit/mace.git@v0.3.13
-      - name: Install allegro
-        run: pip install --no-deps nequip==0.12.1 nequip-allegro==0.7.0
-      - name: Install mlcg
-        run: pip install ${{ github.workspace }}
-      - name: Install sphinx dependencies
-        run: pip install sphinx shibuya sphinx-autodoc-typehints
+          version: "0.11.25"
+          enable-cache: true
+      - name: Set up Python
+        run: uv python install
+      - name: Install mlcg with cpu extra
+        run: uv sync --extra cpu --group docs
+        working-directory: ${{ github.workspace }}
       - name: Build Documentation
-        run: sphinx-build -b html ${{ github.workspace }}/docs/source ${{ github.workspace }}/docs/
+        run: uv run sphinx-build -b html ${{ github.workspace }}/docs/source ${{ github.workspace }}/docs/
       - name: Commit updated Doc
         uses: EndBug/add-and-commit@v7
         with:

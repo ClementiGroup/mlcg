@@ -3,7 +3,7 @@ mlcg
 
 .. start-intro
 
-|Docs badge| |License| |Circleci|
+|Docs badge| |License| |Pipeline|
 
 .. |Docs badge| image:: https://img.shields.io/badge/mlcg-docs-blue.svg
    :target: https://clementigroup.github.io/mlcg/
@@ -11,8 +11,9 @@ mlcg
 .. |License| image:: https://img.shields.io/github/license/Naereen/StrapDown.js.svg
    :target: https://opensource.org/licenses/MIT
 
-.. |Circleci| image:: https://dl.circleci.com/status-badge/img/gh/ClementiGroup/mlcg/tree/main.svg?style=shield
-    :target: https://dl.circleci.com/status-badge/redirect/gh/ClementiGroup/mlcg/tree/main
+.. |Pipeline| image:: https://git.imp.fu-berlin.de/ag-clementi/mlcg/badges/main/pipeline.svg
+   :target: https://git.imp.fu-berlin.de/ag-clementi/mlcg/-/commits/main
+   :alt: pipeline status
 
 This repository collects a set of tools to apply machine learning techniques to coarse grain atomic systems.
 
@@ -21,25 +22,68 @@ Installation
 ------------
 .. start-install
 
-First we suggest to create a new clean empty virtual environment with **python 3.12**, then clone the repo and 
-install the following prerequisites:
+Requires **Python 3.12**. Clone the repo:
 
 .. code:: bash
 
     git clone git@github.com:ClementiGroup/mlcg.git
     cd mlcg
-    pip install -r env_with_hashes.in
-    pip install --no-deps git+https://github.com/ACEsuit/mace.git@v0.3.13
-    pip install --no-deps nequip==0.12.1 nequip-allegro==0.7.0
 
-Then install this repository with:
+We recommend `uv <https://docs.astral.sh/uv/>`_ for installation.
+
+``uv sync`` creates a ``.venv`` in the repo root and installs all
+dependencies from the correct pre-built wheel pages. If you manage your own
+virtual environment instead, install reproducibly from one of the provided
+per-platform lock files with ``uv pip``. Pick the row matching your
+hardware:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 25 35 40
+
+   * - Hardware
+     - ``uv sync``
+     - Self-managed environment
+   * - NVIDIA CUDA 13.0
+     - ``uv sync --extra cu130``
+     - ``uv pip install -r pylock.cu130.toml``
+   * - NVIDIA CUDA 12.8
+     - ``uv sync --extra cu128``
+     - ``uv pip install -r pylock.cu128.toml``
+   * - AMD ROCm 7.2
+     - ``uv sync --extra rocm72``
+     - ``uv pip install -r pylock.rocm72.toml``
+   * - CPU only
+     - ``uv sync --extra cpu``
+     - ``uv pip install -r pylock.cpu.toml``
+
+In a self-managed environment you can also skip the lock file and install
+the package directly with the extra matching your hardware:
 
 .. code:: bash
 
-    pip install .
+    uv pip install ".[cu130]"
 
+**For developers**
 
-This will likely rise an error due to some dependency issue about `e3nn` that you can safely ignore.
+Add ``--group dev`` to install additional development dependencies
+(``black``, ``pytest``, ``coverage``):
+
+.. code:: bash
+
+    uv sync --extra cu130 --group dev
+
+or, for a self-managed environment:
+
+.. code:: bash
+
+    uv pip install ".[cu130]" --group dev
+
+**With pip**
+
+Installing with ``pip`` instead of ``uv`` is also possible, but requires
+installing dependencies in a specific order to avoid version conflicts
+between optional model backends — see `Installation with pip`_ below.
 
 .. end-install
 
@@ -70,7 +114,7 @@ Dependencies
 
 .. code:: bash
 
-    pip install sphinx shibuya sphinx-autodoc-typehints
+    uv sync --group docs
 
 
 How to build
@@ -121,13 +165,71 @@ For quick local development testing, it is also possible to exclude the large te
 Troubleshooting
 ---------------
 
-If it is not possible to install an environment with `pip install -r env_with_hashes.in`, the
-following commands can do a similar job.
+If your hardware is not listed above, we recommend installing ``torch``, ``torch-cluster``,
+and any desired GPU acceleration libraries (``cuequivariance-torch``,
+``cuequivariance-ops-torch``, ``nvalchemi-toolkit-ops``, ``openequivariance``)
+manually into a uv environment first, then install the package with:
 
 .. code:: bash
 
-    pip install --extra-index-url=https://download.pytorch.org/whl/cu128 torch==2.8.0
-    pip install torch_geometric
-    pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.8.0+cu128.html
-    pip install lightning tensorboard torchtnt
-    pip install cuequivariance-torch==0.8.1 cuequivariance-ops-torch-cu12==0.8.1 nvalchemi-toolkit-ops==0.2.0
+    uv pip install -e .
+
+Installation with pip
+----------------------
+
+Some optional model backends declare conflicting sub-dependencies (e.g.
+``mace-torch`` and ``nequip`` require incompatible versions of ``e3nn``),
+which ``uv`` resolves automatically but ``pip`` does not. Installing with
+``pip`` therefore requires following the steps below in order: install the
+heavy, platform-specific dependencies first (torch, PyTorch Geometric,
+equivariant-operation acceleration), then the remaining pure-Python
+dependencies, and finally the model backends **without** letting pip resolve
+their sub-dependencies.
+
+1. Install torch following the instructions on the
+   `official PyTorch website <https://pytorch.org>`_. We recommend
+   **torch 2.11**.
+
+2. Install PyTorch Geometric and its ``torch-cluster`` extension following
+   the instructions in the
+   `PyTorch Geometric documentation <https://pytorch-geometric.readthedocs.io/en/stable/install/installation.html>`_.
+
+3. Install acceleration for equivariant operations, either via
+   ``cuequivariance-torch`` and ``cuequivariance-ops``, or via
+   ``openequivariance``.
+
+4. Install the remaining project dependencies from the provided
+   ``requirements.txt`` file.
+
+5. Install ``mace-torch`` (supported version ``0.3.16``) **without**
+   dependencies.
+
+6. Install ``nequip`` (supported version ``0.12.1``) and ``nequip-allegro``
+   (supported version ``0.7.0``) **without** dependencies.
+
+7. Install the package itself.
+
+.. note::
+   Steps 5 and 6 must use ``--no-deps``. Both ``mace-torch`` and ``nequip``
+   declare conflicting version requirements for ``e3nn``; installing them
+   without dependencies keeps the ``e3nn==0.5.3`` version installed in
+   step 4 intact, instead of triggering a resolution conflict or a silent
+   downgrade/upgrade.
+
+Full example for a machine with CUDA 13.0 (``cu130``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: bash
+
+   pip install torch==2.11.0 --index-url https://download.pytorch.org/whl/cu130
+   pip install torch_geometric
+   pip install torch_cluster -f https://data.pyg.org/whl/torch-2.11.0+cu130.html
+   pip install cuequivariance-torch
+   pip install cuequivariance-ops-torch-cu13
+   pip install -r requirements.txt
+   pip install --no-deps mace-torch==0.3.16
+   pip install --no-deps nequip==0.12.1 nequip-allegro==0.7.0
+   pip install --no-deps .
+
+Adapt the index URLs and ``cuequivariance-ops`` package name to your platform
+(CPU, ``cu128``, ``cu130``, or ROCm) as needed.
