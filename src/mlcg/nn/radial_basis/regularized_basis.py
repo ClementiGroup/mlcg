@@ -52,7 +52,7 @@ class SymmetricTensor(torch.nn.Module):
     def _check_input_bounds(
         self, i: Union[torch.Tensor, int], j: Union[torch.Tensor, int]
     ):
-        if self.check_bounds:
+        if getattr(self, "check_bounds", False):
             invalid = (i >= self.N) | (j >= self.N) | (i < 0) | (j < 0)
             if invalid.any():
                 raise IndexError(
