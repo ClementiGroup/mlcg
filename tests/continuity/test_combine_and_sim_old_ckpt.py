@@ -4,6 +4,7 @@ import pytest
 from shutil import rmtree
 from pathlib import Path
 from mlcg.utils import load_yaml, dump_yaml
+import torch
 
 _here = Path(__file__).parent
 _ckpt_config_dir = _here / "model_ckpts"
@@ -78,6 +79,9 @@ def test_train_simulation_pipeline(model_ckpt, prior, structures, test_dir):
     ## Prepare simulation config
     sim_config = load_yaml(_here / "base_sim_config.yaml")
     sim_config["structure_file"] = str(structures)
+    sim_config["simulation"]["device"] = (
+        "cuda" if torch.cuda.is_available() else "cpu"
+    )
     dump_yaml(test_dir / "sim_config.yaml", sim_config)
 
     _cmd = [
@@ -90,15 +94,13 @@ def test_train_simulation_pipeline(model_ckpt, prior, structures, test_dir):
         _cmd,
         text=True,
         encoding="utf-8",
-        check=True,
         capture_output=True,
         cwd=test_dir,  # Run from test_dir
     )
 
     print("\n--- STDOUT ---\n", result.stdout)
     print("\n--- STDERR ---\n", result.stderr)
-
-    result.check_returncode()
+    assert result.returncode == 0, f"Failed simulation"
 
     # Clean after every iteration: always run also if the test fails
     if test_dir.exists():

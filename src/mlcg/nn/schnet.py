@@ -678,50 +678,22 @@ class AttentiveSchNet(SchNet):
 
 
 class RBFRegularizedSchNet(StandardSchNet):
-    """
+    __doc = StandardSchNet.__doc__
+    __params_onwards = __doc[__doc.index("Parameters") :]
+    __doc__ = (
+        """
     This is a StandardSchNet model where the RBF components are weighted via Hadamard product with couple-specific
     vectors. Each tuple of bead types has its own vector.
     The models also adds the key radial_filters to the output dictionary, containing the regularization parameters.
 
-    Parameters
-    ----------
-    rbf_layer:
-        radial basis function used to project the distances :math:`r_{ij}`.
-    cutoff:
-        smooth cutoff function to supply to the CFConv
-    output_hidden_layer_widths:
-        List giving the number of hidden nodes of each hidden layer of the MLP
-        used to predict the target property from the learned representation.
-    hidden_channels:
-        dimension of the learned representation, i.e. dimension of the embeding projection, convolution layers, and interaction block.
-    embedding_size:
-        dimension of the input embeddings (should be larger than :obj:`AtomicData.atom_types.max()+1`).
-    num_filters:
-        number of nodes of the networks used to filter the projected distances
-    num_interactions:
-        number of interaction blocks
-    activation:
-        activation function
-    max_num_neighbors:
-        The maximum number of neighbors to return for each atom in :obj:`data`.
-        If the number of actual neighbors is greater than
-        :obj:`max_num_neighbors`, returned neighbors are picked randomly.
-    aggr:
-        Aggregation scheme for continuous filter output. For all options,
-        see `here <https://pytorch-geometric.readthedocs.io/en/latest/notes/create_gnn.html?highlight=MessagePassing#the-messagepassing-base-class>`_
-        for more options.
-    nls_distance_method:
-        Method for computing a neighbor list. Supported values are
-        `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`
-        and `custom_kernel`.
-
-    CLASS SPECIFIC PARAMETERS -------------------------------------------------------------
-
-    independent_regularizations: bool
+    """
+        + __params_onwards
+        + """
+    independent_regularizations (bool):
         If True each interaction block has its own set of regularization parameters,
         otherwise the regularization parameters are shared across all interaction blocks.
-
     """
+    )
 
     def __init__(
         self,

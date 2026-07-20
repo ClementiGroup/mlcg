@@ -1,0 +1,18 @@
+stages:
+  - test
+
+test_job:
+  before_script:
+    - uv sync --extra cu130 --group dev
+  script:
+    - source .venv/bin/activate
+    - pytest -m "unit" --verbose --junitxml="tests${CI_NODE_INDEX}.xml" --durations-path tests/.test_durations --splits "$CI_NODE_TOTAL" --group "$CI_NODE_INDEX" --splitting-algorithm least_duration
+    - pytest -m "continuity" --verbose --junitxml="tests${CI_NODE_INDEX}.xml" --durations-path tests/.test_durations --splits "$CI_NODE_TOTAL" --group "$CI_NODE_INDEX" --splitting-algorithm least_duration
+    - pytest -m "integration" --verbose --junitxml="tests${CI_NODE_INDEX}.xml" --durations-path tests/.test_durations --splits "$CI_NODE_TOTAL" --group "$CI_NODE_INDEX" --splitting-algorithm least_duration
+  parallel: 4
+  artifacts:
+    when: always
+    paths:
+      - "tests${CI_NODE_INDEX}.xml"
+    reports:
+      junit: "tests${CI_NODE_INDEX}.xml"

@@ -28,6 +28,7 @@ from mlcg.utils import load_yaml, dump_yaml
 from pathlib import Path
 import pytest
 import os
+import torch
 from shutil import rmtree
 
 _here = Path(__file__).parent
@@ -79,9 +80,13 @@ def test_architecture(model_yaml, test_dir):
         data_path.parent / "small_partition_demo.yaml"
     )
     training_yaml["trainer"]["max_epochs"] = 4
-    training_yaml["trainer"].pop("devices")
+    if torch.cuda.is_available():
+        training_yaml["trainer"]["devices"] = 1
+        training_yaml["trainer"]["accelerator"] = "gpu"
+    else:
+        training_yaml["trainer"].pop("devices")
+        training_yaml["trainer"]["accelerator"] = "cpu"
     training_yaml["trainer"]["default_root_dir"] = str(test_dir)
-    training_yaml["trainer"]["accelerator"] = "cpu"
     training_yaml["ckpt_path"] = f"{_here}/training_ckpts/{name}_train.ckpt"
     dump_yaml(test_dir / "pytest_training.yaml", training_yaml)
 

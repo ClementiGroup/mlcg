@@ -1,41 +1,40 @@
-from typing import Any, Callable, Dict, List, Optional, Union, Final, Tuple
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Union,
+    Final,
+    Tuple,
+    Type,
+)
 
 import torch
 from e3nn import nn, o3
 from e3nn.util.jit import compile_mode
+from mace.modules.radial import ZBLBasis
+from mace.tools.scatter import scatter_sum
+from mace.tools import to_one_hot
 
-try:
-    from mace.modules.radial import ZBLBasis
-    from mace.tools.scatter import scatter_sum
-    from mace.tools import to_one_hot
-
-    from mace.modules.blocks import (
-        EquivariantProductBasisBlock,
-        LinearNodeEmbeddingBlock,
-        LinearReadoutBlock,
-        NonLinearReadoutBlock,
-        RadialEmbeddingBlock,
-        InteractionBlock,
-    )
-    from mace.modules.utils import get_edge_vectors_and_lengths
-    from mace.modules.wrapper_ops import (
-        Linear,
-        TensorProduct,
-        FullyConnectedTensorProduct,
-    )
-    from mace.modules.irreps_tools import (
-        reshape_irreps,
-        tp_out_irreps_with_instructions,
-    )
-
-except ImportError as e:
-    print(e)
-    print(
-        "Please install or set mace to your path before using this interface. "
-        + "To install you can either run 'pip install git+https://github.com/ACEsuit/mace.git@v0.3.13', "
-        + "or clone the repository and add it to your PYTHONPATH."
-        ""
-    )
+from mace.modules.blocks import (
+    EquivariantProductBasisBlock,
+    LinearNodeEmbeddingBlock,
+    LinearReadoutBlock,
+    NonLinearReadoutBlock,
+    RadialEmbeddingBlock,
+    InteractionBlock,
+)
+from mace.modules.utils import get_edge_vectors_and_lengths
+from mace.modules.wrapper_ops import (
+    Linear,
+    TensorProduct,
+    FullyConnectedTensorProduct,
+)
+from mace.modules.irreps_tools import (
+    reshape_irreps,
+    tp_out_irreps_with_instructions,
+)
 
 try:
     import cuequivariance as cue
@@ -49,24 +48,34 @@ except ImportError:
         + "To install cuEquivariance run pip install cuequivariance cuequivariance-torch cuequivariance-ops-torch-cu12 "
         + 'Replace "cu12" with "cu11" if you are using CUDA 11.'
     )
-
 if CUET_AVAILABLE:
     from mace.modules.wrapper_ops import CuEquivarianceConfig
 
-# from ..pl.model import get_class_from_str
+try:
+    import openequivariance as oeq
+
+    OEQ_AVAILABLE = True
+
+except ImportError:
+    OEQ_AVAILABLE = False
+    print(
+        "openequivariance is not installed. openequivariance features will be disabled. It is recommended to install openequivariance for better performance. "
+        + "To install openequivariance run pip install openequivariance"
+    )
+if OEQ_AVAILABLE:
+    from mace.modules.wrapper_ops import OEQConfig
+
 from ..data.atomic_data import AtomicData, ENERGY_KEY
 from ..neighbor_list.neighbor_list import (
     atomic_data2neighbor_list,
     validate_neighborlist,
 )
-
-from e3nn.util.jit import compile_mode
+from .radial_basis import RegularizedMACEBasis
 
 
 # This is a copy of the residual RealAgnosticResidualInteractionBlock as it is in
-# mace v0.3.13
+# mace v0.3.16
 # https://github.com/ACEsuit/mace/blob/b5faaa076c49778fc17493edfecebcabeb960155/mace/modules/blocks.py#L474
-@compile_mode("script")
 class CustomRealAgnosticResidualInteractionBlock(InteractionBlock):
     r"""version of the mace.modules.blocks RealAgnosticResidualInteractionBlock
     without a hardcoded tanh gate.
@@ -78,28 +87,32 @@ class CustomRealAgnosticResidualInteractionBlock(InteractionBlock):
     def _setup(self) -> None:
         if not hasattr(self, "cueq_config"):
             self.cueq_config = None
+        if not hasattr(self, "oeq_config"):
+            self.oeq_config = None
+
         # First linear
         self.linear_up = Linear(
             self.node_feats_irreps,
-            self.node_feats_irreps,
+            self.edge_irreps,
             internal_weights=True,
             shared_weights=True,
             cueq_config=self.cueq_config,
         )
         # TensorProduct
         irreps_mid, instructions = tp_out_irreps_with_instructions(
-            self.node_feats_irreps,
+            self.edge_irreps,
             self.edge_attrs_irreps,
             self.target_irreps,
         )
         self.conv_tp = TensorProduct(
-            self.node_feats_irreps,
+            self.edge_irreps,
             self.edge_attrs_irreps,
             irreps_mid,
             instructions=instructions,
             shared_weights=False,
             internal_weights=False,
             cueq_config=self.cueq_config,
+            oeq_config=self.oeq_config,
         )
 
         # Convolution weights
@@ -137,13 +150,11 @@ class CustomRealAgnosticResidualInteractionBlock(InteractionBlock):
         edge_attrs: torch.Tensor,
         edge_feats: torch.Tensor,
         edge_index: torch.Tensor,
+        cutoff: Optional[torch.Tensor] = None,
         lammps_class: Optional[Any] = None,
         lammps_natoms: Tuple[int, int] = (0, 0),
         first_layer: bool = False,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-        sender = edge_index[0]
-        receiver = edge_index[1]
-        num_nodes = node_feats.shape[0]
         n_real = lammps_natoms[0] if lammps_class is not None else None
         sc = self.skip_tp(node_feats, node_attrs)
         node_feats = self.linear_up(node_feats)
@@ -154,12 +165,23 @@ class CustomRealAgnosticResidualInteractionBlock(InteractionBlock):
             first_layer=first_layer,
         )
         tp_weights = self.conv_tp_weights(edge_feats)
-        mji = self.conv_tp(
-            node_feats[sender], edge_attrs, tp_weights
-        )  # [n_edges, irreps]
-        message = scatter_sum(
-            src=mji, index=receiver, dim=0, dim_size=num_nodes
-        )  # [n_nodes, irreps]
+        if cutoff is not None:
+            tp_weights = tp_weights * cutoff
+        message = None
+        if hasattr(self, "conv_fusion"):
+            message = self.conv_tp(
+                node_feats, edge_attrs, tp_weights, edge_index
+            )
+        else:
+            mji = self.conv_tp(
+                node_feats[edge_index[0]], edge_attrs, tp_weights
+            )  # [n_nodes, irreps]
+            message = scatter_sum(
+                src=mji,
+                index=edge_index[1],
+                dim=0,
+                dim_size=node_feats.shape[0],
+            )
         message = self.truncate_ghosts(message, n_real)
         node_attrs = self.truncate_ghosts(node_attrs, n_real)
         sc = self.truncate_ghosts(sc, n_real)
@@ -170,33 +192,33 @@ class CustomRealAgnosticResidualInteractionBlock(InteractionBlock):
         )  # [n_nodes, channels, (lmax + 1)**2]
 
 
-@compile_mode("script")
 class MACE(torch.nn.Module):
     """
     Implementation of MACE neural network model from https://github.com/ACEsuit/mace
 
-    Args:
-        atomic_numbers (torch.Tensor):
-            Tensor of atomic numbers present in the system.
-        node_embedding (torch.nn.Module):
-            Module for embedding node (atom) attributes.
-        radial_embedding (torch.nn.Module):
-            Module for embedding radial (distance) features.
-        spherical_harmonics (torch.nn.Module):
-            Module for computing spherical harmonics of edge vectors.
-        interactions (List[torch.nn.Module]):
-            List of interaction blocks.
-        products (List[torch.nn.Module]):
-            List of product basis blocks.
-        readouts (List[torch.nn.Module]):
-            List of readout blocks.
-        r_max (float):
-            Cutoff radius for neighbor list.
-        max_num_neighbors (int):
-            Maximum number of neighbors per atom.
-        pair_repulsion_fn (torch.nn.Module, optional):
-            Optional pairwise repulsion energy function.
-        nls_distance_method:
+    Parameters
+    ----------
+    atomic_numbers (torch.Tensor):
+        Tensor of atomic numbers present in the system.
+    node_embedding (torch.nn.Module):
+        Module for embedding node (atom) attributes.
+    radial_embedding (torch.nn.Module):
+        Module for embedding radial (distance) features.
+    spherical_harmonics (torch.nn.Module):
+        Module for computing spherical harmonics of edge vectors.
+    interactions (List[torch.nn.Module]):
+        List of interaction blocks.
+    products (List[torch.nn.Module]):
+        List of product basis blocks.
+    readouts (List[torch.nn.Module]):
+        List of readout blocks.
+    r_max (float):
+        Cutoff radius for neighbor list.
+    max_num_neighbors (int):
+        Maximum number of neighbors per atom.
+    pair_repulsion_fn (torch.nn.Module, optional):
+        Optional pairwise repulsion energy function.
+    nls_distance_method:
         Method for computing a neighbor list. Supported values are
         `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`
         and `custom_kernel`.
@@ -244,13 +266,15 @@ class MACE(torch.nn.Module):
         """
         Forward pass of the MACE model.
 
-        Args:
-            data (AtomicData):
-                Input atomic data object.
+        Parameters
+        ----------
+        data (AtomicData):
+            Input atomic data object.
 
-        Returns:
-            AtomicData:
-                Output data with predicted energies in `data.out`.
+        Returns
+        -------
+        AtomicData:
+            Output data with predicted energies in `data.out`.
         """
         # Setup
         num_atoms_arange = torch.arange(data.pos.shape[0])
@@ -278,7 +302,7 @@ class MACE(torch.nn.Module):
             shifts=neighbor_list["cell_shifts"],
         )
         edge_attrs = self.spherical_harmonics(vectors)
-        edge_feats = self.radial_embedding(
+        edge_feats, cutoff = self.radial_embedding(
             lengths, node_attrs, edge_index, self.atomic_numbers
         )
 
@@ -299,20 +323,25 @@ class MACE(torch.nn.Module):
                 dtype=data.pos.dtype,
             )
 
-        # Interactions
         energies = [pair_energy]
-        for interaction, product, readout in zip(
-            self.interactions, self.products, self.readouts
+
+        # Interactions
+        for i, (interaction, product, readout) in enumerate(
+            zip(self.interactions, self.products, self.readouts)
         ):
             node_feats, sc = interaction(
-                node_attrs=node_attrs,
+                node_attrs=node_attrs.to(dtype=node_feats.dtype),
                 node_feats=node_feats,
                 edge_attrs=edge_attrs,
                 edge_feats=edge_feats,
                 edge_index=edge_index,
+                cutoff=cutoff,
+                first_layer=(i == 0),
             )
             node_feats = product(
-                node_feats=node_feats, sc=sc, node_attrs=node_attrs
+                node_feats=node_feats,
+                sc=sc,
+                node_attrs=node_attrs.to(dtype=node_feats.dtype),
             )
             node_energies = readout(node_feats, node_heads)[
                 num_atoms_arange, node_heads
@@ -364,7 +393,6 @@ class MACE(torch.nn.Module):
         }
 
 
-@compile_mode("script")
 class StandardMACE(MACE):
     """
     Standard configuration of the MACE model.
@@ -373,53 +401,76 @@ class StandardMACE(MACE):
     with typical settings and block choices, including embedding, interaction,
     and readout modules.
 
-    Args:
-        r_max (float):
-            Cutoff radius for neighbor list.
-        num_bessel (int):
-            Number of Bessel functions for radial basis.
-        num_polynomial_cutoff (int):
-            Number of polynomial cutoff functions.
-        max_ell (int):
-            Maximum angular momentum for spherical harmonics.
-        interaction_cls (str):
-            Class name for interaction blocks.
-        interaction_cls_first (str):
-            Class name for the first interaction block.
-        num_interactions (int):
-            Number of interaction blocks.
-        hidden_irreps (str):
-            Irreducible representations for hidden features. For example if only
-            a scalar representation with 128 channels is used can be "128x0e". If
-            also a vector representation is used can be "128x0e + 128x1o".
-        MLP_irreps (str):
-            Irreducible representations for MLP layers.
-        avg_num_neighbors (float):
-            Average number of neighbors per atom used for normalization and numerical stability.
-        atomic_numbers (List[int]):
-            List of atomic numbers in the system.
-        correlation (Union[int, List[int]]):
-            Correlation order(s) for product blocks.
-        gate (Optional[Callable]):
-            Activation function for non-linearities.
-        max_num_neighbors (int, optional):
-            Maximum number of neighbors per atom.
-        pair_repulsion (bool, optional):
-            Whether to use pairwise repulsion.
-        distance_transform (str, optional):
-            Distance transformation type.
-        radial_MLP (Optional[List[int]], optional):
-            Radial MLP architecture.
-        radial_type (Optional[str], optional):
-            Radial basis type.
-        cueq_config (Optional[Dict[str, Any]], optional):
-            cuEquivariance configuration.
-        use_cueq (Optional[bool], optional):
-            Whether to use cuEquivariance acceleration.
-        nls_distance_method:
-            Method for computing a neighbor list. Supported values are
-            `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`
-            and `custom_kernel`.
+    Parameters
+    ----------
+    r_max (float):
+        Cutoff radius for neighbor list.
+    num_bessel (int):
+        Number of Bessel functions for radial basis.
+    num_polynomial_cutoff (int):
+        Number of polynomial cutoff functions.
+    max_ell (int):
+        Maximum angular momentum for spherical harmonics.
+    interaction_cls (str):
+        Class name for interaction blocks.
+    interaction_cls_first (str):
+        Class name for the first interaction block.
+    num_interactions (int):
+        Number of interaction blocks.
+    hidden_irreps (str):
+        Irreducible representations for hidden features. For example if only
+        a scalar representation with 128 channels is used can be "128x0e". If
+        also a vector representation is used can be "128x0e + 128x1o".
+    MLP_irreps (str):
+        Irreducible representations for MLP layers.
+    avg_num_neighbors (float):
+        Average number of neighbors per atom used for normalization and numerical stability.
+    atomic_numbers (List[int]):
+        List of atomic numbers in the system.
+    correlation (Union[int, List[int]]):
+        Correlation order(s) for product blocks.
+    gate (Optional[Callable]):
+        Activation function for non-linearities.
+    max_num_neighbors (int, optional):
+        Maximum number of neighbors per atom.
+    pair_repulsion (bool, optional):
+        Whether to use pairwise repulsion.
+    distance_transform (str, optional):
+        Distance transformation type.
+    radial_MLP (Optional[List[int]], optional):
+        Radial MLP architecture.
+    radial_type (Optional[str], optional):
+        Radial basis type.
+    apply_cutoff (bool, optional):
+        Whether to apply an envelope cutoff to the radial embedding.
+    use_reduced_cg (bool, optional):
+        Whether to use reduced Clebsch-Gordan coefficients in the product blocks.
+    use_so3 (bool, optional):
+        Whether to use SO(3) spherical harmonics (parity +1 only) instead of O(3).
+    use_agnostic_product (bool, optional):
+        Whether to use element-agnostic symmetric contraction in product blocks.
+    edge_irreps (Optional[o3.Irreps], optional):
+        Custom irreps for edge features in interaction blocks (all layers except first).
+        If None, defaults to the standard interaction irreps.
+    use_edge_irreps_first (bool, optional):
+        Whether to apply `edge_irreps` also to the first interaction block's scalar channels.
+    cueq_config (Optional[Dict[str, Any]], optional):
+        cuEquivariance configuration.
+    use_cueq (Optional[bool], optional):
+        Whether to use cuEquivariance acceleration.
+    oeq_config (Optional[Dict[str, Any]], optional):
+        openequivariance configuration.
+    use_oeq (Optional[bool], optional):
+        Whether to use openequivariance acceleration.
+    readout_cls (Optional[Type[NonLinearReadoutBlock]], optional):
+        Class to use for the final (non-linear) readout block.
+    keep_last_layer_irreps (bool, optional):
+        If False, the last interaction layer outputs only scalar irreps, reducing
+        parameters. Defaults to True for backward compatibility.
+    nls_distance_method:
+        Method for computing a neighbor list. Supported values are
+        `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`
+        and `custom_kernel`.
     """
 
     def __init__(
@@ -439,13 +490,27 @@ class StandardMACE(MACE):
         gate: Optional[Callable],
         max_num_neighbors: int = 1000,
         pair_repulsion: bool = False,
+        apply_cutoff: bool = True,
+        use_reduced_cg: bool = True,
+        use_so3: bool = False,
+        use_agnostic_product: bool = False,
         distance_transform: str = "None",
+        edge_irreps: Optional[o3.Irreps] = None,
+        use_edge_irreps_first: bool = False,
         radial_MLP: Optional[List[int]] = None,
         radial_type: Optional[str] = "bessel",
         cueq_config: Optional[Any] = None,
         use_cueq: Optional[
             bool
-        ] = False,  # defaults to False for backwards compatibility
+        ] = False,  # Defaults to False for backwards compatibility
+        oeq_config: Optional[Dict[str, Any]] = None,
+        use_oeq: Optional[
+            bool
+        ] = False,  # Defaults to False for backwards compatibility
+        readout_cls: Optional[
+            Type[NonLinearReadoutBlock]
+        ] = NonLinearReadoutBlock,
+        keep_last_layer_irreps: bool = True,  # Default to True for backward compatibility
         nls_distance_method: str = "torch",
     ):
         from mlcg.pl.model import get_class_from_str
@@ -472,9 +537,25 @@ class StandardMACE(MACE):
                 group="O3",
                 optimize_all=True,
             )
-        else:
-            print("Using e3nn. cuEquivariance acceleration is disabled.")
+            oeq_config = None
+        elif OEQ_AVAILABLE and use_oeq:
+            print("=" * 60)
+            print("INITIALIZING OPEN EQUIVARIANCE")
+            print("=" * 60)
+            print("This may take a few minutes.")
+            print("=" * 60)
+            oeq_config = OEQConfig(
+                enabled=True,
+                optimize_all=True,
+                conv_fusion="atomic",
+            )
             cueq_config = None
+        else:
+            print(
+                "Using e3nn. cuEquivariance and openequivariance acceleration are disabled."
+            )
+            cueq_config = None
+            oeq_config = None
         if isinstance(correlation, int):
             correlation = [correlation] * num_interactions
         # Embedding
@@ -493,6 +574,7 @@ class StandardMACE(MACE):
             num_polynomial_cutoff=num_polynomial_cutoff,
             radial_type=radial_type,
             distance_transform=distance_transform,
+            apply_cutoff=apply_cutoff,
         )
         edge_feats_irreps = o3.Irreps(f"{radial_embedding.out_dim}x0e")
 
@@ -501,8 +583,24 @@ class StandardMACE(MACE):
             pair_repulsion_fn = ZBLBasis(p=num_polynomial_cutoff)
 
         sh_irreps = o3.Irreps.spherical_harmonics(max_ell)
+        if not use_so3:
+            sh_irreps = o3.Irreps.spherical_harmonics(max_ell)
+        else:
+            sh_irreps = o3.Irreps.spherical_harmonics(max_ell, p=1)
         num_features = hidden_irreps.count(o3.Irrep(0, 1))
-        interaction_irreps = (sh_irreps * num_features).sort()[0].simplify()
+        # interaction_irreps = (sh_irreps * num_features).sort()[0].simplify()
+        sh_irreps_inter = sh_irreps
+        if hidden_irreps.count(o3.Irrep(0, -1)) > 0:
+            sh_irreps_inter = o3.Irreps(
+                "+".join([f"1x{i}e+1x{i}o" for i in range(max_ell + 1)])
+            )
+        interaction_irreps = (
+            (sh_irreps_inter * num_features).sort()[0].simplify()
+        )
+        interaction_irreps_first = (
+            (sh_irreps * num_features).sort()[0].simplify()
+        )
+
         spherical_harmonics = o3.SphericalHarmonics(
             sh_irreps, normalize=True, normalization="component"
         )
@@ -510,16 +608,27 @@ class StandardMACE(MACE):
             radial_MLP = [64, 64, 64]
 
         # Interactions and readout
+        if num_interactions == 1 and not keep_last_layer_irreps:
+            hidden_irreps_out = str(hidden_irreps[0])
+        else:
+            hidden_irreps_out = hidden_irreps
+        edge_irreps_first = None
+        if use_edge_irreps_first and edge_irreps is not None:
+            edge_irreps_first = o3.Irreps(
+                f"{edge_irreps.count(o3.Irrep(0, 1))}x0e"
+            )
         inter = get_class_from_str(interaction_cls_first)(
             node_attrs_irreps=node_attr_irreps,
             node_feats_irreps=node_feats_irreps,
             edge_attrs_irreps=sh_irreps,
             edge_feats_irreps=edge_feats_irreps,
-            target_irreps=interaction_irreps,
-            hidden_irreps=hidden_irreps,
+            target_irreps=interaction_irreps_first,
+            hidden_irreps=hidden_irreps_out,
+            edge_irreps=edge_irreps_first,
             avg_num_neighbors=avg_num_neighbors,
             radial_MLP=radial_MLP,
             cueq_config=cueq_config,
+            oeq_config=oeq_config,
         )
         interactions = [inter]
 
@@ -531,11 +640,14 @@ class StandardMACE(MACE):
         node_feats_irreps_out = inter.target_irreps
         prod = EquivariantProductBasisBlock(
             node_feats_irreps=node_feats_irreps_out,
-            target_irreps=hidden_irreps,
+            target_irreps=hidden_irreps_out,
             correlation=correlation[0],
             num_elements=num_elements,
             use_sc=use_sc_first,
             cueq_config=cueq_config,
+            oeq_config=oeq_config,
+            use_reduced_cg=use_reduced_cg,
+            use_agnostic_product=use_agnostic_product,
         )
         products = [prod]
 
@@ -544,7 +656,7 @@ class StandardMACE(MACE):
         ]
 
         for i in range(num_interactions - 1):
-            if i == num_interactions - 2:
+            if i == num_interactions - 2 and not keep_last_layer_irreps:
                 hidden_irreps_out = str(
                     hidden_irreps[0]
                 )  # Select only scalars for last layer
@@ -558,8 +670,10 @@ class StandardMACE(MACE):
                 target_irreps=interaction_irreps,
                 hidden_irreps=hidden_irreps_out,
                 avg_num_neighbors=avg_num_neighbors,
+                edge_irreps=edge_irreps,
                 radial_MLP=radial_MLP,
                 cueq_config=cueq_config,
+                oeq_config=oeq_config,
             )
             interactions.append(inter)
             prod = EquivariantProductBasisBlock(
@@ -569,23 +683,30 @@ class StandardMACE(MACE):
                 num_elements=num_elements,
                 use_sc=True,
                 cueq_config=cueq_config,
+                oeq_config=oeq_config,
+                use_reduced_cg=use_reduced_cg,
+                use_agnostic_product=use_agnostic_product,
             )
             products.append(prod)
             if i == num_interactions - 2:
                 readouts.append(
-                    NonLinearReadoutBlock(
+                    readout_cls(
                         hidden_irreps_out,
                         (1 * MLP_irreps).simplify(),
                         gate,
                         o3.Irreps("1x0e"),
                         1,
                         cueq_config,
+                        oeq_config,
                     )
                 )
             else:
                 readouts.append(
                     LinearReadoutBlock(
-                        hidden_irreps, o3.Irreps("1x0e"), cueq_config
+                        hidden_irreps,
+                        o3.Irreps("1x0e"),
+                        cueq_config,
+                        oeq_config,
                     )
                 )
 
@@ -602,3 +723,213 @@ class StandardMACE(MACE):
             pair_repulsion_fn,
             nls_distance_method=nls_distance_method,
         )
+
+
+class RBFRegularizedMACE(StandardMACE):
+    __doc = StandardMACE.__doc__
+    __params_onwards = __doc[__doc.index("Parameters") :]
+    __doc__ = (
+        """
+    This is a StandardMACE model where the RBF components are weighted via Hadamard product with couple-specific
+    vectors. Each tuple of bead types has its own vector.
+    The models also adds the key radial_filters to the output dictionary, containing the regularization parameters.
+
+    """
+        + __params_onwards
+        + """
+    independent_regularizations (bool):
+        If True each interaction block has its own set of regularization parameters,
+        otherwise the regularization parameters are shared across all interaction blocks.
+    """
+    )
+
+    def __init__(
+        self,
+        r_max: float,
+        num_bessel: int,
+        num_polynomial_cutoff: int,
+        max_ell: int,
+        interaction_cls: str,
+        interaction_cls_first: str,
+        num_interactions: int,
+        hidden_irreps: str,
+        MLP_irreps: str,
+        avg_num_neighbors: float,
+        atomic_numbers: List[int],
+        correlation: Union[int, List[int]],
+        gate: Optional[Callable],
+        max_num_neighbors: int = 1000,
+        pair_repulsion: bool = False,
+        apply_cutoff: bool = True,
+        use_reduced_cg: bool = True,
+        use_so3: bool = False,
+        use_agnostic_product: bool = False,
+        distance_transform: str = "None",
+        edge_irreps: Optional[o3.Irreps] = None,
+        use_edge_irreps_first: bool = False,
+        radial_MLP: Optional[List[int]] = None,
+        radial_type: Optional[str] = "bessel",
+        cueq_config: Optional[Any] = None,
+        use_cueq: Optional[
+            bool
+        ] = False,  # Defaults to False for backwards compatibility
+        oeq_config: Optional[Dict[str, Any]] = None,
+        use_oeq: Optional[
+            bool
+        ] = False,  # Defaults to False for backwards compatibility
+        readout_cls: Optional[
+            Type[NonLinearReadoutBlock]
+        ] = NonLinearReadoutBlock,
+        keep_last_layer_irreps: bool = True,  # Default to True for backward compatibility
+        nls_distance_method: str = "torch",
+        independent_regularizations: bool = False,
+    ):
+
+        super(RBFRegularizedMACE, self).__init__(
+            r_max=r_max,
+            num_bessel=num_bessel,
+            num_polynomial_cutoff=num_polynomial_cutoff,
+            max_ell=max_ell,
+            interaction_cls=interaction_cls,
+            interaction_cls_first=interaction_cls_first,
+            num_interactions=num_interactions,
+            hidden_irreps=hidden_irreps,
+            MLP_irreps=MLP_irreps,
+            avg_num_neighbors=avg_num_neighbors,
+            atomic_numbers=atomic_numbers,
+            correlation=correlation,
+            gate=gate,
+            max_num_neighbors=max_num_neighbors,
+            pair_repulsion=pair_repulsion,
+            apply_cutoff=apply_cutoff,
+            use_reduced_cg=use_reduced_cg,
+            use_so3=use_so3,
+            use_agnostic_product=use_agnostic_product,
+            distance_transform=distance_transform,
+            edge_irreps=edge_irreps,
+            use_edge_irreps_first=use_edge_irreps_first,
+            radial_MLP=radial_MLP,
+            radial_type=radial_type,
+            cueq_config=cueq_config,
+            use_cueq=use_cueq,
+            oeq_config=oeq_config,
+            use_oeq=use_oeq,
+            readout_cls=readout_cls,
+            keep_last_layer_irreps=keep_last_layer_irreps,
+            nls_distance_method=nls_distance_method,
+        )
+
+        initial_radial_embedding = self.radial_embedding
+        self.radial_embedding = RegularizedMACEBasis(
+            basis_function=initial_radial_embedding,
+            types=self.atomic_numbers.max().item() + 1,
+            n_basis_set=num_interactions,
+            independent_regularizations=independent_regularizations,
+        )
+
+    def forward(self, data: AtomicData) -> AtomicData:
+        """
+        Forward pass of the MACE model.
+
+        Parameters
+        ----------
+        data (AtomicData):
+            Input atomic data object.
+
+        Returns
+        -------
+        AtomicData:
+            Output data with predicted energies in `data.out`.
+        """
+        # Setup
+        num_atoms_arange = torch.arange(data.pos.shape[0])
+        num_graphs = data.ptr.numel() - 1  # data.batch.max()
+        node_heads = torch.zeros_like(data.batch)
+
+        types_ids = self.types_mapping[data.atom_types].view(-1, 1)
+        node_attrs = to_one_hot(types_ids, self.atomic_numbers.shape[0])
+
+        # Embeddings
+        node_feats = self.node_embedding(node_attrs)
+
+        neighbor_list = data.neighbor_list.get(self.name)
+
+        if not self.is_nl_compatible(neighbor_list):
+            neighbor_list = self.neighbor_list(
+                data, self.r_max, self.max_num_neighbors
+            )[self.name]
+
+        edge_index = neighbor_list["index_mapping"]
+
+        vectors, lengths = get_edge_vectors_and_lengths(
+            positions=data.pos,
+            edge_index=edge_index,
+            shifts=neighbor_list["cell_shifts"],
+        )
+        edge_attrs = self.spherical_harmonics(vectors)
+        edge_feats, cutoff = self.radial_embedding(
+            lengths,
+            node_attrs,
+            edge_index,
+            self.atomic_numbers,
+            data.atom_types[edge_index[0]],
+            data.atom_types[edge_index[1]],
+        )
+
+        if self.pair_repulsion_fn:
+            pair_node_energy = self.pair_repulsion_fn(
+                lengths, node_attrs, edge_index, self.atomic_numbers
+            )
+            pair_energy = scatter_sum(
+                src=pair_node_energy,
+                index=data["batch"],
+                dim=-1,
+                dim_size=num_graphs,
+            )
+        else:
+            pair_energy = torch.zeros(
+                data.batch.max() + 1,
+                device=data.pos.device,
+                dtype=data.pos.dtype,
+            )
+
+        # Interactions
+        energies = [pair_energy]
+        for i, (interaction, product, readout) in enumerate(
+            zip(self.interactions, self.products, self.readouts)
+        ):
+            node_feats, sc = interaction(
+                node_attrs=node_attrs.to(dtype=node_feats.dtype),
+                node_feats=node_feats,
+                edge_attrs=edge_attrs,
+                edge_feats=edge_feats[i],
+                edge_index=edge_index,
+                cutoff=cutoff,
+                first_layer=(i == 0),
+            )
+            node_feats = product(
+                node_feats=node_feats,
+                sc=sc,
+                node_attrs=node_attrs.to(dtype=node_feats.dtype),
+            )
+            node_energies = readout(node_feats, node_heads)[
+                num_atoms_arange, node_heads
+            ]
+            energy = scatter_sum(
+                src=node_energies,
+                index=data["batch"],
+                dim=0,
+                dim_size=num_graphs,
+            )
+            energies.append(energy)
+
+        # Sum over energy contributions
+        contributions = torch.stack(energies, dim=-1)
+        total_energy = torch.sum(contributions, dim=-1)
+
+        data.out[self.name] = {
+            ENERGY_KEY: total_energy,
+            "radial_filters": self.radial_embedding.get_regularization_parameters(),
+        }
+
+        return data
