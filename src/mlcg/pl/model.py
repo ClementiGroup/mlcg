@@ -114,7 +114,7 @@ class PLModel(pl.LightningModule):
         with torch.set_grad_enabled(stage == "train" or self.derivative):
             data = self.model(data)
         data.out.update(**data.out[self.model.name])
-        loss = self.loss(data)
+        loss, components = self.loss(data)
         batch_size = data[N_ATOMS_KEY].shape[0]
         # Add sync_dist=True to sync logging across all GPU workers
         self.log(
@@ -127,6 +127,17 @@ class PLModel(pl.LightningModule):
             batch_size=batch_size,
             logger=True,
         )
+        # unweighted per-component losses: weight-independent, comparable across runs
+        for name, value in components.items():
+            self.log(
+                f"{stage}_{name}",
+                value,
+                on_step=(stage == "train"),
+                on_epoch=True,
+                sync_dist=True,
+                batch_size=batch_size,
+                logger=True,
+            )
 
         return loss, batch_size
 

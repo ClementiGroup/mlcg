@@ -34,7 +34,7 @@ class Loss(torch.nn.Module):
         self.register_buffer("weights", weights)
         self.losses = losses
 
-    def forward(self, data: AtomicData) -> torch.Tensor:
+    def forward(self, data: AtomicData):
         """Forward pass that sums up the (weighted) contributions
         of each loss function
 
@@ -47,14 +47,23 @@ class Loss(torch.nn.Module):
         Returns
         -------
         loss:
-            The scalar losses aggreagted from each loss function
+            The scalar loss aggregated (weighted) from each loss function
             over the entire AtomicData instance
+        components:
+            Dict mapping each loss function name to its *unweighted* scalar
+            value, for weight-independent logging/comparison across runs
         """
 
-        loss = torch.zeros((len(self.losses)), device=self.weights.device)
+        components = {}
+        total = torch.zeros((), device=self.weights.device)
         for ii, loss_fn in enumerate(self.losses):
-            loss[ii] = loss_fn(data) * self.weights[ii]
-        return loss.sum()
+            raw = loss_fn(data)
+            name = loss_fn.__class__.__name__
+            if name in components:
+                name = f"{name}_{ii}"
+            components[name] = raw.detach()
+            total = total + raw * self.weights[ii]
+        return total, components
 
 
 class ForceRMSE(_Loss):
