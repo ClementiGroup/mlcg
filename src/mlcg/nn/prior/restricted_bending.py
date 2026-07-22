@@ -135,12 +135,12 @@ class RestrictedQuartic(_Prior):
         )
 
         params = {
-            "a": self.a[interaction_types].flatten(),
-            "b": self.b[interaction_types].flatten(),
-            "c": self.c[interaction_types].flatten(),
-            "d": self.d[interaction_types].flatten(),
-            "k": self.k[interaction_types].flatten(),
-            "v_0": self.v_0[interaction_types].flatten(),
+            "a": self.a[tuple(interaction_types)].flatten(),
+            "b": self.b[tuple(interaction_types)].flatten(),
+            "c": self.c[tuple(interaction_types)].flatten(),
+            "d": self.d[tuple(interaction_types)].flatten(),
+            "k": self.k[tuple(interaction_types)].flatten(),
+            "v_0": self.v_0[tuple(interaction_types)].flatten(),
         }
         return params
 

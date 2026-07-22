@@ -112,7 +112,7 @@ class Repulsion(_Prior):
             data.atom_types[mapping[ii]] for ii in range(self.order)
         ]
         features = self.data2features(data)
-        y = Repulsion.compute(features, self.sigma[interaction_types])
+        y = Repulsion.compute(features, self.sigma[tuple(interaction_types)])
         y = scatter(y, mapping_batch, dim=0, reduce="sum")
         data.out[self.name] = {"energy": y}
         return data
@@ -284,9 +284,9 @@ class CutoffRepulsion(Repulsion):
             data.atom_types[mapping[ii]] for ii in range(self.order)
         ]
 
-        y = Repulsion.compute(features, self.sigma[interaction_types])
+        y = Repulsion.compute(features, self.sigma[tuple(interaction_types)])
         yc, dyc = CutoffRepulsion.compute_with_dev(
-            self.cutoff, self.sigma[interaction_types]
+            self.cutoff, self.sigma[tuple(interaction_types)]
         )
         # ensure that the cutoff is continupus
         y = y - yc - (features - self.cutoff) * (dyc)
@@ -390,7 +390,7 @@ class ExpRepulsion(_Prior):
         ]
         features = self.data2features(data)
         y = ExpRepulsion.compute(
-            features, self.alpha[interaction_types], self.r_0[interaction_types]
+            features, self.alpha[tuple(interaction_types)], self.r_0[tuple(interaction_types)]
         )
         y = scatter(y, mapping_batch, dim=0, reduce="sum")
         data.out[self.name] = {"energy": y}
@@ -465,12 +465,12 @@ class CutoffExpRepulsion(ExpRepulsion):
         ]
 
         y = ExpRepulsion.compute(
-            features, self.alpha[interaction_types], self.r_0[interaction_types]
+            features, self.alpha[tuple(interaction_types)], self.r_0[tuple(interaction_types)]
         )
         yc, dyc = CutoffExpRepulsion.compute_with_dev(
             self.cutoff,
-            self.alpha[interaction_types],
-            self.r_0[interaction_types],
+            self.alpha[tuple(interaction_types)],
+            self.r_0[tuple(interaction_types)],
         )
         # ensure that the cutoff is continupus
         y = y - yc - (features - self.cutoff) * dyc

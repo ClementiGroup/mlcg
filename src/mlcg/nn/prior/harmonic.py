@@ -81,8 +81,8 @@ class Harmonic(_Prior):
             data.atom_types[mapping[ii]] for ii in range(self.order)
         ]
         params = {
-            "x0": self.x_0[interaction_types].flatten(),
-            "k": self.k[interaction_types].flatten(),
+            "x0": self.x_0[tuple(interaction_types)].flatten(),
+            "k": self.k[tuple(interaction_types)].flatten(),
         }
         params["V0"] = torch.zeros_like(params["x0"])
         return params

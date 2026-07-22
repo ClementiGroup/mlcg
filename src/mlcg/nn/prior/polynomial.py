@@ -91,9 +91,9 @@ class Polynomial(_Prior):
         ]
         # the parameters have shape n_features x n_degs
         ks = torch.vstack(
-            [self.ks[ii][interaction_types] for ii in range(self.n_degs)]
+            [self.ks[ii][tuple(interaction_types)] for ii in range(self.n_degs)]
         ).t()
-        v_0s = self.v_0[interaction_types].t()
+        v_0s = self.v_0[tuple(interaction_types)].t()
         return {"ks": ks, "v_0s": v_0s}
 
     def forward(self, data: AtomicData) -> AtomicData:

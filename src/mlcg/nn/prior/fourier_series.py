@@ -109,12 +109,12 @@ class FourierSeries(_Prior):
         ]
         # the parameters have shape n_features x n_degs
         k1s = torch.vstack(
-            [self.k1s[ii][interaction_types] for ii in range(self.n_degs)]
+            [self.k1s[ii][tuple(interaction_types)] for ii in range(self.n_degs)]
         ).t()
         k2s = torch.vstack(
-            [self.k2s[ii][interaction_types] for ii in range(self.n_degs)]
+            [self.k2s[ii][tuple(interaction_types)] for ii in range(self.n_degs)]
         ).t()
-        v_0 = self.v_0[interaction_types].view(-1, 1)
+        v_0 = self.v_0[tuple(interaction_types)].view(-1, 1)
         return {"k1s": k1s, "k2s": k2s, "v_0": v_0}
 
     def forward(self, data: AtomicData) -> AtomicData:
