@@ -5,7 +5,7 @@ from ase.build import molecule
 from torch_geometric.data.collate import collate
 
 from mlcg.geometry import Topology
-from mlcg.nn.mace import StandardMACE
+from mlcg.nn.mace import RBFRegularizedMACE
 from mlcg.data.atomic_data import AtomicData
 from mlcg.nn.gradients import GradientsOut
 from mlcg.data._keys import ENERGY_KEY, FORCE_KEY
@@ -96,7 +96,7 @@ mace_config = {
     "radial_type": "bessel",
     "atomic_numbers": database.atomic_numbers,
 }
-test_mace = StandardMACE(**mace_config)
+test_mace = RBFRegularizedMACE(**mace_config)
 
 
 @pytest.mark.parametrize(
@@ -116,7 +116,7 @@ def test_prediction(collated_data, out_keys, expected_shapes):
     """
     print(collated_data.pos.dtype)
 
-    test_mace = StandardMACE(**mace_config)
+    test_mace = RBFRegularizedMACE(**mace_config)
     model = GradientsOut(test_mace, targets=FORCE_KEY).float()
     collated_data = model(collated_data)
     assert len(collated_data.out) != 0
@@ -124,3 +124,38 @@ def test_prediction(collated_data, out_keys, expected_shapes):
     for key, shape in zip(out_keys, expected_shapes):
         assert key in collated_data.out[model.name].keys()
         assert collated_data.out[model.name][key].shape == shape
+
+
+@pytest.mark.parametrize(
+    "collated_data, independent_regularizations",
+    [
+        (database.collated_data, True),
+        (database.collated_data, False),
+    ],
+)
+def test_regularization(collated_data, independent_regularizations):
+    """Test to make sure that the output dictionary is properly populated
+    and that the correspdonding shapes of the outputs are correct given the
+    requested gradient targets.
+    """
+    test_mace = RBFRegularizedMACE(
+        **mace_config,
+        independent_regularizations=independent_regularizations,
+    )
+    model = GradientsOut(test_mace, targets=FORCE_KEY).float()
+    collated_data = model(collated_data)
+    assert len(collated_data.out) != 0
+    assert "mace" in collated_data.out.keys()
+    assert "radial_filters" in collated_data.out[model.name].keys()
+    reg_params = collated_data.out[model.name]["radial_filters"]
+    n_types = int(model.model.atomic_numbers.max()) + 1
+    num_rbf = model.model.radial_embedding.num_rbf
+    n_basis_set = len(model.model.interactions)
+    if not independent_regularizations:
+        assert reg_params.shape == (n_types * (n_types + 1) // 2, num_rbf)
+    else:
+        assert reg_params.shape == (
+            n_basis_set,
+            n_types * (n_types + 1) // 2,
+            num_rbf,
+        )

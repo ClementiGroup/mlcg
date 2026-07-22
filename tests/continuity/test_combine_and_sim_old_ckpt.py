@@ -94,15 +94,13 @@ def test_train_simulation_pipeline(model_ckpt, prior, structures, test_dir):
         _cmd,
         text=True,
         encoding="utf-8",
-        check=True,
         capture_output=True,
         cwd=test_dir,  # Run from test_dir
     )
 
     print("\n--- STDOUT ---\n", result.stdout)
     print("\n--- STDERR ---\n", result.stderr)
-
-    result.check_returncode()
+    assert result.returncode == 0, f"Failed simulation"
 
     # Clean after every iteration: always run also if the test fails
     if test_dir.exists():

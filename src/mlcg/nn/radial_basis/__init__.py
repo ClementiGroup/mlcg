@@ -2,4 +2,4 @@ from .exp_normal import ExpNormalBasis, ExtendedExpNormalBasis, FilteredExpNorma
 from .gaussian import GaussianBasis, FilteredGaussianBasis
 from .radial_integral_gto import RIGTOBasis
 from .exp_spaced import SpacedExpBasis
-from .regularized_basis import RegularizedBasis
+from .regularized_basis import RegularizedBasis, RegularizedMACEBasis

@@ -260,6 +260,7 @@ class RegularizedBasis(torch.nn.Module):
             1000,
         )
         i, j = torch.as_tensor(i), torch.as_tensor(j)
+        self._check_input_bounds(i, j)
         expanded_distances = self(distances, i, j)
 
         if ax is None:
@@ -273,3 +274,82 @@ class RegularizedBasis(torch.nn.Module):
             )
 
         return ax
+
+    def _check_input_bounds(
+        self, i: Union[torch.Tensor, int], j: Union[torch.Tensor, int]
+    ):
+        invalid = (i >= self.types) | (j >= self.types) | (i < 0) | (j < 0)
+        if invalid.any():
+            raise IndexError(
+                f"SymmetricTensor indices out of bounds [0, {self.types})"
+            )
+
+
+class RegularizedMACEBasis(RegularizedBasis):
+    __doc = RegularizedBasis.__doc__
+    __params_onwards = __doc[__doc.index("Parameters") :]
+    __doc__ = """
+        Utility class for applying regularization to provided radial basis function compatible with MACE RadialEmbeddingBlock.
+
+    """ + __params_onwards
+
+    def __init__(
+        self,
+        basis_function: _RadialBasis,
+        types: int,
+        n_basis_set: int,
+        independent_regularizations: bool = False,
+        init_val: Union[float, List] = 1.0,
+    ):
+        basis_function.num_rbf = basis_function.out_dim
+        basis_function.cutoff = basis_function.cutoff_fn
+
+        super().__init__(
+            basis_function=basis_function,
+            types=types,
+            n_basis_set=n_basis_set,
+            independent_regularizations=independent_regularizations,
+            init_val=init_val,
+        )
+
+    def forward(
+        self,
+        edge_lengths,
+        node_attrs,
+        edge_index,
+        atomic_numbers,
+        type_i,
+        type_j,
+    ):
+        r"""
+        Apply the radial basis function and the regularization.
+
+        Parameters:
+        ----------
+        edge_lengths : torch.Tensor
+            Tensor of shape (num_edges,1) containing the distances between atom pairs.
+        node_attrs:
+            Tensor of shape (num_nodes, num_types) containing one-hot encoded atom types.
+        edge_index:
+            Tensor of shape (2, num_edges) containing atom pairs for which edge_lengths are computed.
+        type_i : torch.Tensor
+            Tensor of shape (num_edges,) containing the types of the first atom in each pair.
+        type_j : torch.Tensor
+            Tensor of shape (num_edges,) containing the types of the second atom in each pair.
+
+        Returns:
+        -------
+        torch.Tensor
+            Tensor of shape (n_basis_set, num_edges, num_rbf) containing the regularized radial basis function values.
+
+        """
+        radial, cutoff = self.basis_function(
+            edge_lengths,
+            node_attrs,
+            edge_index,
+            atomic_numbers,
+        )
+
+        reg_params = self._compute_regularization_params_fn(type_i, type_j)
+
+        return radial.unsqueeze(0) * reg_params, cutoff
