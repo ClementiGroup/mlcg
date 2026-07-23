@@ -1555,10 +1555,10 @@ wheels = [
 
 [[packages]]
 name = "pytorch-lightning"
-version = "2.2.1"
+version = "2.6.5"
 index = "https://pypi.org/simple"
-sdist = { url = "https://files.pythonhosted.org/packages/23/9b/da17991bde2a07d01454a1291ef72257363ba99726603451d78c65f9c952/pytorch-lightning-2.2.1.tar.gz", upload-time = 2024-03-04T18:59:36Z, size = 615200, hashes = { sha256 = "aa3be30c9109239a371748565a7f4b7b41ea1395725c30e04426cf946b3e2745" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/56/ed/192d7518b15a06452f480346eeebe1d1d4595af80687e142b2e6f18539fd/pytorch_lightning-2.2.1-py3-none-any.whl", upload-time = 2024-03-04T18:59:32Z, size = 801598, hashes = { sha256 = "b7efdd46a7ede4d66814a6afc28d0dfadd8eea1bb8bddab4fd2ea36c099af685" } }]
+sdist = { url = "https://files.pythonhosted.org/packages/52/2c/8e73a3929b4c4bd600cafd38a97aaf7242a8cf518fb9f33d27c274ec898f/pytorch_lightning-2.6.5.tar.gz", upload-time = 2026-05-27T14:33:41Z, size = 661673, hashes = { sha256 = "1c32cefa76a1a9c4c5250338272d961d1e48b180e68396849efe128538ddb28e" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/8b/4d/5740c27110b83634d8491c3b5facf0111b3e554c3164f4fb953be9bddaf6/pytorch_lightning-2.6.5-py3-none-any.whl", upload-time = 2026-05-27T14:33:39Z, size = 852407, hashes = { sha256 = "62d9c8549b2278fedc3364f0a5607a56c6063d18635008f8cf3fae8d802b0d76" } }]
 
 [[packages]]
 name = "pywinpty"

@@ -1,4 +1,6 @@
 import os.path as osp
+import sys
+from pathlib import Path
 import torch
 import pytorch_lightning.cli as plc
 from torch_geometric.data.makedirs import makedirs
@@ -25,6 +27,34 @@ class LightningCLI(plc.LightningCLI):
     `default_root_dir` / `default_root_dir/data` / `default_root_dir/ckpt`.
 
     """
+
+    def _parse_ckpt_path(self) -> None:
+        """Same as `pytorch_lightning.cli.LightningCLI._parse_ckpt_path`, but
+        loads the checkpoint with `weights_only=False`. mlcg's `PLModel`
+        saves the actual `model`/`loss` objects (not just plain config) as
+        hyperparameters, so `weights_only=True` can never allowlist the full
+        class graph of an arbitrary architecture.
+        """
+        if not self.config.get("subcommand"):
+            return
+        ckpt_path = self.config[self.config.subcommand].get("ckpt_path")
+        if ckpt_path and Path(ckpt_path).is_file():
+            ckpt = torch.load(ckpt_path, weights_only=False, map_location="cpu")
+            hparams = ckpt.get("hyper_parameters", {})
+            hparams.pop("_instantiator", None)
+            if not hparams:
+                return
+            if "_class_path" in hparams:
+                hparams = {
+                    "class_path": hparams.pop("_class_path"),
+                    "dict_kwargs": hparams,
+                }
+            hparams = {self.config.subcommand: {"model": hparams}}
+            try:
+                self.config = self.parser.parse_object(hparams, self.config)
+            except SystemExit:
+                sys.stderr.write("Parsing of ckpt_path hyperparameters failed!\n")
+                raise
 
     def parse_arguments(
         self, parser: plc.LightningArgumentParser, args: plc.ArgsType
