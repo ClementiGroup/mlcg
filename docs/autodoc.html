@@ -200,6 +200,10 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#mlcg.nn.mace.MACE.neighbor_list"><code class="docutils literal notranslate">neighbor_list()</span></code></a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#mlcg.nn.mace.RBFRegularizedMACE"><code class="docutils literal notranslate"><span class="pre">RBFRegularizedMACE</span></code></a><ul>
+<li><a class="reference internal" href="#mlcg.nn.mace.RBFRegularizedMACE.forward"><code class="docutils literal notranslate">forward()</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#mlcg.nn.mace.StandardMACE"><code class="docutils literal notranslate"><span class="pre">StandardMACE</span></code></a></li>
 </ul>
 </li>
@@ -961,10 +965,12 @@ for more options.</p>
 <li><p><strong>nls_distance_method</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Method for computing a neighbor list. Supported values are
 <cite>torch</cite>, <cite>nvalchemi_naive</cite>, <cite>nvalchemi_cell</cite>, <cite>nvalchemi_raw</cite>
 and <cite>custom_kernel</cite>.</p></li>
-<li><p><strong>-------------------------------------------------------------</strong> (<em>CLASS SPECIFIC PARAMETERS</em>)</p></li>
-<li><p><strong>independent_regularizations</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – If True each interaction block has its own set of regularization parameters,
-otherwise the regularization parameters are shared across all interaction blocks.</p></li>
 </ul>
+</dd>
+</dl>
+<dl class="simple">
+<dt>independent_regularizations (bool):</dt><dd><p>If True each interaction block has its own set of regularization parameters,
+otherwise the regularization parameters are shared across all interaction blocks.</p>
 </dd>
 </dl>
 <dl class="py method">
@@ -1433,23 +1439,20 @@ registered hooks while the latter silently ignores them.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>atomic_numbers</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span>) – Tensor of atomic numbers present in the system.</p></li>
-<li><p><strong>node_embedding</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Module for embedding node (atom) attributes.</p></li>
-<li><p><strong>radial_embedding</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Module for embedding radial (distance) features.</p></li>
-<li><p><strong>spherical_harmonics</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Module for computing spherical harmonics of edge vectors.</p></li>
-<li><p><strong>interactions</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code>]</span>) – List of interaction blocks.</p></li>
-<li><p><strong>products</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code>]</span>) – List of product basis blocks.</p></li>
-<li><p><strong>readouts</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code>]</span>) – List of readout blocks.</p></li>
-<li><p><strong>r_max</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – Cutoff radius for neighbor list.</p></li>
-<li><p><strong>max_num_neighbors</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Maximum number of neighbors per atom.</p></li>
-<li><p><strong>pair_repulsion_fn</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span>) – Optional pairwise repulsion energy function.</p></li>
-<li><p><strong>nls_distance_method</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>)</p></li>
-<li><p><strong>are</strong> (<em>Method for computing a neighbor list. Supported values</em>)</p></li>
-<li><p><strong>torch</strong></p></li>
-<li><p><strong>nvalchemi_naive</strong></p></li>
-<li><p><strong>nvalchemi_cell</strong></p></li>
-<li><p><strong>nvalchemi_raw</strong></p></li>
-<li><p><strong>custom_kernel.</strong> (<em>and</em>)</p></li>
+<li><p><strong>(</strong><strong>torch.Tensor</strong><strong>)</strong> (<em>atomic_numbers</em>) – Tensor of atomic numbers present in the system.</p></li>
+<li><p><strong>(</strong><strong>torch.nn.Module</strong><strong>)</strong> (<em>spherical_harmonics</em>) – Module for embedding node (atom) attributes.</p></li>
+<li><p><strong>(</strong><strong>torch.nn.Module</strong><strong>)</strong> – Module for embedding radial (distance) features.</p></li>
+<li><p><strong>(</strong><strong>torch.nn.Module</strong><strong>)</strong> – Module for computing spherical harmonics of edge vectors.</p></li>
+<li><p><strong>(</strong><strong>List</strong><strong>[</strong><strong>torch.nn.Module</strong><strong>]</strong><strong>)</strong> (<em>readouts</em>) – List of interaction blocks.</p></li>
+<li><p><strong>(</strong><strong>List</strong><strong>[</strong><strong>torch.nn.Module</strong><strong>]</strong><strong>)</strong> – List of product basis blocks.</p></li>
+<li><p><strong>(</strong><strong>List</strong><strong>[</strong><strong>torch.nn.Module</strong><strong>]</strong><strong>)</strong> – List of readout blocks.</p></li>
+<li><p><strong>(</strong><strong>float</strong><strong>)</strong> (<em>r_max</em>) – Cutoff radius for neighbor list.</p></li>
+<li><p><strong>(</strong><strong>int</strong><strong>)</strong> (<em>max_num_neighbors</em>) – Maximum number of neighbors per atom.</p></li>
+<li><p><strong>(</strong><strong>torch.nn.Module</strong> (<em>pair_repulsion_fn</em>) – Optional pairwise repulsion energy function.</p></li>
+<li><p><strong>optional</strong><strong>)</strong> – Optional pairwise repulsion energy function.</p></li>
+<li><p><strong>nls_distance_method</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Method for computing a neighbor list. Supported values are
+<cite>torch</cite>, <cite>nvalchemi_naive</cite>, <cite>nvalchemi_cell</cite>, <cite>nvalchemi_raw</cite>
+and <cite>custom_kernel</cite>.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1459,7 +1462,7 @@ registered hooks while the latter silently ignores them.</p>
 <dd><p>Forward pass of the MACE model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>data</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="data/atom_data.html#mlcg.data.atomic_data.AtomicData" title="mlcg.data.atomic_data.AtomicData"><code class="xref py py-class docutils literal notranslate"><span class="pre">AtomicData</span></code></a></span>) – Input atomic data object.</p>
+<dd class="field-odd"><p><strong>(</strong><strong>AtomicData</strong><strong>)</strong> (<em>data</em>) – Input atomic data object.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Output data with predicted energies in <cite>data.out</cite>.</p>
@@ -1484,6 +1487,98 @@ registered hooks while the latter silently ignores them.</p>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="mlcg.nn.mace.RBFRegularizedMACE">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.nn.mace.</span></span><span class="sig-name descname"><span class="pre">RBFRegularizedMACE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">r_max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_bessel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_polynomial_cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_ell</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interaction_cls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interaction_cls_first</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_interactions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hidden_irreps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">MLP_irreps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">avg_num_neighbors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atomic_numbers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">correlation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_neighbors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pair_repulsion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">apply_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_reduced_cg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_so3</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_agnostic_product</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distance_transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'None'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_irreps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_edge_irreps_first</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radial_MLP</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radial_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'bessel'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cueq_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_cueq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">oeq_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_oeq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readout_cls</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;class</span> <span class="pre">'mace.modules.blocks.NonLinearReadoutBlock'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_last_layer_irreps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nls_distance_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'torch'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">independent_regularizations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/mace.html#RBFRegularizedMACE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.mace.RBFRegularizedMACE" title="Link to this definition">¶</a></dt>
+<dd><p>This is a StandardMACE model where the RBF components are weighted via Hadamard product with couple-specific
+vectors. Each tuple of bead types has its own vector.
+The models also adds the key radial_filters to the output dictionary, containing the regularization parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>(</strong><strong>float</strong><strong>)</strong> (<em>avg_num_neighbors</em>) – Cutoff radius for neighbor list.</p></li>
+<li><p><strong>(</strong><strong>int</strong><strong>)</strong> (<em>num_interactions</em>) – Number of Bessel functions for radial basis.</p></li>
+<li><p><strong>(</strong><strong>int</strong><strong>)</strong> – Number of polynomial cutoff functions.</p></li>
+<li><p><strong>(</strong><strong>int</strong><strong>)</strong> – Maximum angular momentum for spherical harmonics.</p></li>
+<li><p><strong>(</strong><strong>str</strong><strong>)</strong> (<em>MLP_irreps</em>) – Class name for interaction blocks.</p></li>
+<li><p><strong>(</strong><strong>str</strong><strong>)</strong> – Class name for the first interaction block.</p></li>
+<li><p><strong>(</strong><strong>int</strong><strong>)</strong> – Number of interaction blocks.</p></li>
+<li><p><strong>(</strong><strong>str</strong><strong>)</strong> – Irreducible representations for hidden features. For example if only
+a scalar representation with 128 channels is used can be “128x0e”. If
+also a vector representation is used can be “128x0e + 128x1o”.</p></li>
+<li><p><strong>(</strong><strong>str</strong><strong>)</strong> – Irreducible representations for MLP layers.</p></li>
+<li><p><strong>(</strong><strong>float</strong><strong>)</strong> – Average number of neighbors per atom used for normalization and numerical stability.</p></li>
+<li><p><strong>(</strong><strong>List</strong><strong>[</strong><strong>int</strong><strong>]</strong><strong>)</strong> (<em>atomic_numbers</em>) – List of atomic numbers in the system.</p></li>
+<li><p><strong>(</strong><strong>Union</strong><strong>[</strong><strong>int</strong> (<em>correlation</em>) – Correlation order(s) for product blocks.</p></li>
+<li><p><strong>List</strong><strong>[</strong><strong>int</strong><strong>]</strong><strong>]</strong><strong>)</strong> – Correlation order(s) for product blocks.</p></li>
+<li><p><strong>(</strong><strong>Optional</strong><strong>[</strong><strong>Callable</strong><strong>]</strong><strong>)</strong> (<em>gate</em>) – Activation function for non-linearities.</p></li>
+<li><p><strong>(</strong><strong>int</strong> (<em>max_num_neighbors</em>) – Maximum number of neighbors per atom.</p></li>
+<li><p><strong>optional</strong><strong>)</strong> – Maximum number of neighbors per atom.</p></li>
+<li><p><strong>(</strong><strong>bool</strong> (<em>keep_last_layer_irreps</em>) – Whether to use pairwise repulsion.</p></li>
+<li><p><strong>optional</strong><strong>)</strong> – Whether to use pairwise repulsion.</p></li>
+<li><p><strong>(</strong><strong>str</strong> (<em>distance_transform</em>) – Distance transformation type.</p></li>
+<li><p><strong>optional</strong><strong>)</strong> – Distance transformation type.</p></li>
+<li><p><strong>(</strong><strong>Optional</strong><strong>[</strong><strong>List</strong><strong>[</strong><strong>int</strong><strong>]</strong><strong>]</strong> (<em>radial_MLP</em>) – Radial MLP architecture.</p></li>
+<li><p><strong>optional</strong><strong>)</strong> – Radial MLP architecture.</p></li>
+<li><p><strong>(</strong><strong>Optional</strong><strong>[</strong><strong>str</strong><strong>]</strong> (<em>radial_type</em>) – Radial basis type.</p></li>
+<li><p><strong>optional</strong><strong>)</strong> – Radial basis type.</p></li>
+<li><p><strong>(</strong><strong>bool</strong> – Whether to apply an envelope cutoff to the radial embedding.</p></li>
+<li><p><strong>optional</strong><strong>)</strong> – Whether to apply an envelope cutoff to the radial embedding.</p></li>
+<li><p><strong>(</strong><strong>bool</strong> – Whether to use reduced Clebsch-Gordan coefficients in the product blocks.</p></li>
+<li><p><strong>optional</strong><strong>)</strong> – Whether to use reduced Clebsch-Gordan coefficients in the product blocks.</p></li>
+<li><p><strong>(</strong><strong>bool</strong> – Whether to use SO(3) spherical harmonics (parity +1 only) instead of O(3).</p></li>
+<li><p><strong>optional</strong><strong>)</strong> – Whether to use SO(3) spherical harmonics (parity +1 only) instead of O(3).</p></li>
+<li><p><strong>(</strong><strong>bool</strong> – Whether to use element-agnostic symmetric contraction in product blocks.</p></li>
+<li><p><strong>optional</strong><strong>)</strong> – Whether to use element-agnostic symmetric contraction in product blocks.</p></li>
+<li><p><strong>(</strong><strong>Optional</strong><strong>[</strong><strong>o3.Irreps</strong><strong>]</strong> (<em>edge_irreps</em>) – Custom irreps for edge features in interaction blocks (all layers except first).
+If None, defaults to the standard interaction irreps.</p></li>
+<li><p><strong>optional</strong><strong>)</strong> – Custom irreps for edge features in interaction blocks (all layers except first).
+If None, defaults to the standard interaction irreps.</p></li>
+<li><p><strong>(</strong><strong>bool</strong> – Whether to apply <cite>edge_irreps</cite> also to the first interaction block’s scalar channels.</p></li>
+<li><p><strong>optional</strong><strong>)</strong> – Whether to apply <cite>edge_irreps</cite> also to the first interaction block’s scalar channels.</p></li>
+<li><p><strong>(</strong><strong>Optional</strong><strong>[</strong><strong>Dict</strong><strong>[</strong><strong>str</strong> (<em>oeq_config</em>) – cuEquivariance configuration.</p></li>
+<li><p><strong>Any</strong><strong>]</strong><strong>]</strong> – cuEquivariance configuration.</p></li>
+<li><p><strong>optional</strong><strong>)</strong> – cuEquivariance configuration.</p></li>
+<li><p><strong>(</strong><strong>Optional</strong><strong>[</strong><strong>bool</strong><strong>]</strong> (<em>use_oeq</em>) – Whether to use cuEquivariance acceleration.</p></li>
+<li><p><strong>optional</strong><strong>)</strong> – Whether to use cuEquivariance acceleration.</p></li>
+<li><p><strong>(</strong><strong>Optional</strong><strong>[</strong><strong>Dict</strong><strong>[</strong><strong>str</strong> – openequivariance configuration.</p></li>
+<li><p><strong>Any</strong><strong>]</strong><strong>]</strong> – openequivariance configuration.</p></li>
+<li><p><strong>optional</strong><strong>)</strong> – openequivariance configuration.</p></li>
+<li><p><strong>(</strong><strong>Optional</strong><strong>[</strong><strong>bool</strong><strong>]</strong> – Whether to use openequivariance acceleration.</p></li>
+<li><p><strong>optional</strong><strong>)</strong> – Whether to use openequivariance acceleration.</p></li>
+<li><p><strong>(</strong><strong>Optional</strong><strong>[</strong><strong>Type</strong><strong>[</strong><strong>NonLinearReadoutBlock</strong><strong>]</strong><strong>]</strong> (<em>readout_cls</em>) – Class to use for the final (non-linear) readout block.</p></li>
+<li><p><strong>optional</strong><strong>)</strong> – Class to use for the final (non-linear) readout block.</p></li>
+<li><p><strong>(</strong><strong>bool</strong> – If False, the last interaction layer outputs only scalar irreps, reducing
+parameters. Defaults to True for backward compatibility.</p></li>
+<li><p><strong>optional</strong><strong>)</strong> – If False, the last interaction layer outputs only scalar irreps, reducing
+parameters. Defaults to True for backward compatibility.</p></li>
+<li><p><strong>nls_distance_method</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Method for computing a neighbor list. Supported values are
+<cite>torch</cite>, <cite>nvalchemi_naive</cite>, <cite>nvalchemi_cell</cite>, <cite>nvalchemi_raw</cite>
+and <cite>custom_kernel</cite>.</p></li>
+<li><p><strong>(</strong><strong>bool</strong><strong>)</strong> (<em>independent_regularizations</em>) – If True each interaction block has its own set of regularization parameters,
+otherwise the regularization parameters are shared across all interaction blocks.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcg.nn.mace.RBFRegularizedMACE.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/mace.html#RBFRegularizedMACE.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.mace.RBFRegularizedMACE.forward" title="Link to this definition">¶</a></dt>
+<dd><p>Forward pass of the MACE model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>(</strong><strong>AtomicData</strong><strong>)</strong> (<em>data</em>) – Input atomic data object.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Output data with predicted energies in <cite>data.out</cite>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="data/atom_data.html#mlcg.data.atomic_data.AtomicData" title="mlcg.data.atomic_data.AtomicData"><code class="xref py py-class docutils literal notranslate"><span class="pre">AtomicData</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="mlcg.nn.mace.StandardMACE">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.nn.mace.</span></span><span class="sig-name descname"><span class="pre">StandardMACE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">r_max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_bessel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_polynomial_cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_ell</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interaction_cls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interaction_cls_first</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_interactions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hidden_irreps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">MLP_irreps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">avg_num_neighbors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atomic_numbers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">correlation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_neighbors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pair_repulsion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">apply_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_reduced_cg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_so3</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_agnostic_product</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distance_transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'None'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_irreps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_edge_irreps_first</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radial_MLP</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radial_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'bessel'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cueq_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_cueq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">oeq_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_oeq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readout_cls</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;class</span> <span class="pre">'mace.modules.blocks.NonLinearReadoutBlock'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_last_layer_irreps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nls_distance_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'torch'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/mace.html#StandardMACE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.mace.StandardMACE" title="Link to this definition">¶</a></dt>
 <dd><p>Standard configuration of the MACE model.</p>
@@ -1493,39 +1588,61 @@ and readout modules.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>r_max</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – Cutoff radius for neighbor list.</p></li>
-<li><p><strong>num_bessel</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Number of Bessel functions for radial basis.</p></li>
-<li><p><strong>num_polynomial_cutoff</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Number of polynomial cutoff functions.</p></li>
-<li><p><strong>max_ell</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Maximum angular momentum for spherical harmonics.</p></li>
-<li><p><strong>interaction_cls</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Class name for interaction blocks.</p></li>
-<li><p><strong>interaction_cls_first</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Class name for the first interaction block.</p></li>
-<li><p><strong>num_interactions</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Number of interaction blocks.</p></li>
-<li><p><strong>hidden_irreps</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Irreducible representations for hidden features. For example if only
+<li><p><strong>(</strong><strong>float</strong><strong>)</strong> (<em>avg_num_neighbors</em>) – Cutoff radius for neighbor list.</p></li>
+<li><p><strong>(</strong><strong>int</strong><strong>)</strong> (<em>num_interactions</em>) – Number of Bessel functions for radial basis.</p></li>
+<li><p><strong>(</strong><strong>int</strong><strong>)</strong> – Number of polynomial cutoff functions.</p></li>
+<li><p><strong>(</strong><strong>int</strong><strong>)</strong> – Maximum angular momentum for spherical harmonics.</p></li>
+<li><p><strong>(</strong><strong>str</strong><strong>)</strong> (<em>MLP_irreps</em>) – Class name for interaction blocks.</p></li>
+<li><p><strong>(</strong><strong>str</strong><strong>)</strong> – Class name for the first interaction block.</p></li>
+<li><p><strong>(</strong><strong>int</strong><strong>)</strong> – Number of interaction blocks.</p></li>
+<li><p><strong>(</strong><strong>str</strong><strong>)</strong> – Irreducible representations for hidden features. For example if only
 a scalar representation with 128 channels is used can be “128x0e”. If
 also a vector representation is used can be “128x0e + 128x1o”.</p></li>
-<li><p><strong>MLP_irreps</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Irreducible representations for MLP layers.</p></li>
-<li><p><strong>avg_num_neighbors</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – Average number of neighbors per atom used for normalization and numerical stability.</p></li>
-<li><p><strong>atomic_numbers</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]</span>) – List of atomic numbers in the system.</p></li>
-<li><p><strong>correlation</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]]</span>) – Correlation order(s) for product blocks.</p></li>
-<li><p><strong>gate</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>]</span>) – Activation function for non-linearities.</p></li>
-<li><p><strong>max_num_neighbors</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Maximum number of neighbors per atom.</p></li>
-<li><p><strong>pair_repulsion</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Whether to use pairwise repulsion.</p></li>
-<li><p><strong>distance_transform</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Distance transformation type.</p></li>
-<li><p><strong>radial_MLP</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]]</span>) – Radial MLP architecture.</p></li>
-<li><p><strong>radial_type</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]</span>) – Radial basis type.</p></li>
-<li><p><strong>apply_cutoff</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Whether to apply an envelope cutoff to the radial embedding.</p></li>
-<li><p><strong>use_reduced_cg</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Whether to use reduced Clebsch-Gordan coefficients in the product blocks.</p></li>
-<li><p><strong>use_so3</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Whether to use SO(3) spherical harmonics (parity +1 only) instead of O(3).</p></li>
-<li><p><strong>use_agnostic_product</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Whether to use element-agnostic symmetric contraction in product blocks.</p></li>
-<li><p><strong>edge_irreps</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Irreps</span></code>]</span>) – Custom irreps for edge features in interaction blocks (all layers except first).
+<li><p><strong>(</strong><strong>str</strong><strong>)</strong> – Irreducible representations for MLP layers.</p></li>
+<li><p><strong>(</strong><strong>float</strong><strong>)</strong> – Average number of neighbors per atom used for normalization and numerical stability.</p></li>
+<li><p><strong>(</strong><strong>List</strong><strong>[</strong><strong>int</strong><strong>]</strong><strong>)</strong> (<em>atomic_numbers</em>) – List of atomic numbers in the system.</p></li>
+<li><p><strong>(</strong><strong>Union</strong><strong>[</strong><strong>int</strong> (<em>correlation</em>) – Correlation order(s) for product blocks.</p></li>
+<li><p><strong>List</strong><strong>[</strong><strong>int</strong><strong>]</strong><strong>]</strong><strong>)</strong> – Correlation order(s) for product blocks.</p></li>
+<li><p><strong>(</strong><strong>Optional</strong><strong>[</strong><strong>Callable</strong><strong>]</strong><strong>)</strong> (<em>gate</em>) – Activation function for non-linearities.</p></li>
+<li><p><strong>(</strong><strong>int</strong> (<em>max_num_neighbors</em>) – Maximum number of neighbors per atom.</p></li>
+<li><p><strong>optional</strong><strong>)</strong> – Maximum number of neighbors per atom.</p></li>
+<li><p><strong>(</strong><strong>bool</strong> (<em>keep_last_layer_irreps</em>) – Whether to use pairwise repulsion.</p></li>
+<li><p><strong>optional</strong><strong>)</strong> – Whether to use pairwise repulsion.</p></li>
+<li><p><strong>(</strong><strong>str</strong> (<em>distance_transform</em>) – Distance transformation type.</p></li>
+<li><p><strong>optional</strong><strong>)</strong> – Distance transformation type.</p></li>
+<li><p><strong>(</strong><strong>Optional</strong><strong>[</strong><strong>List</strong><strong>[</strong><strong>int</strong><strong>]</strong><strong>]</strong> (<em>radial_MLP</em>) – Radial MLP architecture.</p></li>
+<li><p><strong>optional</strong><strong>)</strong> – Radial MLP architecture.</p></li>
+<li><p><strong>(</strong><strong>Optional</strong><strong>[</strong><strong>str</strong><strong>]</strong> (<em>radial_type</em>) – Radial basis type.</p></li>
+<li><p><strong>optional</strong><strong>)</strong> – Radial basis type.</p></li>
+<li><p><strong>(</strong><strong>bool</strong> – Whether to apply an envelope cutoff to the radial embedding.</p></li>
+<li><p><strong>optional</strong><strong>)</strong> – Whether to apply an envelope cutoff to the radial embedding.</p></li>
+<li><p><strong>(</strong><strong>bool</strong> – Whether to use reduced Clebsch-Gordan coefficients in the product blocks.</p></li>
+<li><p><strong>optional</strong><strong>)</strong> – Whether to use reduced Clebsch-Gordan coefficients in the product blocks.</p></li>
+<li><p><strong>(</strong><strong>bool</strong> – Whether to use SO(3) spherical harmonics (parity +1 only) instead of O(3).</p></li>
+<li><p><strong>optional</strong><strong>)</strong> – Whether to use SO(3) spherical harmonics (parity +1 only) instead of O(3).</p></li>
+<li><p><strong>(</strong><strong>bool</strong> – Whether to use element-agnostic symmetric contraction in product blocks.</p></li>
+<li><p><strong>optional</strong><strong>)</strong> – Whether to use element-agnostic symmetric contraction in product blocks.</p></li>
+<li><p><strong>(</strong><strong>Optional</strong><strong>[</strong><strong>o3.Irreps</strong><strong>]</strong> (<em>edge_irreps</em>) – Custom irreps for edge features in interaction blocks (all layers except first).
 If None, defaults to the standard interaction irreps.</p></li>
-<li><p><strong>use_edge_irreps_first</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – Whether to apply <cite>edge_irreps</cite> also to the first interaction block’s scalar channels.</p></li>
-<li><p><strong>cueq_config</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]</span>) – cuEquivariance configuration.</p></li>
-<li><p><strong>use_cueq</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>]</span>) – Whether to use cuEquivariance acceleration.</p></li>
-<li><p><strong>oeq_config</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]]</span>) – openequivariance configuration.</p></li>
-<li><p><strong>use_oeq</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>]</span>) – Whether to use openequivariance acceleration.</p></li>
-<li><p><strong>readout_cls</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Type</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">NonLinearReadoutBlock</span></code>]]</span>) – Class to use for the final (non-linear) readout block.</p></li>
-<li><p><strong>keep_last_layer_irreps</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – If False, the last interaction layer outputs only scalar irreps, reducing
+<li><p><strong>optional</strong><strong>)</strong> – Custom irreps for edge features in interaction blocks (all layers except first).
+If None, defaults to the standard interaction irreps.</p></li>
+<li><p><strong>(</strong><strong>bool</strong> – Whether to apply <cite>edge_irreps</cite> also to the first interaction block’s scalar channels.</p></li>
+<li><p><strong>optional</strong><strong>)</strong> – Whether to apply <cite>edge_irreps</cite> also to the first interaction block’s scalar channels.</p></li>
+<li><p><strong>(</strong><strong>Optional</strong><strong>[</strong><strong>Dict</strong><strong>[</strong><strong>str</strong> (<em>oeq_config</em>) – cuEquivariance configuration.</p></li>
+<li><p><strong>Any</strong><strong>]</strong><strong>]</strong> – cuEquivariance configuration.</p></li>
+<li><p><strong>optional</strong><strong>)</strong> – cuEquivariance configuration.</p></li>
+<li><p><strong>(</strong><strong>Optional</strong><strong>[</strong><strong>bool</strong><strong>]</strong> (<em>use_oeq</em>) – Whether to use cuEquivariance acceleration.</p></li>
+<li><p><strong>optional</strong><strong>)</strong> – Whether to use cuEquivariance acceleration.</p></li>
+<li><p><strong>(</strong><strong>Optional</strong><strong>[</strong><strong>Dict</strong><strong>[</strong><strong>str</strong> – openequivariance configuration.</p></li>
+<li><p><strong>Any</strong><strong>]</strong><strong>]</strong> – openequivariance configuration.</p></li>
+<li><p><strong>optional</strong><strong>)</strong> – openequivariance configuration.</p></li>
+<li><p><strong>(</strong><strong>Optional</strong><strong>[</strong><strong>bool</strong><strong>]</strong> – Whether to use openequivariance acceleration.</p></li>
+<li><p><strong>optional</strong><strong>)</strong> – Whether to use openequivariance acceleration.</p></li>
+<li><p><strong>(</strong><strong>Optional</strong><strong>[</strong><strong>Type</strong><strong>[</strong><strong>NonLinearReadoutBlock</strong><strong>]</strong><strong>]</strong> (<em>readout_cls</em>) – Class to use for the final (non-linear) readout block.</p></li>
+<li><p><strong>optional</strong><strong>)</strong> – Class to use for the final (non-linear) readout block.</p></li>
+<li><p><strong>(</strong><strong>bool</strong> – If False, the last interaction layer outputs only scalar irreps, reducing
+parameters. Defaults to True for backward compatibility.</p></li>
+<li><p><strong>optional</strong><strong>)</strong> – If False, the last interaction layer outputs only scalar irreps, reducing
 parameters. Defaults to True for backward compatibility.</p></li>
 <li><p><strong>nls_distance_method</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – Method for computing a neighbor list. Supported values are
 <cite>torch</cite>, <cite>nvalchemi_naive</cite>, <cite>nvalchemi_cell</cite>, <cite>nvalchemi_raw</cite>
