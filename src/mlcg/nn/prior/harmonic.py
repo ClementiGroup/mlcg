@@ -77,9 +77,9 @@ class Harmonic(_Prior):
 
     def data2parameters(self, data: AtomicData):
         mapping = data.neighbor_list[self.name]["index_mapping"]
-        interaction_types = [
+        interaction_types = tuple(
             data.atom_types[mapping[ii]] for ii in range(self.order)
-        ]
+        )
         params = {
             "x0": self.x_0[interaction_types].flatten(),
             "k": self.k[interaction_types].flatten(),

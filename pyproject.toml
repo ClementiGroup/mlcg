@@ -36,7 +36,7 @@ dependencies = [
     "networkx>=3.3",
     "numpy>=1.26.4",
     "pandas>=2.3.3",
-    "pytorch_lightning==2.2.1",
+    "pytorch_lightning>=2.4.0",
     "pyyaml>=6.0.3",
     "ruamel.yaml",
     "scikit-learn>=1.7.2",
