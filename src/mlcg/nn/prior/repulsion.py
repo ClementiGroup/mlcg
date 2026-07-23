@@ -108,9 +108,9 @@ class Repulsion(_Prior):
 
         mapping = data.neighbor_list[self.name]["index_mapping"]
         mapping_batch = data.neighbor_list[self.name]["mapping_batch"]
-        interaction_types = [
+        interaction_types = tuple(
             data.atom_types[mapping[ii]] for ii in range(self.order)
-        ]
+        )
         features = self.data2features(data)
         y = Repulsion.compute(features, self.sigma[interaction_types])
         y = scatter(y, mapping_batch, dim=0, reduce="sum")
@@ -280,9 +280,9 @@ class CutoffRepulsion(Repulsion):
         features = features[mask]
         mapping = data.neighbor_list[self.name]["index_mapping"][:, mask]
         mapping_batch = data.neighbor_list[self.name]["mapping_batch"][mask]
-        interaction_types = [
+        interaction_types = tuple(
             data.atom_types[mapping[ii]] for ii in range(self.order)
-        ]
+        )
 
         y = Repulsion.compute(features, self.sigma[interaction_types])
         yc, dyc = CutoffRepulsion.compute_with_dev(
@@ -385,9 +385,9 @@ class ExpRepulsion(_Prior):
 
         mapping = data.neighbor_list[self.name]["index_mapping"]
         mapping_batch = data.neighbor_list[self.name]["mapping_batch"]
-        interaction_types = [
+        interaction_types = tuple(
             data.atom_types[mapping[ii]] for ii in range(self.order)
-        ]
+        )
         features = self.data2features(data)
         y = ExpRepulsion.compute(
             features, self.alpha[interaction_types], self.r_0[interaction_types]
@@ -460,9 +460,9 @@ class CutoffExpRepulsion(ExpRepulsion):
         features = features[mask]
         mapping = data.neighbor_list[self.name]["index_mapping"][:, mask]
         mapping_batch = data.neighbor_list[self.name]["mapping_batch"][mask]
-        interaction_types = [
+        interaction_types = tuple(
             data.atom_types[mapping[ii]] for ii in range(self.order)
-        ]
+        )
 
         y = ExpRepulsion.compute(
             features, self.alpha[interaction_types], self.r_0[interaction_types]
