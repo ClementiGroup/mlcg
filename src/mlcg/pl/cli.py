@@ -53,7 +53,9 @@ class LightningCLI(plc.LightningCLI):
             try:
                 self.config = self.parser.parse_object(hparams, self.config)
             except SystemExit:
-                sys.stderr.write("Parsing of ckpt_path hyperparameters failed!\n")
+                sys.stderr.write(
+                    "Parsing of ckpt_path hyperparameters failed!\n"
+                )
                 raise
 
     def parse_arguments(
