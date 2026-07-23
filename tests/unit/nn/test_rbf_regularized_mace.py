@@ -96,7 +96,7 @@ mace_config = {
     "radial_type": "bessel",
     "atomic_numbers": database.atomic_numbers,
 }
-test_mace = RBFRegularizedMACE(**mace_config)
+mace_model = RBFRegularizedMACE(**mace_config)
 
 
 @pytest.mark.parametrize(
