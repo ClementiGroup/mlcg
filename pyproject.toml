@@ -54,6 +54,7 @@ dependencies = [
     "mace-torch==0.3.16",
     "nequip==0.12.1",
     "nequip-allegro==0.7.0",
+    "metatrain",  # backs mlcg.nn.upet.StandardUPET; pin once a version is settled on
 ]
 classifiers = [
   "Development Status :: 4 - Beta",
