@@ -155,12 +155,15 @@ def condense_prior_for_simulation(
     n_degs = []
     n_removed = 0
     for k, prior in priors.models.items():
-        if isinstance(prior.model, TargetPrior):
+        # branches that are not prior wrappers (e.g. a kernel expansion or a
+        # neural network summed alongside the priors) have no `model` attribute
+        model = getattr(prior, "model", None)
+        if isinstance(model, TargetPrior):
             # remove prior that is being condensed
             mod = condensed_priors.models.pop(k)
             n_removed += 1
-        if isinstance(prior.model, Dihedral) and TargetPrior == Dihedral:
-            n_degs.append(prior.model.n_degs)
+        if isinstance(model, Dihedral) and TargetPrior == Dihedral:
+            n_degs.append(model.n_degs)
         else:
             n_degs.append(1)
     n_degs = max(n_degs)
@@ -172,7 +175,7 @@ def condense_prior_for_simulation(
     for ii, data in enumerate(condensed_data_list):
         index_mapping = []
         for k, prior in priors.models.items():
-            if isinstance(prior.model, TargetPrior):
+            if isinstance(getattr(prior, "model", None), TargetPrior):
                 prior.model = desparsify_prior_module(prior.model)
                 pp = prior.model.data2parameters(data)
                 for kv, v in pp.items():
