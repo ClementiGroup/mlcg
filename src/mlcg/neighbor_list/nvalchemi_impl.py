@@ -1,7 +1,7 @@
 from typing import Tuple, Optional
 import torch
 from torch_geometric.data import Data
-from nvalchemiops.neighborlist import (
+from nvalchemiops.torch.neighbors import (
     batch_cell_list,
     batch_naive_neighbor_list,
 )
