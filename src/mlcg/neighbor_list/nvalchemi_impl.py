@@ -72,7 +72,7 @@ def nvalchemi_naive_neighbor_list(
     if "pbc" in data:
         pbc = data.pbc
         # the type casting has to be done otherwise the library complains
-        cell = data.cell.to(torch.float64).reshape(-1, 3, 3)
+        cell = data.cell.reshape(-1, 3, 3)
         with_pbc = True
     else:
         pbc = None
@@ -155,7 +155,7 @@ def nvalchemi_cell_neighbor_list(
     if "pbc" in data:
         pbc = data.pbc
         # the type casting has to be done otherwise the library complains
-        cell = data.cell.to(torch.float64).reshape(-1, 3, 3)
+        cell = data.cell.reshape(-1, 3, 3)
         with_pbc = True
 
     else:
