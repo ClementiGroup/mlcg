@@ -561,7 +561,7 @@ class _BaseFastRepulsion:
         return (i < j) & (nbrs != j.unsqueeze(1).to(nbrs.dtype)).all(dim=1)
 
 
-class FastCutoffRepulsion(CutoffRepulsion,_BaseFastRepulsion):
+class FastCutoffRepulsion(CutoffRepulsion, _BaseFastRepulsion):
     def __init__(
         self, statistics: Dict, cutoff: float, name: str = "repulsion"
     ) -> None:
@@ -609,9 +609,7 @@ class FastCutoffRepulsion(CutoffRepulsion,_BaseFastRepulsion):
         )
         mapping = data.neighbor_list["mpnn"]["index_mapping"][:, mask]
         cell_shifts = data.neighbor_list["mpnn"]["cell_shifts"][mask, :]
-        mapping_batch = data.neighbor_list["mpnn"]["mapping_batch"][
-            mask
-        ]
+        mapping_batch = data.neighbor_list["mpnn"]["mapping_batch"][mask]
         # compute features
         features = compute_distances(data.pos, mapping, cell_shifts)
 
@@ -641,7 +639,6 @@ class FastCutoffRepulsion(CutoffRepulsion,_BaseFastRepulsion):
         return cls(
             statistics=prior_stats, cutoff=repulsion.cutoff, name=repulsion.name
         )
-
 
 
 class FastCutoffExpRepulsion(CutoffExpRepulsion, _BaseFastRepulsion):
@@ -685,9 +682,7 @@ class FastCutoffExpRepulsion(CutoffExpRepulsion, _BaseFastRepulsion):
         )
         mapping = data.neighbor_list["mpnn"]["index_mapping"][:, mask]
         cell_shifts = data.neighbor_list["mpnn"]["cell_shifts"][mask, :]
-        mapping_batch = data.neighbor_list["mpnn"]["mapping_batch"][
-            mask
-        ]
+        mapping_batch = data.neighbor_list["mpnn"]["mapping_batch"][mask]
         # compute features
         features = compute_distances(data.pos, mapping, cell_shifts)
 

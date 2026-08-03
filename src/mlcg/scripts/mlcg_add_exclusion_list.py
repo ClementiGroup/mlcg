@@ -18,7 +18,8 @@ def parse_cli():
         help="path to the input configurations. Must be a valid .pt file.",
     )
     parser.add_argument(
-        "-n", "--nls_name",
+        "-n",
+        "--nls_name",
         type=str,
         default="non_bonded",
         help="name of the neighbor list to build an exclusion to ",
@@ -43,9 +44,7 @@ def main():
         full_codes = fully_connected_nls[0] * num_atoms + fully_connected_nls[1]
         mask = ~torch.isin(full_codes, actual_codes)
         exclusion_nls = fully_connected_nls[:, mask]
-        conf.neighbor_list[nls_name][
-            "index_mapping_exclusions"
-        ] = exclusion_nls
+        conf.neighbor_list[nls_name]["index_mapping_exclusions"] = exclusion_nls
 
     new_name = conf_path.replace(".pt", "_with_nonbonded_exclusion.pt")
     if not os.path.isfile(new_name):
