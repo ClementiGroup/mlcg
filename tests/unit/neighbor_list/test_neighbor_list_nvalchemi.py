@@ -75,7 +75,7 @@ NVALCHEMI_CELL_METHODS = (
     else {}
 )
 
-nvalchemi_cell_method_names = ["cell","raw"]
+nvalchemi_cell_method_names = ["cell", "raw"]
 
 
 @pytest.mark.skipif(
@@ -97,6 +97,7 @@ def test_neighborlist_nvalchemi(name, frame, cutoff, self_interaction):
     for met_name in method_list:
         dds = []
         for data in dataloader:
+            data.cell = data.cell.to(data.pos.dtype)
             if met_name == "ase_ref":
                 met = ase_neighbor_list
             else:
@@ -104,7 +105,7 @@ def test_neighborlist_nvalchemi(name, frame, cutoff, self_interaction):
             idx_i, idx_j, cell_shifts, _ = met(
                 data, cutoff, self_interaction=self_interaction
             )
-            
+
             dd = (data.pos[idx_j] - data.pos[idx_i] + cell_shifts).norm(dim=1)
             dds.extend(dd.numpy())
         dds = np.sort(dds)
@@ -149,15 +150,18 @@ def test_neighborlist_pbc_nvalchemi(nls_name):
                 # Get nvalchemi neighbor list distances
                 nvalchemi_distances = []
                 for data in dataloader:
+                    data.cell = data.cell.to(data.pos.dtype)
                     if "cell" in data:
                         print("Cell:\n", data.cell)
                     idx_i, idx_j, cell_shifts, _ = nls_method(
                         data, cutoff, self_interaction=self_interaction
                     )
                     if nls_name == "raw":
-                        cell = data.cell.reshape(-1,3,3)
+                        cell = data.cell.reshape(-1, 3, 3)
                         cell_shifts = (
-                            cell_shifts.to(cell.dtype).to(cell.dtype).unsqueeze(-1)
+                            cell_shifts.to(cell.dtype)
+                            .to(cell.dtype)
+                            .unsqueeze(-1)
                             * cell[data.batch[idx_i]]
                         ).sum(dim=1)
                     mapping = torch.stack([idx_i, idx_j], dim=0)
@@ -169,6 +173,7 @@ def test_neighborlist_pbc_nvalchemi(nls_name):
                 # Get ASE reference distances
                 ase_distances = []
                 for data in dataloader:
+                    data.cell = data.cell.to(data.pos.dtype)
                     idx_i, idx_j, ase_cell_shifts, _ = ase_neighbor_list(
                         data, cutoff, self_interaction=self_interaction
                     )
@@ -210,6 +215,7 @@ def test_pbc_minimum_image_convention_nvalchemi(nls_name):
     dataloader = DataLoader(data_list, batch_size=1)
 
     for data in dataloader:
+        data.cell = data.cell.to(data.pos.dtype)
         idx_i, idx_j, cell_shifts, _ = nls_method(
             data, cutoff, self_interaction=False
         )
@@ -228,13 +234,14 @@ def test_pbc_minimum_image_convention_nvalchemi(nls_name):
 
     distances = []
     for data in dataloader:
+        data.cell = data.cell.to(data.pos.dtype)
         idx_i, idx_j, cell_shifts, _ = nls_method(
             data, cutoff, self_interaction=False
         )
         if nls_name == "raw":
-            cell = data.cell.reshape(-1,3,3)
+            cell = data.cell.reshape(-1, 3, 3)
             cell_shifts = (
-                cell_shifts.to(cell.dtype).to(cell.dtype).unsqueeze(-1)
+                cell_shifts.to(cell.dtype).unsqueeze(-1)
                 * cell[data.batch[idx_i]]
             ).sum(dim=1)
 
@@ -275,13 +282,14 @@ def test_mixed_pbc_nvalchemi(nls_name):
     dataloader = DataLoader(data_list, batch_size=1)
     distances = []
     for data in dataloader:
+        data.cell = data.cell.to(data.pos.dtype)
         idx_i, idx_j, cell_shifts, _ = nls_method(
             data, cutoff, self_interaction=False
         )
 
-        cell = data.cell.reshape(-1,3,3)
+        cell = data.cell.reshape(-1, 3, 3)
         if nls_name == "raw":
-            cell = data.cell.reshape(-1,3,3)
+            cell = data.cell.reshape(-1, 3, 3)
             cell_shifts = (
                 cell_shifts.to(cell.dtype).unsqueeze(-1)
                 * cell[data.batch[idx_i]]
