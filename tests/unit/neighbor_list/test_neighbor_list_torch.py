@@ -10,16 +10,6 @@ from mlcg.neighbor_list.ase_impl import ase_neighbor_list
 from mlcg.neighbor_list.torch_impl import torch_neighbor_list
 from mlcg.geometry.internal_coordinates import compute_distances
 
-try:
-    from mlcg.neighbor_list.nvalchemi_impl import nvalchemi_neighbor_list
-
-    NVALCH_AVAILABLE = True
-except ImportError:
-    print(
-        "nalchemiis not installed. Please install with "
-        + "pip install nvalchemi-toolkit-ops"
-    )
-    NVALCH_AVAILABLE = False
 
 def sort_edges(edge_index, *tensors):
     if edge_index.numel() == 0:
@@ -61,13 +51,12 @@ test_set = [
     for self_interaction in [False, True]
 ]
 
-if NVALCH_AVAILABLE:
-    test_set += [
-        (nvalchemi_neighbor_list, name, frame, rc, self_interaction)
-        for (name, frame) in atomic_structures()
-        for rc in range(2, 7, 2)
-        for self_interaction in [False]
-    ]
+nvalchemi_test_set = [
+    (name, frame, rc, self_interaction)
+    for (name, frame) in atomic_structures()
+    for rc in range(2, 7, 2)
+    for self_interaction in [False]
+]
 
 
 @pytest.mark.parametrize(
