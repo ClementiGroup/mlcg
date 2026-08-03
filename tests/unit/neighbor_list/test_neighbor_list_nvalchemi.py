@@ -75,7 +75,7 @@ NVALCHEMI_CELL_METHODS = (
     else {}
 )
 
-nvalchemi_cell_method_names = ["cell","raw"]
+nvalchemi_cell_method_names = ["cell", "raw"]
 
 
 @pytest.mark.skipif(
@@ -104,7 +104,7 @@ def test_neighborlist_nvalchemi(name, frame, cutoff, self_interaction):
             idx_i, idx_j, cell_shifts, _ = met(
                 data, cutoff, self_interaction=self_interaction
             )
-            
+
             dd = (data.pos[idx_j] - data.pos[idx_i] + cell_shifts).norm(dim=1)
             dds.extend(dd.numpy())
         dds = np.sort(dds)
@@ -155,9 +155,11 @@ def test_neighborlist_pbc_nvalchemi(nls_name):
                         data, cutoff, self_interaction=self_interaction
                     )
                     if nls_name == "raw":
-                        cell = data.cell.reshape(-1,3,3)
+                        cell = data.cell.reshape(-1, 3, 3)
                         cell_shifts = (
-                            cell_shifts.to(cell.dtype).to(cell.dtype).unsqueeze(-1)
+                            cell_shifts.to(cell.dtype)
+                            .to(cell.dtype)
+                            .unsqueeze(-1)
                             * cell[data.batch[idx_i]]
                         ).sum(dim=1)
                     mapping = torch.stack([idx_i, idx_j], dim=0)
@@ -232,7 +234,7 @@ def test_pbc_minimum_image_convention_nvalchemi(nls_name):
             data, cutoff, self_interaction=False
         )
         if nls_name == "raw":
-            cell = data.cell.reshape(-1,3,3)
+            cell = data.cell.reshape(-1, 3, 3)
             cell_shifts = (
                 cell_shifts.to(cell.dtype).to(cell.dtype).unsqueeze(-1)
                 * cell[data.batch[idx_i]]
@@ -279,9 +281,9 @@ def test_mixed_pbc_nvalchemi(nls_name):
             data, cutoff, self_interaction=False
         )
 
-        cell = data.cell.reshape(-1,3,3)
+        cell = data.cell.reshape(-1, 3, 3)
         if nls_name == "raw":
-            cell = data.cell.reshape(-1,3,3)
+            cell = data.cell.reshape(-1, 3, 3)
             cell_shifts = (
                 cell_shifts.to(cell.dtype).unsqueeze(-1)
                 * cell[data.batch[idx_i]]
