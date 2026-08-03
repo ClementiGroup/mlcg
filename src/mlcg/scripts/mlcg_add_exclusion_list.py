@@ -17,6 +17,12 @@ def parse_cli():
         type=str,
         help="path to the input configurations. Must be a valid .pt file.",
     )
+    parser.add_argument(
+        "-n", "--nls_name",
+        type=str,
+        default="non_bonded",
+        help="name of the neighbor list to build an exclusion to ",
+    )
     return parser
 
 
@@ -25,9 +31,10 @@ def main():
     args = parser.parse_args()
 
     conf_path = args.conf_path
+    nls_name = args.nls_name
     confs = torch.load(conf_path, weights_only=False)
     for conf in confs:
-        actual_nls = conf.neighbor_list["non_bonded"]["index_mapping"]
+        actual_nls = conf.neighbor_list[nls_name]["index_mapping"]
         fully_connected_nls = torch.tensor(
             list(combinations(range(conf.pos.shape[0]), 2))
         ).T
@@ -36,7 +43,7 @@ def main():
         full_codes = fully_connected_nls[0] * num_atoms + fully_connected_nls[1]
         mask = ~torch.isin(full_codes, actual_codes)
         exclusion_nls = fully_connected_nls[:, mask]
-        conf.neighbor_list["non_bonded"][
+        conf.neighbor_list[nls_name][
             "index_mapping_exclusions"
         ] = exclusion_nls
 
