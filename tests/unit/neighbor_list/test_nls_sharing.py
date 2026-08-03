@@ -5,7 +5,7 @@ import torch
 from torch_geometric.data.collate import collate
 
 from mlcg.data import AtomicData
-from mlcg.nn.prior.repulsion import FastCutoffRepulsion,FastCutoffExpRepulsion
+from mlcg.nn.prior.repulsion import FastCutoffRepulsion, FastCutoffExpRepulsion
 
 try:
     import nvalchemiops  # noqa: F401
@@ -115,6 +115,7 @@ def test_fast_cutoff_exp_repulsion_and_network_nls_match(
         new_forces, old_forces, atol=atol_forces, rtol=1e-3
     )
 
+
 @pytest.fixture(
     params=[
         "dissolved_with_nonbonded_exclusion",
@@ -142,7 +143,7 @@ def test_fast_cutoff_repulsion_and_network_nls_match(
     is checked over many steps of a randomly perturbed trajectory so
     that both implementations are exercised over an evolving set of
     neighbor lists.
-"""
+    """
     n_steps = 20
     n_replicas = col_data.n_atoms.shape[0]
 
