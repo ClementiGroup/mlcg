@@ -7,19 +7,31 @@ import torch
 
 from mlcg.neighbor_list.utils import ase2data
 from mlcg.neighbor_list.ase_impl import ase_neighbor_list
-from mlcg.neighbor_list.torch_impl import torch_neighbor_list
 from mlcg.geometry.internal_coordinates import compute_distances
 
 try:
-    from mlcg.neighbor_list.nvalchemi_impl import nvalchemi_neighbor_list
+    from mlcg.neighbor_list.nvalchemi_impl import (
+        nvalchemi_naive_neighbor_list,
+        nvalchemi_cell_neighbor_list,
+        nvalchemi_cell_neighbor_list_raw,
+    )
 
     NVALCH_AVAILABLE = True
 except ImportError:
     print(
-        "nalchemiis not installed. Please install with "
+        "nalchemi is not installed. Please install with "
         + "pip install nvalchemi-toolkit-ops"
     )
     NVALCH_AVAILABLE = False
+
+
+def sort_edges(edge_index, *tensors):
+    if edge_index.numel() == 0:
+        return (edge_index,) + tuple(t for t in tensors)
+    stride = edge_index.max().item() + 1
+    key = edge_index[0] * stride + edge_index[1]
+    order = torch.argsort(key)
+    return (edge_index[:, order],) + tuple(t[order] for t in tensors)
 
 
 def bulk_metal():
@@ -46,28 +58,36 @@ def atomic_structures():
         yield (frame.get_chemical_symbols(), frame)
 
 
-test_set = [
-    (torch_neighbor_list, name, frame, rc, self_interaction)
+nvalchemi_test_set = [
+    (name, frame, rc, self_interaction)
     for (name, frame) in atomic_structures()
     for rc in range(2, 7, 2)
-    for self_interaction in [False, True]
+    for self_interaction in [False]
 ]
 
-if NVALCH_AVAILABLE:
-    test_set += [
-        (nvalchemi_neighbor_list, name, frame, rc, self_interaction)
-        for (name, frame) in atomic_structures()
-        for rc in range(2, 7, 2)
-        for self_interaction in [False]
-    ]
-
-
-@pytest.mark.parametrize(
-    "nls_method, name, frame, cutoff, self_interaction",
-    test_set,
+# resolved lazily by name so that collection works without nvalchemi installed
+NVALCHEMI_CELL_METHODS = (
+    {
+        "cell": nvalchemi_cell_neighbor_list,
+        "raw": nvalchemi_cell_neighbor_list_raw,
+    }
+    if NVALCH_AVAILABLE
+    else {}
 )
-def test_neighborlist(nls_method, name, frame, cutoff, self_interaction):
-    """Check that torch_neighbor_list gives the same NL as ASE by comparing
+
+nvalchemi_cell_method_names = ["cell","raw"]
+
+
+@pytest.mark.skipif(
+    not NVALCH_AVAILABLE,
+    reason="nvalchemi is not available (install nvalchemi-toolkit-ops)",
+)
+@pytest.mark.parametrize(
+    "name, frame, cutoff, self_interaction",
+    nvalchemi_test_set,
+)
+def test_neighborlist_nvalchemi(name, frame, cutoff, self_interaction):
+    """Check that nvalchemi_neighbor_list gives the same NL as ASE by comparing
     the resulting sorted list of distances between neighbors."""
     data_list = [ase2data(frame)]
     dataloader = DataLoader(data_list, batch_size=1)
@@ -80,17 +100,18 @@ def test_neighborlist(nls_method, name, frame, cutoff, self_interaction):
             if met_name == "ase_ref":
                 met = ase_neighbor_list
             else:
-                met = nls_method
+                met = nvalchemi_naive_neighbor_list
             idx_i, idx_j, cell_shifts, _ = met(
                 data, cutoff, self_interaction=self_interaction
             )
+            
             dd = (data.pos[idx_j] - data.pos[idx_i] + cell_shifts).norm(dim=1)
             dds.extend(dd.numpy())
         dds = np.sort(dds)
+        edge_index = torch.stack([idx_i, idx_j], dim=0)
+        edge_index = sort_edges(edge_index)
         distance_results[met_name] = dds
-        neighs_results[met_name] = torch.stack([idx_i, idx_j], dim=0).sort(
-            dim=1
-        )
+        neighs_results[met_name] = edge_index
     assert np.allclose(
         distance_results["current_nls_method"], distance_results["ase_ref"]
     )
@@ -99,9 +120,15 @@ def test_neighborlist(nls_method, name, frame, cutoff, self_interaction):
     )
 
 
-def test_neighborlist_pbc():
+@pytest.mark.skipif(
+    not NVALCH_AVAILABLE,
+    reason="nvalchemi is not available (install nvalchemi-toolkit-ops)",
+)
+@pytest.mark.parametrize("nls_name", nvalchemi_cell_method_names)
+def test_neighborlist_pbc_nvalchemi(nls_name):
     """Test that neighbor list with PBC correctly handles periodic images
     and produces the same results as ASE reference implementation."""
+    nls_method = NVALCHEMI_CELL_METHODS[nls_name]
 
     # Create test structures with PBC
     structures = [
@@ -114,24 +141,30 @@ def test_neighborlist_pbc():
 
     for structure in structures:
         for cutoff in cutoffs:
-            for self_interaction in [True, False]:
+            for self_interaction in [False]:
                 # Convert to data format
                 data_list = [ase2data(structure)]
                 dataloader = DataLoader(data_list, batch_size=1)
 
-                # Get torch neighbor list distances
-                torch_distances = []
+                # Get nvalchemi neighbor list distances
+                nvalchemi_distances = []
                 for data in dataloader:
                     if "cell" in data:
                         print("Cell:\n", data.cell)
-                    idx_i, idx_j, cell_shifts, _ = torch_neighbor_list(
+                    idx_i, idx_j, cell_shifts, _ = nls_method(
                         data, cutoff, self_interaction=self_interaction
                     )
+                    if nls_name == "raw":
+                        cell = data.cell.reshape(-1,3,3)
+                        cell_shifts = (
+                            cell_shifts.to(cell.dtype).to(cell.dtype).unsqueeze(-1)
+                            * cell[data.batch[idx_i]]
+                        ).sum(dim=1)
                     mapping = torch.stack([idx_i, idx_j], dim=0)
                     dd = compute_distances(data.pos, mapping, cell_shifts)
-                    torch_distances.extend(dd.numpy())
+                    nvalchemi_distances.extend(dd.numpy())
 
-                torch_distances = np.sort(torch_distances)
+                nvalchemi_distances = np.sort(nvalchemi_distances)
 
                 # Get ASE reference distances
                 ase_distances = []
@@ -147,16 +180,22 @@ def test_neighborlist_pbc():
                 ase_distances = np.sort(ase_distances)
 
                 assert np.allclose(
-                    ase_distances, torch_distances, rtol=1e-5, atol=1e-6
+                    ase_distances, nvalchemi_distances, rtol=1e-5, atol=1e-6
                 )
 
-                assert np.all(torch_distances <= cutoff + 1e-6)
+                assert np.all(nvalchemi_distances <= cutoff + 1e-6)
 
 
-def test_pbc_minimum_image_convention():
+@pytest.mark.skipif(
+    not NVALCH_AVAILABLE,
+    reason="nvalchemi is not available (install nvalchemi-toolkit-ops)",
+)
+@pytest.mark.parametrize("nls_name", nvalchemi_cell_method_names)
+def test_pbc_minimum_image_convention_nvalchemi(nls_name):
     """Test that PBC neighbor list correctly applies minimum image convention.
     Neighbors should be found across periodic boundaries at the shortest distance.
     """
+    nls_method = NVALCHEMI_CELL_METHODS[nls_name]
 
     # Create a simple cubic cell with one atom
     atoms = ase.Atoms(
@@ -171,7 +210,7 @@ def test_pbc_minimum_image_convention():
     dataloader = DataLoader(data_list, batch_size=1)
 
     for data in dataloader:
-        idx_i, idx_j, cell_shifts, _ = torch_neighbor_list(
+        idx_i, idx_j, cell_shifts, _ = nls_method(
             data, cutoff, self_interaction=False
         )
 
@@ -189,9 +228,15 @@ def test_pbc_minimum_image_convention():
 
     distances = []
     for data in dataloader:
-        idx_i, idx_j, cell_shifts, _ = torch_neighbor_list(
+        idx_i, idx_j, cell_shifts, _ = nls_method(
             data, cutoff, self_interaction=False
         )
+        if nls_name == "raw":
+            cell = data.cell.reshape(-1,3,3)
+            cell_shifts = (
+                cell_shifts.to(cell.dtype).to(cell.dtype).unsqueeze(-1)
+                * cell[data.batch[idx_i]]
+            ).sum(dim=1)
 
         mapping = torch.stack([idx_i, idx_j], dim=0)
         dd = compute_distances(data.pos, mapping, cell_shifts)
@@ -200,12 +245,18 @@ def test_pbc_minimum_image_convention():
         distances = np.sort(distances)
         assert np.all(distances < 1.0), (
             f"Minimum image convention not applied correctly. "
-            f"Distances: {distances.numpy()}"
+            f"Distances: {distances}"
         )
 
 
-def test_mixed_pbc():
+@pytest.mark.skipif(
+    not NVALCH_AVAILABLE,
+    reason="nvalchemi is not available (install nvalchemi-toolkit-ops)",
+)
+@pytest.mark.parametrize("nls_name", nvalchemi_cell_method_names)
+def test_mixed_pbc_nvalchemi(nls_name):
     """Test neighbor list with partial periodic boundary conditions."""
+    nls_method = NVALCHEMI_CELL_METHODS[nls_name]
 
     atoms = ase.Atoms(
         "C4",
@@ -224,9 +275,17 @@ def test_mixed_pbc():
     dataloader = DataLoader(data_list, batch_size=1)
     distances = []
     for data in dataloader:
-        idx_i, idx_j, cell_shifts, _ = torch_neighbor_list(
+        idx_i, idx_j, cell_shifts, _ = nls_method(
             data, cutoff, self_interaction=False
         )
+
+        cell = data.cell.reshape(-1,3,3)
+        if nls_name == "raw":
+            cell = data.cell.reshape(-1,3,3)
+            cell_shifts = (
+                cell_shifts.to(cell.dtype).unsqueeze(-1)
+                * cell[data.batch[idx_i]]
+            ).sum(dim=1)
 
         mapping = torch.stack([idx_i, idx_j], dim=0)
         dd = compute_distances(data.pos, mapping, cell_shifts)
