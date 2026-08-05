@@ -295,9 +295,7 @@ def minimize_energy_ase(
 
         idx = None if fixed_atoms is None else fixed_atoms[i]
         if idx is not None and len(idx) > 0:
-            atoms.set_constraint(
-                FixAtoms(indices=np.asarray(idx, dtype=int))
-            )
+            atoms.set_constraint(FixAtoms(indices=np.asarray(idx, dtype=int)))
 
         optimizer = optimizer_cls(atoms, **optimizer_kwargs)
         optimizer.run(fmax=fmax, steps=steps)
@@ -312,7 +310,6 @@ def minimize_energy_ase(
         minimized.append(new_data)
 
     return minimized
-
 
 
 def minimize_energy(
@@ -406,7 +403,7 @@ def minimize_energy(
         out = model(batch)
         if FORCE_KEY not in out.out:
             raise KeyError(
-                f"Model output does not contain \'{FORCE_KEY}\'. The model "
+                f"Model output does not contain '{FORCE_KEY}'. The model "
                 "passed to minimize_energy must be wrapped with "
                 "mlcg.nn.gradients.GradientsOut (or SumOut over "
                 "GradientsOut-wrapped terms) with forces among its targets "
