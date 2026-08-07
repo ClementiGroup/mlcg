@@ -83,6 +83,14 @@ def parse_simulation_config(
         help="filename for the output profiling file",
     )
 
+    parser.add_argument(
+        "-pyg",
+        "--pyg_inspector",
+        type=bool,
+        default=True,
+        help="flag that activates pyg forward compatibility for old checkpoints.",
+    )
+
     config = parser.parse_args()
     # save config
     exported_config = {}
@@ -104,9 +112,11 @@ def parse_simulation_config(
         config["simulation"].pop("save_subroutine", None)
 
     model_fn = config.pop("model_file")
-    model = load_and_adapt_old_checkpoint(
-        (model_fn if isinstance(model_fn, str) else model_fn())
-    )
+    model_pn = model_fn if isinstance(model_fn, str) else model_fn()
+    if not config.pop("pyg_inspector"):
+        model = torch.load(model_pn, weights_only=False)
+    else:
+        model = load_and_adapt_old_checkpoint(model_pn)
 
     structures_fn = config.pop("structure_file")
     initial_data_list = torch.load(
