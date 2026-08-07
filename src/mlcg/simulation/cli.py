@@ -1,3 +1,4 @@
+import os.path as osp
 from typing import Any, List, Dict, Tuple, Sequence
 import torch
 from jsonargparse import (
@@ -13,6 +14,7 @@ from . import (
     PTSimulation,
     OverdampedSimulation,
 )
+from .minimizer import minimize_energy
 from ..data import AtomicData
 from ..nn import load_and_adapt_old_checkpoint
 from ..utils import dump_yaml
@@ -122,6 +124,112 @@ def parse_simulation_config(
     profile = config.pop("profile")
 
     return model, initial_data_list, betas, simulation, profile
+
+
+def parse_minimizer_config(
+    description: str = "Energy minimization command line tool",
+    parser_kwargs: Dict[str, Any] = None,
+) -> Tuple[torch.nn.Module, List[AtomicData], Dict[str, Any], str]:
+    """Utility to parse a configuration file to run :py:func:`minimize_energy`
+    from the command line, mirroring :py:func:`parse_simulation_config`.
+
+    Parameters
+    ----------
+    description : str, optional
+        cli description, by default "Energy minimization command line tool"
+    parser_kwargs : Dict[str, Any], optional
+        more arguments to the parser, by default None
+
+    Returns
+    -------
+    model, initial_data_list, minimizer_kwargs, output_file
+    """
+    parser_kwargs = {} if parser_kwargs is None else parser_kwargs
+    parser_kwargs.update({"description": description})
+    parser = SimulationParser(**parser_kwargs)
+    # minimize_energy is a plain function rather than a _Simulation subclass,
+    # so its arguments are added directly instead of via add_simulation_args.
+    # model/configurations are skipped here: they are loaded from
+    # model_file/structure_file below instead of being part of the config.
+    parser.add_function_arguments(
+        minimize_energy,
+        "minimizer",
+        skip={"model", "configurations"},
+        fail_untyped=False,
+    )
+
+    parser.add_argument(
+        "-mf",
+        "--model_file",
+        metavar="FN",
+        type=Path_fr,
+        help="path to the pytorch model file (including the priors) in pytorch format",
+    )
+
+    parser.add_argument(
+        "-sf",
+        "--structure_file",
+        metavar="FN",
+        type=Path_fr,
+        help="path to the starting configurations (a list of un-collated "
+        "AtomicData) in pytorch format",
+    )
+
+    parser.add_argument(
+        "-o",
+        "--output_file",
+        metavar="FN",
+        type=str,
+        help="path at which the minimized configurations (a list of "
+        "AtomicData) will be saved, in pytorch format",
+    )
+
+    config = parser.parse_args()
+    # save config
+    exported_config = {}
+    for k, v in config.items():
+        # Path_fr must be converted to string otherwise they can't be saved
+        if isinstance(v, Path_fr):
+            exported_config[k] = str(v)
+        # redundant to save the path to the original config
+        elif k == "config":
+            continue
+        elif k == "minimizer":
+            # dtype and optimizer_cls are resolved to actual torch.dtype/type
+            # objects by this point, neither of which ruamel.yaml can
+            # represent, so they are dumped back out as import path strings.
+            exported_config[k] = {
+                mk: (
+                    str(mv)
+                    if isinstance(mv, torch.dtype)
+                    else (
+                        f"{mv.__module__}.{mv.__qualname__}"
+                        if isinstance(mv, type)
+                        else mv
+                    )
+                )
+                for mk, mv in v.items()
+            }
+        else:
+            exported_config[k] = v
+    out_name = osp.splitext(config["output_file"])[0]
+    dump_yaml(f"{out_name}_config.yaml", exported_config)
+
+    model_fn = config.pop("model_file")
+    model = load_and_adapt_old_checkpoint(
+        (model_fn if isinstance(model_fn, str) else model_fn())
+    )
+
+    structures_fn = config.pop("structure_file")
+    initial_data_list = torch.load(
+        (structures_fn if isinstance(structures_fn, str) else structures_fn()),
+        weights_only=False,
+    )
+
+    minimizer_kwargs = config.pop("minimizer")
+    output_file = config.pop("output_file")
+
+    return model, initial_data_list, minimizer_kwargs, output_file
 
 
 class ConfigurationException(Exception):

@@ -117,15 +117,20 @@ def test_converges_near_equilibrium(ASE_prior_model):
         assert final_rmsd < initial_rmsd
 
 
-def test_fixed_atoms_do_not_move(ASE_prior_model):
+def test_atoms_outside_free_atoms_do_not_move(ASE_prior_model):
     data_dictionary = ASE_prior_model()
     model = data_dictionary["model"]
     configurations = _build_perturbed_configurations(data_dictionary)
     original_positions = [data.pos.clone() for data in configurations]
+    n_atoms = configurations[0].pos.shape[0]
 
-    fixed_atoms = [[0] for _ in configurations]
+    free = [i for i in range(n_atoms) if i != 0]
     minimized = minimize_energy(
-        model, configurations, fixed_atoms=fixed_atoms, fmax=1e-3, steps=200
+        model,
+        configurations,
+        free_atoms=[free for _ in configurations],
+        fmax=1e-3,
+        steps=200,
     )
 
     for original, data in zip(original_positions, minimized):
@@ -133,7 +138,7 @@ def test_fixed_atoms_do_not_move(ASE_prior_model):
         assert not torch.allclose(data.pos[1:], original[1:], atol=1e-3)
 
 
-def test_fixed_atoms_excluded_from_convergence(ASE_prior_model):
+def test_non_free_atoms_excluded_from_convergence(ASE_prior_model):
     # A fixed atom keeps a large force, so convergence must be judged on the
     # free atoms alone -- otherwise no constrained run could ever converge.
     data_dictionary = ASE_prior_model()
@@ -141,13 +146,12 @@ def test_fixed_atoms_excluded_from_convergence(ASE_prior_model):
     configurations = _build_perturbed_configurations(data_dictionary)
     n_atoms = configurations[0].pos.shape[0]
 
-    fixed = [0]
-    free = [i for i in range(n_atoms) if i not in fixed]
+    free = [i for i in range(n_atoms) if i != 0]
     fmax = 1e-3
     minimized = minimize_energy(
         model,
         configurations,
-        fixed_atoms=[fixed for _ in configurations],
+        free_atoms=[free for _ in configurations],
         fmax=fmax,
         steps=500,
     )
@@ -320,7 +324,7 @@ def test_rejects_batched_configuration(ASE_prior_model):
         minimize_energy(model, [batched], fmax=1e-3, steps=10)
 
 
-def test_rejects_out_of_range_fixed_atoms(ASE_prior_model):
+def test_rejects_out_of_range_free_atoms(ASE_prior_model):
     data_dictionary = ASE_prior_model()
     model = data_dictionary["model"]
     configurations = _build_perturbed_configurations(data_dictionary)
@@ -330,7 +334,7 @@ def test_rejects_out_of_range_fixed_atoms(ASE_prior_model):
         minimize_energy(
             model,
             configurations,
-            fixed_atoms=[[n_atoms] for _ in configurations],
+            free_atoms=[[n_atoms] for _ in configurations],
             fmax=1e-3,
             steps=10,
         )

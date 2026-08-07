@@ -25,9 +25,9 @@ def _num_structures(data: AtomicData) -> int:
     return 1
 
 
-def _validate_configurations_and_fixed_atoms(
+def _validate_configurations_and_free_atoms(
     configurations: List[AtomicData],
-    fixed_atoms: Optional[List[Optional[Sequence[int]]]],
+    free_atoms: Optional[List[Optional[Sequence[int]]]],
 ) -> None:
     r"""Input validation for :py:func:`minimize_energy`."""
     if len(configurations) == 0:
@@ -44,13 +44,13 @@ def _validate_configurations_and_fixed_atoms(
                 "AtomicData structure per list element."
             )
 
-    if fixed_atoms is not None:
-        if len(fixed_atoms) != len(configurations):
+    if free_atoms is not None:
+        if len(free_atoms) != len(configurations):
             raise ValueError(
-                f"len(fixed_atoms)={len(fixed_atoms)} must equal "
+                f"len(free_atoms)={len(free_atoms)} must equal "
                 f"len(configurations)={len(configurations)}."
             )
-        for i, (data, idx) in enumerate(zip(configurations, fixed_atoms)):
+        for i, (data, idx) in enumerate(zip(configurations, free_atoms)):
             if idx is None:
                 continue
             idx_arr = np.asarray(idx, dtype=int)
@@ -59,7 +59,7 @@ def _validate_configurations_and_fixed_atoms(
                 idx_arr.min() < 0 or idx_arr.max() >= n_atoms_i
             ):
                 raise ValueError(
-                    f"fixed_atoms[{i}] contains an out-of-range index for a "
+                    f"free_atoms[{i}] contains an out-of-range index for a "
                     f"structure with {n_atoms_i} atoms: {idx_arr.tolist()}."
                 )
 
@@ -67,7 +67,7 @@ def _validate_configurations_and_fixed_atoms(
 def minimize_energy(
     model: torch.nn.Module,
     configurations: List[AtomicData],
-    fixed_atoms: Optional[List[Optional[Sequence[int]]]] = None,
+    free_atoms: Optional[List[Optional[Sequence[int]]]] = None,
     fmax: float = 0.05,
     steps: int = 500,
     device: Union[str, torch.device] = "cpu",
@@ -76,7 +76,7 @@ def minimize_energy(
     optimizer_kwargs: Optional[Dict[str, Any]] = None,
 ) -> List[AtomicData]:
     r"""Relax all of ``configurations`` to nearby local minima of ``model`` at
-    once, optionally holding a subset of atoms fixed.
+    once, optionally restricting relaxation to a subset of atoms.
 
     The relaxation is batched: every configuration is collated into a single
     :py:class:`AtomicData` so that all structures share **one model forward
@@ -107,12 +107,14 @@ def minimize_energy(
     configurations:
         List of single, un-collated :py:class:`AtomicData` structures to
         relax. They are not modified.
-    fixed_atoms:
+    free_atoms:
         Optional list, parallel to ``configurations``, of atom index
-        sequences that should remain fixed during minimization. Use ``None``
-        for a given entry (or pass ``fixed_atoms=None`` altogether) to leave
-        that configuration fully unconstrained. Fixed atoms are held in place
-        by zeroing their gradient, so they never move.
+        sequences that are allowed to move during minimization; every other
+        atom in that structure is held fixed at its input position. Use
+        ``None`` for a given entry (or pass ``free_atoms=None`` altogether,
+        the default) to leave that configuration fully unconstrained. Fixed
+        atoms are held in place by zeroing their gradient, so they never
+        move.
     fmax:
         Convergence threshold on the largest per-atom force magnitude (atoms
         held fixed are excluded, since they are expected to carry a nonzero
@@ -156,7 +158,7 @@ def minimize_energy(
         configuration, identical to the inputs except for relaxed positions
         (cast back to each input's own dtype/device).
     """
-    _validate_configurations_and_fixed_atoms(configurations, fixed_atoms)
+    _validate_configurations_and_free_atoms(configurations, free_atoms)
 
     model = model.eval().to(device=device, dtype=dtype)
     for param in model.parameters():
@@ -177,14 +179,19 @@ def minimize_energy(
     n_atoms_total = batch.pos.shape[0]
 
     fixed_mask = torch.zeros(n_atoms_total, dtype=torch.bool, device=device)
-    if fixed_atoms is not None:
-        for i, idx in enumerate(fixed_atoms):
-            if idx is None or len(idx) == 0:
+    if free_atoms is not None:
+        for i, idx in enumerate(free_atoms):
+            if idx is None:
                 continue
-            idx_t = (
-                torch.as_tensor(idx, dtype=torch.long, device=device) + ptr[i]
-            )
-            fixed_mask[idx_t] = True
+            # Every atom in this structure starts fixed; only the listed
+            # indices (if any) are then let free again.
+            fixed_mask[ptr[i] : ptr[i + 1]] = True
+            if len(idx):
+                idx_t = (
+                    torch.as_tensor(idx, dtype=torch.long, device=device)
+                    + ptr[i]
+                )
+                fixed_mask[idx_t] = False
     # fixed_mask is static across steps; checking it every iteration would
     # cost an extra GPU->CPU sync per step for no reason.
     has_fixed = bool(fixed_mask.any())
