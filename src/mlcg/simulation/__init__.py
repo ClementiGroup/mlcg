@@ -3,4 +3,4 @@ from .parallel_tempering import PTSimulation
 from .base import _Simulation
 from .cli import parse_simulation_config
 from .specialize_prior import condense_all_priors_for_simulation
-from .minimizer import MLCGCalculator, minimize_energy, minimize_energy_ase
+from .minimizer import minimize_energy

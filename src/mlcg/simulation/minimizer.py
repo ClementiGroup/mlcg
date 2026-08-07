@@ -1,3 +1,4 @@
+import warnings
 from copy import deepcopy
 from typing import Any, Dict, List, Optional, Sequence, Type, Union
 
@@ -6,21 +7,8 @@ import torch
 from torch_geometric.data.collate import collate
 from torch_geometric.utils import scatter
 
-from ase import Atoms
-from ase.calculators.calculator import Calculator, all_changes
-from ase.constraints import FixAtoms
-from ase.optimize import FIRE
-from ase.optimize.optimize import Optimizer
-
 from ..data.atomic_data import AtomicData
-from ..data._keys import (
-    ATOM_TYPE_KEY,
-    MASS_KEY,
-    CELL_KEY,
-    PBC_KEY,
-    ENERGY_KEY,
-    FORCE_KEY,
-)
+from ..data._keys import FORCE_KEY
 
 
 def _num_structures(data: AtomicData) -> int:
@@ -41,8 +29,7 @@ def _validate_configurations_and_fixed_atoms(
     configurations: List[AtomicData],
     fixed_atoms: Optional[List[Optional[Sequence[int]]]],
 ) -> None:
-    r"""Shared input validation for :py:func:`minimize_energy` and
-    :py:func:`minimize_energy_ase`."""
+    r"""Input validation for :py:func:`minimize_energy`."""
     if len(configurations) == 0:
         raise ValueError(
             "configurations must be a non-empty list of AtomicData."
@@ -77,241 +64,6 @@ def _validate_configurations_and_fixed_atoms(
                 )
 
 
-class MLCGCalculator(Calculator):
-    r"""ASE calculator wrapper around an mlcg model.
-
-    On every :py:meth:`calculate` call, a fresh single-structure
-    :py:class:`~mlcg.data.atomic_data.AtomicData` instance is built from the
-    current :py:class:`ase.Atoms` positions and forwarded through the model to
-    obtain the energy and forces.
-
-    Parameters
-    ----------
-    model:
-        Trained mlcg model. Must be wrapped so that its output contains both
-        :py:data:`~mlcg.data._keys.ENERGY_KEY` and
-        :py:data:`~mlcg.data._keys.FORCE_KEY` (e.g. via
-        :py:class:`mlcg.nn.gradients.GradientsOut` or
-        :py:class:`mlcg.nn.gradients.SumOut`).
-    data_template:
-        A single, un-collated :py:class:`AtomicData` instance describing the
-        structure. ``atom_types``, ``masses``, ``cell``, ``pbc`` and
-        ``neighbor_list`` are captured from it once and reused, unmodified,
-        on every subsequent call; only positions change between calls.
-
-        The ``neighbor_list`` is reused verbatim rather than cleared: bonded
-        topology entries (e.g. from harmonic priors) do a direct dictionary
-        lookup with no fallback and would raise if missing, while
-        cutoff-based entries left absent from the dictionary (the standard
-        convention) are automatically rebuilt from the current positions by
-        the model itself.
-    device:
-        Device used to run the model.
-    dtype:
-        Floating point precision used to run the model.
-    """
-
-    implemented_properties = ["energy", "forces"]
-
-    def __init__(
-        self,
-        model: torch.nn.Module,
-        data_template: AtomicData,
-        device: Union[str, torch.device] = "cpu",
-        dtype: torch.dtype = torch.float32,
-        **kwargs: Any,
-    ):
-        super().__init__(**kwargs)
-        if _num_structures(data_template) != 1:
-            raise ValueError(
-                "MLCGCalculator expects a single, un-collated AtomicData "
-                f"structure, but got a template spanning "
-                f"{_num_structures(data_template)} structures."
-            )
-
-        self.model = model
-        self.device = torch.device(device)
-        self.dtype = dtype
-
-        self.atom_types = data_template.atom_types.detach().clone()
-        self.masses = (
-            data_template.masses.detach().clone()
-            if MASS_KEY in data_template and data_template.masses is not None
-            else None
-        )
-        self.cell = (
-            data_template.cell.detach().clone()
-            if CELL_KEY in data_template and data_template.cell is not None
-            else None
-        )
-        self.pbc = (
-            data_template.pbc.detach().clone()
-            if PBC_KEY in data_template and data_template.pbc is not None
-            else None
-        )
-        self.template_neighbor_list = deepcopy(data_template.neighbor_list)
-
-    def calculate(
-        self,
-        atoms: Optional[Atoms] = None,
-        properties: Sequence[str] = ("energy",),
-        system_changes: Sequence[str] = all_changes,
-    ):
-        super().calculate(atoms, properties, system_changes)
-
-        pos = torch.tensor(
-            self.atoms.get_positions(), dtype=self.dtype, device=self.device
-        )
-        data = AtomicData.from_points(
-            pos=pos,
-            atom_types=self.atom_types,
-            masses=self.masses,
-            cell=self.cell,
-            pbc=self.pbc,
-            neighborlist=deepcopy(self.template_neighbor_list),
-        )
-        batch, _, _ = collate(
-            AtomicData, data_list=[data], increment=True, add_batch=True
-        )
-        batch = batch.to(self.device)
-        batch = self.model(batch)
-
-        if FORCE_KEY not in batch.out:
-            raise KeyError(
-                f"Model output does not contain '{FORCE_KEY}'. The model "
-                "passed to MLCGCalculator/minimize_energy must be wrapped "
-                "with mlcg.nn.gradients.GradientsOut (or SumOut over "
-                "GradientsOut-wrapped terms) with forces among its targets "
-                "-- an energy-only model cannot be used for minimization."
-            )
-
-        self.results["energy"] = float(
-            batch.out[ENERGY_KEY].detach().cpu().item()
-        )
-        self.results["forces"] = (
-            batch.out[FORCE_KEY].detach().cpu().numpy().astype(np.float64)
-        )
-
-
-def minimize_energy_ase(
-    model: torch.nn.Module,
-    configurations: List[AtomicData],
-    fixed_atoms: Optional[List[Optional[Sequence[int]]]] = None,
-    optimizer_cls: Type[Optimizer] = FIRE,
-    fmax: float = 0.05,
-    steps: int = 500,
-    device: Union[str, torch.device] = "cpu",
-    dtype: torch.dtype = torch.float32,
-    optimizer_kwargs: Optional[Dict[str, Any]] = None,
-) -> List[AtomicData]:
-    r"""Relax each of ``configurations`` to a nearby local minimum of
-    ``model``, optionally holding a subset of atoms fixed.
-
-    Each configuration is minimized independently via an ASE optimizer
-    (:py:class:`ase.optimize.FIRE` by default) acting on an
-    :py:class:`MLCGCalculator`-backed :py:class:`ase.Atoms` instance. Atoms
-    marked as fixed for a given configuration are held in place via
-    :py:class:`ase.constraints.FixAtoms`.
-
-    Parameters
-    ----------
-    model:
-        Trained mlcg model producing both energies and forces (see
-        :py:class:`MLCGCalculator`). Note that this model is mutated in
-        place: it is switched to evaluation mode, moved to ``device``/``dtype``,
-        and has ``requires_grad`` disabled on all of its parameters, mirroring
-        :py:meth:`mlcg.simulation.base._Simulation._attach_model`.
-    configurations:
-        List of single, un-collated :py:class:`AtomicData` structures to
-        relax.
-    fixed_atoms:
-        Optional list, parallel to ``configurations``, of atom index
-        sequences that should remain fixed during minimization. Use ``None``
-        for a given entry (or pass ``fixed_atoms=None`` altogether) to leave
-        that configuration fully unconstrained.
-    optimizer_cls:
-        ASE :py:class:`~ase.optimize.optimize.Optimizer` subclass used to
-        perform the minimization.
-    fmax:
-        Convergence threshold on the maximum force component. This is
-        compared directly against the model's own force units (e.g.
-        kcal/mol/Angstrom for typical CG models), unlike ASE's own optimizers
-        whose default ``fmax`` assumes eV/Angstrom -- pick a value
-        appropriate for the model being used.
-    steps:
-        Maximum number of optimizer steps per configuration.
-    device:
-        Device used to run the model.
-    dtype:
-        Floating point precision used to run the model.
-    optimizer_kwargs:
-        Additional keyword arguments forwarded to ``optimizer_cls``.
-
-    Returns
-    -------
-    List[AtomicData]:
-        New list of :py:class:`AtomicData` instances, one per input
-        configuration, identical to the inputs except for relaxed positions
-        (cast back to each input's own dtype/device).
-    """
-    _validate_configurations_and_fixed_atoms(configurations, fixed_atoms)
-
-    model = model.eval().to(device=device, dtype=dtype)
-    for param in model.parameters():
-        param.requires_grad = False
-
-    optimizer_kwargs = dict(optimizer_kwargs or {})
-    optimizer_kwargs.setdefault("logfile", None)
-
-    minimized: List[AtomicData] = []
-    for i, data in enumerate(configurations):
-        calc = MLCGCalculator(model, data, device=device, dtype=dtype)
-
-        numbers = data[ATOM_TYPE_KEY].detach().cpu().numpy()
-        positions = data.pos.detach().cpu().numpy().astype(np.float64)
-        masses = (
-            data.masses.detach().cpu().numpy()
-            if MASS_KEY in data and data.masses is not None
-            else None
-        )
-        cell = (
-            data.cell.detach().cpu().numpy().reshape(3, 3)
-            if CELL_KEY in data and data.cell is not None
-            else None
-        )
-        pbc = (
-            data.pbc.detach().cpu().numpy().reshape(3)
-            if PBC_KEY in data and data.pbc is not None
-            else False
-        )
-        atoms = Atoms(
-            numbers=numbers,
-            positions=positions,
-            masses=masses,
-            cell=cell,
-            pbc=pbc,
-        )
-        atoms.calc = calc
-
-        idx = None if fixed_atoms is None else fixed_atoms[i]
-        if idx is not None and len(idx) > 0:
-            atoms.set_constraint(FixAtoms(indices=np.asarray(idx, dtype=int)))
-
-        optimizer = optimizer_cls(atoms, **optimizer_kwargs)
-        optimizer.run(fmax=fmax, steps=steps)
-
-        new_data = deepcopy(data)
-        new_data.pos = torch.tensor(
-            atoms.get_positions(),
-            dtype=data.pos.dtype,
-            device=data.pos.device,
-        )
-        new_data.out = {}
-        minimized.append(new_data)
-
-    return minimized
-
-
 def minimize_energy(
     model: torch.nn.Module,
     configurations: List[AtomicData],
@@ -323,29 +75,77 @@ def minimize_energy(
     optimizer_cls: Type[torch.optim.Optimizer] = torch.optim.LBFGS,
     optimizer_kwargs: Optional[Dict[str, Any]] = None,
 ) -> List[AtomicData]:
-    r"""Relax all of ``configurations`` at once via a batched gradient-based
-    minimization, exploiting the model's own batching: every configuration is
-    collated into a single :py:class:`AtomicData` and all structures share
-    one model forward call per step, unlike :py:func:`minimize_energy_ase`
-    which relaxes one structure at a time through ASE.
+    r"""Relax all of ``configurations`` to nearby local minima of ``model`` at
+    once, optionally holding a subset of atoms fixed.
 
-    Positions are treated as the optimizable parameters and a PyTorch
-    optimizer (``optimizer_cls``) drives the relaxation. The model forces are
-    used directly as the negative gradient of the energy with respect to
-    positions, so no second-order differentiation through the model is
-    required.
+    The relaxation is batched: every configuration is collated into a single
+    :py:class:`AtomicData` so that all structures share **one model forward
+    call per step**. Each configuration nevertheless gets its own, independent
+    ``optimizer_cls`` instance -- and therefore its own optimizer state (e.g.
+    its own L-BFGS history). That separation matters because the structures
+    are physically independent (each one's energy depends only on its own
+    coordinates), so the true Hessian is block-diagonal; a single optimizer
+    state shared across all of them would let curvature information from one
+    structure pollute the search direction chosen for the others, and would
+    need substantially more steps to reach the same ``fmax``.
+
+    The model forces are used directly as the negative gradient of the energy
+    with respect to positions, so no second-order differentiation through the
+    model is required.
 
     Parameters
     ----------
-    model, configurations, fixed_atoms, fmax, steps, device, dtype:
-        See :py:func:`minimize_energy_ase`.
+    model:
+        Trained mlcg model producing forces, i.e. wrapped so that its output
+        contains :py:data:`~mlcg.data._keys.FORCE_KEY` (via
+        :py:class:`mlcg.nn.gradients.GradientsOut`, or
+        :py:class:`mlcg.nn.gradients.SumOut` over ``GradientsOut``-wrapped
+        terms). Note that this model is mutated in place: it is switched to
+        evaluation mode, moved to ``device``/``dtype``, and has
+        ``requires_grad`` disabled on all of its parameters, mirroring
+        :py:meth:`mlcg.simulation.base._Simulation._attach_model`.
+    configurations:
+        List of single, un-collated :py:class:`AtomicData` structures to
+        relax. They are not modified.
+    fixed_atoms:
+        Optional list, parallel to ``configurations``, of atom index
+        sequences that should remain fixed during minimization. Use ``None``
+        for a given entry (or pass ``fixed_atoms=None`` altogether) to leave
+        that configuration fully unconstrained. Fixed atoms are held in place
+        by zeroing their gradient, so they never move.
+    fmax:
+        Convergence threshold on the largest per-atom force magnitude (atoms
+        held fixed are excluded, since they are expected to carry a nonzero
+        force precisely because they are being constrained). A structure is
+        considered converged once its own value drops to ``fmax`` and is then
+        left alone while the rest of the batch keeps going. This is compared
+        directly against the model's own force units (e.g. kcal/mol/Angstrom
+        for typical CG models), unlike ASE optimizers, whose default ``fmax``
+        assumes eV/Angstrom -- pick a value appropriate for the model in use.
+    steps:
+        Maximum number of optimizer steps. A warning is issued if the budget
+        runs out before every structure has converged.
+    device:
+        Device used to run the model.
+    dtype:
+        Floating point precision used to run the model. Positions are cast to
+        it for the relaxation and cast back to each input's own dtype on the
+        way out.
     optimizer_cls:
         Any :py:class:`torch.optim.Optimizer` subclass. Defaults to
         :py:class:`torch.optim.LBFGS`, which is well-suited to energy
         minimization. First-order optimizers such as
         :py:class:`torch.optim.SGD` or :py:class:`torch.optim.Adam` are also
         supported; pass optimizer-specific hyperparameters via
-        ``optimizer_kwargs``.
+        ``optimizer_kwargs``. Each ``.step()`` call is given the gradient
+        from the one forward pass already taken this iteration, via a closure
+        that does *not* re-run the model (re-running it per structure would
+        defeat the point of batching); for :py:class:`torch.optim.LBFGS` this
+        means ``max_iter`` must stay 1 (its default here), since a larger
+        value would spend extra sub-iterations applying quasi-Newton updates
+        from that same, now-stale gradient instead of a freshly evaluated
+        one. The same caveat applies to any other optimizer whose ``step()``
+        may invoke its closure more than once.
     optimizer_kwargs:
         Additional keyword arguments forwarded to ``optimizer_cls``.
 
@@ -369,6 +169,11 @@ def minimize_energy(
     batch = batch.to(device)
 
     batch_index = batch.batch
+    # ptr lives on `device`; pulling it into python once avoids a GPU->CPU
+    # sync per structure per step when it is used as a slice bound below.
+    # Also save it before the loop, since model calls may rebind batch
+    # attributes.
+    ptr = batch.ptr.tolist()
     n_atoms_total = batch.pos.shape[0]
 
     fixed_mask = torch.zeros(n_atoms_total, dtype=torch.bool, device=device)
@@ -377,29 +182,62 @@ def minimize_energy(
             if idx is None or len(idx) == 0:
                 continue
             idx_t = (
-                torch.as_tensor(idx, dtype=torch.long, device=device)
-                + batch.ptr[i]
+                torch.as_tensor(idx, dtype=torch.long, device=device) + ptr[i]
             )
             fixed_mask[idx_t] = True
+    # fixed_mask is static across steps; checking it every iteration would
+    # cost an extra GPU->CPU sync per step for no reason.
+    has_fixed = bool(fixed_mask.any())
 
-    # Positions are the only optimizable parameter; model weights stay frozen.
-    # GradientsOut internally calls torch.autograd.grad(energy, batch.pos),
-    # which does NOT set .grad; we assign pos.grad manually from the returned
-    # forces so that any torch.optim optimizer can be used without requiring
-    # a second backward pass through the model.
-    pos = batch.pos.detach().requires_grad_(True)
-    batch.pos = pos
+    # Positions are the only optimizable parameters; model weights stay
+    # frozen. GradientsOut internally calls torch.autograd.grad(energy,
+    # batch.pos), which does NOT set .grad; we assign each structure's slice
+    # of .grad manually from the returned forces so that any torch.optim
+    # optimizer can be used without requiring a second backward pass through
+    # the model. One independent leaf tensor per structure gives each one its
+    # own optimizer state (see the docstring) while the forward pass stays
+    # batched.
+    sizes = [ptr[i + 1] - ptr[i] for i in range(n_structures)]
+    param_list = [
+        p.clone().requires_grad_(True)
+        for p in batch.pos.detach().to(dtype).split(sizes)
+    ]
 
     optimizer_kwargs = dict(optimizer_kwargs or {})
-    optimizer = optimizer_cls([pos], **optimizer_kwargs)
+    # `isinstance(..., type)` first: optimizer_cls may legitimately be a
+    # partial or other factory rather than a class, and issubclass() would
+    # raise on those.
+    if isinstance(optimizer_cls, type) and issubclass(
+        optimizer_cls, torch.optim.LBFGS
+    ):
+        if optimizer_kwargs.get("max_iter", 1) != 1:
+            raise ValueError(
+                "minimize_energy's closure does not re-run the model (the "
+                "gradient for this step was already computed by the one "
+                "shared forward pass), so torch.optim.LBFGS's max_iter must "
+                "stay 1 -- see the optimizer_cls docstring entry."
+            )
+        optimizer_kwargs["max_iter"] = 1
+    optimizers = [optimizer_cls([p], **optimizer_kwargs) for p in param_list]
 
-    # Save ptr before the loop; model calls may rebind batch attributes.
-    ptr = batch.ptr
+    # Cached once: torch.optim's step() API requires a closure, but the
+    # gradient is already assigned manually from the shared forward pass
+    # below, so the closure has nothing to compute. Reusing one tensor avoids
+    # a fresh host->device scalar transfer on every one of the n_structures
+    # closure calls per step.
+    _dummy_loss = torch.tensor(0.0, dtype=dtype, device=device)
 
-    def closure() -> torch.Tensor:
-        optimizer.zero_grad()
+    def dummy_closure() -> torch.Tensor:
+        return _dummy_loss
+
+    # Structures that reach fmax are skipped for the rest of the loop: a
+    # skipped structure stops moving, so its force -- and therefore its
+    # converged status -- cannot change afterwards.
+    done = np.zeros(n_structures, dtype=bool)
+
+    for _ in range(steps):
+        batch.pos = torch.cat(param_list, dim=0)
         batch.out = {}
-        batch.pos = pos
         out = model(batch)
         if FORCE_KEY not in out.out:
             raise KeyError(
@@ -409,40 +247,47 @@ def minimize_energy(
                 "GradientsOut-wrapped terms) with forces among its targets "
                 "-- an energy-only model cannot be used for minimization."
             )
-        f = out.out[FORCE_KEY].detach()
-        g = -f
-        if fixed_mask.any():
-            g = g.masked_fill(fixed_mask.unsqueeze(1), 0.0)
-        pos.grad = g
-        if ENERGY_KEY in out.out:
-            return out.out[ENERGY_KEY].sum().detach()
-        return torch.tensor(0.0, dtype=dtype, device=device)
+        # Fresh tensor every iteration (the unary minus allocates), so it is
+        # never aliased to the model output and is safe to mask in place.
+        g = -out.out[FORCE_KEY].detach()
+        if has_fixed:
+            g.masked_fill_(fixed_mask.unsqueeze(1), 0.0)
 
-    for _ in range(steps):
-        optimizer.step(closure)
-        if pos.grad is None:
-            continue
-        # pos.grad == -forces with fixed atoms already zeroed (see closure),
-        # so its per-atom norm is the force magnitude used for convergence.
-        # Note: for line-search optimizers (e.g. LBFGS) this reflects the last
-        # closure evaluation, which may be a trial point rather than the
-        # accepted step, so the convergence estimate can be marginally noisy.
         per_structure_fmax = scatter(
-            pos.grad.detach().norm(dim=1),
+            g.norm(dim=1),
             batch_index,
             dim=0,
             dim_size=n_structures,
             reduce="max",
         )
-        if bool((per_structure_fmax <= fmax).all()):
+        # One sync for the whole per-structure array, reused for both the
+        # overall break check and the per-structure skip below, instead of a
+        # separate .all() sync plus a GPU-side compare per structure.
+        done |= (per_structure_fmax <= fmax).cpu().numpy()
+        if done.all():
             break
 
-    final_pos = pos.detach().cpu()
+        for i, opt in enumerate(optimizers):
+            if done[i]:
+                continue
+            # g is rebuilt every iteration, so this slice is never aliased or
+            # mutated across iterations -- no clone needed.
+            param_list[i].grad = g[ptr[i] : ptr[i + 1]]
+            opt.step(dummy_closure)
+    else:
+        n_unconverged = int((~done).sum())
+        if n_unconverged:
+            warnings.warn(
+                f"minimize_energy: {n_unconverged} of {n_structures} "
+                f"structure(s) did not reach fmax={fmax} within steps="
+                f"{steps}; returning their last positions."
+            )
+
+    final_pos = torch.cat(param_list, dim=0).detach().cpu()
     minimized: List[AtomicData] = []
     for i, data in enumerate(configurations):
-        start, end = int(ptr[i]), int(ptr[i + 1])
         new_data = deepcopy(data)
-        new_data.pos = final_pos[start:end].to(
+        new_data.pos = final_pos[ptr[i] : ptr[i + 1]].to(
             dtype=data.pos.dtype, device=data.pos.device
         )
         new_data.out = {}
