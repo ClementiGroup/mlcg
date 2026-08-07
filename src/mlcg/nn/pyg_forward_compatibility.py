@@ -232,9 +232,8 @@ def load_and_adapt_old_checkpoint(f, **kwargs):
         of a checkpoint from a possibly older version of pyg.
     kwargs: see the docstring of `torch.load` for details.
     """
-    #with fixed_pyg_inspector():
-    #    module = torch.load(f, **kwargs, weights_only=False)
-    #    refresh_module_(module, SchNet)
-    #    refresh_module_(module, PaiNN)
-    module = torch.load(f, **kwargs, weights_only=False)
+    with fixed_pyg_inspector():
+        module = torch.load(f, **kwargs, weights_only=False)
+        refresh_module_(module, SchNet)
+        refresh_module_(module, PaiNN)
     return module
