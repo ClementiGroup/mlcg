@@ -316,7 +316,7 @@ class HarmonicAnglesRaw(Harmonic):
 
     def __init__(self, statistics, name) -> None:
         super(HarmonicAnglesRaw, self).__init__(
-            statistics, HarmonicAnglesRaw.name
+            statistics, HarmonicAnglesRaw.name, order=3
         )
         self.name = name
 

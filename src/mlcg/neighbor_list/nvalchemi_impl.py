@@ -1,7 +1,7 @@
 from typing import Tuple, Optional
 import torch
 from torch_geometric.data import Data
-from nvalchemiops.neighborlist import (
+from nvalchemiops.torch.neighbors import (
     batch_cell_list,
     batch_naive_neighbor_list,
 )
@@ -72,7 +72,7 @@ def nvalchemi_naive_neighbor_list(
     if "pbc" in data:
         pbc = data.pbc
         # the type casting has to be done otherwise the library complains
-        cell = data.cell.to(torch.float32)
+        cell = data.cell.reshape(-1, 3, 3)
         with_pbc = True
     else:
         pbc = None
@@ -98,7 +98,10 @@ def nvalchemi_naive_neighbor_list(
 
     if with_pbc:
         (idx_i, idx_j), _, idx_S = result
-        cell_shifts = torch.matmul(idx_S.to(cell.dtype), cell)
+        # cell_shifts = torch.einsum("ni,nij->nj", idx_S.to(cell.dtype), cell[data.batch[idx_i]])
+        cell_shifts = (
+            idx_S.to(cell.dtype).unsqueeze(-1) * cell[data.batch[idx_i]]
+        ).sum(dim=1)
         return idx_i, idx_j, cell_shifts, None
     else:
         (idx_i, idx_j), _ = result
@@ -152,13 +155,13 @@ def nvalchemi_cell_neighbor_list(
     if "pbc" in data:
         pbc = data.pbc
         # the type casting has to be done otherwise the library complains
-        cell = data.cell.to(torch.float32)
+        cell = data.cell.reshape(-1, 3, 3)
         with_pbc = True
 
     else:
         box_size = 70
         warnings.warn(no_pbc_warning(box_size), UserWarning)
-        # this is required as the method needs
+        # this is required as the method needs PBC
         cell = (
             torch.zeros(
                 data.batch[-1] + 1,
@@ -190,9 +193,11 @@ def nvalchemi_cell_neighbor_list(
     )
 
     (idx_i, idx_j), _, idx_S = result
-
     if with_pbc:
-        cell_shifts = torch.matmul(idx_S.to(cell.dtype), cell)
+        # cell_shifts = torch.einsum("ni,nij->nj", idx_S.to(cell.dtype), cell[data.batch[idx_i]])
+        cell_shifts = (
+            idx_S.to(cell.dtype).unsqueeze(-1) * cell[data.batch[idx_i]]
+        ).sum(dim=1)
     else:
         cell_shifts = torch.zeros(
             (idx_i.shape[0], 3), dtype=data.pos.dtype, device=data.pos.device
@@ -245,7 +250,7 @@ def nvalchemi_cell_neighbor_list_raw(
     if "pbc" in data:
         pbc = data.pbc
         # the type casting has to be done otherwise the library complains
-        cell = data.cell.to(torch.float32)
+        cell = data.cell.to(torch.float64).reshape(-1, 3, 3)
         with_pbc = True
 
     else:

@@ -282,9 +282,9 @@ class CutoffRepulsion(Repulsion):
         features = features[mask]
         mapping = data.neighbor_list[self.name]["index_mapping"][:, mask]
         mapping_batch = data.neighbor_list[self.name]["mapping_batch"][mask]
-        interaction_types = [
+        interaction_types = tuple(
             data.atom_types[mapping[ii]] for ii in range(self.order)
-        ]
+        )
 
         y = Repulsion.compute(features, self.sigma[interaction_types])
         yc, dyc = CutoffRepulsion.compute_with_dev(
@@ -362,7 +362,11 @@ class ExpRepulsion(_Prior):
         """
 
         mapping = data.neighbor_list[self.name]["index_mapping"]
-        return ExpRepulsion.compute_features(data.pos, mapping)
+        pbc = getattr(data, "pbc", None)
+        cell = getattr(data, "cell", None)
+        return ExpRepulsion.compute_features(
+            pos=data.pos, mapping=mapping, pbc=pbc, cell=cell, batch=data.batch
+        )
 
     def forward(self, data: AtomicData) -> AtomicData:
         """Forward pass through the repulsion interaction.
@@ -387,9 +391,9 @@ class ExpRepulsion(_Prior):
 
         mapping = data.neighbor_list[self.name]["index_mapping"]
         mapping_batch = data.neighbor_list[self.name]["mapping_batch"]
-        interaction_types = [
+        interaction_types = tuple(
             data.atom_types[mapping[ii]] for ii in range(self.order)
-        ]
+        )
         features = self.data2features(data)
         y = ExpRepulsion.compute(
             features, self.alpha[interaction_types], self.r_0[interaction_types]
@@ -399,8 +403,20 @@ class ExpRepulsion(_Prior):
         return data
 
     @staticmethod
-    def compute_features(pos, mapping):
-        return compute_distances(pos, mapping)
+    def compute_features(
+        pos: torch.Tensor,
+        mapping: torch.Tensor,
+        pbc: torch.Tensor = None,
+        cell: torch.Tensor = None,
+        batch: torch.Tensor = None,
+    ) -> torch.Tensor:
+        if all([feat != None for feat in [pbc, cell]]):
+            cell_shifts = _Prior._get_cell_shifts(
+                pos, mapping, pbc, cell, batch
+            )
+        else:
+            cell_shifts = None
+        return compute_distances(pos, mapping, cell_shifts)
 
     @staticmethod
     def compute(x, alpha, r_0):
@@ -462,9 +478,9 @@ class CutoffExpRepulsion(ExpRepulsion):
         features = features[mask]
         mapping = data.neighbor_list[self.name]["index_mapping"][:, mask]
         mapping_batch = data.neighbor_list[self.name]["mapping_batch"][mask]
-        interaction_types = [
+        interaction_types = tuple(
             data.atom_types[mapping[ii]] for ii in range(self.order)
-        ]
+        )
 
         y = ExpRepulsion.compute(
             features, self.alpha[interaction_types], self.r_0[interaction_types]
