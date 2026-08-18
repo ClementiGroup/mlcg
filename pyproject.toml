@@ -122,6 +122,7 @@ mlcg-train = "mlcg.scripts.mlcg_train:main"
 mlcg-train_multischeduler = "mlcg.scripts.mlcg_train_multischeduler:main"
 mlcg-nvt_langevin = "mlcg.scripts.mlcg_nvt_langevin:main"
 mlcg-nvt_pt_langevin = "mlcg.scripts.mlcg_nvt_pt_langevin:main"
+mlcg-minimize_energy = "mlcg.scripts.mlcg_minimize_energy:main"
 
 [tool.black]
 line-length = 80
