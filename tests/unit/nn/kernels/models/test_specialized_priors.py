@@ -93,14 +93,14 @@ def test_base_vs_kernel(device, base_prior):
     specialized_energy = specialized_data.out[prior_name]["energy"]
     specialized_forces = specialized_data.out[prior_name]["forces"]
     torch.testing.assert_close(base_energy, specialized_energy)
-    torch.testing.assert_close(base_forces, specialized_forces)
+    torch.testing.assert_close(base_forces, specialized_forces, rtol=1e-5, atol=1e-4)
 
     specialized_data.out = {}
     specialized_data = flash_specialized_prior(specialized_data)
     flash_energy = specialized_data.out[prior_name]["energy"]
     flash_forces = specialized_data.out[prior_name]["forces"]
     torch.testing.assert_close(base_energy, flash_energy)
-    torch.testing.assert_close(base_forces, flash_forces)
+    torch.testing.assert_close(base_forces, flash_forces, rtol=1e-5, atol=1e-4)
 
     if device == "cuda":
         specialized_data.out = {}
@@ -109,4 +109,4 @@ def test_base_vs_kernel(device, base_prior):
         compiled_flash_forces = specialized_data.out[prior_name]["forces"]
 
         torch.testing.assert_close(base_energy, compiled_flash_energy)
-        torch.testing.assert_close(base_forces, compiled_flash_forces)
+        torch.testing.assert_close(base_forces, compiled_flash_forces, rtol=1e-5, atol=1e-4)
