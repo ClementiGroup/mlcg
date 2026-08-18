@@ -90,7 +90,7 @@ def flash_repulsion(
     num_graphs: int,
     eps: float = 1e-12,
 ) -> torch.Tensor:
-    """Compute repulsion energy per graph using a Triton fused energy kernel.
+    r"""Compute repulsion energy per graph using a Triton fused energy kernel.
 
     The repulsion energy for each pair of atoms i,j is given by:
 
@@ -306,7 +306,7 @@ def repulsion_pos_bwd(
     num_graphs: int,
     eps: float = 1e-12,
 ) -> torch.Tensor:
-    """Compute position gradients for repulsion energy using Triton.
+    r"""Compute position gradients for repulsion energy using Triton.
 
     The gradient with respect to position is:
 
