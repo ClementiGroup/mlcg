@@ -1,5 +1,6 @@
 from .langevin import LangevinSimulation, OverdampedSimulation
 from .parallel_tempering import PTSimulation
 from .base import _Simulation
-from .cli import parse_simulation_config
+from .cli import parse_simulation_config, parse_minimizer_config
 from .specialize_prior import condense_all_priors_for_simulation
+from .minimizer import minimize_energy
