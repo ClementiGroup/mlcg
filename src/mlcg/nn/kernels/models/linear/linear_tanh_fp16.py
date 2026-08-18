@@ -7,7 +7,7 @@ import triton
 import triton.language as tl
 from torch.library import triton_op, wrap_triton
 
-from .tanh_linear import _triton_tanh
+from triton.language.extra import libdevice
 from ...utils import ensure_contiguous
 
 # ============================================================================
@@ -397,7 +397,7 @@ def fused_linear_tanh_fp16_kernel(
         acc = acc + bias[None, :].to(tl.float32)
 
     # Apply tanh, store as FP16
-    acc = _triton_tanh(acc)
+    acc = libdevice.tanh(acc)
     y_ptrs = y_ptr + offs_m[:, None] * stride_ym + offs_n[None, :] * stride_yn
     y_mask = (offs_m[:, None] < M) & (offs_n[None, :] < N)
     tl.store(y_ptrs, acc.to(tl.float16), mask=y_mask)
