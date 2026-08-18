@@ -94,6 +94,8 @@ def fused_distance_gaussian_rbf_cosinecutoff_kernel(
     if pid_rbf == 0:
         tl.store(dist_output_ptr + edge_offsets, dist, mask=edge_mask)
 
+    cutoff_upper = cutoff_upper.to(dist.dtype)
+
     # Compute cosine cutoff: 0.5 * (cos(d * pi / cutoff) + 1) * (d < cutoff)
     cos_val = tl.cos(dist * triton_pi / cutoff_upper)
     cutoff_val = 0.5 * (cos_val + 1.0)

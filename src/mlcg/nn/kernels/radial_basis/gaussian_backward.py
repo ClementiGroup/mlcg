@@ -55,6 +55,9 @@ def fused_gaussian_rbf_backward_kernel(
 
     gamma = tl.load(gamma_ptr)
     dist = tl.load(distances_ptr + edge_offsets, mask=edge_mask, other=0.0)
+    dtype = dist.dtype
+
+    cutoff_upper = cutoff_upper.to(dtype)
 
     # Compute cosine cutoff: 0.5 * (cos(d * pi / cutoff) + 1) * (d < cutoff)
     cos_val = tl.cos(dist * triton_pi / cutoff_upper)
@@ -62,8 +65,8 @@ def fused_gaussian_rbf_backward_kernel(
     dist_in_range = dist < cutoff_upper
     cutoff_val = tl.where(dist_in_range, cutoff_val, 0.0)
 
-    acc_gamma_grad = 0.0
-    acc_grad_dist_from_rbf = tl.zeros([BLOCK_EDGES], dtype=tl.float32)
+    acc_gamma_grad = tl.zeros([], dtype=dtype)
+    acc_grad_dist_from_rbf = tl.zeros([BLOCK_EDGES], dtype=dtype)
 
     if NEED_POS_GRAD:
         sin_val = tl.sin(dist * triton_pi / cutoff_upper)
@@ -89,13 +92,11 @@ def fused_gaussian_rbf_backward_kernel(
         # Load input grads
         grad_rbf = tl.load(
             grad_rbf_ptr + rbf_2d_offsets, mask=rbf_2d_mask, other=0.0
-        ).to(tl.float32)
+        ).to(dtype)
 
         if NEED_CENTERS_GRAD:
             drbf_dcenters = -rbf_values * 2 * gamma * diff
-            grad_centers_update = tl.sum(
-                grad_rbf * drbf_dcenters.to(tl.float32), axis=0
-            )
+            grad_centers_update = tl.sum(grad_rbf * drbf_dcenters, axis=0)
             tl.atomic_add(
                 grad_centers_ptr + rbf_offsets,
                 grad_centers_update,
