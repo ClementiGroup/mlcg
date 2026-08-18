@@ -12,7 +12,7 @@ from mlcg.simulation.parallel_tempering import PTSimulation
 from mlcg.data._keys import MASS_KEY, POSITIONS_KEY, ATOM_TYPE_KEY, FORCE_KEY
 from mlcg.mol_utils import _get_initial_data, _ASE_prior_model
 
-from mlcg.nn.flash_schnet import StandardFlashSchNet
+from mlcg.nn.flash_models.flash_schnet import StandardFlashSchNet
 from mlcg.nn.radial_basis import ExpNormalBasis
 from mlcg.nn.cutoff import CosineCutoff
 from mlcg.nn import GradientsOut, SumOut

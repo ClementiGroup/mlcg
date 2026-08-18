@@ -4,7 +4,7 @@ import pytest
 from typing import List
 import warnings
 
-from mlcg.nn.flash_schnet import StandardFlashSchNet
+from mlcg.nn.flash_models.flash_schnet import StandardFlashSchNet
 from mlcg.nn.schnet import StandardSchNet
 from mlcg.nn.radial_basis import ExpNormalBasis
 from mlcg.nn.gradients import GradientsOut

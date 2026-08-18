@@ -5,7 +5,7 @@ from torch.autograd import grad
 from mlcg.nn import MLP, CosineCutoff, GaussianBasis
 from mlcg.nn.kernels.csr import build_csr_representation_from_edges
 from mlcg.nn.schnet import CFConv as StandardCFConv
-from mlcg.nn.flash_schnet import FlashCFConv as FlashCFConv
+from mlcg.nn.flash_models.flash_schnet import FlashCFConv as FlashCFConv
 from mlcg.neighbor_list.neighbor_list import atomic_data2neighbor_list
 from mlcg.geometry.internal_coordinates import compute_distances
 
