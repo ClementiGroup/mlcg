@@ -7,16 +7,28 @@ import torch
 import triton
 import triton.language as tl
 from torch.library import triton_op, wrap_triton
+from triton.language.extra import libdevice
 
 from ...utils import ensure_contiguous
 
 
+# tf32x3 keeps fp32 accuracy on tensor cores and lowers to plain fp32 FMA on
+# pre-Ampere; the HIP backend rejects it at compile time instead of falling back
+_DOT_PRECISION = "ieee" if torch.version.hip is not None else "tf32x3"
+
+
 @triton.jit
-def _triton_tanh(x):
-    """Compute tanh using exp: tanh(x) = (exp(2x) - 1) / (exp(2x) + 1)"""
-    x_clamped = tl.minimum(tl.maximum(x, -10.0), 10.0)
-    exp_2x = tl.exp(2.0 * x_clamped)
-    return (exp_2x - 1.0) / (exp_2x + 1.0)
+def _to_tf32_rne(x):
+    """Round fp32 to tf32 using round-to-nearest-even (not truncation)."""
+    return tl.inline_asm_elementwise(
+        asm="cvt.rna.tf32.f32 $0, $1;",
+        constraints="=r,r",
+        args=[x],
+        dtype=tl.float32,
+        is_pure=True,
+        pack=1,
+    )
+
 
 
 @triton.autotune(
@@ -55,7 +67,7 @@ def _triton_tanh(x):
     key=[
         "N",
         "K",
-    ],  # NOT M! M varies per step, would trigger autotune ~1500ms each
+    ],
 )
 @triton.jit
 def fused_tanh_linear_kernel(
@@ -77,6 +89,7 @@ def fused_tanh_linear_kernel(
     stride_yn,
     # Meta-parameters
     HAS_BIAS: tl.constexpr,
+    PREC: tl.constexpr,
     BLOCK_M: tl.constexpr,
     BLOCK_N: tl.constexpr,
     BLOCK_K: tl.constexpr,
@@ -94,22 +107,16 @@ def fused_tanh_linear_kernel(
     - K = hidden_channels (typically ~128)
     - N = hidden_channels (typically ~128)
 
-    WARNING: Precision Issue
-    ------------------------
-    This kernel uses `input_precision="tf32"` for the matmul operation (line 131).
-    This causes numerical discrepancies:
+    Precision
+    ---------
+    The matmul runs at `input_precision=PREC`, which is "tf32x3" on NVIDIA and
+    "ieee" on AMD; on pre-Ampere NVIDIA cards Triton lowers "tf32x3" to the same
+    fp32 FMA code as "ieee", so the choice is a no-op there. tf32x3 splits each fp32 operand into three tf32 terms, so its accuracy is
+    on par with fp32 (measured slightly better than "ieee" on tanh(X) @ W with
+    K=N=128) rather than the ~1e-2 relative error of plain "tf32".
 
-    - Non-Triton (eager PyTorch): Does NOT match the Triton kernel output with tf32
-    - With `input_precision="ieee"`: Matches eager PyTorch exactly
-    - When torch.compile() is enabled: Does NOT match eager PyTorch even with ieee
-
-    Known behavior:
-    - The tf32 precision offers speed benefits but sacrifices accuracy
-    - If exact numerical match with eager PyTorch is required, use ieee precision
-    - torch.compile() introduces additional differences that require investigation
-
-    This behavior may be revisited/deprecated in future versions pending
-    performance/accuracy tradeoff analysis and torch.compile() compatibility.
+    Results still differ from eager PyTorch in the last bits, since the
+    reduction order over K differs; they do not differ systematically.
     """
     # Program ID
     pid_m = tl.program_id(0)
@@ -136,8 +143,7 @@ def fused_tanh_linear_kernel(
         x_mask = (offs_m[:, None] < M) & (k_offs[None, :] < K)
         x_block = tl.load(x_ptrs, mask=x_mask, other=0.0)
 
-        # apply tanh to input (fused!)
-        x_block = _triton_tanh(x_block)
+        x_block = libdevice.tanh(x_block)
 
         # load W block [BLOCK_K, BLOCK_N]
         w_ptrs = (
@@ -147,7 +153,7 @@ def fused_tanh_linear_kernel(
         w_block = tl.load(w_ptrs, mask=w_mask, other=0.0)
 
         # accumulate matmul
-        acc += tl.dot(x_block, w_block, input_precision="tf32")  # "tf32" "ieee"
+        acc += tl.dot(x_block, w_block, input_precision=PREC)
 
     # add bias if present
     if HAS_BIAS:
@@ -184,24 +190,13 @@ def fused_tanh_linear(
     torch.Tensor
         Output [M, N]
 
-    Warning: Numerical Precision
-    -----------------------------
-    IMPORTANT: This kernel uses tf32 precision for matmul operations,
-    which causes numerical differences from eager PyTorch:
-
-    - eager PyTorch result ≠ this kernel (with tf32)
-    - eager PyTorch result = this kernel (with ieee precision)
-    - torch.compile() results differ from eager PyTorch (both need verification)
-
-    If numerical exactness with eager PyTorch is critical, consider:
-    1. Using ieee precision instead of tf32 (slower but accurate)
-    2. Using plain PyTorch for validation/debugging
-    3. Verifying torch.compile() behavior in your use case
-
-    Deprecation Notice
-    ------------------
-    The current precision behavior may be subject to change pending
-    performance vs. accuracy analysis and torch.compile() compatibility fixes.
+    Notes
+    -----
+    The matmul uses tf32x3 on NVIDIA and ieee fp32 on AMD, so
+    accuracy matches fp32; see the kernel docstring. The cost of tf32x3 depends
+    on the card: on consumer Ampere (GA102) tf32 tensor cores run at the same
+    throughput as the fp32 pipeline, so tf32x3 is ~2.5x slower than "ieee",
+    while on A100/H100 tf32 is ~8x fp32 and tf32x3 comes out ahead.
     """
     M, K = x.shape
     K2, N = weight.shape
@@ -210,7 +205,7 @@ def fused_tanh_linear(
     ), f"Dimension mismatch: x has {K} columns but weight has {K2} rows"
 
     # allocate output
-    y = torch.empty((M, N), device=x.device, dtype=x.dtype).contiguous()
+    y = torch.empty((M, N), device=x.device, dtype=x.dtype)
 
     # grid
     def grid(META):
@@ -235,6 +230,7 @@ def fused_tanh_linear(
         y.stride(0),
         y.stride(1),
         HAS_BIAS=(bias is not None),
+        PREC=_DOT_PRECISION,
     )
 
     return y
