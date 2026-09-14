@@ -57,6 +57,13 @@ class PTSimulation(LangevinSimulation):
     such complementary entries across the matrix diagonal always sum to the total number
     of exhchanges proposed between each export interval.
 
+    A per-frame log of the accepted exchanges is exported alongside it, with shape
+    `(n_sims, n_frames)`. Column `k` holds the exchanges that were performed *after*
+    frame `k` was recorded, so replaying the columns in order reconstructs which
+    replica each configuration occupied at every frame. The two sides of an accepted
+    exchange are marked with `+p` and `-p`, where the parity `p` is 2 for the
+    even pairs (0, 1), (2, 3), ... and 1 for the odd pairs (1, 2), (3, 4), ...
+
 
     Note: This implementation only allows for replica exchanges between directly
     adjecent temperatures implied by the user-supplied list of beta values.
@@ -67,7 +74,8 @@ class PTSimulation(LangevinSimulation):
         Scalar friction to use for Langevin updates
     exchange_interval:
         Specifies the number of simulation steps to take before attempting
-        replica exchange.
+        replica exchange. Should be a multiple of `save_interval`, otherwise
+        the exchange log cannot hold all the attempted exchanges.
     """
 
     def __init__(
@@ -83,6 +91,21 @@ class PTSimulation(LangevinSimulation):
             save_subroutine=self.save_exchanges,
             **kwargs,
         )
+
+        self.exchange_interval = exchange_interval
+        # Each exchange is logged in the column of the last saved frame. If
+        # exchanges are more frequent than saves, several of them share a
+        # column and only the last one is kept in the exchange log. The
+        # dynamics are unaffected, but the log can no longer be used to
+        # demultiplex the replicas, so warn about it.
+        if exchange_interval % self.save_interval != 0:
+            warnings.warn(
+                "exchange_interval ({}) is not a multiple of save_interval ({}): "
+                "the exchange log holds at most one exchange per saved frame, so "
+                "some exchanges will be missing from it.".format(
+                    exchange_interval, self.save_interval
+                )
+            )
 
         self._replica_exchange_approved = 0
         self._replica_exchange_attempts = 0
@@ -100,16 +123,20 @@ class PTSimulation(LangevinSimulation):
         self._replica_exchange_attempts = 0
         self._replica_exchange_approved = 0
 
+    def _reset_acceptance_matrix(self):
+        """(Re)allocates the matrix accumulating exchange statistics"""
+        self.acceptance_matrix = torch.zeros(
+            self.n_replicas, self.n_replicas, device=self.device
+        )
+
     def _set_up_simulation(self, overwrite: bool = False):
         super(PTSimulation, self)._set_up_simulation(overwrite=overwrite)
         self._reset_exchange_stats()
         self.exchange_arr = torch.zeros(
-            (self.n_sims, int(self.n_timesteps / self.save_interval)),
+            (self.n_sims, self.n_timesteps // self.save_interval),
             dtype=torch.int8,
         )
-        self.acceptance_matrix = torch.zeros(
-            self.n_replicas, self.n_replicas
-        ).to(self.device)
+        self._reset_acceptance_matrix()
 
     def attach_model_and_configurations(
         self,
@@ -118,6 +145,11 @@ class PTSimulation(LangevinSimulation):
         betas: List[float],
     ):
         if self.specialize_priors:
+            # `_attach_configurations` consumes `checkpointed_data`; keep a
+            # handle on it so that the re-attachment below can still restore
+            # the checkpointed positions and velocities instead of silently
+            # restarting from the initial configurations.
+            checkpointed_data = self.checkpointed_data
             new_configurations = self._attach_configurations(
                 configurations, betas=betas
             )
@@ -126,16 +158,21 @@ class PTSimulation(LangevinSimulation):
                 condensed_configurations,
             ) = condense_all_priors_for_simulation(model, new_configurations)
             # Repeat attachment, this time with the condensed configurations
+            self.checkpointed_data = checkpointed_data
             self._manually_reattach_configurations(condensed_configurations)
             self._attach_model(model)
             print("Prior models have been specialized for the simulation.")
+            # the condensed configurations are the ones actually simulated, so
+            # they (and not the inputs) are what makes the run reproducible
+            saved_configurations = condensed_configurations
         else:
             self._attach_configurations(configurations, betas=betas)
             self._attach_model(model)
+            saved_configurations = configurations
 
         if self.filename is not None:
             torch.save(
-                (deepcopy(model), deepcopy(configurations)),
+                (deepcopy(model), deepcopy(saved_configurations)),
                 f"{self.filename}_specialized_model_and_config.pt",
             )
 
@@ -168,6 +205,13 @@ class PTSimulation(LangevinSimulation):
         self.initial_data[POSITIONS_KEY] = self.initial_data[POSITIONS_KEY].to(
             self.dtype
         )
+        # recomputed here because the condensed configurations are collated
+        # anew above, so the masses this ratio depends on are new tensors
+        self.beta_mass_ratio = torch.sqrt(
+            1.0
+            / self.beta.repeat_interleave(self.n_atoms)
+            / self.initial_data[MASS_KEY]
+        )[:, None]
 
     def _attach_configurations(
         self, configurations: List[AtomicData], betas: List[float]
@@ -214,6 +258,11 @@ class PTSimulation(LangevinSimulation):
 
         self.n_indep_sims = len(configurations)
         self.n_replicas = len(betas)
+        if self.n_replicas < 2:
+            raise ValueError(
+                "Parallel tempering requires at least two temperatures, but "
+                "{} was supplied.".format(betas)
+            )
         # copy the configurations across each beta/temperature
         new_configurations = []
         extended_betas = []
@@ -268,39 +317,21 @@ class PTSimulation(LangevinSimulation):
         self._propose_even_pairs = True
 
         # (0, 1), (2, 3), ...
-        even_pairs = [(i, i + 1) for i in torch.arange(self.n_replicas)[:-1:2]]
+        even_pairs = [(i, i + 1) for i in range(self.n_replicas)[:-1:2]]
         # (1, 2), (3, 4), ...
-        odd_pairs = [(i, i + 1) for i in torch.arange(self.n_replicas)[1:-1:2]]
+        odd_pairs = [(i, i + 1) for i in range(self.n_replicas)[1:-1:2]]
         if len(odd_pairs) == 0:
             odd_pairs = even_pairs
-        pair_a = []
-        pair_b = []
-        for pair in even_pairs:
-            pair_a.append(
-                torch.arange(self.n_indep_sims) + pair[0] * self.n_indep_sims
-            )
-            pair_b.append(
-                torch.arange(self.n_indep_sims) + pair[1] * self.n_indep_sims
-            )
-        self._even_pairs = [torch.cat(pair_a), torch.cat(pair_b)]
-        pair_a = []
-        pair_b = []
-        for pair in odd_pairs:
-            pair_a.append(
-                torch.arange(self.n_indep_sims) + pair[0] * self.n_indep_sims
-            )
-            pair_b.append(
-                torch.arange(self.n_indep_sims) + pair[1] * self.n_indep_sims
-            )
-        self._odd_pairs = [torch.cat(pair_a), torch.cat(pair_b)]
+        # everything that only depends on these (fixed) pairs is built once
+        # here instead of at every exchange attempt
+        self._even_pairs = self._build_pair_cache(even_pairs)
+        self._odd_pairs = self._build_pair_cache(odd_pairs)
 
         # maps pairs to beta idx for acceptance matrix updates
-        self.pair_to_beta_idx = torch.arange(self.n_replicas).repeat_interleave(
-            self.n_indep_sims
-        )
-        self.acceptance_matrix = torch.zeros(
-            self.n_replicas, self.n_replicas
-        ).to(self.device)
+        self.pair_to_beta_idx = torch.arange(
+            self.n_replicas, device=self.device
+        ).repeat_interleave(self.n_indep_sims)
+        self._reset_acceptance_matrix()
 
         self.initial_pos_spread = (
             torch.cat([data.pos.std(dim=1) for data in new_configurations])
@@ -353,21 +384,65 @@ class PTSimulation(LangevinSimulation):
             (replica_num + 1) * self.n_indep_sims,
         )
         return {
-            "beta": self.betas[replica_num],
+            # `self.beta` holds one entry per simulation, so index the first
+            # simulation of the requested replica
+            "beta": self.beta[replica_num * self.n_indep_sims].item(),
             "indices_in_the_output": indices,
         }
 
-    def _get_proposed_pairs(self) -> List[torch.Tensor]:
+    def _build_pair_cache(
+        self, replica_pairs: List[Tuple[int, int]]
+    ) -> Dict[str, Any]:
+        """Precomputes the quantities that are constant for a given set of
+        proposed replica pairs: the simulation indices on both sides of every
+        pair, their beta values, and the replica indices used to accumulate the
+        acceptance matrix. They are built once at attachment time and kept on
+        the simulation device, so that no index tensor has to be created or
+        transferred to the device during the simulation.
+
+        Parameters
+        ----------
+        replica_pairs:
+            List of (replica, replica) index tuples proposed for exchange
+
+        Returns
+        -------
+        dict:
+            Cached tensors describing the proposed exchanges
+        """
+        sim_idx = torch.arange(self.n_indep_sims, device=self.device)
+        pair_a = torch.cat(
+            [sim_idx + pair[0] * self.n_indep_sims for pair in replica_pairs]
+        )
+        pair_b = torch.cat(
+            [sim_idx + pair[1] * self.n_indep_sims for pair in replica_pairs]
+        )
+        return {
+            "a": pair_a,
+            "b": pair_b,
+            "beta_a": self.beta[pair_a],
+            "beta_b": self.beta[pair_b],
+            # replica index of each proposed pair, in proposal order
+            "replica_a": torch.tensor(
+                [pair[0] for pair in replica_pairs], device=self.device
+            ),
+            "replica_b": torch.tensor(
+                [pair[1] for pair in replica_pairs], device=self.device
+            ),
+            "n_pairs": len(replica_pairs),
+        }
+
+    def _get_proposed_pairs(self) -> Dict[str, Any]:
         """Proposes the even and odd exchange pairs alternatively each time the
         _detect_exchange method is called. Exchanges can only happen between direcly adjacent
         temperatures defined by the user supplied beta series.
 
         Returns
         -------
-        torch.Tensor:
-            pair_a, all possible even/odd pairs across all of the simulations/replicas
-        torch.Tensor:
-            pair_b, all possible
+        dict:
+            The cache built by `_build_pair_cache` for the current parity,
+            holding the simulation indices of both sides of every proposed
+            pair ("a"/"b") together with their beta and replica indices.
         """
         if self._propose_even_pairs:
             return self._even_pairs
@@ -390,45 +465,52 @@ class PTSimulation(LangevinSimulation):
         dict:
             Dictionary containing the approved exchanges
         """
-        pair_a, pair_b = self._get_proposed_pairs()
-        u_a, u_b = data.out[ENERGY_KEY][pair_a], data.out[ENERGY_KEY][pair_b]
-        betas_a, betas_b = self.beta[pair_a], self.beta[pair_b]
-        beta_idx_a, beta_idx_b = (
-            self.pair_to_beta_idx[pair_a],
-            self.pair_to_beta_idx[pair_b],
+        pairs = self._get_proposed_pairs()
+        pair_a, pair_b = pairs["a"], pairs["b"]
+        # detached: the model energies still carry their autograd graph, which
+        # would be kept alive by the tensors derived from them below
+        energies = data.out[ENERGY_KEY].detach()
+        u_a, u_b = energies[pair_a], energies[pair_b]
+        p_pair = (u_a - u_b) * (pairs["beta_a"] - pairs["beta_b"])
+        # drawn from the simulation generator, so that `random_seed` makes the
+        # exchanges reproducible too, and on the simulation device, so that no
+        # host/device synchronisation is needed at every exchange
+        uniform = torch.rand(
+            p_pair.shape,
+            dtype=p_pair.dtype,
+            device=p_pair.device,
+            generator=self.rng,
         )
-        # Assemble pairs of beta undergoing exchange - useful for indexing below
-        beta_pairs = torch.unique(torch.stack((beta_idx_a, beta_idx_b)), dim=1)
-        p_pair = ((u_a - u_b) * (betas_a - betas_b)).cpu()
-        approved = torch.log(torch.rand(len(p_pair))) < p_pair
-        num_approved = torch.sum(approved)
-        num_attempted = len(pair_a)
-        self._replica_exchange_approved += num_approved
-        self._replica_exchange_attempts += num_attempted
+        approved = torch.log(uniform) < p_pair
+        self._replica_exchange_approved += torch.sum(approved)
+        self._replica_exchange_attempts += len(pair_a)
         pairs_for_exchange = {"a": pair_a[approved], "b": pair_b[approved]}
 
-        # Count the number of approved for each temperature pair
-        approved_per_beta = torch.sum(
-            approved.reshape(len(torch.unique(betas_a)), self.n_indep_sims),
-            dim=1,
-        ).to(self.device)
+        # Count the number of approved exchanges for each proposed pair. The
+        # proposals are ordered pair-first, so one row per proposed pair.
+        approved_per_pair = torch.sum(
+            approved.view(pairs["n_pairs"], self.n_indep_sims), dim=1
+        )
         # accumulate the symmetric acceptance/rejection matrices
         self.acceptance_matrix[
-            beta_pairs[0, :], beta_pairs[1, :]
-        ] += approved_per_beta
-        self.acceptance_matrix[beta_pairs[1, :], beta_pairs[0, :]] += (
-            self.n_indep_sims - approved_per_beta
+            pairs["replica_a"], pairs["replica_b"]
+        ] += approved_per_pair
+        self.acceptance_matrix[pairs["replica_b"], pairs["replica_a"]] += (
+            self.n_indep_sims - approved_per_pair
         )
         return pairs_for_exchange
 
     def _perform_exchange(
-        self, data: AtomicData, pairs_for_exchange: Dict
-    ) -> AtomicData:
-        r"""Exchanges the coordinates and velcities for those pairs marked for exchange.
+        self,
+        data: AtomicData,
+        pairs_for_exchange: Dict,
+        forces: torch.Tensor = None,
+    ) -> Tuple[AtomicData, torch.Tensor]:
+        r"""Exchanges the coordinates, velcities and forces for those pairs marked for exchange.
         Exchanged velocities are rescaled based on ratios of beta values from the two configurations.
-        For a pair of configurations :math:`A` and :math:`B`, characterized by the respective
-        potential energies :math:`U_A` and :math:`U_B` the the inverse thermodynamic temperatures
-        :math:`\beta_A` and :math:`\beta_B`, the the velocity exchange rescaling factor is:
+        A configuration leaving the replica at :math:`\beta_{old}` and entering the replica at
+        :math:`\beta_{new}` carries velocities equilibrated at :math:`\beta_{old}`, so they are
+        rescaled by:
 
         .. math::
 
@@ -441,63 +523,80 @@ class PTSimulation(LangevinSimulation):
             velocities for each simulation/replica
         pairs_for_exchange:
             Dictionary that denotes which pairs have been accepted for exchange
+        forces:
+            Forces of the current positions. All replicas share the same molecule and
+            potential, so exchanging configurations only permutes the forces; passing
+            them here keeps them consistent with the new positions without an extra
+            model evaluation.
 
         Returns
         -------
         AtomicData:
             The updated collated atomic data where the coordinates and (rescaled) velocities
             have been exchanged according to the appropriate supplied exchange pairs
+        torch.Tensor:
+            The forces, permuted in the same way as the coordinates (`None` if no
+            forces were supplied)
         """
         pair_a, pair_b = pairs_for_exchange["a"], pairs_for_exchange["b"]
-        save_t_idx = (self.sim_t + 1) // self.save_interval
-        exchange_parity = 2 if self._propose_even_pairs else 1
-        self.exchange_arr[pairs_for_exchange["a"], save_t_idx - 1] = (
-            exchange_parity
-        )
-        self.exchange_arr[pairs_for_exchange["b"], save_t_idx - 1] = (
-            -exchange_parity
-        )
-        # exchange the coordinates
-        # Here we must make swaps in the coordinates and velocities
-        # according to to the collated batch attribute
         if len(pair_a) == 0 and len(pair_b) == 0:
-            return data
-        else:
-            batch_pair_a_cond = False
-            batch_pair_b_cond = False
-            for idx_a, idx_b in zip(pair_a, pair_b):
-                # cumulative bitwise OR to grab corresponding pair batch index
-                batch_pair_a_cond |= data.batch == idx_a
-                batch_pair_b_cond |= data.batch == idx_b
+            return data, forces
 
-            # exchange coordinates
-            x_changed = data[POSITIONS_KEY].detach().clone()
-            x_changed[batch_pair_a_cond] = data[POSITIONS_KEY][
-                batch_pair_b_cond
-            ]
-            x_changed[batch_pair_b_cond] = data[POSITIONS_KEY][
-                batch_pair_a_cond
-            ]
+        # Column of the exchange log. With an exchange_interval that is a
+        # multiple of save_interval (see the warning in __init__) this
+        # subroutine runs right after the frame of the current step was saved,
+        # and `sim_t // save_interval` is the index of that frame. Unlike
+        # `(sim_t + 1) // save_interval - 1` it is never negative, which would
+        # otherwise wrap the record around to the end of the array whenever an
+        # exchange happens before the first frame is saved.
+        save_t_idx = self.sim_t // self.save_interval
+        exchange_parity = 2 if self._propose_even_pairs else 1
+        self.exchange_arr[pair_a.cpu(), save_t_idx] = exchange_parity
+        self.exchange_arr[pair_b.cpu(), save_t_idx] = -exchange_parity
 
-            # scale and exchange the velocities
-            # reshape the betas for simpler elementwise multiplication
-            betas_a = self.beta[pair_a].repeat_interleave(self.n_atoms)[:, None]
-            betas_b = self.beta[pair_b].repeat_interleave(self.n_atoms)[:, None]
-            vscale_a_to_b = torch.sqrt(betas_a / betas_b)
-            vscale_b_to_a = torch.sqrt(betas_b / betas_a)
-            v_changed = data[VELOCITY_KEY].detach().clone()
-            v_changed[batch_pair_a_cond] = (
-                data[VELOCITY_KEY][batch_pair_b_cond] * vscale_a_to_b
+        # Coordinates, velocities and forces are stored atom-by-atom for all
+        # replicas at once. Grouping them per simulation lets every accepted
+        # pair be swapped by a single fancy-index assignment, instead of
+        # building one boolean mask over all atoms per pair.
+        per_sim = (self.n_sims, self.n_atoms, self.n_dims)
+
+        # exchange the coordinates
+        pos = data[POSITIONS_KEY].detach().clone().reshape(per_sim)
+        pos_a, pos_b = pos[pair_a], pos[pair_b]
+        pos[pair_a], pos[pair_b] = pos_b, pos_a
+        data[POSITIONS_KEY] = pos.reshape(-1, self.n_dims)
+
+        # scale and exchange the velocities: the velocities entering replica a
+        # come from replica b, hence they are rescaled by sqrt(beta_b/beta_a)
+        beta_a = self.beta[pair_a][:, None, None]
+        beta_b = self.beta[pair_b][:, None, None]
+        vscale_into_a = torch.sqrt(beta_b / beta_a)
+        vscale_into_b = torch.sqrt(beta_a / beta_b)
+        vel = data[VELOCITY_KEY].detach().clone().reshape(per_sim)
+        vel_a, vel_b = vel[pair_a], vel[pair_b]
+        vel[pair_a] = vel_b * vscale_into_a
+        vel[pair_b] = vel_a * vscale_into_b
+        data[VELOCITY_KEY] = vel.reshape(-1, self.n_dims)
+
+        # exchange the forces: the integrator reuses the forces of the current
+        # positions at the next step, so they must follow the configurations
+        if forces is not None:
+            swapped_forces = forces.clone().reshape(per_sim)
+            forces_a, forces_b = (
+                swapped_forces[pair_a],
+                swapped_forces[pair_b],
             )
-            v_changed[batch_pair_b_cond] = (
-                data[VELOCITY_KEY][batch_pair_a_cond] * vscale_b_to_a
+            swapped_forces[pair_a], swapped_forces[pair_b] = (
+                forces_b,
+                forces_a,
             )
+            forces = swapped_forces.reshape(-1, self.n_dims)
 
-            data[POSITIONS_KEY] = x_changed
-            data[VELOCITY_KEY] = v_changed
-            return data
+        return data, forces
 
-    def detect_and_exchange_replicas(self, data: AtomicData) -> AtomicData:
+    def detect_and_exchange_replicas(
+        self, data: AtomicData, forces: torch.Tensor
+    ) -> Tuple[AtomicData, torch.Tensor]:
         """Subroutine for replica exchange: Modifies the internal coordinates and velocities
         according to the algorithm specified by `reform`:
 
@@ -508,46 +607,65 @@ class PTSimulation(LangevinSimulation):
         data:
             Current `AtomicData` instance containing all replicas, their coordinates, velocities,
             potential energies, and beta values
+        forces:
+            Forces of the current positions, permuted along with the exchanged replicas
 
         Returns
         -------
         data:
             Updated `AtomicData` instance containing potentially exchanged replicas.
+        forces:
+            Forces belonging to the updated positions.
         """
         pairs_for_exchange = self._detect_exchange(data)
-        data = self._perform_exchange(data, pairs_for_exchange)
+        data, forces = self._perform_exchange(
+            data, pairs_for_exchange, forces=forces
+        )
         self._propose_even_pairs = not self._propose_even_pairs
-        return data
+        return data, forces
 
     def save_exchanges(self, data: AtomicData, save_step: int) -> None:
         """Save routine to record the ratio of acceptances/attempts for each temperature during the simulation.
         After saving to file, the acceptances/attempts are reset. For this particular method, the AtomicData
         and save_step are not used, though they are included as arguments for the sake of saving
         """
-        key = self._get_numpy_count()
+        # `write` has already advanced the numpy file counter by the time this
+        # runs, so step back by one to label these files like the trajectory
+        # chunk they belong to
+        key = "{:04d}".format(self._npy_file_index - 1)
         np.save(
             "{}_acceptance_{}.npy".format(self.filename, key),
             self.acceptance_matrix.detach().cpu().numpy(),
         )
+        exchanges = self.exchange_arr[:, self._old_save_step : save_step]
+        # trajectory chunks are always exported with `_save_size` frames, zero
+        # padded for the last, partial one; pad here as well so that the
+        # exchange log stays aligned with the exported frames column by column
+        if exchanges.shape[1] < self._save_size:
+            exchanges = torch.nn.functional.pad(
+                exchanges, (0, self._save_size - exchanges.shape[1])
+            )
         np.save(
             "{}_exchanges_{}.npy".format(self.filename, key),
-            self.exchange_arr[:, self._old_save_step : save_step],
+            exchanges,
         )
         # Reset
         self._old_save_step = save_step
-        self.acceptance_matrix = torch.zeros(
-            self.n_replicas, self.n_replicas
-        ).to(self.device)
+        self._reset_acceptance_matrix()
 
     def summary(self):
-        attempted = self._replica_exchange_attempts
-        exchanged = self._replica_exchange_approved
+        attempted = int(self._replica_exchange_attempts)
+        exchanged = int(self._replica_exchange_approved)
         printstring = "Done simulating ({})".format(time.asctime())
-        printstring += "\nReplica-exchange rate: %.2f%% (%d/%d)" % (
-            exchanged / attempted * 100.0,
-            exchanged,
-            attempted,
-        )
+        # a simulation shorter than one exchange interval has no statistics
+        if attempted == 0:
+            printstring += "\nNo replica exchange was attempted."
+        else:
+            printstring += "\nReplica-exchange rate: %.2f%% (%d/%d)" % (
+                exchanged / attempted * 100.0,
+                exchanged,
+                attempted,
+            )
         printstring += (
             "\nNote that you can call .get_replica_info"
             "(#replica) to query the inverse temperature"

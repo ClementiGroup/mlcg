@@ -423,15 +423,17 @@ def test_exchange_and_rescale(tmp_path):
     swapped_coords[pairs_for_exchange["b"].numpy()] = manual_coords[
         pairs_for_exchange["a"]
     ]
+    # velocities coming from the hot replica "b" enter the cold replica "a",
+    # so they must be rescaled with the hot -> cold factor (and vice versa)
     swapped_velocities[pairs_for_exchange["a"].numpy()] = (
-        manual_velocities[pairs_for_exchange["b"]] * cold_to_hot_vscale
+        manual_velocities[pairs_for_exchange["b"]] * hot_to_cold_vscale
     )
     swapped_velocities[pairs_for_exchange["b"].numpy()] = (
-        manual_velocities[pairs_for_exchange["a"]] * hot_to_cold_vscale
+        manual_velocities[pairs_for_exchange["a"]] * cold_to_hot_vscale
     )
 
     # Perform exchange
-    exchanged_data = simulation._perform_exchange(
+    exchanged_data, _ = simulation._perform_exchange(
         simulation.initial_data, pairs_for_exchange
     )
 
