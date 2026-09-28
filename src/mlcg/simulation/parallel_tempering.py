@@ -205,13 +205,6 @@ class PTSimulation(LangevinSimulation):
         self.initial_data[POSITIONS_KEY] = self.initial_data[POSITIONS_KEY].to(
             self.dtype
         )
-        # recomputed here because the condensed configurations are collated
-        # anew above, so the masses this ratio depends on are new tensors
-        self.beta_mass_ratio = torch.sqrt(
-            1.0
-            / self.beta.repeat_interleave(self.n_atoms)
-            / self.initial_data[MASS_KEY]
-        )[:, None]
 
     def _attach_configurations(
         self, configurations: List[AtomicData], betas: List[float]
@@ -322,15 +315,10 @@ class PTSimulation(LangevinSimulation):
         odd_pairs = [(i, i + 1) for i in range(self.n_replicas)[1:-1:2]]
         if len(odd_pairs) == 0:
             odd_pairs = even_pairs
-        # everything that only depends on these (fixed) pairs is built once
-        # here instead of at every exchange attempt
+        # the proposed pairs never change during the simulation, so the
+        # tensors describing them are built once here
         self._even_pairs = self._build_pair_cache(even_pairs)
         self._odd_pairs = self._build_pair_cache(odd_pairs)
-
-        # maps pairs to beta idx for acceptance matrix updates
-        self.pair_to_beta_idx = torch.arange(
-            self.n_replicas, device=self.device
-        ).repeat_interleave(self.n_indep_sims)
         self._reset_acceptance_matrix()
 
         self.initial_pos_spread = (
@@ -411,24 +399,23 @@ class PTSimulation(LangevinSimulation):
             Cached tensors describing the proposed exchanges
         """
         sim_idx = torch.arange(self.n_indep_sims, device=self.device)
-        pair_a = torch.cat(
-            [sim_idx + pair[0] * self.n_indep_sims for pair in replica_pairs]
-        )
-        pair_b = torch.cat(
-            [sim_idx + pair[1] * self.n_indep_sims for pair in replica_pairs]
-        )
+        pair_a, pair_b = [], []
+        replica_a, replica_b = [], []
+        for rep_a, rep_b in replica_pairs:
+            pair_a.append(sim_idx + rep_a * self.n_indep_sims)
+            pair_b.append(sim_idx + rep_b * self.n_indep_sims)
+            replica_a.append(rep_a)
+            replica_b.append(rep_b)
+        pair_a = torch.cat(pair_a)
+        pair_b = torch.cat(pair_b)
         return {
             "a": pair_a,
             "b": pair_b,
             "beta_a": self.beta[pair_a],
             "beta_b": self.beta[pair_b],
             # replica index of each proposed pair, in proposal order
-            "replica_a": torch.tensor(
-                [pair[0] for pair in replica_pairs], device=self.device
-            ),
-            "replica_b": torch.tensor(
-                [pair[1] for pair in replica_pairs], device=self.device
-            ),
+            "replica_a": torch.tensor(replica_a, device=self.device),
+            "replica_b": torch.tensor(replica_b, device=self.device),
             "n_pairs": len(replica_pairs),
         }
 
@@ -504,7 +491,7 @@ class PTSimulation(LangevinSimulation):
         self,
         data: AtomicData,
         pairs_for_exchange: Dict,
-        forces: torch.Tensor = None,
+        forces: torch.Tensor,
     ) -> Tuple[AtomicData, torch.Tensor]:
         r"""Exchanges the coordinates, velcities and forces for those pairs marked for exchange.
         Exchanged velocities are rescaled based on ratios of beta values from the two configurations.
@@ -535,8 +522,7 @@ class PTSimulation(LangevinSimulation):
             The updated collated atomic data where the coordinates and (rescaled) velocities
             have been exchanged according to the appropriate supplied exchange pairs
         torch.Tensor:
-            The forces, permuted in the same way as the coordinates (`None` if no
-            forces were supplied)
+            The forces, permuted in the same way as the coordinates
         """
         pair_a, pair_b = pairs_for_exchange["a"], pairs_for_exchange["b"]
         if len(pair_a) == 0 and len(pair_b) == 0:
@@ -580,17 +566,10 @@ class PTSimulation(LangevinSimulation):
 
         # exchange the forces: the integrator reuses the forces of the current
         # positions at the next step, so they must follow the configurations
-        if forces is not None:
-            swapped_forces = forces.clone().reshape(per_sim)
-            forces_a, forces_b = (
-                swapped_forces[pair_a],
-                swapped_forces[pair_b],
-            )
-            swapped_forces[pair_a], swapped_forces[pair_b] = (
-                forces_b,
-                forces_a,
-            )
-            forces = swapped_forces.reshape(-1, self.n_dims)
+        swapped_forces = forces.clone().reshape(per_sim)
+        forces_a, forces_b = swapped_forces[pair_a], swapped_forces[pair_b]
+        swapped_forces[pair_a], swapped_forces[pair_b] = forces_b, forces_a
+        forces = swapped_forces.reshape(-1, self.n_dims)
 
         return data, forces
 

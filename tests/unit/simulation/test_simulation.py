@@ -14,7 +14,12 @@ from mlcg.simulation.langevin import (
 )
 from mlcg.simulation.parallel_tempering import PTSimulation
 from mlcg.data.atomic_data import AtomicData
-from mlcg.data._keys import MASS_KEY, POSITIONS_KEY, ATOM_TYPE_KEY
+from mlcg.data._keys import (
+    MASS_KEY,
+    POSITIONS_KEY,
+    VELOCITY_KEY,
+    ATOM_TYPE_KEY,
+)
 from mlcg.mol_utils import _get_initial_data, _ASE_prior_model
 
 torch_pi = torch.tensor(np.pi)
@@ -432,9 +437,20 @@ def test_exchange_and_rescale(tmp_path):
         manual_velocities[pairs_for_exchange["a"]] * cold_to_hot_vscale
     )
 
+    # the forces must be exchanged exactly like the coordinates
+    forces = torch.randn(*simulation.initial_data.pos.shape).double()
+    manual_forces = forces.numpy().reshape(n_replicas * n_indep, 7, 3)
+    swapped_forces = deepcopy(manual_forces)
+    swapped_forces[pairs_for_exchange["a"].numpy()] = manual_forces[
+        pairs_for_exchange["b"]
+    ]
+    swapped_forces[pairs_for_exchange["b"].numpy()] = manual_forces[
+        pairs_for_exchange["a"]
+    ]
+
     # Perform exchange
-    exchanged_data, _ = simulation._perform_exchange(
-        simulation.initial_data, pairs_for_exchange
+    exchanged_data, exchanged_forces = simulation._perform_exchange(
+        simulation.initial_data, pairs_for_exchange, forces
     )
 
     exchanged_coords = exchanged_data.pos.numpy().reshape(
@@ -448,6 +464,68 @@ def test_exchange_and_rescale(tmp_path):
     np.testing.assert_almost_equal(
         swapped_velocities, exchanged_and_scaled_velocities, decimal=5
     )
+    np.testing.assert_almost_equal(
+        swapped_forces,
+        exchanged_forces.numpy().reshape(n_replicas * n_indep, 7, 3),
+        decimal=5,
+    )
+
+
+@pytest.mark.parametrize(
+    "ASE_prior_model, get_initial_data, specialize_priors",
+    [
+        (ASE_prior_model, get_initial_data, False),
+        (ASE_prior_model, get_initial_data, True),
+    ],
+    indirect=["ASE_prior_model", "get_initial_data"],
+)
+def test_pt_checkpoint_restart(
+    ASE_prior_model, get_initial_data, specialize_priors, tmp_path
+):
+    """Tests that a PTSimulation restarted from a checkpoint loads exactly
+    the state the checkpointed simulation had when the checkpoint was
+    written, with and without condensed priors"""
+    betas = [1.67, 1.42, 1.28, 1.00]
+    sim_kwargs = dict(
+        friction=1.0,
+        exchange_interval=10,
+        n_timesteps=40,
+        save_interval=10,
+        export_interval=20,
+        log_interval=10,
+        create_checkpoints=True,
+        specialize_priors=specialize_priors,
+        filename=str(tmp_path / PTSimulation.__name__),
+    )
+
+    data_dictionary = ASE_prior_model()
+    initial_data_list = get_initial_data(
+        data_dictionary["molecule"],
+        data_dictionary["neighbor_lists"],
+        corruptor=None,
+        add_masses=True,
+    )
+    simulation = PTSimulation(**sim_kwargs)
+    simulation.attach_model_and_configurations(
+        data_dictionary["model"], initial_data_list, betas
+    )
+    simulation.simulate()
+    # state of the simulation at the moment the last checkpoint was written
+    checkpoint = simulation.checkpoint
+
+    data_dictionary = ASE_prior_model()
+    restarted = PTSimulation(**sim_kwargs, read_checkpoint_file=True)
+    restarted.attach_model_and_configurations(
+        data_dictionary["model"], initial_data_list, betas
+    )
+
+    torch.testing.assert_close(
+        restarted.initial_data[POSITIONS_KEY], checkpoint[POSITIONS_KEY]
+    )
+    torch.testing.assert_close(
+        restarted.initial_data[VELOCITY_KEY], checkpoint[VELOCITY_KEY]
+    )
+    assert restarted.current_timestep == checkpoint["current_timestep"]
 
 
 def test_maxwell_boltzmann_stats():
