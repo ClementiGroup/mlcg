@@ -296,7 +296,7 @@ class PaiNN(nn.Module):
     max_num_neighbors:
         Maximum number of neighbors to return for a
         given node/atom when constructing the molecular graph during forward
-        passes. This attribute is passed to the torch_cluster radius_graph
+        passes. This attribute is passed to the pyg_lib radius
         routine keyword max_num_neighbors, which normally defaults to 32.
         Users should set this to higher values if they are using higher upper
         distance cutoffs and expect more than 32 neighbors per node/atom.

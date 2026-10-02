@@ -223,7 +223,7 @@ Full example for a machine with CUDA 13.0 (``cu130``)
 
    pip install torch==2.11.0 --index-url https://download.pytorch.org/whl/cu130
    pip install torch_geometric
-   pip install torch_cluster -f https://data.pyg.org/whl/torch-2.11.0+cu130.html
+   pip install "pyg_lib>=0.7.0" -f https://data.pyg.org/whl/torch-2.11.0+cu130.html
    pip install cuequivariance-torch
    pip install cuequivariance-ops-torch-cu13
    pip install -r requirements.txt

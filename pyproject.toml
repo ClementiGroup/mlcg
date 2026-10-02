@@ -44,7 +44,7 @@ dependencies = [
     "sympy",
     "seaborn",
     "tensorboard",
-    "torch-geometric>=2.6.1",
+    "torch_geometric>=2.6.1",
     "torchist>=1.0.1",
     "torchtnt",
     "tqdm",
@@ -63,11 +63,11 @@ classifiers = [
 [project.optional-dependencies]
 cpu = [
     "torch==2.11.0",
-    "torch-cluster",
+    "pyg_lib>=0.7.0",
 ]
 cu128 = [
     "torch==2.11.0",
-    "torch-cluster",
+    "pyg_lib>=0.7.0",
     "cuequivariance",
     "cuequivariance-torch",
     "cuequivariance-ops-torch-cu12",
@@ -75,7 +75,7 @@ cu128 = [
 ]
 cu130 = [
     "torch==2.11.0",
-    "torch-cluster",
+    "pyg_lib>=0.7.0",
     "cuequivariance",
     "cuequivariance-torch",
     "cuequivariance-ops-torch-cu13",
@@ -83,7 +83,7 @@ cu130 = [
 ]
 rocm72 = [
     "torch==2.11.0",
-    "torch-cluster-rocm",
+    "pyg-lib-rocm>=0.7.0",
     "openequivariance",
     "triton-rocm",
 ]
@@ -150,9 +150,9 @@ filterwarnings = [
 [tool.uv]
 override-dependencies = ["e3nn==0.5.3"]
 # Keep no-build-isolation-package as a fallback: if no pre-built PyG wheel is
-# found for this platform, torch-cluster will be built from source and needs
+# found for this platform, pyg_lib will be built from source and needs
 # to see the already-installed torch without build isolation.
-no-build-isolation-package = ["torch-cluster"]
+no-build-isolation-package = ["pyg_lib"]
 index-strategy = "unsafe-best-match"
 # unsafe-best-match needed so torch's transitive deps (e.g. nvidia-cudnn-cu12)
 # can be resolved across multiple indexes.
@@ -174,7 +174,7 @@ torch = [
     { index="torch-cu130", extra="cu130" },
     { index="torch-rocm72", extra="rocm72" },
 ]
-torch-cluster = [
+pyg_lib = [
     { index="pyg-cpu", extra="cpu" },
     { index="pyg-cu128", extra="cu128" },
     { index="pyg-cu130", extra="cu130" },
