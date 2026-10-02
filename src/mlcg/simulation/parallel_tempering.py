@@ -1,7 +1,7 @@
 # Authors: Nick Charron, Felix Musil, Clark Templeton
 # Based on code from Yaoyi Chen and Andreas Kramer: https://github.com/noegroup/reform
 
-from typing import List, Tuple, Any, Dict, Sequence
+from typing import List, Tuple, Any, Dict, Sequence, Optional
 import time
 import torch
 import numpy as np
@@ -491,8 +491,8 @@ class PTSimulation(LangevinSimulation):
         self,
         data: AtomicData,
         pairs_for_exchange: Dict,
-        forces: torch.Tensor,
-    ) -> Tuple[AtomicData, torch.Tensor]:
+        forces: Optional[torch.Tensor] = None,
+    ) -> Tuple[AtomicData, Optional[torch.Tensor]]:
         r"""Exchanges the coordinates, velcities and forces for those pairs marked for exchange.
         Exchanged velocities are rescaled based on ratios of beta values from the two configurations.
         A configuration leaving the replica at :math:`\beta_{old}` and entering the replica at
@@ -514,7 +514,8 @@ class PTSimulation(LangevinSimulation):
             Forces of the current positions. All replicas share the same molecule and
             potential, so exchanging configurations only permutes the forces; passing
             them here keeps them consistent with the new positions without an extra
-            model evaluation.
+            model evaluation. If `None`, only coordinates and velocities are exchanged,
+            and the forces must be recomputed before the next integration step.
 
         Returns
         -------
@@ -522,7 +523,8 @@ class PTSimulation(LangevinSimulation):
             The updated collated atomic data where the coordinates and (rescaled) velocities
             have been exchanged according to the appropriate supplied exchange pairs
         torch.Tensor:
-            The forces, permuted in the same way as the coordinates
+            The forces, permuted in the same way as the coordinates (`None` if no
+            forces were supplied)
         """
         pair_a, pair_b = pairs_for_exchange["a"], pairs_for_exchange["b"]
         if len(pair_a) == 0 and len(pair_b) == 0:
@@ -566,10 +568,11 @@ class PTSimulation(LangevinSimulation):
 
         # exchange the forces: the integrator reuses the forces of the current
         # positions at the next step, so they must follow the configurations
-        swapped_forces = forces.clone().reshape(per_sim)
-        forces_a, forces_b = swapped_forces[pair_a], swapped_forces[pair_b]
-        swapped_forces[pair_a], swapped_forces[pair_b] = forces_b, forces_a
-        forces = swapped_forces.reshape(-1, self.n_dims)
+        if forces is not None:
+            swapped_forces = forces.clone().reshape(per_sim)
+            forces_a, forces_b = swapped_forces[pair_a], swapped_forces[pair_b]
+            swapped_forces[pair_a], swapped_forces[pair_b] = forces_b, forces_a
+            forces = swapped_forces.reshape(-1, self.n_dims)
 
         return data, forces
 
