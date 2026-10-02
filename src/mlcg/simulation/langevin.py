@@ -1,4 +1,4 @@
-from typing import List, Tuple, Any, Dict, Sequence, Union
+from typing import List, Tuple, Any, Dict, Optional, Sequence, Union
 import torch
 from torch.distributions.normal import Normal
 import numpy as np
@@ -229,7 +229,7 @@ class LangevinSimulation(_Simulation):
             )
             self.simulated_kinetic_energies[save_ind, :] = kes
 
-    def write(self):
+    def write(self, data: Optional[AtomicData] = None):
         """Utility to save numpy arrays"""
         key = self._get_numpy_count()
         if self.save_energies:
@@ -247,7 +247,7 @@ class LangevinSimulation(_Simulation):
                 self._save_size, self.n_sims
             )
 
-        super().write()
+        super().write(data=data)
 
     def reshape_output(self):
         super().reshape_output()
