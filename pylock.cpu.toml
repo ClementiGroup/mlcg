@@ -1254,6 +1254,16 @@ sdist = { url = "https://files.pythonhosted.org/packages/1b/7d/92392ff7815c21062
 wheels = [{ url = "https://files.pythonhosted.org/packages/0c/c3/44f3fbbfa403ea2a7c779186dc20772604442dde72947e7d01069cbe98e3/pycparser-3.0-py3-none-any.whl", upload-time = 2026-01-21T14:26:50Z, size = 48172, hashes = { sha256 = "b727414169a36b7d524c1c3e31839a521725078d7b2ff038656844266160a992" } }]
 
 [[packages]]
+name = "pyg-lib"
+version = "0.9.0+pt211cpu"
+index = "https://data.pyg.org/whl/torch-2.11.0+cpu.html"
+wheels = [
+    { url = "https://data.pyg.org/whl/torch-2.11.0%2Bcpu/pyg_lib-0.9.0%2Bpt211cpu-cp310-abi3-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hashes = { sha256 = "956c5be0c9a56417f8610d4652115e90071688e2d1329d6f4e5cde457ee1dd7d" } },
+    { url = "https://data.pyg.org/whl/torch-2.11.0%2Bcpu/pyg_lib-0.9.0%2Bpt211cpu-cp310-abi3-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hashes = { sha256 = "2da8e7998dfda3001e03b34808cd01f434baa50e0456bd1f7488a9cce90dd3c9" } },
+    { url = "https://data.pyg.org/whl/torch-2.11.0%2Bcpu/pyg_lib-0.9.0%2Bpt211cpu-cp310-abi3-win_amd64.whl", hashes = { sha256 = "6223704272ab1881e858304b14b42290f26bf2689e39bfa823f436fdabac1892" } },
+]
+
+[[packages]]
 name = "pygments"
 version = "2.20.0"
 index = "https://pypi.org/simple"
@@ -1604,24 +1614,6 @@ wheels = [
     { url = "https://download-r2.pytorch.org/whl/cpu/torch-2.11.0%2Bcpu-cp312-cp312-manylinux_2_28_aarch64.whl", upload-time = 2026-04-28T00:06:14Z, hashes = { sha256 = "70ecb2659af6373b7c5336e692e665605b0201ea21ff51aaea47e1d75ea6b5aa" } },
     { url = "https://download-r2.pytorch.org/whl/cpu/torch-2.11.0%2Bcpu-cp312-cp312-manylinux_2_28_x86_64.whl", upload-time = 2026-04-28T00:06:24Z, hashes = { sha256 = "f82e2ae20c1545bb03997d1cc3143d94e14b800038669ee1aca45808a9acc338" } },
     { url = "https://download-r2.pytorch.org/whl/cpu/torch-2.11.0%2Bcpu-cp312-cp312-win_amd64.whl", upload-time = 2026-04-28T00:06:34Z, hashes = { sha256 = "1abeaa46fa7532ed35ed79146f4de5d7a9d4b30462c98052ea4ddfe781ea3eca" } },
-]
-
-[[packages]]
-name = "torch-cluster"
-version = "1.6.3"
-marker = "sys_platform == 'darwin'"
-index = "https://data.pyg.org/whl/torch-2.11.0+cpu.html"
-wheels = [{ url = "https://data.pyg.org/whl/torch-2.11.0%2Bcpu/torch_cluster-1.6.3-cp312-cp312-macosx_10_13_universal2.whl", hashes = {} }]
-
-[[packages]]
-name = "torch-cluster"
-version = "1.6.3+pt211cpu"
-marker = "sys_platform != 'darwin'"
-index = "https://data.pyg.org/whl/torch-2.11.0+cpu.html"
-wheels = [
-    { url = "https://data.pyg.org/whl/torch-2.11.0%2Bcpu/torch_cluster-1.6.3%2Bpt211cpu-cp312-cp312-linux_aarch64.whl", hashes = {} },
-    { url = "https://data.pyg.org/whl/torch-2.11.0%2Bcpu/torch_cluster-1.6.3%2Bpt211cpu-cp312-cp312-linux_x86_64.whl", hashes = {} },
-    { url = "https://data.pyg.org/whl/torch-2.11.0%2Bcpu/torch_cluster-1.6.3%2Bpt211cpu-cp312-cp312-win_amd64.whl", hashes = {} },
 ]
 
 [[packages]]

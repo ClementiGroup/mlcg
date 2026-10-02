@@ -1485,6 +1485,16 @@ sdist = { url = "https://files.pythonhosted.org/packages/1b/7d/92392ff7815c21062
 wheels = [{ url = "https://files.pythonhosted.org/packages/0c/c3/44f3fbbfa403ea2a7c779186dc20772604442dde72947e7d01069cbe98e3/pycparser-3.0-py3-none-any.whl", upload-time = 2026-01-21T14:26:50Z, size = 48172, hashes = { sha256 = "b727414169a36b7d524c1c3e31839a521725078d7b2ff038656844266160a992" } }]
 
 [[packages]]
+name = "pyg-lib"
+version = "0.9.0+pt211cu130"
+index = "https://data.pyg.org/whl/torch-2.11.0+cu130.html"
+wheels = [
+    { url = "https://data.pyg.org/whl/torch-2.11.0%2Bcu130/pyg_lib-0.9.0%2Bpt211cu130-cp310-abi3-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hashes = { sha256 = "7dc1216b615c9f78d94698ef4667a200defcc66549593ed71b688e73f3071b83" } },
+    { url = "https://data.pyg.org/whl/torch-2.11.0%2Bcu130/pyg_lib-0.9.0%2Bpt211cu130-cp310-abi3-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hashes = { sha256 = "2ef892f5c2839da647da040a14cfecb803d55e989a2681943472aa6b2644ab5f" } },
+    { url = "https://data.pyg.org/whl/torch-2.11.0%2Bcu130/pyg_lib-0.9.0%2Bpt211cu130-cp310-abi3-win_amd64.whl", hashes = { sha256 = "91c1f4983e45d46d6f1cc98bf669bc2844121224f57287aa55a21e80fa88de8d" } },
+]
+
+[[packages]]
 name = "pygments"
 version = "2.20.0"
 index = "https://pypi.org/simple"
@@ -1827,12 +1837,6 @@ wheels = [
     { url = "https://download-r2.pytorch.org/whl/cu130/torch-2.11.0%2Bcu130-cp312-cp312-manylinux_2_28_x86_64.whl", upload-time = 2026-04-27T20:02:14Z, hashes = { sha256 = "96911323dcfcd42028c7e8edde7bdf25bb187753234e8775f0f3f112e86a22db" } },
     { url = "https://download-r2.pytorch.org/whl/cu130/torch-2.11.0%2Bcu130-cp312-cp312-win_amd64.whl", upload-time = 2026-04-27T20:03:28Z, hashes = { sha256 = "ef8beae16d781c3244ef28dc7bee6d8871c26bbde65d5bf66e902cb61972c4ab" } },
 ]
-
-[[packages]]
-name = "torch-cluster"
-version = "1.6.3+pt211cu130"
-index = "https://data.pyg.org/whl/torch-2.11.0+cu130.html"
-wheels = [{ url = "https://data.pyg.org/whl/torch-2.11.0%2Bcu130/torch_cluster-1.6.3%2Bpt211cu130-cp312-cp312-linux_x86_64.whl", hashes = {} }]
 
 [[packages]]
 name = "torch-ema"

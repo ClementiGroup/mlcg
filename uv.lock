@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = "==3.12.*"
 resolution-markers = [
     "sys_platform == 'win32' and extra != 'extra-4-mlcg-cpu' and extra != 'extra-4-mlcg-cu128' and extra != 'extra-4-mlcg-cu130' and extra == 'extra-4-mlcg-rocm72'",
@@ -1587,7 +1587,7 @@ wheels = [
 
 [[package]]
 name = "mlcg"
-version = "0.1.4"
+version = "0.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "aggforce" },
@@ -1624,31 +1624,30 @@ dependencies = [
 
 [package.optional-dependencies]
 cpu = [
+    { name = "pyg-lib", version = "0.9.0+pt211cpu", source = { registry = "https://data.pyg.org/whl/torch-2.11.0+cpu.html" } },
     { name = "torch", version = "2.11.0", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(sys_platform == 'darwin' and extra == 'extra-4-mlcg-cpu') or (extra == 'extra-4-mlcg-cpu' and extra == 'extra-4-mlcg-cu128') or (extra == 'extra-4-mlcg-cpu' and extra == 'extra-4-mlcg-cu130') or (extra == 'extra-4-mlcg-cpu' and extra == 'extra-4-mlcg-rocm72') or (extra == 'extra-4-mlcg-cu128' and extra == 'extra-4-mlcg-cu130') or (extra == 'extra-4-mlcg-cu128' and extra == 'extra-4-mlcg-rocm72') or (extra == 'extra-4-mlcg-cu130' and extra == 'extra-4-mlcg-rocm72')" },
     { name = "torch", version = "2.11.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "(sys_platform != 'darwin' and extra == 'extra-4-mlcg-cpu') or (extra == 'extra-4-mlcg-cpu' and extra == 'extra-4-mlcg-cu128') or (extra == 'extra-4-mlcg-cpu' and extra == 'extra-4-mlcg-cu130') or (extra == 'extra-4-mlcg-cpu' and extra == 'extra-4-mlcg-rocm72') or (extra == 'extra-4-mlcg-cu128' and extra == 'extra-4-mlcg-cu130') or (extra == 'extra-4-mlcg-cu128' and extra == 'extra-4-mlcg-rocm72') or (extra == 'extra-4-mlcg-cu130' and extra == 'extra-4-mlcg-rocm72')" },
-    { name = "torch-cluster", version = "1.6.3", source = { registry = "https://data.pyg.org/whl/torch-2.11.0+cpu.html" }, marker = "(sys_platform == 'darwin' and extra == 'extra-4-mlcg-cpu') or (extra == 'extra-4-mlcg-cpu' and extra == 'extra-4-mlcg-cu128') or (extra == 'extra-4-mlcg-cpu' and extra == 'extra-4-mlcg-cu130') or (extra == 'extra-4-mlcg-cpu' and extra == 'extra-4-mlcg-rocm72') or (extra == 'extra-4-mlcg-cu128' and extra == 'extra-4-mlcg-cu130') or (extra == 'extra-4-mlcg-cu128' and extra == 'extra-4-mlcg-rocm72') or (extra == 'extra-4-mlcg-cu130' and extra == 'extra-4-mlcg-rocm72')" },
-    { name = "torch-cluster", version = "1.6.3+pt211cpu", source = { registry = "https://data.pyg.org/whl/torch-2.11.0+cpu.html" }, marker = "(sys_platform != 'darwin' and extra == 'extra-4-mlcg-cpu') or (extra == 'extra-4-mlcg-cpu' and extra == 'extra-4-mlcg-cu128') or (extra == 'extra-4-mlcg-cpu' and extra == 'extra-4-mlcg-cu130') or (extra == 'extra-4-mlcg-cpu' and extra == 'extra-4-mlcg-rocm72') or (extra == 'extra-4-mlcg-cu128' and extra == 'extra-4-mlcg-cu130') or (extra == 'extra-4-mlcg-cu128' and extra == 'extra-4-mlcg-rocm72') or (extra == 'extra-4-mlcg-cu130' and extra == 'extra-4-mlcg-rocm72')" },
 ]
 cu128 = [
     { name = "cuequivariance" },
     { name = "cuequivariance-ops-torch-cu12" },
     { name = "cuequivariance-torch" },
     { name = "nvalchemi-toolkit-ops", extra = ["torch"], marker = "extra == 'extra-4-mlcg-cu128' or (extra == 'extra-4-mlcg-cpu' and extra == 'extra-4-mlcg-cu130') or (extra == 'extra-4-mlcg-cpu' and extra == 'extra-4-mlcg-rocm72') or (extra == 'extra-4-mlcg-cu130' and extra == 'extra-4-mlcg-rocm72')" },
+    { name = "pyg-lib", version = "0.9.0+pt211cu128", source = { registry = "https://data.pyg.org/whl/torch-2.11.0+cu128.html" } },
     { name = "torch", version = "2.11.0+cu128", source = { registry = "https://download.pytorch.org/whl/cu128" } },
-    { name = "torch-cluster", version = "1.6.3+pt211cu128", source = { registry = "https://data.pyg.org/whl/torch-2.11.0+cu128.html" } },
 ]
 cu130 = [
     { name = "cuequivariance" },
     { name = "cuequivariance-ops-torch-cu13" },
     { name = "cuequivariance-torch" },
     { name = "nvalchemi-toolkit-ops", extra = ["torch"], marker = "extra == 'extra-4-mlcg-cu130' or (extra == 'extra-4-mlcg-cpu' and extra == 'extra-4-mlcg-cu128') or (extra == 'extra-4-mlcg-cu128' and extra == 'extra-4-mlcg-rocm72') or (extra == 'extra-4-mlcg-cpu' and extra != 'extra-4-mlcg-cu130' and extra == 'extra-4-mlcg-rocm72')" },
+    { name = "pyg-lib", version = "0.9.0+pt211cu130", source = { registry = "https://data.pyg.org/whl/torch-2.11.0+cu130.html" } },
     { name = "torch", version = "2.11.0+cu130", source = { registry = "https://download.pytorch.org/whl/cu130" } },
-    { name = "torch-cluster", version = "1.6.3+pt211cu130", source = { registry = "https://data.pyg.org/whl/torch-2.11.0+cu130.html" } },
 ]
 rocm72 = [
     { name = "openequivariance" },
+    { name = "pyg-lib-rocm" },
     { name = "torch", version = "2.11.0+rocm7.2", source = { registry = "https://download.pytorch.org/whl/rocm7.2" } },
-    { name = "torch-cluster-rocm" },
     { name = "triton-rocm" },
 ]
 
@@ -1694,6 +1693,10 @@ requires-dist = [
     { name = "nvalchemi-toolkit-ops", extras = ["torch"], marker = "extra == 'cu130'" },
     { name = "openequivariance", marker = "extra == 'rocm72'" },
     { name = "pandas", specifier = ">=2.3.3" },
+    { name = "pyg-lib", marker = "extra == 'cpu'", specifier = ">=0.7.0", index = "https://data.pyg.org/whl/torch-2.11.0+cpu.html", conflict = { package = "mlcg", extra = "cpu" } },
+    { name = "pyg-lib", marker = "extra == 'cu128'", specifier = ">=0.7.0", index = "https://data.pyg.org/whl/torch-2.11.0+cu128.html", conflict = { package = "mlcg", extra = "cu128" } },
+    { name = "pyg-lib", marker = "extra == 'cu130'", specifier = ">=0.7.0", index = "https://data.pyg.org/whl/torch-2.11.0+cu130.html", conflict = { package = "mlcg", extra = "cu130" } },
+    { name = "pyg-lib-rocm", marker = "extra == 'rocm72'", specifier = ">=0.7.0" },
     { name = "pytorch-lightning", specifier = ">=2.4.0" },
     { name = "pyyaml", specifier = ">=6.0.3" },
     { name = "ruamel-yaml" },
@@ -1706,10 +1709,6 @@ requires-dist = [
     { name = "torch", marker = "extra == 'cu128'", specifier = "==2.11.0", index = "https://download.pytorch.org/whl/cu128", conflict = { package = "mlcg", extra = "cu128" } },
     { name = "torch", marker = "extra == 'cu130'", specifier = "==2.11.0", index = "https://download.pytorch.org/whl/cu130", conflict = { package = "mlcg", extra = "cu130" } },
     { name = "torch", marker = "extra == 'rocm72'", specifier = "==2.11.0", index = "https://download.pytorch.org/whl/rocm7.2", conflict = { package = "mlcg", extra = "rocm72" } },
-    { name = "torch-cluster", marker = "extra == 'cpu'", index = "https://data.pyg.org/whl/torch-2.11.0+cpu.html", conflict = { package = "mlcg", extra = "cpu" } },
-    { name = "torch-cluster", marker = "extra == 'cu128'", index = "https://data.pyg.org/whl/torch-2.11.0+cu128.html", conflict = { package = "mlcg", extra = "cu128" } },
-    { name = "torch-cluster", marker = "extra == 'cu130'", index = "https://data.pyg.org/whl/torch-2.11.0+cu130.html", conflict = { package = "mlcg", extra = "cu130" } },
-    { name = "torch-cluster-rocm", marker = "extra == 'rocm72'" },
     { name = "torch-geometric", specifier = ">=2.6.1" },
     { name = "torchist", specifier = ">=1.0.1" },
     { name = "torchtnt" },
@@ -2673,6 +2672,60 @@ wheels = [
 ]
 
 [[package]]
+name = "pyg-lib"
+version = "0.9.0+pt211cpu"
+source = { registry = "https://data.pyg.org/whl/torch-2.11.0+cpu.html" }
+resolution-markers = [
+    "sys_platform == 'win32'",
+    "sys_platform == 'emscripten'",
+    "sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "sys_platform == 'darwin'",
+]
+wheels = [
+    { url = "https://data.pyg.org/whl/torch-2.11.0%2Bcpu/pyg_lib-0.9.0%2Bpt211cpu-cp310-abi3-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl" },
+    { url = "https://data.pyg.org/whl/torch-2.11.0%2Bcpu/pyg_lib-0.9.0%2Bpt211cpu-cp310-abi3-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl" },
+    { url = "https://data.pyg.org/whl/torch-2.11.0%2Bcpu/pyg_lib-0.9.0%2Bpt211cpu-cp310-abi3-win_amd64.whl" },
+]
+
+[[package]]
+name = "pyg-lib"
+version = "0.9.0+pt211cu128"
+source = { registry = "https://data.pyg.org/whl/torch-2.11.0+cu128.html" }
+resolution-markers = [
+    "sys_platform == 'win32'",
+    "sys_platform == 'emscripten'",
+    "sys_platform != 'emscripten' and sys_platform != 'win32'",
+]
+wheels = [
+    { url = "https://data.pyg.org/whl/torch-2.11.0%2Bcu128/pyg_lib-0.9.0%2Bpt211cu128-cp310-abi3-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl" },
+    { url = "https://data.pyg.org/whl/torch-2.11.0%2Bcu128/pyg_lib-0.9.0%2Bpt211cu128-cp310-abi3-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl" },
+    { url = "https://data.pyg.org/whl/torch-2.11.0%2Bcu128/pyg_lib-0.9.0%2Bpt211cu128-cp310-abi3-win_amd64.whl" },
+]
+
+[[package]]
+name = "pyg-lib"
+version = "0.9.0+pt211cu130"
+source = { registry = "https://data.pyg.org/whl/torch-2.11.0+cu130.html" }
+resolution-markers = [
+    "sys_platform == 'win32'",
+    "sys_platform == 'emscripten'",
+    "sys_platform != 'emscripten' and sys_platform != 'win32'",
+]
+wheels = [
+    { url = "https://data.pyg.org/whl/torch-2.11.0%2Bcu130/pyg_lib-0.9.0%2Bpt211cu130-cp310-abi3-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl" },
+    { url = "https://data.pyg.org/whl/torch-2.11.0%2Bcu130/pyg_lib-0.9.0%2Bpt211cu130-cp310-abi3-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl" },
+    { url = "https://data.pyg.org/whl/torch-2.11.0%2Bcu130/pyg_lib-0.9.0%2Bpt211cu130-cp310-abi3-win_amd64.whl" },
+]
+
+[[package]]
+name = "pyg-lib-rocm"
+version = "0.8.0.post2"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/5e/85/81ab2734baa24dbb593f026dbc955be6368a41d886c36d13a4cfb04bacca/pyg_lib_rocm-0.8.0.post2-cp312-cp312-manylinux_2_32_x86_64.whl", hash = "sha256:1d4d427c4f87df6481ec69cb3da0d78486a2636b0551b2b035f985faf42c69bc", size = 9084051, upload-time = "2026-09-20T10:50:09.081Z" },
+]
+
+[[package]]
 name = "pygments"
 version = "2.20.0"
 source = { registry = "https://pypi.org/simple" }
@@ -3459,79 +3512,6 @@ dependencies = [
 ]
 wheels = [
     { url = "https://download-r2.pytorch.org/whl/rocm7.2/torch-2.11.0%2Brocm7.2-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:8f02a36213288ab5921e277e13f5954cc62afe7cfa899b79d739d4ef2be6510b", upload-time = "2026-04-28T19:44:39Z" },
-]
-
-[[package]]
-name = "torch-cluster"
-version = "1.6.3"
-source = { registry = "https://data.pyg.org/whl/torch-2.11.0+cpu.html" }
-resolution-markers = [
-    "sys_platform == 'darwin'",
-]
-dependencies = [
-    { name = "scipy", marker = "sys_platform == 'darwin'" },
-]
-wheels = [
-    { url = "https://data.pyg.org/whl/torch-2.11.0%2Bcpu/torch_cluster-1.6.3-cp312-cp312-macosx_10_13_universal2.whl" },
-]
-
-[[package]]
-name = "torch-cluster"
-version = "1.6.3+pt211cpu"
-source = { registry = "https://data.pyg.org/whl/torch-2.11.0+cpu.html" }
-resolution-markers = [
-    "sys_platform == 'win32'",
-    "sys_platform == 'emscripten'",
-    "sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32'",
-]
-dependencies = [
-    { name = "scipy", marker = "sys_platform != 'darwin'" },
-]
-wheels = [
-    { url = "https://data.pyg.org/whl/torch-2.11.0%2Bcpu/torch_cluster-1.6.3%2Bpt211cpu-cp312-cp312-linux_aarch64.whl" },
-    { url = "https://data.pyg.org/whl/torch-2.11.0%2Bcpu/torch_cluster-1.6.3%2Bpt211cpu-cp312-cp312-linux_x86_64.whl" },
-    { url = "https://data.pyg.org/whl/torch-2.11.0%2Bcpu/torch_cluster-1.6.3%2Bpt211cpu-cp312-cp312-win_amd64.whl" },
-]
-
-[[package]]
-name = "torch-cluster"
-version = "1.6.3+pt211cu128"
-source = { registry = "https://data.pyg.org/whl/torch-2.11.0+cu128.html" }
-resolution-markers = [
-    "sys_platform == 'win32'",
-    "sys_platform == 'emscripten'",
-    "sys_platform != 'emscripten' and sys_platform != 'win32'",
-]
-dependencies = [
-    { name = "scipy" },
-]
-wheels = [
-    { url = "https://data.pyg.org/whl/torch-2.11.0%2Bcu128/torch_cluster-1.6.3%2Bpt211cu128-cp312-cp312-linux_x86_64.whl" },
-    { url = "https://data.pyg.org/whl/torch-2.11.0%2Bcu128/torch_cluster-1.6.3%2Bpt211cu128-cp312-cp312-win_amd64.whl" },
-]
-
-[[package]]
-name = "torch-cluster"
-version = "1.6.3+pt211cu130"
-source = { registry = "https://data.pyg.org/whl/torch-2.11.0+cu130.html" }
-resolution-markers = [
-    "sys_platform == 'win32'",
-    "sys_platform == 'emscripten'",
-    "sys_platform != 'emscripten' and sys_platform != 'win32'",
-]
-dependencies = [
-    { name = "scipy" },
-]
-wheels = [
-    { url = "https://data.pyg.org/whl/torch-2.11.0%2Bcu130/torch_cluster-1.6.3%2Bpt211cu130-cp312-cp312-linux_x86_64.whl" },
-]
-
-[[package]]
-name = "torch-cluster-rocm"
-version = "1.6.3.post4"
-source = { registry = "https://pypi.org/simple" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/3e/f5/98e9c8446f16628a7d7dae6575ed4201b0829d78982215f10643ed5766e0/torch_cluster_rocm-1.6.3.post4-cp312-cp312-manylinux_2_32_x86_64.whl", hash = "sha256:019be8371aea5ff29727ac7b54a4cfc0e0683db2838358649eeda5a7a89ff312", size = 1913141, upload-time = "2026-04-20T13:29:13.303Z" },
 ]
 
 [[package]]
