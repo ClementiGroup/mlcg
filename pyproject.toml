@@ -54,6 +54,7 @@ dependencies = [
     "mace-torch==0.3.16",
     "nequip==0.12.1",
     "nequip-allegro==0.7.0",
+    "md-et @ git+https://github.com/mx-e/md-et.git",  # backs mlcg.nn.et.StandardET; pin once a version is settled on
 ]
 classifiers = [
   "Development Status :: 4 - Beta",

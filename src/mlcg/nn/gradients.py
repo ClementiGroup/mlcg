@@ -1,4 +1,5 @@
 import torch
+from torch.profiler import record_function
 from typing import Sequence, Any, List
 from ..data.atomic_data import AtomicData
 from ..data._keys import *
@@ -232,20 +233,22 @@ class GradientsOut(torch.nn.Module):
         """
 
         data.pos.requires_grad_(True)
-        data = self.model(data)
+        with record_function("gradients_out/energy_forward"):
+            data = self.model(data)
         if FORCE_KEY in self.targets:
             if self.name == "SumOut":
                 y = data.out[ENERGY_KEY]
             else:
                 y = data.out[self.name][ENERGY_KEY]
 
-            dy_dr = torch.autograd.grad(
-                y.sum(),
-                data.pos,
-                # grad_outputs=torch.ones_like(y),
-                # retain_graph=self.training,
-                create_graph=self.training,
-            )[0]
+            with record_function("gradients_out/force_backward_creategraph"):
+                dy_dr = torch.autograd.grad(
+                    y.sum(),
+                    data.pos,
+                    # grad_outputs=torch.ones_like(y),
+                    # retain_graph=self.training,
+                    create_graph=self.training,
+                )[0]
             if self.name == "SumOut":
                 data.out[FORCE_KEY] = -dy_dr
             else:
