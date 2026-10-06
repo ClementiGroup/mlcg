@@ -504,3 +504,218 @@ class CutoffExpRepulsion(ExpRepulsion):
             single_r_0 = repulsion.r_0[key]
             prior_stats[key] = {"alpha": single_alpha, "r_0": single_r_0}
         return cls(statistics=prior_stats, cutoff=cutoff, name=repulsion.name)
+
+
+class _BaseFastRepulsion:
+
+    @staticmethod
+    def build_exclusion_table(
+        exclusions_nls: torch.Tensor,
+        n_atoms: int,
+        dtype: torch.dtype = torch.int32,
+    ) -> torch.Tensor:
+        r"""Compile (2, m) exclusions into a padded (n_atoms, width) table.
+
+        Row `a` holds every `b` such that (a, b) is excluded and a < b, padded
+        with -1. Only the a < b direction is stored, because queries are
+        canonicalised to a < b before lookup.
+
+        `dtype` is int32 to halve the gather bandwidth in the hot path; the
+        comparison against int64 indices is a fused elementwise cast.
+        """
+        if exclusions_nls.numel() == 0:
+            return torch.full(
+                (n_atoms, 0), -1, dtype=dtype, device=exclusions_nls.device
+            )
+
+        lo, hi = torch.aminmax(exclusions_nls, dim=0)  # tolerate unsorted input
+        if int(hi.max()) >= torch.iinfo(dtype).max:
+            raise ValueError(f"atom index exceeds {dtype} range")
+
+        counts = torch.bincount(lo, minlength=n_atoms)
+        width = int(counts.max())
+
+        # Stable sort groups equal `lo` contiguously; slot = offset within group.
+        order = torch.argsort(lo, stable=True)
+        lo_s, hi_s = lo[order], hi[order]
+        starts = torch.cumsum(counts, 0) - counts
+        slot = torch.arange(lo_s.numel(), device=lo.device) - starts[lo_s]
+
+        table = torch.full((n_atoms, width), -1, dtype=dtype, device=lo.device)
+        table[lo_s, slot] = hi_s.to(dtype)
+        return table
+
+    @staticmethod
+    def pair_mask(
+        geometric_nls: torch.Tensor,
+        excl_table: torch.Tensor,
+    ) -> torch.Tensor:
+        r"""Boolean mask over columns: True = keep (unique, canonical, included).
+
+        Assumes `geometric_nls` is symmetric, i.e. every pair appears as both
+        (i, j) and (j, i). True for radius_graph unless max_num_neighbors
+        truncated the neighbor list.
+        """
+        i, j = geometric_nls[0], geometric_nls[1]
+        nbrs = excl_table[i]  # (n, width) gather
+        return (i < j) & (nbrs != j.unsqueeze(1).to(nbrs.dtype)).all(dim=1)
+
+
+class FastCutoffRepulsion(CutoffRepulsion, _BaseFastRepulsion):
+    def __init__(
+        self, statistics: Dict, cutoff: float, name: str = "repulsion"
+    ) -> None:
+        super().__init__(statistics=statistics, cutoff=cutoff)
+        self.name = name
+
+    @staticmethod
+    def compute_with_dev(x, sigma):
+        r"""Method defining the repulsion and its derivative"""
+        orig = CutoffRepulsion.compute(x, sigma)
+        deriv = -6 * orig / x
+        return orig, deriv
+
+    def forward(self, data: AtomicData) -> AtomicData:
+        """Forward pass through the repulsion interaction.
+
+        Parameters
+        ----------
+        data:
+            Input AtomicData instance that possesses an appropriate
+            neighbor list containing both an 'index_mapping'
+            field and a 'mapping_batch' field for accessing
+            beads relevant to the interaction and scattering
+            the interaction energies onto the correct example/structure
+            respectively.
+
+        Returns
+        -------
+        AtomicData:
+            Updated AtomicData instance with the 'out' field
+            populated with the predicted energies for each
+            example/structure
+        """
+
+        exc_table = data.neighbor_list[self.name].get("exc_table")
+        if exc_table is None:
+            exc_table = self.build_exclusion_table(
+                data.neighbor_list[self.name]["index_mapping_exclusions"],
+                data.pos.shape[0],
+            )
+            data.neighbor_list[self.name]["exc_table"] = exc_table
+        # get relevant information for network neighborlist
+        mask = self.pair_mask(
+            data.neighbor_list["mpnn"]["index_mapping"], exc_table
+        )
+        mapping = data.neighbor_list["mpnn"]["index_mapping"][:, mask]
+        cell_shifts = data.neighbor_list["mpnn"]["cell_shifts"][mask, :]
+        mapping_batch = data.neighbor_list["mpnn"]["mapping_batch"][mask]
+        # compute features
+        features = compute_distances(data.pos, mapping, cell_shifts)
+
+        cutoff = data.neighbor_list["mpnn"]["rcut"]
+
+        interaction_types = tuple(
+            data.atom_types[mapping[ii]] for ii in range(self.order)
+        )
+
+        y = Repulsion.compute(features, self.sigma[interaction_types])
+        yc, dyc = CutoffRepulsion.compute_with_dev(
+            cutoff, self.sigma[interaction_types]
+        )
+        # ensure that the cutoff is continupus
+        y = y - yc - (features - cutoff) * (dyc)
+        y = scatter(y, mapping_batch, dim=0, reduce="sum")
+        data.out[self.name] = {"energy": y}
+        data.neighbor_list.pop("mpnn")
+        return data
+
+    @classmethod
+    def from_base(cls, repulsion: CutoffRepulsion):
+        prior_stats = {}
+        for key in repulsion.allowed_interaction_keys:
+            single_sigma = repulsion.sigma[key]
+            prior_stats[key] = {"sigma": single_sigma}
+        return cls(
+            statistics=prior_stats, cutoff=repulsion.cutoff, name=repulsion.name
+        )
+
+
+class FastCutoffExpRepulsion(CutoffExpRepulsion, _BaseFastRepulsion):
+    def __init__(
+        self, statistics: Dict, cutoff: float, name: str = "repulsion"
+    ) -> None:
+        super().__init__(statistics=statistics, cutoff=cutoff)
+        self.name = name
+
+    def forward(self, data: AtomicData) -> AtomicData:
+        """Forward pass through the repulsion interaction.
+
+        Parameters
+        ----------
+        data:
+            Input AtomicData instance that possesses an appropriate
+            neighbor list containing both an 'index_mapping'
+            field and a 'mapping_batch' field for accessing
+            beads relevant to the interaction and scattering
+            the interaction energies onto the correct example/structure
+            respectively.
+
+        Returns
+        -------
+        AtomicData:
+            Updated AtomicData instance with the 'out' field
+            populated with the predicted energies for each
+            example/structure
+        """
+
+        exc_table = data.neighbor_list[self.name].get("exc_table")
+        if exc_table is None:
+            exc_table = self.build_exclusion_table(
+                data.neighbor_list[self.name]["index_mapping_exclusions"],
+                data.pos.shape[0],
+            )
+            data.neighbor_list[self.name]["exc_table"] = exc_table
+        # get relevant information for network neighborlist
+        mask = self.pair_mask(
+            data.neighbor_list["mpnn"]["index_mapping"], exc_table
+        )
+        mapping = data.neighbor_list["mpnn"]["index_mapping"][:, mask]
+        cell_shifts = data.neighbor_list["mpnn"]["cell_shifts"][mask, :]
+        mapping_batch = data.neighbor_list["mpnn"]["mapping_batch"][mask]
+        # compute features
+        features = compute_distances(data.pos, mapping, cell_shifts)
+
+        cutoff = data.neighbor_list["mpnn"]["rcut"]
+        interaction_types = tuple(
+            data.atom_types[mapping[ii]] for ii in range(self.order)
+        )
+
+        y = ExpRepulsion.compute(
+            features, self.alpha[interaction_types], self.r_0[interaction_types]
+        )
+        yc, dyc = CutoffExpRepulsion.compute_with_dev(
+            cutoff,
+            self.alpha[interaction_types],
+            self.r_0[interaction_types],
+        )
+        # ensure that the cutoff is continupus
+        y = y - yc - (features - cutoff) * dyc
+        # we can override the
+        y = scatter(y, mapping_batch, dim=0, reduce="sum")
+        data.out[self.name] = {"energy": y}
+        # remove unwanted network neighborlist
+        data.neighbor_list.pop("mpnn")
+        return data
+
+    @classmethod
+    def from_base(cls, repulsion: CutoffExpRepulsion):
+        """initialize a CutoffExpRepulsion from a normal ExpRepulsion"""
+        prior_stats = {}
+        for key in repulsion.allowed_interaction_keys:
+            single_alpha = repulsion.alpha[key]
+            single_r_0 = repulsion.r_0[key]
+            prior_stats[key] = {"alpha": single_alpha, "r_0": single_r_0}
+        return cls(
+            statistics=prior_stats, cutoff=repulsion.cutoff, name=repulsion.name
+        )
