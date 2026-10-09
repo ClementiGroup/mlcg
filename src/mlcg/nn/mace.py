@@ -3,6 +3,7 @@ from typing import (
     Callable,
     Dict,
     List,
+    Mapping,
     Optional,
     Union,
     Final,
@@ -63,7 +64,11 @@ except ImportError:
         + "To install openequivariance run pip install openequivariance"
     )
 if OEQ_AVAILABLE:
-    from mace.modules.wrapper_ops import OEQConfig
+    from mace.modules.wrapper_ops import (
+        OEQConfig,
+        with_oeq_conv_fusion,
+        with_oeq_scatter_sum,
+    )
 
 from ..data.atomic_data import AtomicData, ENERGY_KEY
 from ..neighbor_list.neighbor_list import (
@@ -71,6 +76,56 @@ from ..neighbor_list.neighbor_list import (
     validate_neighborlist,
 )
 from .radial_basis import RegularizedMACEBasis
+
+
+def refresh_oeq_conv_(module: torch.nn.Module) -> torch.nn.Module:
+    """In-place restore the MACE calling convention of the openequivariance
+    tensor products found in the interaction blocks of `module`.
+
+    MACE adapts `oeq.TensorProductConv` / `oeq.TensorProduct` to its
+    `conv_tp(node_feats, edge_attrs, tp_weights, edge_index)` convention by
+    overriding `forward` on the instance (see
+    `mace.modules.wrapper_ops.with_oeq_conv_fusion`). openequivariance defines
+    `__getstate__`/`__setstate__` that rebuild the object from its constructor
+    arguments, so this override is silently lost on every `copy.deepcopy`,
+    `torch.save`/`torch.load` or pickling, and the forward pass then fails with
+    `TensorProductConv.forward() missing 1 required positional argument: 'cols'`.
+
+    Already adapted tensor products are left untouched, so calling this
+    function several times is safe.
+
+    Parameters
+    ----------
+    module (torch.nn.Module):
+        a module that possibly contains MACE interaction blocks as submodules.
+        Tuples, lists and mappings (e.g. a `(model, configurations)` pair
+        loaded from a checkpoint) are searched recursively, and any other
+        object is ignored.
+    """
+    if not OEQ_AVAILABLE:
+        return module
+    if isinstance(module, (tuple, list)):
+        for item in module:
+            refresh_oeq_conv_(item)
+        return module
+    if isinstance(module, Mapping):
+        for item in module.values():
+            refresh_oeq_conv_(item)
+        return module
+    if not isinstance(module, torch.nn.Module):
+        return module
+    for submodule in module.modules():
+        conv_tp = getattr(submodule, "conv_tp", None)
+        if conv_tp is None or "forward" in conv_tp.__dict__:
+            continue
+        # `StandardMACE` never enables cuEquivariance together with
+        # openequivariance, so the `ir_mul` layout transposes that
+        # `with_oeq_conv_fusion` optionally takes are not needed here
+        if isinstance(conv_tp, oeq.TensorProductConv):
+            with_oeq_conv_fusion(conv_tp)
+        elif isinstance(conv_tp, oeq.TensorProduct):
+            with_oeq_scatter_sum(conv_tp)
+    return module
 
 
 # This is a copy of the residual RealAgnosticResidualInteractionBlock as it is in
@@ -142,6 +197,12 @@ class CustomRealAgnosticResidualInteractionBlock(InteractionBlock):
         self.reshape = reshape_irreps(
             self.irreps_out, cueq_config=self.cueq_config
         )
+
+    def __setstate__(self, state):
+        super().__setstate__(state)
+        # openequivariance tensor products lose their MACE adaptation when
+        # deep-copied or unpickled, see `refresh_oeq_conv_`
+        refresh_oeq_conv_(self)
 
     def forward(
         self,
@@ -261,6 +322,12 @@ class MACE(torch.nn.Module):
         self.types_mapping[atomic_numbers] = torch.arange(
             atomic_numbers.shape[0]
         )
+
+    def __setstate__(self, state):
+        super().__setstate__(state)
+        # openequivariance tensor products lose their MACE adaptation when
+        # deep-copied or unpickled, see `refresh_oeq_conv_`
+        refresh_oeq_conv_(self)
 
     def forward(self, data: AtomicData) -> AtomicData:
         """

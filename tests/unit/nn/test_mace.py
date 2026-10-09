@@ -1,3 +1,4 @@
+import copy
 import pytest
 import torch
 from typing import List
@@ -5,7 +6,8 @@ from ase.build import molecule
 from torch_geometric.data.collate import collate
 
 from mlcg.geometry import Topology
-from mlcg.nn.mace import StandardMACE
+from mlcg.nn.mace import StandardMACE, OEQ_AVAILABLE
+from mlcg.nn import load_and_adapt_old_checkpoint
 from mlcg.data.atomic_data import AtomicData
 from mlcg.nn.gradients import GradientsOut
 from mlcg.data._keys import ENERGY_KEY, FORCE_KEY
@@ -124,3 +126,58 @@ def test_prediction(collated_data, out_keys, expected_shapes):
     for key, shape in zip(out_keys, expected_shapes):
         assert key in collated_data.out[model.name].keys()
         assert collated_data.out[model.name][key].shape == shape
+
+
+def _conv_tps(model):
+    return [
+        module.conv_tp
+        for module in model.modules()
+        if hasattr(module, "conv_tp")
+    ]
+
+
+@pytest.mark.skipif(
+    not (OEQ_AVAILABLE and torch.cuda.is_available()),
+    reason="openequivariance and a GPU are required",
+)
+@pytest.mark.parametrize(
+    "interaction_cls",
+    [
+        "mlcg.nn.mace.CustomRealAgnosticResidualInteractionBlock",
+        "mace.modules.blocks.RealAgnosticResidualInteractionBlock",
+    ],
+)
+@pytest.mark.parametrize("copy_method", ["deepcopy", "save_load"])
+def test_oeq_survives_copy(interaction_cls, copy_method, tmp_path):
+    """Test that openequivariance models still predict the same energies and
+    forces after being deep-copied (as done by `PLModel.get_model`) or saved
+    and loaded again (as done by `load_and_adapt_old_checkpoint`), since
+    openequivariance drops the MACE adaptation of `conv_tp.forward` when
+    copied or unpickled.
+    """
+    config = {
+        **mace_config,
+        "hidden_irreps": "16x0e + 16x1o",
+        "num_interactions": 2,
+        "interaction_cls": interaction_cls,
+        "interaction_cls_first": interaction_cls,
+        "use_oeq": True,
+    }
+    model = GradientsOut(StandardMACE(**config), targets=FORCE_KEY)
+    model = model.float().to("cuda")
+    assert len(_conv_tps(model)) == 2
+
+    if copy_method == "deepcopy":
+        copied_model = copy.deepcopy(model)
+    else:
+        torch.save(model, tmp_path / "model.pt")
+        copied_model = load_and_adapt_old_checkpoint(tmp_path / "model.pt")
+
+    for conv_tp in _conv_tps(copied_model):
+        assert "forward" in conv_tp.__dict__
+
+    data = database.collated_data.to("cuda")
+    out = model(data.clone()).out[model.name]
+    copied_out = copied_model(data.clone()).out[model.name]
+    for key in [ENERGY_KEY, FORCE_KEY]:
+        torch.testing.assert_close(out[key], copied_out[key])

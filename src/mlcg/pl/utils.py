@@ -6,7 +6,14 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from typing import Optional, Union
 
 from .model import PLModel
-from ..nn import SumOut, SchNet, PaiNN, refresh_module_, fixed_pyg_inspector
+from ..nn import (
+    SumOut,
+    SchNet,
+    PaiNN,
+    refresh_module_,
+    refresh_oeq_conv_,
+    fixed_pyg_inspector,
+)
 
 
 def extract_model_from_checkpoint(checkpoint_path, hparams_file):
@@ -19,6 +26,7 @@ def extract_model_from_checkpoint(checkpoint_path, hparams_file):
         model = plmodel.get_model()
         refresh_module_(model, SchNet)
         refresh_module_(model, PaiNN)
+        refresh_oeq_conv_(model)
     return model
 
 
