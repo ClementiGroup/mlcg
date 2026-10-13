@@ -12,6 +12,7 @@ from . import (
     _Simulation,
     LangevinSimulation,
     PTSimulation,
+    REUSSimulation,
     OverdampedSimulation,
 )
 from .minimizer import minimize_energy
@@ -107,8 +108,8 @@ def parse_simulation_config(
             exported_config[k] = v
     out_name = exported_config["simulation"]["filename"]
     dump_yaml(f"{out_name}_config.yaml", exported_config)
-    # Sanitize PTSimulation kwargs
-    if simulation_class == PTSimulation:
+    # Sanitize PTSimulation / REUSSimulation kwargs: they set their own subroutines
+    if simulation_class in (PTSimulation, REUSSimulation):
         config["simulation"].pop("sim_subroutine", None)
         config["simulation"].pop("sim_subroutine_interval", None)
         config["simulation"].pop("save_subroutine", None)

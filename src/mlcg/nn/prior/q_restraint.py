@@ -122,6 +122,15 @@ class NativeContactQRestraint(_Prior):
         return compute_distances(data.pos, mapping, cell_shifts)
 
     def forward(self, data: AtomicData) -> AtomicData:
+        Q = self.batch_q(data)
+        energy = self.k.to(Q.dtype) * (Q - self.Q0.to(Q.dtype)) ** 2
+        data.out[self.name] = {"energy": energy}
+        return data
+
+    def batch_q(self, data: AtomicData) -> torch.Tensor:
+        """The restrained :math:`Q` of every structure of a collated batch,
+        shape ``(n_structures,)``; used by :meth:`forward` and by replica
+        exchange between windows."""
         mapping_batch = data.neighbor_list[self.name]["mapping_batch"]
         r_ij = self.data2features(data)
         # an un-collated single structure carries no ptr, and is one structure
@@ -140,12 +149,9 @@ class NativeContactQRestraint(_Prior):
         r0 = self.r0.to(r_ij.dtype).repeat(num_graphs)
         # sigmoid(-x) == 1 / (1 + exp(x)): q_ij -> 1 when r_ij << lambda_q * r0 (contact formed)
         q_ij = torch.sigmoid(-self.beta_q * (r_ij - self.lambda_q * r0))
-        Q = scatter(
+        return scatter(
             q_ij, mapping_batch, dim=0, reduce="mean", dim_size=num_graphs
         )
-        energy = self.k.to(Q.dtype) * (Q - self.Q0.to(Q.dtype)) ** 2
-        data.out[self.name] = {"energy": energy}
-        return data
 
     def compute_q(
         self, pos: torch.Tensor, mapping: torch.Tensor
