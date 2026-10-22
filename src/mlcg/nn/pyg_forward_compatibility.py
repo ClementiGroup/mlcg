@@ -224,7 +224,8 @@ def load_and_adapt_old_checkpoint(f, **kwargs):
     """Load and adapt an older checkpoint from training with a previous
     version of pyg. Using this function instead of `torch.load` can bypass
     the import error caused by an newer version of pyg, and automatically
-    adapts SchNet or PaiNN models to make them usable.
+    adapts SchNet or PaiNN models to make them usable. MACE models using
+    openequivariance are adapted as well, see `mlcg.nn.mace.refresh_oeq_conv_`.
 
     Parameters
     ----------
@@ -232,8 +233,11 @@ def load_and_adapt_old_checkpoint(f, **kwargs):
         of a checkpoint from a possibly older version of pyg.
     kwargs: see the docstring of `torch.load` for details.
     """
+    from mlcg.nn.mace import refresh_oeq_conv_
+
     with fixed_pyg_inspector():
         module = torch.load(f, **kwargs, weights_only=False)
         refresh_module_(module, SchNet)
         refresh_module_(module, PaiNN)
+        refresh_oeq_conv_(module)
     return module
