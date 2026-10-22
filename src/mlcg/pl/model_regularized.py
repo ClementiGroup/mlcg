@@ -93,8 +93,12 @@ class RegularizedPLModel(PLModel):
                     if key in name:
                         extracted_params.append(param)
                         all_extracted_group_names.append(name)
-            group.pop("group_keys")
-            optimizer_setup.append({"params": extracted_params, **group})
+            group_options = {
+                k: v for k, v in group.items() if k != "group_keys"
+            }
+            optimizer_setup.append(
+                {"params": extracted_params, **group_options}
+            )
 
         # Extract main parameter group
         extracted_params = [
