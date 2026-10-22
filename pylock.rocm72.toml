@@ -1681,7 +1681,7 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/96/8d/1080ee4c231f361
 name = "triton-rocm"
 version = "3.6.0"
 index = "https://download.pytorch.org/whl/rocm7.2"
-wheels = [{ url = "https://download-r2.pytorch.org/whl/triton_rocm-3.6.0-cp312-cp312-linux_x86_64.whl", upload-time = 2026-01-20T18:39:32Z, hashes = {} }]
+wheels = [{ url = "https://download-r2.pytorch.org/whl/triton_rocm-3.6.0-cp312-cp312-linux_x86_64.whl", upload-time = 2026-01-20T18:39:32Z, hashes = { sha256 = "cff15082784c7056b0af9347770e034ab0a8ccbce0642723ddc8c8de1bd6af3f" } }]
 
 [[packages]]
 name = "typeshed-client"
