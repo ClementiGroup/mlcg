@@ -157,6 +157,7 @@ class CompiledTraining:
 
     def _compile(self, data, state, tensors, key):
         self.key = key
+        expected = self._reference(data)
         try:
             with fx_config.patch(use_duck_shape=False):
                 graph = make_fx(
@@ -180,7 +181,7 @@ class CompiledTraining:
             )
             self.traceable, self.graph = False, None
             return
-        self._check(data, actual)
+        self._check(actual, expected)
 
     def _set_guards(self, graph):
         """Size conditions the trace assumed, checked on every batch."""
@@ -195,28 +196,32 @@ class CompiledTraining:
             or "True"
         )
 
-    def _check(self, data, actual):
-        params = [p for p in self.model.parameters() if p.requires_grad]
+    def _reference(self, data):
+        """Eager outputs and gradients on ``data``, computed (and their graph
+        freed) before the first compiled call, so the two don't add up."""
         reference = copy.copy(data)
         reference.pos = data.pos.detach().clone()
         reference.out = {}
-        expected = pytree.tree_leaves(self.model(reference).out)
-        for name, outputs in (
-            ("outputs", (actual, expected)),
-            (
-                "parameter gradients",
-                [self._grads(o, params) for o in (actual, expected)],
-            ),
-        ):
-            errors = [_relative_error(x, y) for x, y in zip(*outputs)]
+        outputs = pytree.tree_leaves(self.model(reference).out)
+        grads = self._grads(outputs)
+        return [x.detach() for x in outputs], grads
+
+    def _check(self, actual, expected):
+        compared = (
+            ("outputs", actual, expected[0]),
+            ("parameter gradients", self._grads(actual), expected[1]),
+        )
+        for name, values, references in compared:
+            errors = [_relative_error(x, y) for x, y in zip(values, references)]
             if max(errors, default=0.0) > CHECK_TOLERANCE:
                 raise RuntimeError(
                     f"Compiled {name} differ from eager "
                     f"(relative error {max(errors):.2e})"
                 )
 
-    @staticmethod
-    def _grads(outputs, params):
+    def _grads(self, outputs):
+        """Parameter gradients of a test loss on ``outputs``."""
+        params = [p for p in self.model.parameters() if p.requires_grad]
         loss = sum(
             x.float().square().sum() for x in outputs if x.is_floating_point()
         )
