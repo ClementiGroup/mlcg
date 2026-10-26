@@ -14,6 +14,16 @@ To train, we can run from a terminal:
 mlcg-train_h5 fit --config ./train_demo_cuda.yaml
 ```
 
+To train faster, compile the energy and force computation (and, to save
+memory, use the flash kernels); see "Faster training" in the training docs:
+
+```bash
+mlcg-train_h5 fit --config ./train_demo_cuda.yaml --model.optimize '{compile: true, flash: true}'
+```
+
+The same goes in the YAML as `optimize: {compile: true, flash: true}` under
+`model`. Checkpoints are the same as without it.
+
 During training, the ouput will be saved into two directories: 
 - `${trainer.default_root_dir}/ckpt` will save the state of the model every certain epoch. This checkpoints can be examined with pytorch. By default the last checkpoint is saved in `last.ckpt`
 - `${trainer.default_root_dir}/tensorboard` will save a tensorboard logger that can be used to launch a [tensorboard](https://www.tensorflow.org/tensorboard) server to monitorize the training and validation loss of the model (i.e. running `tensorboard --logdir ${trainer.default_root_dir}/tensorboard`)
