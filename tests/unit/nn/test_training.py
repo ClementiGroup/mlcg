@@ -230,7 +230,7 @@ def test_flatten_round_trip_keeps_none_leaves():
             "extra": [None, torch.ones(3)],
         }
     }
-    tensors, key = _flatten(data)
+    tensors, key = _flatten(data, {"prior"})
     fields, neighbor_lists = _unflatten(key, tensors)
     assert neighbor_lists["prior"]["cell_shifts"] is None
     assert neighbor_lists["prior"]["extra"][0] is None
@@ -301,3 +301,23 @@ def test_checkpoint_round_trip(tmp_path, full_float32):
     )
     tabulated = inference(data.clone()).out[extracted.name][FORCE_KEY]
     assert float((tabulated - expected).norm() / expected.norm()) < TOLERANCE
+
+
+def test_unused_neighbor_lists_keep_the_graph(full_float32):
+    """Prior neighbour lists differing between batches don't matter when
+    the trained model has no priors."""
+    model = GradientsOut(schnet(), targets=FORCE_KEY).to(DEVICE).train()
+    forward = CompiledTraining(model)
+    prior = {
+        "tag": "bonds",
+        "index_mapping": torch.zeros(2, 3, dtype=torch.long, device=DEVICE),
+    }
+    first, second = batch(NAMES[:3]), batch(NAMES[2:])
+    first.neighbor_list = {"bonds": prior}
+    second.neighbor_list = {"bonds": prior, "angles": dict(prior, tag="a")}
+    for data in (first, second):
+        assert_same(
+            force_loss_grads(forward, model, data),
+            force_loss_grads(model, model, data),
+        )
+    assert forward.compiled_calls == 3  # the check, then both batches

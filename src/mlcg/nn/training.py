@@ -59,10 +59,13 @@ def precompute_neighbor_lists(model: torch.nn.Module, data: AtomicData):
     data.neighbor_list = neighbor_lists
 
 
-def _flatten(data: AtomicData):
-    """Tensor inputs of ``data``, and a key for everything else."""
+def _flatten(data: AtomicData, names):
+    """Tensor inputs of ``data``, and a key for everything else. Only the
+    neighbour lists of modules in ``names`` are kept: others (e.g. of priors
+    not in the trained model) must not affect the graph."""
     fields = {k: data[k] for k in data.keys() if k not in _NOT_INPUTS}
-    leaves, spec = pytree.tree_flatten((fields, data.neighbor_list))
+    neighbor_lists = {k: v for k, v in data.neighbor_list.items() if k in names}
+    leaves, spec = pytree.tree_flatten((fields, neighbor_lists))
     tensors = [x for x in leaves if torch.is_tensor(x)]
     constants = tuple(_TENSOR if torch.is_tensor(x) else x for x in leaves)
     return tensors, (spec, constants)
@@ -105,6 +108,7 @@ class CompiledTraining:
         self.graph = None
         self.traceable = True
         self.compiled_calls = 0
+        self.names = {getattr(m, "name", None) for m in model.modules()}
 
     def _state(self):
         return dict(self.model.named_parameters()) | dict(
@@ -117,7 +121,7 @@ class CompiledTraining:
         ):
             return self.model(data)
         precompute_neighbor_lists(self.model, data)
-        tensors, key = _flatten(data)
+        tensors, key = _flatten(data, self.names)
         state = list(self._state().values())
         if self.graph is None:
             self._compile(data, state, tensors, key)
