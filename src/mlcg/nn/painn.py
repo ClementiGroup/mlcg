@@ -438,7 +438,7 @@ class PaiNN(nn.Module):
             if (
                 nl["order"] == 2
                 and nl["self_interaction"] is False
-                and nl["rcut"] == self.cutoff.cutoff_upper
+                and nl["rcut"] == self.rbf_layer.cutoff.cutoff_upper
                 and nl["excluded_order"] == getattr(self, "excluded_order", 1)
             ):
                 is_compatible = True
