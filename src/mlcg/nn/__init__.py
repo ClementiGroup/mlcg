@@ -35,8 +35,11 @@ from .flash_models import (
     FlashDihedral,
     FlashRepulsion,
 )
+from .training import optimize_for_training, CompiledTraining
 
 __all__ = [
+    "optimize_for_training",
+    "CompiledTraining",
     "GradientsOut",
     "SumOut",
     "EnergyOut",

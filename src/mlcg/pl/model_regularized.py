@@ -1,5 +1,5 @@
 import torch
-from typing import List
+from typing import List, Optional
 from pytorch_lightning.cli import OptimizerCallable, LRSchedulerCallable
 
 from mlcg.pl import PLModel
@@ -50,6 +50,8 @@ class RegularizedPLModel(PLModel):
                     - regularization.param2
                     - regularization.param3
                 lr: 0.1
+        optimize:
+            optional keyword arguments of :func:`mlcg.nn.optimize_for_training`.
     """
 
     def __init__(
@@ -59,10 +61,11 @@ class RegularizedPLModel(PLModel):
         optimizer: OptimizerCallable = torch.optim.AdamW,
         lr_scheduler: LRSchedulerCallable = CustomStepLR,
         optimizer_groups: List[dict] = [],
+        optimize: Optional[dict] = None,
     ) -> None:
         """ """
 
-        super().__init__(model, loss)
+        super().__init__(model, loss, optimize)
 
         self.optimizer = optimizer
         self.scheduler = lr_scheduler

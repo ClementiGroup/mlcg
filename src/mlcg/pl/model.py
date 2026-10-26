@@ -1,12 +1,12 @@
 import torch
 import pytorch_lightning as pl
 from ..utils import detect_nan_parameters
-from typing import Tuple
+from typing import Optional, Tuple
 from copy import deepcopy
 
 from ..data import AtomicData
 from ..data._keys import N_ATOMS_KEY
-from ..nn import Loss, GradientsOut
+from ..nn import Loss, GradientsOut, optimize_for_training
 
 
 def get_class_from_str(class_path):
@@ -26,19 +26,24 @@ class PLModel(pl.LightningModule):
             instance of a model class from :ref:`mlcg.nn`.
         loss:
             instance of :ref:`mlcg.nn.Loss`.
+        optimize:
+            optional keyword arguments of :func:`mlcg.nn.optimize_for_training`,
+            e.g. ``{flash: true, compile: true}``.
     """
 
     def __init__(
         self,
         model: torch.nn.Module,
         loss: Loss,
+        optimize: Optional[dict] = None,
     ) -> None:
         """ """
 
         super(PLModel, self).__init__()
 
         self.save_hyperparameters(logger=False)
-        self.model = model
+        self.model, forward = optimize_for_training(model, **(optimize or {}))
+        self.compiled = None if forward is self.model else forward
         self.loss = loss
         self.validation_step_outputs = []
 
@@ -112,7 +117,7 @@ class PLModel(pl.LightningModule):
 
     def step(self, data: AtomicData, stage: str) -> Tuple[torch.Tensor, int]:
         with torch.set_grad_enabled(stage == "train" or self.derivative):
-            data = self.model(data)
+            data = (self.compiled or self.model)(data)
         data.out.update(**data.out[self.model.name])
         loss = self.loss(data)
         batch_size = data[N_ATOMS_KEY].shape[0]
