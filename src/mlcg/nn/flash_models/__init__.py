@@ -1,4 +1,5 @@
 from .flash_schnet import FlashSchNet, StandardFlashSchNet
+from .tabulated_schnet import TabulatedSchNet
 from .prior import (
     FlashDihedral,
     FlashHarmonicBonds,
@@ -13,6 +14,7 @@ from .converter import (
 __all__ = [
     "FlashSchNet",
     "StandardFlashSchNet",
+    "TabulatedSchNet",
     "FlashDihedral",
     "FlashHarmonicBonds",
     "FlashHarmonicAngles",
