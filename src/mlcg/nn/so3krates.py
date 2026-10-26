@@ -737,7 +737,7 @@ class So3krates(nn.Module):
             if (
                 nl["order"] == 2
                 and nl["self_interaction"] is False
-                and nl["rcut"] == self.cutoff.cutoff_upper
+                and nl["rcut"] == self.rbf_layer.cutoff.cutoff_upper
             ):
                 is_compatible = True
         return is_compatible

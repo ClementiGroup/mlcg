@@ -170,7 +170,7 @@ class SchNet(torch.nn.Module):
             if (
                 nl["order"] == 2
                 and nl["self_interaction"] == False
-                and nl["rcut"] == self.cutoff.cutoff_upper
+                and nl["rcut"] == self.rbf_layer.cutoff.cutoff_upper
             ):
                 is_compatible = True
         return is_compatible
