@@ -410,7 +410,10 @@ class PaiNN(nn.Module):
         q = q.squeeze(1)
 
         energy = self.output_network(q, data)
-        energy = scatter(energy, data.batch, dim=0, reduce="sum")
+        num_graphs = data.ptr.numel() - 1 if hasattr(data, "ptr") else None
+        energy = scatter(
+            energy, data.batch, dim=0, reduce="sum", dim_size=num_graphs
+        )
         energy = energy.flatten()
         data.out.setdefault(self.name, {}).update({ENERGY_KEY: energy})
 
@@ -682,7 +685,10 @@ class RBFRegularizedPaiNN(StandardPaiNN):
         q = q.squeeze(1)
 
         energy = self.output_network(q, data)
-        energy = scatter(energy, data.batch, dim=0, reduce="sum")
+        num_graphs = data.ptr.numel() - 1 if hasattr(data, "ptr") else None
+        energy = scatter(
+            energy, data.batch, dim=0, reduce="sum", dim_size=num_graphs
+        )
         energy = energy.flatten()
         data.out[self.name] = {
             ENERGY_KEY: energy,

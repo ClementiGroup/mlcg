@@ -318,7 +318,7 @@ class MACE(torch.nn.Module):
             )  # [n_graphs,]
         else:
             pair_energy = torch.zeros(
-                data.batch.max() + 1,
+                num_graphs,
                 device=data.pos.device,
                 dtype=data.pos.dtype,
             )
@@ -888,7 +888,7 @@ class RBFRegularizedMACE(StandardMACE):
             )
         else:
             pair_energy = torch.zeros(
-                data.batch.max() + 1,
+                num_graphs,
                 device=data.pos.device,
                 dtype=data.pos.dtype,
             )

@@ -725,7 +725,10 @@ class So3krates(nn.Module):
         x = self.layer_norm(x)
 
         energy = self.output_network(x, data)
-        energy = scatter(energy, data.batch, dim=0, reduce="sum")
+        num_graphs = data.ptr.numel() - 1 if hasattr(data, "ptr") else None
+        energy = scatter(
+            energy, data.batch, dim=0, reduce="sum", dim_size=num_graphs
+        )
         energy = energy.flatten()
 
         data.out.setdefault(self.name, {}).update({ENERGY_KEY: energy})
