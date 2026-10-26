@@ -24,6 +24,7 @@ from .flash_models.converter import convert_standard_model_to_flash
 
 CHECK_TOLERANCE = 1e-2  # catches missing terms; TF32 differences are ~1e-3
 _NOT_INPUTS = ("out", "neighbor_list")
+_TENSOR = object()  # marks tensor leaves; data may hold None leaves
 # this rewrite gives the in-place one-hot of e3nn/MACE an integer dtype
 INDUCTOR_OPTIONS = {"optimize_scatter_upon_const_tensor": False}
 
@@ -63,14 +64,14 @@ def _flatten(data: AtomicData):
     fields = {k: data[k] for k in data.keys() if k not in _NOT_INPUTS}
     leaves, spec = pytree.tree_flatten((fields, data.neighbor_list))
     tensors = [x for x in leaves if torch.is_tensor(x)]
-    constants = tuple(None if torch.is_tensor(x) else x for x in leaves)
+    constants = tuple(_TENSOR if torch.is_tensor(x) else x for x in leaves)
     return tensors, (spec, constants)
 
 
 def _unflatten(key, tensors):
     spec, constants = key
     tensors = iter(tensors)
-    leaves = [next(tensors) if c is None else c for c in constants]
+    leaves = [next(tensors) if c is _TENSOR else c for c in constants]
     return pytree.tree_unflatten(leaves, spec)
 
 
@@ -177,7 +178,7 @@ class CompiledTraining:
             actual = self._run(state, tensors)
         except Exception as error:
             warnings.warn(
-                f"Can't compile the model ({error}); training eagerly"
+                f"Can't compile the model ({error!r}); training eagerly"
             )
             self.traceable, self.graph = False, None
             return

@@ -19,6 +19,7 @@ from mlcg.nn import (
 )
 from mlcg.nn.mace import StandardMACE
 from mlcg.pl import PLModel
+from mlcg.nn.training import _flatten, _unflatten
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 TOLERANCE = 1e-4
@@ -206,3 +207,22 @@ def test_pl_model_optimize_keeps_checkpoint_keys():
     assert plain.state_dict().keys() == optimized.state_dict().keys()
     assert plain.compiled is None
     assert isinstance(optimized.compiled, CompiledTraining)
+
+
+def test_flatten_round_trip_keeps_none_leaves():
+    data = batch(NAMES[:2])
+    data.neighbor_list = {
+        "prior": {
+            "tag": "prior",
+            "index_mapping": torch.zeros(2, 3, dtype=torch.long),
+            "cell_shifts": None,
+            "rcut": None,
+            "extra": [None, torch.ones(3)],
+        }
+    }
+    tensors, key = _flatten(data)
+    fields, neighbor_lists = _unflatten(key, tensors)
+    assert neighbor_lists["prior"]["cell_shifts"] is None
+    assert neighbor_lists["prior"]["extra"][0] is None
+    assert neighbor_lists["prior"]["extra"][1] is tensors[-1]
+    assert fields["pos"] is data.pos
