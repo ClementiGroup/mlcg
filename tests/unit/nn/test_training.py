@@ -321,3 +321,54 @@ def test_unused_neighbor_lists_keep_the_graph(full_float32):
             force_loss_grads(model, model, data),
         )
     assert forward.compiled_calls == 3  # the check, then both batches
+
+
+def eval_forces(forward, model, data):
+    data = data.clone()
+    data.out = {}
+    return forward(data).out[model.name][FORCE_KEY].detach()
+
+
+def test_validation_reuses_the_training_graph(full_float32):
+    model = GradientsOut(schnet(), targets=FORCE_KEY).to(DEVICE)
+    forward = CompiledTraining(model)
+    data = batch(NAMES[:3])
+    model.eval()
+    eval_forces(forward, model, data)
+    assert forward.compiled_calls == 0  # no graph before training
+    model.train()
+    force_loss_grads(forward, model, data)
+    model.eval()
+    for names in (NAMES[:3], NAMES[2:]):
+        data = batch(names)
+        expected = eval_forces(model, model, data)
+        actual = eval_forces(forward, model, data)
+        assert float((actual - expected).norm() / expected.norm()) < TOLERANCE
+    assert forward.eval_matches
+    assert forward.compiled_calls == 4  # check, train step, two validations
+
+
+def test_eval_dependent_model_validates_eagerly(full_float32):
+    class EvalScaled(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.network = schnet()
+            self.name = self.network.name
+
+        def forward(self, data):
+            data = self.network(data)
+            if not self.training:
+                out = data.out[self.name]
+                out["energy"] = 2 * out["energy"]
+            return data
+
+    model = GradientsOut(EvalScaled(), targets=FORCE_KEY).to(DEVICE).train()
+    forward = CompiledTraining(model)
+    data = batch(NAMES[:3])
+    force_loss_grads(forward, model, data)
+    model.eval()
+    with pytest.warns(UserWarning, match="validating eagerly"):
+        actual = eval_forces(forward, model, data)
+    expected = eval_forces(model, model, data)
+    assert float((actual - expected).norm() / expected.norm()) < TOLERANCE
+    assert forward.eval_matches is False

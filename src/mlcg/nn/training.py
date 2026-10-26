@@ -88,19 +88,37 @@ def _strip_detach(graph_module: torch.fx.GraphModule):
     graph_module.recompile()
 
 
-def _relative_error(x, y):
-    return float((x - y).norm() / y.norm().clamp_min(1e-30))
+def _max_error(values, references):
+    return max(
+        (
+            float((x - y).norm() / y.norm().clamp_min(1e-30))
+            for x, y in zip(values, references)
+        ),
+        default=0.0,
+    )
+
+
+def _fresh(data: AtomicData) -> AtomicData:
+    """A shallow copy of ``data`` for an eager reference call, with its own
+    positions and outputs."""
+    sample = copy.copy(data)
+    sample.pos = data.pos.detach().clone()
+    sample.out = {}
+    return sample
 
 
 class CompiledTraining:
     """``model(data)`` for force training, from one compiled graph of energy
     and forces with the parameters as inputs (sizes of nodes, edges and
-    graphs are dynamic). The first call traces, compiles and checks outputs
-    and parameter gradients against eager, raising on a mismatch.
+    graphs are dynamic). The first training call traces, compiles and
+    checks outputs and parameter gradients against eager, raising on a
+    mismatch. In eval mode (validation) the same graph runs without grad,
+    once checked against eager on the first batch.
 
-    Runs ``model`` eagerly in eval mode or without grad, for a batch the
-    graph's size guards reject (e.g. a single graph), and for good if the
-    model can't be traced (with a warning).
+    Runs ``model`` eagerly in train mode without grad, in eval mode before
+    the first training call or if the eval check fails (with a warning),
+    for a batch the graph's size guards reject (e.g. a single graph), and
+    for good if the model can't be traced (with a warning).
     """
 
     def __init__(self, model: torch.nn.Module):
@@ -108,6 +126,7 @@ class CompiledTraining:
         self.graph = None
         self.traceable = True
         self.compiled_calls = 0
+        self.eval_matches = None
         self.names = {getattr(m, "name", None) for m in model.modules()}
 
     def _state(self):
@@ -116,8 +135,11 @@ class CompiledTraining:
         )
 
     def __call__(self, data: AtomicData) -> AtomicData:
-        if not (
-            self.traceable and self.model.training and torch.is_grad_enabled()
+        training = self.model.training
+        if not self.traceable or (
+            (not torch.is_grad_enabled())
+            if training
+            else (self.graph is None or self.eval_matches is False)
         ):
             return self.model(data)
         precompute_neighbor_lists(self.model, data)
@@ -131,10 +153,30 @@ class CompiledTraining:
             self.guards, state + tensors
         ):
             return self.model(data)
-        data.out = pytree.tree_unflatten(
-            self._run(state, tensors), self.out_spec
-        )
+        if training:
+            outputs = self._run(state, tensors)
+        else:
+            outputs = self._evaluate(data, state, tensors)
+            if outputs is None:
+                return self.model(data)
+        data.out = pytree.tree_unflatten(outputs, self.out_spec)
         return data
+
+    def _evaluate(self, data, state, tensors):
+        """The training graph without grad: eval mode gives the same energy
+        and forces for mlcg models; checked once, ``None`` if it differs."""
+        with torch.no_grad():
+            outputs = self._run(state, tensors)
+        if self.eval_matches is None:
+            expected = pytree.tree_leaves(self.model(_fresh(data)).out)
+            error = _max_error(outputs, expected)
+            self.eval_matches = error <= CHECK_TOLERANCE
+            if not self.eval_matches:
+                warnings.warn(
+                    f"Compiled outputs differ from eager in eval mode "
+                    f"(relative error {error:.2e}); validating eagerly"
+                )
+        return outputs if self.eval_matches else None
 
     def _run(self, state, tensors):
         self.compiled_calls += 1
@@ -204,10 +246,7 @@ class CompiledTraining:
     def _reference(self, data):
         """Eager outputs and gradients on ``data``, computed (and their graph
         freed) before the first compiled call, so the two don't add up."""
-        reference = copy.copy(data)
-        reference.pos = data.pos.detach().clone()
-        reference.out = {}
-        outputs = pytree.tree_leaves(self.model(reference).out)
+        outputs = pytree.tree_leaves(self.model(_fresh(data)).out)
         grads = self._grads(outputs)
         return [x.detach() for x in outputs], grads
 
@@ -217,11 +256,11 @@ class CompiledTraining:
             ("parameter gradients", self._grads(actual), expected[1]),
         )
         for name, values, references in compared:
-            errors = [_relative_error(x, y) for x, y in zip(values, references)]
-            if max(errors, default=0.0) > CHECK_TOLERANCE:
+            error = _max_error(values, references)
+            if error > CHECK_TOLERANCE:
                 raise RuntimeError(
                     f"Compiled {name} differ from eager "
-                    f"(relative error {max(errors):.2e})"
+                    f"(relative error {error:.2e})"
                 )
 
     def _grads(self, outputs):
