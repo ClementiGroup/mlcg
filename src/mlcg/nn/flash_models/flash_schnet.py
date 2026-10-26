@@ -51,8 +51,7 @@ class FlashSchNet(SchNet):
 
         csr_data = build_csr_representation_from_edges(edge_index, x.shape[0])
 
-        for i, block in enumerate(self.interaction_blocks):
-
+        for block in self.interaction_blocks:
             x = x + block(
                 x,
                 edge_index,
@@ -61,8 +60,7 @@ class FlashSchNet(SchNet):
                 csr_data=csr_data,
             )
 
-            energy = self.output_network(x, data)
-
+        energy = self.output_network(x, data)
         energy = scatter(
             energy, data.batch, dim=0, reduce="sum", dim_size=num_graphs
         )

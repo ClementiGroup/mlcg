@@ -5,6 +5,7 @@ from torch_geometric.loader import DataLoader
 import numpy as np
 import torch
 
+from mlcg.data import AtomicData
 from mlcg.neighbor_list.utils import ase2data
 from mlcg.neighbor_list.ase_impl import ase_neighbor_list
 from mlcg.neighbor_list.torch_impl import torch_neighbor_list
@@ -235,3 +236,34 @@ def test_mixed_pbc():
         atoms_involved = torch.cat([idx_i, idx_j]).unique()
 
         assert len(atoms_involved) >= 3
+
+
+@pytest.mark.parametrize(
+    "cell",
+    [
+        torch.eye(3) * 20.0,
+        torch.tensor([[20.0, 0, 0], [5.0, 18.0, 0], [3.0, 4.0, 16.0]]),
+    ],
+)
+def test_wrap_positions_keeps_inside_and_wraps_images(cell):
+    """Rows of ``cell`` are the lattice vectors (pos = f @ cell): atoms in the
+    cell stay put, atoms shifted by lattice vectors come back, and a
+    non-periodic axis is left alone."""
+    from mlcg.neighbor_list.torch_impl import wrap_positions
+
+    gen = torch.Generator().manual_seed(0)
+    frac = torch.rand(8, 3, generator=gen) * 0.9 + 0.05
+    inside = frac @ cell
+    shifts = torch.randint(-2, 3, (8, 3), generator=gen).float()
+    for pbc, moved_axes in (([True] * 3, 3), ([True, True, False], 2)):
+        shifts_used = shifts.clone()
+        shifts_used[:, moved_axes:] = 0.0
+        data = AtomicData.from_points(
+            pos=(frac + shifts_used) @ cell,
+            atom_types=torch.ones(8, dtype=torch.long),
+            cell=cell,
+            pbc=torch.tensor(pbc),
+        )
+        data.batch = torch.zeros(8, dtype=torch.long)
+        wrapped = wrap_positions(data, "cpu").pos
+        torch.testing.assert_close(wrapped, inside, atol=1e-4, rtol=0)
