@@ -7,7 +7,9 @@ The graph is a destination CSR ``(row_ptr, col)`` of a *symmetric* neighbor
 list (``j in N(i)`` iff ``i in N(j)``), which lets the backward pass gather
 ``grad_x`` and ``grad_pos`` per node without atomics, a source CSR or a
 per-edge filter. Edges with ``d >= cutoff`` contribute nothing. The table
-freezes the filter weights: inference only, no double backward.
+freezes the filter weights: inference only, no double backward. With
+periodic boundary conditions, ``d_ij`` is the minimum-image distance
+(:mod:`~mlcg.nn.kernels.pbc`).
 """
 
 import copy
@@ -27,6 +29,7 @@ from ...hermite import (
     load_hermite_segment,
     locate_knot,
 )
+from ...pbc import minimum_image
 from ...utils import ensure_contiguous
 
 
@@ -63,13 +66,27 @@ def _load_pos(pos_ptr, i):
 
 
 @triton.jit
-def _neighbor_tile(e, end, col_ptr, pos_ptr, px, py, pz, cutoff):
-    """Neighbors ``j`` of edges ``e``, ``p_i - p_j``, distance, in-range."""
+def _graph_index(batch_ptr, i, PBC: tl.constexpr):
+    """Graph of node ``i``, read only for the minimum image."""
+    mol = 0
+    if PBC:
+        mol = tl.load(batch_ptr + i)
+    return mol
+
+
+@triton.jit
+def _neighbor_tile(
+    e, end, col_ptr, pos_ptr, px, py, pz, cutoff, cell_ptr, pbc_ptr, mol, PBC
+):
+    """Neighbors ``j`` of edges ``e``, ``p_i - p_j`` (minimum image if
+    ``PBC``), distance, in-range."""
     in_row = e < end
     j = tl.load(col_ptr + e, mask=in_row, other=0).to(tl.int64)
     dx = px - tl.load(pos_ptr + j * 3, mask=in_row, other=0.0)
     dy = py - tl.load(pos_ptr + j * 3 + 1, mask=in_row, other=0.0)
     dz = pz - tl.load(pos_ptr + j * 3 + 2, mask=in_row, other=0.0)
+    if PBC:
+        dx, dy, dz = minimum_image(dx, dy, dz, cell_ptr, pbc_ptr, mol)
     d = tl.sqrt(dx * dx + dy * dy + dz * dz)
     return j, dx, dy, dz, d, in_row & (d < cutoff)
 
@@ -96,13 +113,18 @@ def tabulated_cfconv_kernel(
     col_ptr,
     table_ptr,
     out_ptr,
+    batch_ptr,
+    cell_ptr,
+    pbc_ptr,
     cutoff,
     num_knots,
     F: tl.constexpr,
+    PBC: tl.constexpr,
     BLOCK_E: tl.constexpr,
     BLOCK_F: tl.constexpr,
 ):
     i = tl.program_id(0).to(tl.int64)
+    mol = _graph_index(batch_ptr, i, PBC)
     f = tl.program_id(1) * BLOCK_F + tl.arange(0, BLOCK_F)
     f_ok = f < F
     start = tl.load(row_ptr + i)
@@ -121,6 +143,10 @@ def tabulated_cfconv_kernel(
             py,
             pz,
             cutoff,
+            cell_ptr,
+            pbc_ptr,
+            mol,
+            PBC,
         )
         k, t = locate_knot(d, cutoff, num_knots)
         mask = valid[:, None] & f_ok[None, :]
@@ -148,9 +174,13 @@ def tabulated_cfconv_backward_kernel(
     table_ptr,
     grad_x_ptr,
     grad_pos_ptr,
+    batch_ptr,
+    cell_ptr,
+    pbc_ptr,
     cutoff,
     num_knots,
     F: tl.constexpr,
+    PBC: tl.constexpr,
     BLOCK_F: tl.constexpr,
     BLOCK_E: tl.constexpr,
 ):
@@ -159,6 +189,7 @@ def tabulated_cfconv_backward_kernel(
     ``grad_pos[i] = sum_j (p_i - p_j) / d_ij
     * sum_f phi'_f(d_ij) (g[i, f] x[j, f] + g[j, f] x[i, f])``."""
     i = tl.program_id(0).to(tl.int64)
+    mol = _graph_index(batch_ptr, i, PBC)
     f = tl.arange(0, BLOCK_F)
     f_ok = f < F
     start = tl.load(row_ptr + i)
@@ -182,6 +213,10 @@ def tabulated_cfconv_backward_kernel(
             py,
             pz,
             cutoff,
+            cell_ptr,
+            pbc_ptr,
+            mol,
+            PBC,
         )
         k, t = locate_knot(d, cutoff, num_knots)
         mask = valid[:, None] & f_ok[None, :]
@@ -215,6 +250,9 @@ def tabulated_cfconv(
     col: torch.Tensor,
     table: torch.Tensor,
     cutoff: float,
+    batch: torch.Tensor,
+    cell: torch.Tensor,
+    pbc: torch.Tensor,
 ) -> torch.Tensor:
     """
     Parameters
@@ -226,6 +264,10 @@ def tabulated_cfconv(
     table : [num_knots, 2, F] float32 Hermite table of the filter over
         ``[0, cutoff]`` (:func:`build_filter_table`)
     cutoff : upper end of the table; longer edges are ignored
+    batch : [num_nodes] graph index of each node
+    cell, pbc : [B, 9] reduced cells and [B, 3] periodic flags of
+        :func:`~mlcg.nn.kernels.pbc.periodic_cells`, or empty tensors
+        (no periodic boundary conditions)
 
     Returns
     -------
@@ -237,7 +279,21 @@ def tabulated_cfconv(
         return out
     wrap_triton(tabulated_cfconv_kernel)[
         lambda meta: (num_nodes, triton.cdiv(F, meta["BLOCK_F"]))
-    ](x, pos, row_ptr, col, table, out, cutoff, table.shape[0], F)
+    ](
+        x,
+        pos,
+        row_ptr,
+        col,
+        table,
+        out,
+        batch,
+        cell,
+        pbc,
+        cutoff,
+        table.shape[0],
+        F,
+        PBC=cell.numel() > 0,
+    )
     return out
 
 
@@ -251,6 +307,9 @@ def tabulated_cfconv_backward(
     col: torch.Tensor,
     table: torch.Tensor,
     cutoff: float,
+    batch: torch.Tensor,
+    cell: torch.Tensor,
+    pbc: torch.Tensor,
 ) -> List[torch.Tensor]:
     """Gradients of ``<grad_out, tabulated_cfconv(x, pos, ...)>`` wrt
     ``x`` and ``pos``. Requires a symmetric neighbor list."""
@@ -268,36 +327,40 @@ def tabulated_cfconv_backward(
         table,
         grad_x,
         grad_pos,
+        batch,
+        cell,
+        pbc,
         cutoff,
         table.shape[0],
         F,
+        PBC=cell.numel() > 0,
         BLOCK_F=triton.next_power_of_2(F),
     )
     return [grad_x, grad_pos]
 
 
 @tabulated_cfconv.register_fake
-def _(x, pos, row_ptr, col, table, cutoff):
+def _(x, pos, row_ptr, col, table, cutoff, batch, cell, pbc):
     return torch.empty_like(x)
 
 
 @tabulated_cfconv_backward.register_fake
-def _(grad_out, x, pos, row_ptr, col, table, cutoff):
+def _(grad_out, x, pos, row_ptr, col, table, cutoff, batch, cell, pbc):
     return [torch.empty_like(x), torch.empty_like(pos)]
 
 
 def _setup_context(ctx, inputs, output):
-    x, pos, row_ptr, col, table, cutoff = inputs
-    ctx.save_for_backward(x, pos, row_ptr, col, table)
+    x, pos, row_ptr, col, table, cutoff, batch, cell, pbc = inputs
+    ctx.save_for_backward(x, pos, row_ptr, col, table, batch, cell, pbc)
     ctx.cutoff = cutoff
 
 
 def _backward(ctx, grad_out):
-    x, pos, row_ptr, col, table = ctx.saved_tensors
+    x, pos, row_ptr, col, table, batch, cell, pbc = ctx.saved_tensors
     grad_x, grad_pos = tabulated_cfconv_backward(
-        grad_out, x, pos, row_ptr, col, table, ctx.cutoff
+        grad_out, x, pos, row_ptr, col, table, ctx.cutoff, batch, cell, pbc
     )
-    return grad_x, grad_pos, None, None, None, None
+    return grad_x, grad_pos, None, None, None, None, None, None, None
 
 
 def _no_double_backward(ctx, *grads):

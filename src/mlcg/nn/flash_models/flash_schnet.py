@@ -6,12 +6,12 @@ from torch_geometric.utils import scatter
 from ...data.atomic_data import AtomicData, ENERGY_KEY
 from ..mlp import MLP
 from ..schnet import SchNet, StandardSchNet, InteractionBlock, CFConv
+from ..kernels.pbc import minimum_image_vectors, periodic_cells
 from ..kernels import (
     RadiusCSR,
     build_csr_representation_from_edges,
     build_filter_table,
     fused_cfconv,
-    radius,
     tabulated_cfconv,
 )
 
@@ -30,14 +30,15 @@ class FlashSchNet(SchNet):
     This implementation replaces the standard message-passing kernels
     with fused Triton kernels. After :meth:`build_tables`, in eval mode, every
     interaction filter is read from a cubic Hermite table instead of being
-    evaluated, with a sync-free neighbor search (inference only). In train
+    evaluated, with a sync-free neighbor search (inference only; periodic
+    cells as in :mod:`~mlcg.nn.kernels.pbc`). In train
     mode, or without tables, it runs the filter networks (trainable, double
     backward). ``train()`` and loading a state dict drop the tables.
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.neighbors = None
+        self.neighbors = RadiusCSR(float(self.rbf_layer.cutoff.cutoff_upper))
         self.register_load_state_dict_post_hook(_drop_tables_hook)
 
     def build_tables(
@@ -70,13 +71,15 @@ class FlashSchNet(SchNet):
             tables.append(table)
         for block, table in zip(self.interaction_blocks, tables):
             block.conv.table = table
-        self.neighbors = RadiusCSR(cutoff_upper)
         return self
 
     def drop_tables(self):
         for block in self.interaction_blocks:
             block.conv.table = None
-        self.neighbors = None
+
+    @property
+    def tabulated(self) -> bool:
+        return self.interaction_blocks[0].conv.table is not None
 
     def train(self, mode: bool = True) -> "FlashSchNet":
         if mode:
@@ -84,27 +87,32 @@ class FlashSchNet(SchNet):
         return super().train(mode)
 
     def forward(self, data: AtomicData) -> AtomicData:
-        if not self.training and self.neighbors is not None:
+        if not self.training and self.tabulated:
             return self._forward_tabulated(data)
         return self._forward_filters(data)
 
-    def _forward_tabulated(self, data: AtomicData) -> AtomicData:
-        if data.get("cell") is not None:
-            raise NotImplementedError(
-                "Tabulated filters do not support periodic boundary "
-                "conditions yet; use the model without build_tables()"
-            )
+    def _neighbor_graph(self, data: AtomicData):
+        """Sync-free CSR radius graph (minimum image with a cell), the
+        per-graph cells and the ``valid`` factor (1, or NaN)."""
         ptr = (
             data.ptr
             if hasattr(data, "ptr")
             else data.pos.new_tensor([0, data.pos.shape[0]], dtype=torch.long)
         )
-        row_ptr, col, valid = self.neighbors(data.pos.detach(), data.batch, ptr)
+        periodic = periodic_cells(
+            data.get("cell"), data.get("pbc"), ptr.numel() - 1, data.pos.device
+        )
+        row_ptr, col, valid = self.neighbors(
+            data.pos.detach(), data.batch, ptr, *periodic
+        )
+        return row_ptr, col, valid, periodic
+
+    def _forward_tabulated(self, data: AtomicData) -> AtomicData:
+        row_ptr, col, valid, periodic = self._neighbor_graph(data)
+        edges = (row_ptr, col, self.neighbors.cutoff, data.batch, *periodic)
         x = self.embedding_layer(data.atom_types)
         for block in self.interaction_blocks:
-            x = x + block.tabulated(
-                x, data.pos, row_ptr, col, self.neighbors.cutoff
-            )
+            x = x + block.tabulated(x, data.pos, *edges)
         return self._readout(x, data, valid)
 
     def _forward_filters(self, data: AtomicData) -> AtomicData:
@@ -124,16 +132,20 @@ class FlashSchNet(SchNet):
            information.
         """
 
-        x = self.embedding_layer(data.atom_types)
-
-        edge_index, distances, _ = radius(
-            data.pos,
-            data.batch,
-            self.rbf_layer.cutoff.cutoff_upper,
-            data.get("pbc"),
-            data.get("cell"),
-            self.max_num_neighbors,
+        row_ptr, col, valid, (cell, pbc) = self._neighbor_graph(data)
+        num_edges = int(row_ptr[-1])
+        dst = torch.repeat_interleave(
+            torch.arange(len(row_ptr) - 1, device=col.device),
+            row_ptr.diff(),
+            output_size=num_edges,
         )
+        src = col[:num_edges].long()
+        edge_index = torch.stack([src, dst])
+        vectors = minimum_image_vectors(
+            data.pos[dst] - data.pos[src], cell, pbc, data.batch[dst]
+        )
+        distances = vectors.norm(dim=1)
+        x = self.embedding_layer(data.atom_types)
 
         rbf_expansion = self.rbf_layer(distances)
 
@@ -148,7 +160,7 @@ class FlashSchNet(SchNet):
                 csr_data=csr_data,
             )
 
-        return self._readout(x, data)
+        return self._readout(x, data, valid)
 
     def _readout(self, x, data, scale=1.0):
         energy = self.output_network(x, data) * scale
@@ -209,9 +221,8 @@ class FlashInteractionBlock(InteractionBlock):
         x = self.lin(x)
         return x
 
-    def tabulated(self, x, pos, row_ptr, col, cutoff_upper):
-        x = self.conv.tabulated(x, pos, row_ptr, col, cutoff_upper)
-        return self.lin(self.activation(x))
+    def tabulated(self, x, pos, *edges):
+        return self.lin(self.activation(self.conv.tabulated(x, pos, *edges)))
 
 
 class FlashCFConv(CFConv):
@@ -228,9 +239,17 @@ class FlashCFConv(CFConv):
         super().__init__(*args, **kwargs)
         self.register_buffer("table", None, persistent=False)
 
-    def tabulated(self, x, pos, row_ptr, col, cutoff_upper):
+    def tabulated(self, x, pos, row_ptr, col, cutoff_upper, batch, cell, pbc):
         x = tabulated_cfconv(
-            self.lin1(x), pos, row_ptr, col, self.table, cutoff_upper
+            self.lin1(x),
+            pos,
+            row_ptr,
+            col,
+            self.table,
+            cutoff_upper,
+            batch,
+            cell,
+            pbc,
         )
         return self.lin2(x)
 

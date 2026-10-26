@@ -13,6 +13,7 @@ import torch
 
 from ...data.atomic_data import AtomicData
 from ...data._keys import POSITIONS_KEY
+from ..kernels.pbc import check_cells
 from .converter import convert_standard_model_to_flash
 from .flash_schnet import DEFAULT_NUM_KNOTS, TABLE_TOLERANCE, FlashSchNet
 
@@ -25,14 +26,16 @@ def prepare_for_inference(
 ) -> torch.nn.Module:
     """Flash-convert ``model``, tabulate the filters of every flash SchNet
     (falling back to its filter networks, with a warning, if they can't be
-    tabulated) and freeze it in eval mode. One forward on ``data`` fills
+    tabulated) and freeze it in eval mode. Raises ``ValueError`` for a
+    periodic cell the tabulated path can't handle (see
+    :func:`~mlcg.nn.kernels.pbc.check_cells`). One forward on ``data`` fills
     ``data.out``, so that compiling it later traces fewer graphs."""
     model = convert_standard_model_to_flash(model)
     schnets = [m for m in model.modules() if isinstance(m, FlashSchNet)]
     for schnet in schnets:
+        cutoff = float(schnet.rbf_layer.cutoff.cutoff_upper)
+        check_cells(data.get("cell"), data.get("pbc"), cutoff)
         try:
-            if data.get("cell") is not None:
-                raise ValueError("periodic filters can't be tabulated yet")
             schnet.build_tables(num_knots, tolerance)
         except ValueError as error:
             warnings.warn(f"{error}; {schnet.name} uses its filter networks")
