@@ -136,7 +136,11 @@ class PLModel(pl.LightningModule):
         return loss, batch_size
 
     def get_model(self) -> torch.nn.Module:
-        return deepcopy(self.model)
+        """A copy of the trained model in the architecture it was given
+        (e.g. standard SchNet, also when trained with ``optimize``)."""
+        model = deepcopy(self.hparams.model).to(self.device)
+        model.load_state_dict(self.model.state_dict())
+        return model
 
     def on_load_checkpoint(self, checkpoint):
         # inject missing keys from current model before PL loads it

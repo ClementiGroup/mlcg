@@ -1,7 +1,9 @@
 import pytest
+import pytorch_lightning as pl
 import torch
 from ase.build import molecule
 from torch_geometric.data.collate import collate
+from torch_geometric.loader import DataLoader
 
 from mlcg.data.atomic_data import AtomicData
 from mlcg.data._keys import FORCE_KEY
@@ -18,7 +20,8 @@ from mlcg.nn import (
     optimize_for_training,
 )
 from mlcg.nn.mace import StandardMACE
-from mlcg.pl import PLModel
+from mlcg.pl import PLModel, extract_model_from_checkpoint
+from mlcg.nn.flash_models import optimize_for_inference
 from mlcg.nn.training import _flatten, _unflatten
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -27,7 +30,7 @@ NAMES = ["CH3CH2NH2", "C6H6", "H2CO", "CH3COOH", "butadiene", "cyclobutane"]
 TYPES = sorted({int(z) for n in NAMES for z in molecule(n).numbers})
 
 
-def batch(names, seed=0):
+def frames(names, seed=0):
     generator = torch.Generator().manual_seed(seed)
     frames = []
     for name in names:
@@ -40,8 +43,15 @@ def batch(names, seed=0):
                 forces=torch.randn(pos.shape, generator=generator),
             )
         )
+    return frames
+
+
+def batch(names, seed=0):
     data, _, _ = collate(
-        AtomicData, data_list=frames, increment=True, add_batch=True
+        AtomicData,
+        data_list=frames(names, seed),
+        increment=True,
+        add_batch=True,
     )
     return data.to(DEVICE)
 
@@ -226,3 +236,68 @@ def test_flatten_round_trip_keeps_none_leaves():
     assert neighbor_lists["prior"]["extra"][0] is None
     assert neighbor_lists["prior"]["extra"][1] is tensors[-1]
     assert fields["pos"] is data.pos
+
+
+class AdamPLModel(PLModel):
+    def configure_optimizers(self):
+        return torch.optim.Adam(self.parameters(), lr=1e-3)
+
+
+def fit(module, epochs, root, ckpt_path=None):
+    """Two batches per epoch, so checkpoints fall on epoch boundaries."""
+    loader = DataLoader(frames(NAMES[:4]), batch_size=2, shuffle=False)
+    trainer = pl.Trainer(
+        accelerator="gpu",
+        devices=1,
+        max_epochs=epochs,
+        logger=False,
+        enable_checkpointing=False,
+        enable_progress_bar=False,
+        enable_model_summary=False,
+        default_root_dir=str(root),
+    )
+    trainer.fit(module, loader, ckpt_path=ckpt_path)
+    return trainer
+
+
+def pl_module(optimize):
+    torch.manual_seed(0)
+    model = GradientsOut(schnet(), targets=FORCE_KEY)
+    loss = Loss(losses=[ForceMSE(force_kwd=FORCE_KEY)])
+    return AdamPLModel(model, loss, optimize=optimize)
+
+
+@pytest.mark.skipif(DEVICE == "cpu", reason="flash kernels need CUDA")
+def test_checkpoint_round_trip(tmp_path, full_float32):
+    """Trained with flash + compile: training restarts from the checkpoint
+    with any ``optimize``, and the extracted model is the standard one,
+    ready for simulation."""
+    optimize = {"flash": True, "compile": True}
+    straight = pl_module(optimize)
+    fit(straight, 2, tmp_path / "straight")
+
+    first = pl_module(optimize)
+    trainer = fit(first, 1, tmp_path / "first")
+    ckpt = tmp_path / "epoch1.ckpt"
+    trainer.save_checkpoint(ckpt)
+    for resume_optimize in (None, optimize):
+        resumed = pl_module(resume_optimize)
+        fit(resumed, 2, tmp_path / "resumed", ckpt_path=str(ckpt))
+        for (name, p), q in zip(
+            resumed.model.named_parameters(), straight.model.parameters()
+        ):
+            assert float((p - q).norm() / q.norm()) < TOLERANCE, name
+
+    extracted = extract_model_from_checkpoint(str(ckpt), None).to(DEVICE)
+    assert type(extracted.model) is StandardSchNet
+    trained = PLModel.load_from_checkpoint(str(ckpt)).model.to(DEVICE)
+    data = batch(NAMES[:3])
+    expected = trained.eval()(data.clone()).out[trained.name][FORCE_KEY]
+    actual = extracted.eval()(data.clone()).out[extracted.name][FORCE_KEY]
+    assert float((actual - expected).norm() / expected.norm()) < TOLERANCE
+
+    inference = optimize_for_inference(
+        extracted, data.clone(), cuda_graph=False
+    )
+    tabulated = inference(data.clone()).out[extracted.name][FORCE_KEY]
+    assert float((tabulated - expected).norm() / expected.norm()) < TOLERANCE
