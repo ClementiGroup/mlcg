@@ -3,7 +3,7 @@ from typing import List
 from pytorch_lightning.cli import OptimizerCallable, LRSchedulerCallable
 
 from mlcg.pl import PLModel
-from mlcg.nn import Loss, CustomStepLR
+from mlcg.nn import Loss, CustomStepLR, GradientsOut
 
 
 class RegularizedPLModel(PLModel):
@@ -62,7 +62,19 @@ class RegularizedPLModel(PLModel):
     ) -> None:
         """ """
 
-        super().__init__(model, loss)
+        super(PLModel, self).__init__()
+
+        self.save_hyperparameters(
+            ignore=["optimizer", "lr_scheduler"], logger=False
+        )
+        self.model = model
+        self.loss = loss
+        self.validation_step_outputs = []
+
+        self.derivative = getattr(self.model, "derivative", False)
+        for module in self.modules():
+            if isinstance(module, GradientsOut):
+                self.derivative = True
 
         self.optimizer = optimizer
         self.scheduler = lr_scheduler
@@ -81,8 +93,12 @@ class RegularizedPLModel(PLModel):
                     if key in name:
                         extracted_params.append(param)
                         all_extracted_group_names.append(name)
-            group.pop("group_keys")
-            optimizer_setup.append({"params": extracted_params, **group})
+            group_options = {
+                k: v for k, v in group.items() if k != "group_keys"
+            }
+            optimizer_setup.append(
+                {"params": extracted_params, **group_options}
+            )
 
         # Extract main parameter group
         extracted_params = [
