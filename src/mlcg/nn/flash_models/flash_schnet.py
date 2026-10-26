@@ -7,7 +7,9 @@ from torch_geometric.utils import scatter
 from ...data.atomic_data import AtomicData, ENERGY_KEY
 from ..mlp import MLP
 from ..schnet import SchNet, StandardSchNet, InteractionBlock, CFConv
-from ..kernels.pbc import minimum_image_vectors, periodic_cells
+from ...geometry.internal_coordinates import compute_distances
+from ...neighbor_list.neighbor_list import make_neighbor_list
+from ..kernels.pbc import check_cells, minimum_image_vectors, periodic_cells
 from ..kernels import (
     RadiusCSR,
     build_csr_representation_from_edges,
@@ -164,19 +166,15 @@ class FlashSchNet(SchNet):
            information.
         """
 
-        row_ptr, col, valid, (cell, pbc) = self._neighbor_graph(data)
-        num_edges = int(row_ptr[-1])
-        dst = torch.repeat_interleave(
-            torch.arange(len(row_ptr) - 1, device=col.device),
-            row_ptr.diff(),
-            output_size=num_edges,
+        neighbor_list = data.neighbor_list.get(self.name)
+        if not self.is_nl_compatible(neighbor_list):
+            neighbor_list = self.neighbor_list(
+                data, self.rbf_layer.cutoff.cutoff_upper
+            )[self.name]
+        edge_index = neighbor_list["index_mapping"]
+        distances = compute_distances(
+            data.pos, edge_index, neighbor_list["cell_shifts"]
         )
-        src = col[:num_edges].long()
-        edge_index = torch.stack([src, dst])
-        vectors = minimum_image_vectors(
-            data.pos[dst] - data.pos[src], cell, pbc, data.batch[dst]
-        )
-        distances = vectors.norm(dim=1)
         x = self.embedding_layer(data.atom_types)
 
         rbf_expansion = self.rbf_layer(distances)
@@ -192,7 +190,38 @@ class FlashSchNet(SchNet):
                 csr_data=csr_data,
             )
 
-        return self._readout(x, data, valid)
+        return self._readout(x, data)
+
+    @torch.no_grad()
+    def neighbor_list(
+        self, data: AtomicData, rcut: float, max_num_neighbors: int = 1000
+    ) -> dict:
+        """mlcg neighbour list of the radius graph (``self.neighbors``, no
+        neighbour cap), with minimum-image ``cell_shifts``. Raises
+        ``ValueError`` for an unsupported periodic cell."""
+        if float(rcut) != self.neighbors.cutoff:
+            raise ValueError(f"rcut {rcut} != cutoff {self.neighbors.cutoff}")
+        check_cells(data.get("cell"), data.get("pbc"), self.neighbors.cutoff)
+        row_ptr, col, _, (cell, pbc) = self._neighbor_graph(data)
+        num_edges = int(row_ptr[-1])
+        dst = torch.repeat_interleave(
+            torch.arange(len(row_ptr) - 1, device=col.device),
+            row_ptr.diff(),
+            output_size=num_edges,
+        )
+        src = col[:num_edges].long()
+        d = data.pos[dst] - data.pos[src]
+        shifts = minimum_image_vectors(d, cell, pbc, data.batch[dst]) - d
+        return {
+            self.name: make_neighbor_list(
+                tag=self.name,
+                order=2,
+                index_mapping=torch.stack([src, dst]),
+                cell_shifts=shifts,
+                rcut=float(rcut),
+                self_interaction=False,
+            )
+        }
 
     def _readout(self, x, data, scale=1.0):
         energy = self.output_network(x, data) * scale
