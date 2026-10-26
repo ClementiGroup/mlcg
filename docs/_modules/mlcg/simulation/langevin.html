@@ -148,7 +148,7 @@ data-aria-dark="Switch to auto color mode">
       <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
   <article class="yue" role="main">
           <h1>Source code for mlcg.simulation.langevin</h1><div class="highlight"><pre>
-<span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Union</span>
+<span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Union</span>
 </span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 </span><span data-line="3"><span class="kn">from</span><span class="w"> </span><span class="nn">torch.distributions.normal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Normal</span>
 </span><span data-line="4"><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
@@ -381,7 +381,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="229">            <span class="p">)</span>
 </span><span data-line="230">            <span class="bp">self</span><span class="o">.</span><span class="n">simulated_kinetic_energies</span><span class="p">[</span><span class="n">save_ind</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">kes</span>
 </span><span data-line="231">
-</span><span data-line="232">    <span class="k">def</span><span class="w"> </span><span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span data-line="232">    <span class="k">def</span><span class="w"> </span><span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AtomicData</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 </span><span data-line="233"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Utility to save numpy arrays&quot;&quot;&quot;</span>
 </span><span data-line="234">        <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_numpy_count</span><span class="p">()</span>
 </span><span data-line="235">        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_energies</span><span class="p">:</span>
@@ -399,7 +399,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="247">                <span class="bp">self</span><span class="o">.</span><span class="n">_save_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_sims</span>
 </span><span data-line="248">            <span class="p">)</span>
 </span><span data-line="249">
-</span><span data-line="250">        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">write</span><span class="p">()</span>
+</span><span data-line="250">        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
 </span><span data-line="251">
 </span><span data-line="252">    <span class="k">def</span><span class="w"> </span><span class="nf">reshape_output</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 </span><span data-line="253">        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">reshape_output</span><span class="p">()</span>

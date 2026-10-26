@@ -205,6 +205,7 @@ data-aria-dark="Switch to auto color mode">
 </ul>
 </li>
 <li><a class="reference internal" href="#mlcg.nn.mace.StandardMACE"><code class="docutils literal notranslate"><span class="pre">StandardMACE</span></code></a></li>
+<li><a class="reference internal" href="#mlcg.nn.mace.refresh_oeq_conv_"><code class="docutils literal notranslate"><span class="pre">refresh_oeq_conv_()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#module-mlcg.nn.radial_basis.radial_integral_gto">Radial basis functions</a><ul>
@@ -1648,6 +1649,34 @@ parameters. Defaults to True for backward compatibility.</p></li>
 <cite>torch</cite>, <cite>nvalchemi_naive</cite>, <cite>nvalchemi_cell</cite>, <cite>nvalchemi_raw</cite>
 and <cite>custom_kernel</cite>.</p></li>
 </ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mlcg.nn.mace.refresh_oeq_conv_">
+<span class="sig-prename descclassname"><span class="pre">mlcg.nn.mace.</span></span><span class="sig-name descname"><span class="pre">refresh_oeq_conv_</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/mace.html#refresh_oeq_conv_"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.mace.refresh_oeq_conv_" title="Link to this definition">¶</a></dt>
+<dd><p>In-place restore the MACE calling convention of the openequivariance
+tensor products found in the interaction blocks of <cite>module</cite>.</p>
+<p>MACE adapts <cite>oeq.TensorProductConv</cite> / <cite>oeq.TensorProduct</cite> to its
+<cite>conv_tp(node_feats, edge_attrs, tp_weights, edge_index)</cite> convention by
+overriding <cite>forward</cite> on the instance (see
+<cite>mace.modules.wrapper_ops.with_oeq_conv_fusion</cite>). openequivariance defines
+<cite>__getstate__</cite>/<cite>__setstate__</cite> that rebuild the object from its constructor
+arguments, so this override is silently lost on every <cite>copy.deepcopy</cite>,
+<cite>torch.save</cite>/<cite>torch.load</cite> or pickling, and the forward pass then fails with
+<cite>TensorProductConv.forward() missing 1 required positional argument: ‘cols’</cite>.</p>
+<p>Already adapted tensor products are left untouched, so calling this
+function several times is safe.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>(</strong><strong>torch.nn.Module</strong><strong>)</strong> (<em>module</em>) – a module that possibly contains MACE interaction blocks as submodules.
+Tuples, lists and mappings (e.g. a <cite>(model, configurations)</cite> pair
+loaded from a checkpoint) are searched recursively, and any other
+object is ignored.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></span></p>
 </dd>
 </dl>
 </dd></dl>

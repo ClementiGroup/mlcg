@@ -230,9 +230,18 @@ for numpy outputs, ‘_coords_000.npy’ or similar is added. For log
 outputs, ‘_log.txt’ is added.</p></li>
 <li><p><strong>specialize_priors</strong> (<em>bool</em><em>, </em><em>default=False</em>) – use optimized version of the priors for a particular molecule</p></li>
 <li><p><strong>dtype</strong> – precision to run the simulation with (single or double)</p></li>
-<li><p><strong>sim_subroutine</strong> – Optional subroutine to run at at the interval specified by
-subroutine_interval after simulation updates. The subroutine should
-take only the internal collated <cite>AtomicData</cite> instance as an argument.</p></li>
+<li><p><strong>sim_subroutine</strong> – <p>Optional subroutine to run at at the interval specified by
+subroutine_interval after simulation updates. Two signatures are
+supported:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">f(data)</span> <span class="pre">-&gt;</span> <span class="pre">data</span></code>: for subroutines that do not change the positions.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">f(data,</span> <span class="pre">forces)</span> <span class="pre">-&gt;</span> <span class="pre">(data,</span> <span class="pre">forces)</span></code>: required whenever the
+subroutine modifies the positions. The integrator reuses the forces
+of the previous step, so a subroutine that moves atoms must also
+return the forces belonging to the new positions.</p></li>
+</ul>
+<p>The signature is detected automatically from the number of arguments.</p>
+</p></li>
 <li><p><strong>sim_subroutine_interval</strong> – Specifies the interval, in simulation steps, between successive calls to
 the subroutine, if specified.</p></li>
 <li><p><strong>save_subroutine</strong> – Specifies additional saving procedures for extra information at the
