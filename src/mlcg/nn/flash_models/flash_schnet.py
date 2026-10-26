@@ -6,8 +6,21 @@ from torch_geometric.utils import scatter
 from ...data.atomic_data import AtomicData, ENERGY_KEY
 from ..mlp import MLP
 from ..schnet import SchNet, StandardSchNet, InteractionBlock, CFConv
-from ..kernels import build_csr_representation_from_edges, fused_cfconv, radius
-from ...geometry.internal_coordinates import compute_distances
+from ..kernels import (
+    RadiusCSR,
+    build_csr_representation_from_edges,
+    build_filter_table,
+    fused_cfconv,
+    radius,
+    tabulated_cfconv,
+)
+
+DEFAULT_NUM_KNOTS = 2048
+TABLE_TOLERANCE = 1e-4
+
+
+def _drop_tables_hook(module, incompatible_keys):
+    module.drop_tables()
 
 
 class FlashSchNet(SchNet):
@@ -15,10 +28,86 @@ class FlashSchNet(SchNet):
     See :class:`SchNet` for the full API documentation.
 
     This implementation replaces the standard message-passing kernels
-    with fused Triton kernels.
+    with fused Triton kernels. After :meth:`build_tables`, in eval mode, every
+    interaction filter is read from a cubic Hermite table instead of being
+    evaluated, with a sync-free neighbor search (inference only). In train
+    mode, or without tables, it runs the filter networks (trainable, double
+    backward). ``train()`` and loading a state dict drop the tables.
     """
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.neighbors = None
+        self.register_load_state_dict_post_hook(_drop_tables_hook)
+
+    def build_tables(
+        self,
+        num_knots: int = DEFAULT_NUM_KNOTS,
+        tolerance: float = TABLE_TOLERANCE,
+    ) -> "FlashSchNet":
+        """Tabulate every interaction filter from the current weights
+        (float64, cubic Hermite on ``num_knots`` knots over the cutoff).
+        Raises ``ValueError`` if a filter's relative table error exceeds
+        ``tolerance`` (e.g. non-smooth activations). The tables reflect the
+        weights at this call: weights changed by hand afterwards need another
+        call (``train()`` and ``load_state_dict`` drop the tables)."""
+        cutoff_upper = float(self.rbf_layer.cutoff.cutoff_upper)
+        tables = []
+        for block in self.interaction_blocks:
+            conv = block.conv
+            table, error = build_filter_table(
+                conv.filter_network,
+                self.rbf_layer,
+                conv.cutoff,
+                cutoff_upper,
+                num_knots,
+            )
+            if error > tolerance:
+                raise ValueError(
+                    f"Filter table error {error:.2e} exceeds {tolerance:.0e} "
+                    f"with {num_knots} knots"
+                )
+            tables.append(table)
+        for block, table in zip(self.interaction_blocks, tables):
+            block.conv.table = table
+        self.neighbors = RadiusCSR(cutoff_upper)
+        return self
+
+    def drop_tables(self):
+        for block in self.interaction_blocks:
+            block.conv.table = None
+        self.neighbors = None
+
+    def train(self, mode: bool = True) -> "FlashSchNet":
+        if mode:
+            self.drop_tables()
+        return super().train(mode)
+
     def forward(self, data: AtomicData) -> AtomicData:
+        if not self.training and self.neighbors is not None:
+            return self._forward_tabulated(data)
+        return self._forward_filters(data)
+
+    def _forward_tabulated(self, data: AtomicData) -> AtomicData:
+        if data.get("cell") is not None:
+            raise NotImplementedError(
+                "Tabulated filters do not support periodic boundary "
+                "conditions yet; use the model without build_tables()"
+            )
+        ptr = (
+            data.ptr
+            if hasattr(data, "ptr")
+            else data.pos.new_tensor([0, data.pos.shape[0]], dtype=torch.long)
+        )
+        row_ptr, col, valid = self.neighbors(data.pos.detach(), data.batch, ptr)
+        x = self.embedding_layer(data.atom_types)
+        for block in self.interaction_blocks:
+            x = x + block.tabulated(
+                x, data.pos, row_ptr, col, self.neighbors.cutoff
+            )
+        return self._readout(x, data, valid)
+
+    def _forward_filters(self, data: AtomicData) -> AtomicData:
         r"""Forward pass through the SchNet architecture.
 
         Parameters
@@ -38,16 +127,15 @@ class FlashSchNet(SchNet):
         x = self.embedding_layer(data.atom_types)
 
         edge_index, distances, _ = radius(
-            data.pos, 
-            data.batch, 
+            data.pos,
+            data.batch,
             self.rbf_layer.cutoff.cutoff_upper,
             data.get("pbc"),
             data.get("cell"),
-            self.max_num_neighbors
+            self.max_num_neighbors,
         )
 
         rbf_expansion = self.rbf_layer(distances)
-        num_graphs = data.ptr.numel() - 1 if hasattr(data, "ptr") else None
 
         csr_data = build_csr_representation_from_edges(edge_index, x.shape[0])
 
@@ -60,13 +148,17 @@ class FlashSchNet(SchNet):
                 csr_data=csr_data,
             )
 
-        energy = self.output_network(x, data)
+        return self._readout(x, data)
+
+    def _readout(self, x, data, scale=1.0):
+        energy = self.output_network(x, data) * scale
+        num_graphs = data.ptr.numel() - 1 if hasattr(data, "ptr") else None
         energy = scatter(
             energy, data.batch, dim=0, reduce="sum", dim_size=num_graphs
         )
-
-        energy = energy.flatten()
-        data.out.setdefault(self.name, {}).update({ENERGY_KEY: energy})
+        data.out.setdefault(self.name, {}).update(
+            {ENERGY_KEY: energy.flatten()}
+        )
         return data
 
 
@@ -117,6 +209,10 @@ class FlashInteractionBlock(InteractionBlock):
         x = self.lin(x)
         return x
 
+    def tabulated(self, x, pos, row_ptr, col, cutoff_upper):
+        x = self.conv.tabulated(x, pos, row_ptr, col, cutoff_upper)
+        return self.lin(self.activation(x))
+
 
 class FlashCFConv(CFConv):
     r"""
@@ -124,8 +220,19 @@ class FlashCFConv(CFConv):
 
     This implementation use :func:`fused_cfconv` to fuse
     the message passing operation performed by SchNet without
-    materializing intermediate expanded representations.
+    materializing intermediate expanded representations, or, with a filter
+    table (see :meth:`FlashSchNet.build_tables`), :func:`tabulated_cfconv`.
     """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.register_buffer("table", None, persistent=False)
+
+    def tabulated(self, x, pos, row_ptr, col, cutoff_upper):
+        x = tabulated_cfconv(
+            self.lin1(x), pos, row_ptr, col, self.table, cutoff_upper
+        )
+        return self.lin2(x)
 
     def forward(
         self,
@@ -341,5 +448,15 @@ class StandardFlashSchNet(FlashSchNet):
             aggr=standard_model.interaction_blocks[0].conv.aggr,
         )
         instance.load_state_dict(standard_model.state_dict(), strict=True)
-
-        return instance
+        # the constructor builds every MLP with the block activation; copy the
+        # source's own modules so that each filter keeps its activation
+        for flash_block, block in zip(
+            instance.interaction_blocks, standard_model.interaction_blocks
+        ):
+            flash_block.conv.filter_network = copy.deepcopy(
+                block.conv.filter_network
+            )
+            flash_block.activation = copy.deepcopy(block.activation)
+        instance.output_network = copy.deepcopy(standard_model.output_network)
+        device = next(standard_model.parameters()).device
+        return instance.to(device).train(standard_model.training)

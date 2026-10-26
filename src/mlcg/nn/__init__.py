@@ -30,7 +30,6 @@ from .allegro import StandardAllegro
 from .flash_models import (
     FlashSchNet,
     StandardFlashSchNet,
-    TabulatedSchNet,
     FlashHarmonicBonds,
     FlashHarmonicAngles,
     FlashDihedral,
@@ -90,7 +89,6 @@ __all__ = [
     "StandardAllegro",
     "FlashSchNet",
     "StandardFlashSchNet",
-    "TabulatedSchNet",
     "FlashHarmonicBonds",
     "FlashHarmonicAngles",
     "FlashDihedral",

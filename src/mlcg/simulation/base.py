@@ -153,9 +153,18 @@ class _Simulation(object):
         expose known issues with scatter operations and may produce invalid
         outputs or NaN gradients.
     convert_to_flash:
-        If set to True, the script will attempt to convert the loaded model to its flash counterpart,
-        which may provide significant speedups for some models. This option is fully compatible with
-        torch compile.
+        If set to True, the model is prepared for inference with
+        :func:`~mlcg.nn.flash_models.prepare_for_inference`: converted to its
+        flash counterpart, with SchNet filters tabulated. This option is fully
+        compatible with torch compile.
+    cuda_graph:
+        If True, one force evaluation (energy and autograd forces) is
+        captured in a CUDA graph after conversion/compilation and replayed at
+        every step, removing the per-step CPU and launch overhead that
+        dominates small systems. Only positions may change between steps.
+        Falls back to the plain model, with a warning, if the model cannot be
+        captured (e.g. it synchronizes with the host). Defaults to
+        ``convert_to_flash``.
     """
 
     def __init__(
@@ -188,6 +197,7 @@ class _Simulation(object):
         compile_mode: str = "default",
         force_compile: bool = False,
         convert_to_flash: bool = False,
+        cuda_graph: Optional[bool] = None,
     ):
         self.model = None
         self.initial_data = None
@@ -258,6 +268,8 @@ class _Simulation(object):
         self.compile_mode = compile_mode
         self.force_compile = force_compile
         self.convert_to_flash = convert_to_flash
+        self.cuda_graph = convert_to_flash if cuda_graph is None else cuda_graph
+        self._graphed_model = None
 
     def attach_model_and_configurations(
         self,
@@ -481,15 +493,25 @@ class _Simulation(object):
 
     def compile_model(self, data):
         """Compiles the model for faster execution"""
-        # Populate data.out to vaoid some graph breaks during compilation
-        data = self.model(data)
-        if self.convert_to_flash:
-            from ..nn.flash_models.converter import (
-                convert_standard_model_to_flash,
-            )
+        self._compile_model(data)
+        if self.cuda_graph:
+            self._capture_cuda_graph(data)
 
-            model = convert_standard_model_to_flash(self.model)
-            self._attach_model(model)
+    def _capture_cuda_graph(self, data):
+        from ..nn.flash_models import capture_cuda_graph
+
+        self._graphed_model = capture_cuda_graph(self.model, data)
+
+    def _compile_model(self, data):
+        if self.convert_to_flash:
+            from ..nn.flash_models import prepare_for_inference
+
+            # converts, tabulates the filters and populates data.out on the
+            # flash model, so the standard model never sets the memory peak
+            self._attach_model(prepare_for_inference(self.model, data))
+        else:
+            # Populate data.out to avoid some graph breaks during compilation
+            data = self.model(data)
 
         if self.compile:
             if (data.batch.max() == 0) and not self.force_compile:
@@ -579,7 +601,8 @@ class _Simulation(object):
             vector forces predicted by the model
         """
 
-        data = self.model(data)
+        model = self._graphed_model or self.model
+        data = model(data)
         potential = data.out[ENERGY_KEY].detach()
         forces = data.out[FORCE_KEY].detach()
         return potential, forces

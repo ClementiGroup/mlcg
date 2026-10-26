@@ -8,6 +8,8 @@ from mlcg.simulation.langevin import (
     OverdampedSimulation,
 )
 from mlcg.simulation.parallel_tempering import PTSimulation
+from mlcg.nn.flash_models import GraphedModel
+from mlcg.data.atomic_data import AtomicData
 from mlcg.data._keys import FORCE_KEY
 from mlcg.nn import (
     StandardSchNet,
@@ -267,3 +269,69 @@ def test_simulation_run(
     torch.testing.assert_close(
         forces_eager, forces_compiled, atol=1e-5, rtol=1e-5
     )
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="needs CUDA")
+@pytest.mark.parametrize("compile_flag", [False, True])
+def test_cuda_graph_matches_plain_model(
+    get_initial_data, compile_flag, tmp_path
+):
+    """The replayed graph gives the plain model's outputs after MD steps."""
+    torch._functorch.config.donated_buffer = False
+    data_dict = ASE_SchNet_model(device="cuda")
+    initial_data_list = get_initial_data(
+        data_dict["molecule"],
+        data_dict["neighbor_lists"],
+        corruptor=None,
+        add_masses=True,
+    )
+    sim = LangevinSimulation(
+        1.0,
+        filename=tmp_path / "graph",
+        device="cuda",
+        compile=compile_flag,
+        convert_to_flash=True,
+        cuda_graph=True,
+    )
+    sim.attach_model_and_configurations(
+        data_dict["model"], initial_data_list, 1.0
+    )
+    sim._set_up_simulation(overwrite=False)
+    data = deepcopy(sim.initial_data).to(sim.device)
+    sim.compile_model(data)
+    assert sim._graphed_model is not None
+    _, forces = sim.calculate_potential_and_forces(data)
+    for _ in range(20):
+        data, _, forces = sim.timestep(data, forces)
+
+    graphed = sim.calculate_potential_and_forces(data)
+    sim._graphed_model = None
+    plain = sim.calculate_potential_and_forces(data)
+    for g, p in zip(graphed, plain):
+        torch.testing.assert_close(g, p, atol=1e-5, rtol=1e-5)
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="needs CUDA")
+def test_cuda_graph_rejects_host_sync():
+    """A model that synchronizes with the host fails on its first warm-up
+    call, before any capture is attempted."""
+
+    class Syncing(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.calls = 0
+
+        def forward(self, data):
+            self.calls += 1
+            energy = data.pos.sum().item() * torch.ones(1, device="cuda")
+            data.out = {"energy": energy, "forces": data.pos}
+            return data
+
+    data = AtomicData.from_points(
+        pos=torch.randn(5, 3), atom_types=torch.ones(5, dtype=torch.long)
+    ).to("cuda")
+    data.out = {}
+    model = Syncing()
+    with pytest.raises(RuntimeError):
+        GraphedModel(model, data)
+    assert model.calls == 1

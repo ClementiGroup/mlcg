@@ -6,7 +6,6 @@ import torch
 from warnings import warn
 from ..schnet import StandardSchNet
 from .flash_schnet import StandardFlashSchNet
-from .tabulated_schnet import TabulatedSchNet
 from .prior import (
     FlashDihedral,
     FlashRepulsion,
@@ -24,70 +23,60 @@ from ..prior import (
 from ..gradients import GradientsOut, SumOut, EnergyOut
 from ...simulation.specialize_prior import glbls
 
+_SUPPORTED_CONVERSIONS = {
+    StandardSchNet: StandardFlashSchNet,
+    Repulsion: FlashRepulsion,
+    HarmonicBonds: FlashHarmonicBonds,
+    HarmonicAngles: FlashHarmonicAngles,
+    Dihedral: FlashDihedral,
+    GeneralBonds: FlashHarmonicBonds,  # FIXME: check if this conversion is always valid
+    GeneralAngles: FlashHarmonicAngles,  # FIXME: check if this conversion is always valid
+    glbls["StaticHarmonicBonds"]: FlashHarmonicBonds,
+    glbls["StaticHarmonicAngles"]: FlashHarmonicAngles,
+    glbls["StaticDihedral"]: FlashDihedral,
+    glbls["StaticGeneralBonds"]: FlashHarmonicBonds,
+    glbls["StaticGeneralAngles"]: FlashHarmonicAngles,
+}
+
 
 def convert_single_standard_model_to_flash(
     standard_model: torch.nn.Module,
-    tabulate_filters: bool = True,
 ) -> torch.nn.Module:
     """
     Convert a standard model into its flash counterpart.
-    Only maps supported classes.
+    Only maps supported classes; flash models are returned unchanged.
 
     Args:
         standard_model (torch.nn.Module): The original SchNet model to be converted.
-        tabulate_filters (bool): convert a ``StandardSchNet`` to the
-            inference-only :class:`TabulatedSchNet`, falling back to
-            :class:`StandardFlashSchNet` if its filters can't be tabulated.
 
     """
-    if tabulate_filters and type(standard_model) is StandardSchNet:
-        try:
-            return TabulatedSchNet.flash_from_standard(standard_model)
-        except ValueError as error:
-            warn(f"{error}; using StandardFlashSchNet instead")
-
-    _supported_conversions = {
-        StandardSchNet: StandardFlashSchNet,
-        Repulsion: FlashRepulsion,
-        HarmonicBonds: FlashHarmonicBonds,
-        HarmonicAngles: FlashHarmonicAngles,
-        Dihedral: FlashDihedral,
-        GeneralBonds: FlashHarmonicBonds,  # FIXME: check if this conversion is always valid
-        GeneralAngles: FlashHarmonicAngles,  # FIXME: check if this conversion is always valid
-        glbls["StaticHarmonicBonds"]: FlashHarmonicBonds,
-        glbls["StaticHarmonicAngles"]: FlashHarmonicAngles,
-        glbls["StaticDihedral"]: FlashDihedral,
-        glbls["StaticGeneralBonds"]: FlashHarmonicBonds,
-        glbls["StaticGeneralAngles"]: FlashHarmonicAngles,
-    }
     model_type = type(standard_model)
-    if model_type not in _supported_conversions:
+    if model_type in _SUPPORTED_CONVERSIONS.values():
+        return standard_model
+    if model_type not in _SUPPORTED_CONVERSIONS:
         warn(
             f"Model type {model_type} not supported for flash conversion, returning original model"
         )
         return standard_model
 
-    flash_cls = _supported_conversions[model_type]
+    flash_cls = _SUPPORTED_CONVERSIONS[model_type]
     return flash_cls.flash_from_standard(standard_model)
 
 
 def convert_standard_model_to_flash(
     standard_model: torch.nn.Module,
-    tabulate_filters: bool = True,
 ) -> torch.nn.Module:
     """
     Convert a standard model into its flash counterpart.
-    Only maps supported classes.
+    Only maps supported classes. The result keeps the standard parameter
+    names and is trainable; for fast inference see
+    :func:`~mlcg.nn.flash_models.optimize_for_inference`.
 
     Args:
         standard_model (torch.nn.Module): The original SchNet model to be converted.
-        tabulate_filters (bool): see :func:`convert_single_standard_model_to_flash`.
-            The tabulated SchNet is for inference (simulations) only.
 
     """
-
-    def convert(model):
-        return convert_standard_model_to_flash(model, tabulate_filters)
+    convert = convert_standard_model_to_flash
 
     if isinstance(standard_model, GradientsOut):
         return GradientsOut(
@@ -108,6 +97,4 @@ def convert_standard_model_to_flash(
         )
         return SumOut(flash_inner, targets=standard_model.targets)
 
-    return convert_single_standard_model_to_flash(
-        standard_model, tabulate_filters
-    )
+    return convert_single_standard_model_to_flash(standard_model)

@@ -1,0 +1,148 @@
+"""
+One entry point for fast inference (MD) with an mlcg model:
+:func:`optimize_for_inference`, built from :func:`prepare_for_inference`
+(flash conversion, filter tables, eval mode) and :func:`capture_cuda_graph`.
+"""
+
+import copy
+import warnings
+from contextlib import contextmanager
+from typing import Callable, Optional
+
+import torch
+
+from ...data.atomic_data import AtomicData
+from ...data._keys import POSITIONS_KEY
+from .converter import convert_standard_model_to_flash
+from .flash_schnet import DEFAULT_NUM_KNOTS, TABLE_TOLERANCE, FlashSchNet
+
+
+def prepare_for_inference(
+    model: torch.nn.Module,
+    data: AtomicData,
+    num_knots: int = DEFAULT_NUM_KNOTS,
+    tolerance: float = TABLE_TOLERANCE,
+) -> torch.nn.Module:
+    """Flash-convert ``model``, tabulate the filters of every flash SchNet
+    (falling back to its filter networks, with a warning, if they can't be
+    tabulated) and freeze it in eval mode. One forward on ``data`` fills
+    ``data.out``, so that compiling it later traces fewer graphs."""
+    model = convert_standard_model_to_flash(model)
+    schnets = [m for m in model.modules() if isinstance(m, FlashSchNet)]
+    for schnet in schnets:
+        try:
+            if data.get("cell") is not None:
+                raise ValueError("periodic filters can't be tabulated yet")
+            schnet.build_tables(num_knots, tolerance)
+        except ValueError as error:
+            warnings.warn(f"{error}; {schnet.name} uses its filter networks")
+    model.eval().requires_grad_(False)
+    model(data)
+    return model
+
+
+def capture_cuda_graph(
+    model: Callable, data: AtomicData
+) -> Optional["GraphedModel"]:
+    """A :class:`GraphedModel` of ``model`` on ``data``, or ``None`` (with a
+    warning) if it can't be captured."""
+    try:
+        graphed = GraphedModel(model, data)
+    except Exception as e:
+        warnings.warn(f"CUDA graph capture failed ({e}); running without it.")
+        graphed = None
+    # frees the warm-up's cached blocks and a failed capture's pool
+    torch.cuda.empty_cache()
+    return graphed
+
+
+def optimize_for_inference(
+    model: torch.nn.Module,
+    data: AtomicData,
+    num_knots: int = DEFAULT_NUM_KNOTS,
+    tolerance: float = TABLE_TOLERANCE,
+    compile: bool = False,
+    cuda_graph: bool = True,
+) -> Callable[[AtomicData], AtomicData]:
+    """Every inference speed-up in one call: :func:`prepare_for_inference`,
+    optionally ``torch.compile``, and a CUDA graph of the energy + force
+    evaluation (:func:`capture_cuda_graph`). ``data`` is a representative
+    input, already on the model's device; returns ``model(data) -> data``.
+    """
+    model = prepare_for_inference(model, data, num_knots, tolerance)
+    if compile:
+        model = torch.compile(model, dynamic=True)
+        model(data)
+    graphed = capture_cuda_graph(model, data) if cuda_graph else None
+    return graphed or model
+
+
+def _copy_outputs(out):
+    """Copies of the outputs a caller reads, since the graph overwrites its
+    buffers at the next replay: the totals of a ``SumOut`` (top-level
+    tensors), or a single model's own outputs. Per-model entries of a
+    ``SumOut`` stay views: a copy each costs ~10 launches per step, +50% of
+    a small system's step."""
+    if any(torch.is_tensor(value) for value in out.values()):
+        return {
+            key: value.detach().clone() if torch.is_tensor(value) else value
+            for key, value in out.items()
+        }
+    return {
+        key: _copy_outputs(value) if isinstance(value, dict) else value
+        for key, value in out.items()
+    }
+
+
+@contextmanager
+def _fail_on_host_sync():
+    previous = torch.cuda.get_sync_debug_mode()
+    torch.cuda.set_sync_debug_mode("error")
+    try:
+        yield
+    finally:
+        torch.cuda.set_sync_debug_mode(previous)
+
+
+class GraphedModel:
+    """Replays a CUDA graph of one ``model(data)`` call (energies and forces).
+
+    The graph is captured on a shallow copy of ``data`` with its own position
+    buffer; each call copies the new positions into it and replays. Every
+    other input (atom types, batch, neighbour lists, ...) must stay the same
+    for the whole simulation. The model must not synchronize with the host:
+    the first warm-up call raises if it does, before any capture is tried.
+    """
+
+    def __init__(self, model: torch.nn.Module, data: AtomicData, warmup=3):
+        self.model = model
+        self.data = copy.copy(data)
+        self.pos = data[POSITIONS_KEY].detach().clone()
+        self.data[POSITIONS_KEY] = self.pos
+        # data.out keeps the structure the model was compiled with, otherwise
+        # Dynamo's guards on it fail and every submodule recompiles.
+        self.data.out = {
+            key: dict(value) if isinstance(value, dict) else value
+            for key, value in data.out.items()
+        }
+        stream = torch.cuda.Stream()
+        stream.wait_stream(torch.cuda.current_stream())
+        with torch.cuda.stream(stream):
+            with _fail_on_host_sync():
+                model(self.data)
+            for _ in range(warmup - 1):
+                model(self.data)
+        torch.cuda.current_stream().wait_stream(stream)
+        # the graph's private memory pool cannot reuse blocks cached by the
+        # warm-up, so release them before capturing
+        torch.cuda.empty_cache()
+        self.graph = torch.cuda.CUDAGraph()
+        with torch.cuda.graph(self.graph):
+            self.out = model(self.data).out
+
+    def __call__(self, data: AtomicData) -> AtomicData:
+        with torch.no_grad():
+            self.pos.copy_(data[POSITIONS_KEY])
+        self.graph.replay()
+        data.out = _copy_outputs(self.out)
+        return data

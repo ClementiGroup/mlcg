@@ -9,8 +9,8 @@ from mlcg.data._keys import ENERGY_KEY, FORCE_KEY
 from mlcg.nn.cutoff import CosineCutoff, IdentityCutoff, ShiftedCosineCutoff
 from mlcg.nn.flash_models import (
     StandardFlashSchNet,
-    TabulatedSchNet,
     convert_standard_model_to_flash,
+    prepare_for_inference,
 )
 from mlcg.nn.gradients import GradientsOut
 from mlcg.nn.kernels import RadiusCSR, radius
@@ -80,6 +80,13 @@ def build_schnet(basis, cutoff, activation, num_interactions=2):
     )
 
 
+def tabulate(standard):
+    """The inference model: flash conversion, filter tables, eval mode."""
+    return (
+        StandardFlashSchNet.flash_from_standard(standard).build_tables().eval()
+    )
+
+
 def energy_forces(model, data, dtype):
     model = GradientsOut(copy.deepcopy(model), targets=FORCE_KEY)
     model = model.to("cuda", dtype).eval()
@@ -102,45 +109,101 @@ def assert_matches_float64(standard, tabulated, data):
 @pytest.mark.parametrize("basis", BASES)
 def test_tabulated_bases_and_cutoffs(basis, cutoff):
     standard = build_schnet(basis, cutoff, "tanh")
-    tabulated = TabulatedSchNet.flash_from_standard(standard.cuda())
-    assert_matches_float64(standard, tabulated, random_batch())
+    assert_matches_float64(standard, tabulate(standard.cuda()), random_batch())
 
 
 @pytest.mark.parametrize("activation", ACTIVATIONS)
 def test_tabulated_activations(activation):
     standard = build_schnet("exp_normal", "cosine", activation, 3)
-    tabulated = TabulatedSchNet.flash_from_standard(standard.cuda())
-    assert_matches_float64(standard, tabulated, random_batch(seed=1))
-
-
-def test_converter_falls_back_for_non_smooth_filter():
-    standard = GradientsOut(
-        build_schnet("exp_normal", "cosine", "tanh"), targets=FORCE_KEY
+    assert_matches_float64(
+        standard, tabulate(standard.cuda()), random_batch(seed=1)
     )
-    for block in standard.model.interaction_blocks:
+
+
+def non_smooth_flash_schnet():
+    flash = StandardFlashSchNet.flash_from_standard(
+        build_schnet("exp_normal", "cosine", "tanh").cuda()
+    )
+    for block in flash.interaction_blocks:
         block.conv.filter_network.layers[1] = torch.nn.ReLU()
+    return flash
+
+
+def test_build_tables_rejects_non_smooth_filter():
+    with pytest.raises(ValueError, match="Filter table error"):
+        non_smooth_flash_schnet().build_tables()
+
+
+def test_prepare_for_inference_keeps_filters_when_not_tabulable():
+    model = GradientsOut(non_smooth_flash_schnet(), targets=FORCE_KEY)
     with pytest.warns(UserWarning, match="Filter table error"):
-        flash = convert_standard_model_to_flash(standard.cuda())
-    assert isinstance(flash.model, StandardFlashSchNet)
+        model = prepare_for_inference(model, random_batch().to("cuda"))
+    assert model.model.neighbors is None and not model.training
 
 
-def test_converter_tabulates_by_default():
+def test_conversion_keeps_the_filter_activation():
+    standard = build_schnet("exp_normal", "cosine", "tanh").cuda()
+    for block in standard.interaction_blocks:
+        block.conv.filter_network.layers[1] = torch.nn.SiLU()
+    flash = StandardFlashSchNet.flash_from_standard(standard)
+    for block in flash.interaction_blocks:
+        assert isinstance(block.conv.filter_network.layers[1], torch.nn.SiLU)
+        assert isinstance(block.activation, torch.nn.Tanh)
+    data = random_batch()
+    assert_matches_float64(standard, flash, data)
+    assert_matches_float64(standard, flash.build_tables().eval(), data)
+
+
+def test_converter_is_trainable_and_idempotent():
     standard = GradientsOut(
         build_schnet("exp_normal", "cosine", "tanh"), targets=FORCE_KEY
     ).cuda()
-    assert isinstance(
-        convert_standard_model_to_flash(standard).model, TabulatedSchNet
+    flash = convert_standard_model_to_flash(standard)
+    assert isinstance(flash.model, StandardFlashSchNet)
+    assert flash.model.neighbors is None
+    assert convert_standard_model_to_flash(flash).model is flash.model
+
+
+def test_eval_without_tables_is_the_filter_path():
+    model = GradientsOut(
+        StandardFlashSchNet.flash_from_standard(
+            build_schnet("exp_normal", "cosine", "tanh").cuda()
+        ),
+        targets=FORCE_KEY,
     )
-    assert isinstance(
-        convert_standard_model_to_flash(standard, False).model,
-        StandardFlashSchNet,
-    )
+    data = random_batch().to("cuda")
+    outputs = []
+    for mode in (True, False):
+        model.train(mode)
+        batch = copy.deepcopy(data)
+        batch.out = {}
+        out = model(batch).out[model.name]
+        outputs.append((out[ENERGY_KEY].detach(), out[FORCE_KEY].detach()))
+    assert model.model.neighbors is None
+    for train, evaluated in zip(*outputs):
+        torch.testing.assert_close(train, evaluated)
+
+
+def test_train_and_load_state_dict_drop_tables():
+    flash = tabulate(build_schnet("exp_normal", "cosine", "tanh").cuda())
+    assert all(b.conv.table is not None for b in flash.interaction_blocks)
+    flash.train()
+    assert flash.neighbors is None
+    assert all(b.conv.table is None for b in flash.interaction_blocks)
+    flash.build_tables().eval()
+    flash.load_state_dict(flash.state_dict())
+    assert flash.neighbors is None
+
+
+def test_state_dict_is_standard():
+    standard = build_schnet("exp_normal", "cosine", "tanh").cuda()
+    flash = tabulate(standard)
+    assert flash.state_dict().keys() == standard.state_dict().keys()
+    standard.load_state_dict(flash.state_dict())
 
 
 def test_tabulated_rejects_pbc():
-    tabulated = TabulatedSchNet.flash_from_standard(
-        build_schnet("exp_normal", "cosine", "tanh").cuda()
-    )
+    tabulated = tabulate(build_schnet("exp_normal", "cosine", "tanh").cuda())
     data = random_batch().to("cuda")
     data.cell = torch.eye(3, device="cuda") * 20
     with pytest.raises(NotImplementedError):
@@ -148,9 +211,7 @@ def test_tabulated_rejects_pbc():
 
 
 def test_tabulated_has_no_double_backward():
-    tabulated = TabulatedSchNet.flash_from_standard(
-        build_schnet("exp_normal", "cosine", "tanh").cuda()
-    )
+    tabulated = tabulate(build_schnet("exp_normal", "cosine", "tanh").cuda())
     data = random_batch().to("cuda")
     data.pos.requires_grad_(True)
     energy = tabulated(data).out[tabulated.name][ENERGY_KEY].sum()
@@ -190,9 +251,7 @@ def test_radius_csr_regrows_when_checked():
 
 
 def test_tabulated_poisons_truncated_neighbor_lists():
-    tabulated = TabulatedSchNet.flash_from_standard(
-        build_schnet("exp_normal", "cosine", "tanh").cuda()
-    )
+    tabulated = tabulate(build_schnet("exp_normal", "cosine", "tanh").cuda())
     small_graphs = random_batch(sizes=(8, 8, 8, 8)).to("cuda")
     one_graph = random_batch(sizes=(32,)).to("cuda")
     one_graph.pos = one_graph.pos * 0.1
@@ -203,9 +262,7 @@ def test_tabulated_poisons_truncated_neighbor_lists():
 
 def test_tabulated_step_has_no_host_sync():
     model = GradientsOut(
-        TabulatedSchNet.flash_from_standard(
-            build_schnet("exp_normal", "cosine", "tanh").cuda()
-        ),
+        tabulate(build_schnet("exp_normal", "cosine", "tanh").cuda()),
         targets=FORCE_KEY,
     ).eval()
     data = random_batch().to("cuda")
@@ -216,3 +273,22 @@ def test_tabulated_step_has_no_host_sync():
         model(data)
     finally:
         torch.cuda.set_sync_debug_mode("default")
+
+
+def test_optimize_for_inference_graphs_a_network_alone():
+    """The network without priors (as in mlcg_to_openmm) keeps its outputs
+    under its own name; the replay must return them, equal to the plain
+    model."""
+    from mlcg.nn.flash_models import GraphedModel, optimize_for_inference
+
+    network = GradientsOut(
+        build_schnet("exp_normal", "cosine", "tanh"), targets=FORCE_KEY
+    ).cuda()
+    data = random_batch().to("cuda")
+    data.out = {}
+    fast = optimize_for_inference(network, data)
+    assert isinstance(fast, GraphedModel)
+    graphed = fast(data).out[network.name]
+    plain = fast.model(copy.deepcopy(data)).out[network.name]
+    for key in (ENERGY_KEY, FORCE_KEY):
+        torch.testing.assert_close(graphed[key], plain[key].detach())
