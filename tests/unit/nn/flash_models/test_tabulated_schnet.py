@@ -82,11 +82,11 @@ def build_schnet(basis, cutoff, activation, num_interactions=2):
     )
 
 
-def tabulate(standard):
-    """The inference model: flash conversion, filter tables, eval mode."""
-    return (
-        StandardFlashSchNet.flash_from_standard(standard).build_tables().eval()
-    )
+def tabulate(standard, tolerance=1e-4):
+    """The inference model: flash conversion, filter tables, eval mode. The
+    accuracy tests were frozen with the 1e-4 table tolerance of 02."""
+    flash = StandardFlashSchNet.flash_from_standard(standard)
+    return flash.build_tables(tolerance=tolerance).eval()
 
 
 def energy_forces(model, data, dtype):
@@ -405,6 +405,59 @@ def test_optimize_for_inference_graphs_a_network_alone():
         torch.testing.assert_close(graphed[key], plain[key].detach())
 
 
+def knots_of(flash):
+    return [block.conv.table.shape[0] for block in flash.interaction_blocks]
+
+
+def test_adaptive_grid_uses_fewest_power_of_two_knots():
+    flash = StandardFlashSchNet.flash_from_standard(
+        build_schnet("exp_normal", "cosine", "tanh").cuda()
+    )
+    knots = knots_of(flash.build_tables(tolerance=1e-5))
+    assert all(k & (k - 1) == 0 for k in knots)
+    for k in set(knots):
+        if k > 2048:
+            with pytest.raises(ValueError, match="Filter table error"):
+                flash.build_tables(num_knots=k // 2, tolerance=1e-5)
+    tighter = knots_of(flash.build_tables(tolerance=1e-6))
+    assert all(t >= k for t, k in zip(tighter, knots))
+    assert (
+        knots_of(flash.build_tables(num_knots=3000, tolerance=1)) == [3000] * 2
+    )
+
+
+def test_adaptive_grid_refines_sharp_filters():
+    """Narrow Gaussians make a sharp but smooth filter: the first grid
+    misses the tolerance and the adaptive one refines until it meets it."""
+    torch.manual_seed(0)
+    standard = StandardSchNet(
+        GaussianBasis(CosineCutoff(0.0, CUTOFF), num_rbf=800),
+        CosineCutoff(0.0, CUTOFF),
+        [40],
+        hidden_channels=48,
+        num_filters=48,
+        num_interactions=1,
+        activation=torch.nn.Tanh(),
+    ).cuda()
+    flash = StandardFlashSchNet.flash_from_standard(standard)
+    with pytest.raises(ValueError, match="Filter table error"):
+        flash.build_tables(num_knots=2048, tolerance=1e-5)
+    assert knots_of(flash.build_tables(tolerance=1e-5))[0] > 2048
+    assert_matches_float64(standard, flash.eval(), random_batch())
+
+
+def test_tolerance_below_float32_floor_raises():
+    model = GradientsOut(
+        build_schnet("exp_normal", "cosine", "tanh"), targets=FORCE_KEY
+    ).cuda()
+    with pytest.raises(ValueError, match="float32 floor"):
+        StandardFlashSchNet.flash_from_standard(model.model).build_tables(
+            tolerance=1e-9
+        )
+    with pytest.raises(ValueError, match="float32 floor"):
+        prepare_for_inference(model, random_batch().to("cuda"), tolerance=1e-9)
+
+
 @pytest.mark.parametrize("cells", [["triclinic", "cubic"], ["orthorhombic"]])
 def test_filter_path_pbc_matches_float64(cells):
     """The non-tabulated (training) path on the sync-free neighbour list,
@@ -450,3 +503,25 @@ def test_radius_csr_cpu_matches_gpu():
             csr_sets(*RadiusCSR(CUTOFF)(d.pos, d.batch, d.ptr, cell, pbc)[:2])
         )
     assert sets[0] == sets[1]
+
+
+@pytest.mark.parametrize(
+    "basis, cutoff",
+    [
+        ("gaussian", "shifted_cosine"),
+        ("exp_normal", "shifted_cosine"),
+        ("extended_exp_normal", "cosine_lower"),
+    ],
+)
+def test_cutoff_breakpoints_get_knots(basis, cutoff):
+    """Cutoffs that change formula inside the range declare it; a knot is
+    put there, so their filters meet the default tolerance."""
+    torch.manual_seed(0)
+    standard = build_schnet(basis, cutoff, "tanh").cuda()
+    flash = StandardFlashSchNet.flash_from_standard(standard).build_tables()
+    for block in flash.interaction_blocks:
+        knots = block.conv.table.shape[0] - 1
+        breakpoint = block.conv.cutoff.breakpoints()[0]
+        offset = breakpoint / CUTOFF * knots
+        assert abs(offset - round(offset)) <= 1e-3
+    assert_matches_float64(standard, flash.eval(), random_batch())

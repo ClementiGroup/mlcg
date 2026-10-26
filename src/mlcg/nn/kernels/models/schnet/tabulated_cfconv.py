@@ -22,6 +22,7 @@ import triton.language as tl
 from torch.library import triton_op, wrap_triton
 
 from ...hermite import (
+    aligned_num_knots,
     hermite_relative_error,
     hermite_slope,
     hermite_table,
@@ -150,9 +151,9 @@ def tabulated_cfconv_kernel(
         )
         k, t = locate_knot(d, cutoff, num_knots)
         mask = valid[:, None] & f_ok[None, :]
-        v0, m0, v1, m1 = load_hermite_segment(table_ptr, k, f, mask, F)
+        v0, m0, dv, m1 = load_hermite_segment(table_ptr, k, f, mask, F)
         x_j = tl.load(x_ptr + j[:, None] * F + f[None, :], mask=mask, other=0.0)
-        acc += x_j * hermite_value(t[:, None], v0, m0, v1, m1)
+        acc += x_j * hermite_value(t[:, None], v0, m0, dv, m1)
 
     tl.store(out_ptr + i * F + f, tl.sum(acc, axis=0), mask=f_ok)
 
@@ -220,14 +221,14 @@ def tabulated_cfconv_backward_kernel(
         )
         k, t = locate_knot(d, cutoff, num_knots)
         mask = valid[:, None] & f_ok[None, :]
-        v0, m0, v1, m1 = load_hermite_segment(table_ptr, k, f, mask, F)
+        v0, m0, dv, m1 = load_hermite_segment(table_ptr, k, f, mask, F)
         node_j = j[:, None] * F + f[None, :]
         g_j = tl.load(grad_out_ptr + node_j, mask=mask, other=0.0)
         x_j = tl.load(x_ptr + node_j, mask=mask, other=0.0)
 
         t = t[:, None]
-        acc_x += g_j * hermite_value(t, v0, m0, v1, m1)
-        slope = hermite_slope(t, v0, m0, v1, m1)
+        acc_x += g_j * hermite_value(t, v0, m0, dv, m1)
+        slope = hermite_slope(t, v0, m0, dv, m1)
         grad_d = tl.sum(slope * (g_i * x_j + g_j * x_i), axis=1)
         scale = grad_d * (num_knots - 1) / (d * cutoff)
         scale = tl.where(valid & (d > 0), scale, 0.0)
@@ -261,7 +262,7 @@ def tabulated_cfconv(
     pos : [num_nodes, 3] float32 positions
     row_ptr : [num_nodes + 1] destination-CSR row pointers (int32/int64)
     col : [num_edges] source node of each CSR edge (int32/int64)
-    table : [num_knots, 2, F] float32 Hermite table of the filter over
+    table : [num_knots, 3, F] float32 Hermite table of the filter over
         ``[0, cutoff]`` (:func:`build_filter_table`)
     cutoff : upper end of the table; longer edges are ignored
     batch : [num_nodes] graph index of each node
@@ -383,10 +384,12 @@ def build_filter_table(
     cutoff_upper: float,
     num_knots: int,
 ) -> Tuple[torch.Tensor, float]:
-    """``[num_knots, 2, F]`` table of ``cutoff(d) * filter_network(rbf(d))``
+    """``[num_knots, 3, F]`` table of ``cutoff(d) * filter_network(rbf(d))``
     over ``[0, cutoff_upper]``, built in float64 from the modules themselves
     (any radial basis, cutoff, activation or filter depth), and its relative
-    interpolation error (:func:`hermite_relative_error`)."""
+    interpolation error (:func:`hermite_relative_error`). Knots are placed on
+    the cutoffs' breakpoints (:func:`aligned_num_knots`), so ``num_knots``
+    may grow by up to 2x for a cutoff that declares any."""
     device = next(filter_network.parameters()).device
     filter_network, rbf_layer, cutoff = (
         copy.deepcopy(m).double() for m in (filter_network, rbf_layer, cutoff)
@@ -395,6 +398,13 @@ def build_filter_table(
     def phi(d):
         return cutoff(d).unsqueeze(-1) * filter_network(rbf_layer(d))
 
+    breakpoints = [
+        b
+        for m in (cutoff, getattr(rbf_layer, "cutoff", None))
+        if hasattr(m, "breakpoints")
+        for b in m.breakpoints()
+    ]
+    num_knots = aligned_num_knots(cutoff_upper, num_knots, breakpoints)
     with torch.no_grad():
         table = hermite_table(phi, cutoff_upper, num_knots, device)
         return table, hermite_relative_error(phi, table, cutoff_upper)

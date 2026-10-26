@@ -1,6 +1,7 @@
+import math
 import warnings
 import copy
-from typing import List
+from typing import List, Optional
 import torch
 from torch_geometric.utils import scatter
 from ...data.atomic_data import AtomicData, ENERGY_KEY
@@ -15,8 +16,46 @@ from ..kernels import (
     tabulated_cfconv,
 )
 
-DEFAULT_NUM_KNOTS = 2048
-TABLE_TOLERANCE = 1e-4
+TABLE_TOLERANCE = 1e-5
+MIN_TOLERANCE = 1e-7  # float32 storage and arithmetic floor
+FIRST_NUM_KNOTS = 2048
+MAX_NUM_KNOTS = 16384
+
+
+def check_tolerance(tolerance: float):
+    if tolerance < MIN_TOLERANCE:
+        raise ValueError(
+            f"Table tolerance {tolerance:.0e} is below the float32 floor "
+            f"{MIN_TOLERANCE:.0e}"
+        )
+
+
+def _filter_table(conv, rbf_layer, cutoff_upper, num_knots, tolerance):
+    """Table of ``conv``'s filter on ``num_knots`` knots, or, if ``None``, on
+    the smallest power of two meeting ``tolerance``: the next size is
+    predicted from the O(h^4) error and then verified, up to
+    ``MAX_NUM_KNOTS``."""
+
+    def table_on(knots):
+        return build_filter_table(
+            conv.filter_network, rbf_layer, conv.cutoff, cutoff_upper, knots
+        )
+
+    knots = num_knots or FIRST_NUM_KNOTS
+    table, error = table_on(knots)
+    while num_knots is None and error > tolerance and knots < MAX_NUM_KNOTS:
+        predicted = knots * (error / tolerance) ** 0.25
+        knots = min(MAX_NUM_KNOTS, 1 << math.ceil(math.log2(predicted)))
+        previous = error
+        table, error = table_on(knots)
+        if error >= previous:  # at the float32 floor: more knots won't help
+            break
+    if error > tolerance:
+        raise ValueError(
+            f"Filter table error {error:.2e} exceeds {tolerance:.0e} "
+            f"with {knots} knots"
+        )
+    return table
 
 
 def _drop_tables_hook(module, incompatible_keys):
@@ -43,32 +82,25 @@ class FlashSchNet(SchNet):
 
     def build_tables(
         self,
-        num_knots: int = DEFAULT_NUM_KNOTS,
+        num_knots: Optional[int] = None,
         tolerance: float = TABLE_TOLERANCE,
     ) -> "FlashSchNet":
         """Tabulate every interaction filter from the current weights
-        (float64, cubic Hermite on ``num_knots`` knots over the cutoff).
-        Raises ``ValueError`` if a filter's relative table error exceeds
-        ``tolerance`` (e.g. non-smooth activations). The tables reflect the
+        (float64, cubic Hermite over the cutoff), each on the fewest
+        power-of-two knots that keep its relative error within ``tolerance``,
+        or on ``num_knots`` knots if given. Raises ``ValueError`` if a filter
+        can't meet ``tolerance`` (e.g. non-smooth activations) or if
+        ``tolerance`` is below the float32 floor. The tables reflect the
         weights at this call: weights changed by hand afterwards need another
         call (``train()`` and ``load_state_dict`` drop the tables)."""
+        check_tolerance(tolerance)
         cutoff_upper = float(self.rbf_layer.cutoff.cutoff_upper)
-        tables = []
-        for block in self.interaction_blocks:
-            conv = block.conv
-            table, error = build_filter_table(
-                conv.filter_network,
-                self.rbf_layer,
-                conv.cutoff,
-                cutoff_upper,
-                num_knots,
+        tables = [
+            _filter_table(
+                block.conv, self.rbf_layer, cutoff_upper, num_knots, tolerance
             )
-            if error > tolerance:
-                raise ValueError(
-                    f"Filter table error {error:.2e} exceeds {tolerance:.0e} "
-                    f"with {num_knots} knots"
-                )
-            tables.append(table)
+            for block in self.interaction_blocks
+        ]
         for block, table in zip(self.interaction_blocks, tables):
             block.conv.table = table
         return self

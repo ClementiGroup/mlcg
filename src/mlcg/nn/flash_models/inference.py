@@ -15,13 +15,13 @@ from ...data.atomic_data import AtomicData
 from ...data._keys import POSITIONS_KEY
 from ..kernels.pbc import check_cells
 from .converter import convert_standard_model_to_flash
-from .flash_schnet import DEFAULT_NUM_KNOTS, TABLE_TOLERANCE, FlashSchNet
+from .flash_schnet import TABLE_TOLERANCE, FlashSchNet, check_tolerance
 
 
 def prepare_for_inference(
     model: torch.nn.Module,
     data: AtomicData,
-    num_knots: int = DEFAULT_NUM_KNOTS,
+    num_knots: Optional[int] = None,
     tolerance: float = TABLE_TOLERANCE,
 ) -> torch.nn.Module:
     """Flash-convert ``model``, tabulate the filters of every flash SchNet
@@ -30,6 +30,7 @@ def prepare_for_inference(
     periodic cell the tabulated path can't handle (see
     :func:`~mlcg.nn.kernels.pbc.check_cells`). One forward on ``data`` fills
     ``data.out``, so that compiling it later traces fewer graphs."""
+    check_tolerance(tolerance)
     model = convert_standard_model_to_flash(model)
     schnets = [m for m in model.modules() if isinstance(m, FlashSchNet)]
     for schnet in schnets:
@@ -62,7 +63,7 @@ def capture_cuda_graph(
 def optimize_for_inference(
     model: torch.nn.Module,
     data: AtomicData,
-    num_knots: int = DEFAULT_NUM_KNOTS,
+    num_knots: Optional[int] = None,
     tolerance: float = TABLE_TOLERANCE,
     compile: bool = False,
     cuda_graph: bool = True,
