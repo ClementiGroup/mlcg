@@ -451,10 +451,6 @@ class _Simulation(object):
                     if int((t + 1) % self.log_interval) == 0:
                         self.log((t + 1) // self.save_interval)
 
-            if self.sim_subroutine != None:
-                if (t + 1) % self.sim_subroutine_interval == 0:
-                    data = self.sim_subroutine(data)
-
             # reset data outputs to collect the new forces/energies
             data.out = {}
             if prof:

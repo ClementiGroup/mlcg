@@ -554,6 +554,50 @@ def test_maxwell_boltzmann_stats():
     )
 
 
+def test_pt_velocity_init(tmp_path):
+    """Tests to make sure that PTSimulation.attach_configurations
+    correctly for each temperature level"""
+    betas = [1.67, 1.42, 1.22, 1.0]  # only used to instantiate the simulation
+
+    # Mock data of 1000 frames of a 7 atom molecule, each atom having unit mass
+    n_indep = 10000
+    n_atoms = 7
+    configurations = []
+    for _ in range(n_indep):
+        configurations.append(
+            AtomicData.from_points(
+                pos=torch.zeros(n_atoms, 3),
+                atom_types=torch.ones(n_atoms),
+                masses=torch.ones(n_atoms),
+                velocities=torch.zeros(n_atoms, 3),
+            )
+        )
+    fn = tmp_path / PTSimulation.__name__
+    simulation = PTSimulation(filename=fn)
+    simulation._attach_configurations(configurations, betas)
+    print(simulation.initial_data.velocities)
+
+    mass = 1.00
+    for i, beta in enumerate(betas):
+        theory_expectation = torch.sqrt(8 / (beta * torch_pi * mass))
+        theory_expectation_2 = torch.tensor(3 / (beta * mass))
+
+        velocities = simulation.initial_data.velocities[
+            (n_indep * n_atoms) * i : (n_indep * n_atoms) * (i + 1)
+        ]
+        emperical_expectation = torch.sqrt((velocities**2).sum(dim=1)).mean()
+        emperical_expectation_2 = (velocities**2).sum(dim=1).mean()
+
+        np.testing.assert_almost_equal(
+            emperical_expectation.numpy(), theory_expectation.numpy(), decimal=1
+        )
+        np.testing.assert_almost_equal(
+            emperical_expectation_2.numpy(),
+            theory_expectation_2.numpy(),
+            decimal=1,
+        )
+
+
 def flash_cgschnet_model():
     standard_basis = ExpNormalBasis(cutoff=5)
     standard_cutoff = CosineCutoff(cutoff_upper=5)
