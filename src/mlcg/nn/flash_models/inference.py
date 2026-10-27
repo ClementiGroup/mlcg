@@ -12,7 +12,7 @@ from typing import Callable, Optional
 import torch
 
 from ...data.atomic_data import AtomicData
-from ...data._keys import POSITIONS_KEY
+from ...data._keys import CELL_KEY, PBC_KEY, POSITIONS_KEY
 from ..kernels.pbc import check_cells
 from .converter import convert_standard_model_to_flash
 from .flash_schnet import TABLE_TOLERANCE, FlashSchNet, check_tolerance
@@ -108,21 +108,33 @@ def _fail_on_host_sync():
         torch.cuda.set_sync_debug_mode(previous)
 
 
+GRAPH_INPUTS = (POSITIONS_KEY, CELL_KEY, PBC_KEY)
+
+
 class GraphedModel:
     """Replays a CUDA graph of one ``model(data)`` call (energies and forces).
 
-    The graph is captured on a shallow copy of ``data`` with its own position
-    buffer; each call copies the new positions into it and replays. Every
-    other input (atom types, batch, neighbour lists, ...) must stay the same
-    for the whole simulation. The model must not synchronize with the host:
-    the first warm-up call raises if it does, before any capture is tried.
+    The graph is captured on a shallow copy of ``data`` with its own buffers
+    for the inputs that change during a run: positions and, if periodic, the
+    cell and ``pbc`` (a barostat rescales the box). Each call copies them
+    from the given ``data`` and replays, so ``data`` may be a new object.
+    Every other input (atom types, batch, ``ptr``, ...) must stay the same
+    for the whole simulation. A periodic call to a graph captured without a
+    cell, or the reverse, raises ``ValueError``. The model must not
+    synchronize with the host: the first warm-up call raises if it does,
+    before any capture is tried.
     """
 
     def __init__(self, model: torch.nn.Module, data: AtomicData, warmup=3):
         self.model = model
         self.data = copy.copy(data)
-        self.pos = data[POSITIONS_KEY].detach().clone()
-        self.data[POSITIONS_KEY] = self.pos
+        self.inputs = {
+            key: data[key].detach().clone()
+            for key in GRAPH_INPUTS
+            if data.get(key) is not None
+        }
+        for key, buffer in self.inputs.items():
+            self.data[key] = buffer
         # data.out keeps the structure the model was compiled with, otherwise
         # Dynamo's guards on it fail and every submodule recompiles.
         self.data.out = {
@@ -145,8 +157,15 @@ class GraphedModel:
             self.out = model(self.data).out
 
     def __call__(self, data: AtomicData) -> AtomicData:
+        if (data.get(CELL_KEY) is None) == (CELL_KEY in self.inputs):
+            raise ValueError(
+                "The CUDA graph was captured "
+                f"{'with' if CELL_KEY in self.inputs else 'without'} a "
+                "periodic cell; capture a new one for this data"
+            )
         with torch.no_grad():
-            self.pos.copy_(data[POSITIONS_KEY])
+            for key, buffer in self.inputs.items():
+                buffer.copy_(data[key])
         self.graph.replay()
         data.out = _copy_outputs(self.out)
         return data

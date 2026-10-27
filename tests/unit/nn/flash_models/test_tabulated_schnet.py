@@ -405,6 +405,38 @@ def test_optimize_for_inference_graphs_a_network_alone():
         torch.testing.assert_close(graphed[key], plain[key].detach())
 
 
+@pytest.mark.parametrize(
+    "matrix",
+    [
+        [[1.03, 0, 0], [0, 0.97, 0], [0, 0, 1.01]],
+        [[1, 0, 0], [0.03, 1, 0], [0, 0, 1]],
+    ],
+)
+def test_graph_follows_a_new_cell(matrix):
+    """A barostat rescales or shears the box: the replay must use the cell
+    of the data it is given, like the plain model, and a call without a
+    cell must not reuse the captured one."""
+    from mlcg.nn.flash_models import GraphedModel, optimize_for_inference
+
+    network = GradientsOut(
+        build_schnet("exp_normal", "cosine", "tanh"), targets=FORCE_KEY
+    ).cuda()
+    data = periodic_batch([CELLS["cubic"], CELLS["triclinic"]]).to("cuda")
+    data.out = {}
+    fast = optimize_for_inference(network, data)
+    assert isinstance(fast, GraphedModel)
+    matrix = torch.tensor(matrix, device="cuda")
+    deformed = data.clone()
+    deformed.pos = data.pos @ matrix
+    deformed.cell = data.cell @ matrix
+    graphed = fast(deformed.clone()).out[network.name][FORCE_KEY]
+    plain = fast.model(deformed.clone()).out[network.name][FORCE_KEY]
+    torch.testing.assert_close(graphed, plain.detach())
+    deformed.cell = None
+    with pytest.raises(ValueError, match="periodic cell"):
+        fast(deformed)
+
+
 def knots_of(flash):
     return [block.conv.table.shape[0] for block in flash.interaction_blocks]
 
