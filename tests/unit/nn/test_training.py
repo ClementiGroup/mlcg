@@ -152,10 +152,10 @@ def assert_same(actual, expected):
 
 @pytest.fixture
 def full_float32():
-    previous = torch.backends.cuda.matmul.allow_tf32
-    torch.backends.cuda.matmul.allow_tf32 = False
+    # the global setting, not the legacy allow_tf32 flag: mixing the two
+    # makes Lightning's precision check raise under torch >= 2.9
+    torch.set_float32_matmul_precision("highest")
     yield
-    torch.backends.cuda.matmul.allow_tf32 = previous
 
 
 @pytest.mark.parametrize("name, build, flash", MODELS)
