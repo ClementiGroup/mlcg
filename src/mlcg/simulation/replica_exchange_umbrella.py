@@ -1,7 +1,7 @@
 """Replica exchange between umbrella windows (Hamiltonian replica exchange,
 REUS) for the native-contact Q restraint."""
 
-from typing import List, Union
+from typing import List, Optional, Union
 import time
 import numpy as np
 import torch
@@ -210,13 +210,8 @@ class REUSSimulation(LangevinSimulation):
             t // self.save_interval
         ) - self._npy_file_index * self._save_size
         self.simulated_replicas[save_ind] = self.replica_of_window.cpu()
-        if self.create_checkpoints:
-            self.checkpoint["replica_of_window"] = (
-                self.replica_of_window.detach().clone()
-            )
-            self.checkpoint["propose_even_pairs"] = self._propose_even_pairs
 
-    def write(self):
+    def write(self, data: Optional[AtomicData] = None):
         key = self._get_numpy_count()
         np.save(
             "{}_replicas_{}.npy".format(self.filename, key),
@@ -235,7 +230,18 @@ class REUSSimulation(LangevinSimulation):
         self.simulated_replicas = torch.zeros(
             (self._save_size, self.n_sims), dtype=torch.long
         )
-        super().write()
+        super().write(data=data)
+        # the base class builds and saves the checkpoint in write() (after this step's exchange): add the replica state
+        # to it and save it again
+        if self.create_checkpoints:
+            self.checkpoint["replica_of_window"] = (
+                self.replica_of_window.detach().clone()
+            )
+            self.checkpoint["propose_even_pairs"] = self._propose_even_pairs
+            torch.save(
+                self.checkpoint,
+                "{}_checkpoint.pt".format(self.filename),
+            )
 
     def summary(self):
         super().summary()

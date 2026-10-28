@@ -101,9 +101,9 @@ def test_simulate_exports_and_restarts(tmp_path):
     sim, _ = _attached(tmp_path, Q0, k, **common)
     sim.simulate()
     # attempts every 5 steps, alternating 2 even pairs and 1 odd pair; the
-    # attempt at step 100 comes after that step's export, so it is counted
-    # in the second interval (and the one at step 200 in no exported one)
-    n_attempted = {"0000": 10 * 2 + 9 * 1, "0001": 10 * 1 + 10 * 2}
+    # base loop runs the exchange before that step's export, so each interval
+    # holds its 20 attempts, the ones at steps 100 and 200 included
+    n_attempted = {"0000": 10 * 2 + 10 * 1, "0001": 10 * 2 + 10 * 1}
     for key in ("0000", "0001"):
         rep = np.load(tmp_path / f"sim_replicas_{key}.npy")
         assert rep.shape == (4, 10)
