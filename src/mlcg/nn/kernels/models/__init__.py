@@ -1,4 +1,4 @@
-from .schnet import fused_cfconv
+from .schnet import build_filter_table, fused_cfconv, tabulated_cfconv
 from .prior import (
     flash_repulsion,
     flash_harmonic_bonds,

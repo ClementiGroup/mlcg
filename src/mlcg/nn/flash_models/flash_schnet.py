@@ -1,13 +1,65 @@
+import math
 import warnings
 import copy
-from typing import List
+from typing import List, Optional
 import torch
 from torch_geometric.utils import scatter
 from ...data.atomic_data import AtomicData, ENERGY_KEY
 from ..mlp import MLP
 from ..schnet import SchNet, StandardSchNet, InteractionBlock, CFConv
-from ..kernels import build_csr_representation_from_edges, fused_cfconv, radius
-from ...geometry.internal_coordinates import compute_distances
+from ..kernels.pbc import minimum_image_vectors, periodic_cells
+from ..kernels import (
+    RadiusCSR,
+    build_csr_representation_from_edges,
+    build_filter_table,
+    fused_cfconv,
+    tabulated_cfconv,
+)
+
+TABLE_TOLERANCE = 1e-5
+MIN_TOLERANCE = 1e-7  # float32 storage and arithmetic floor
+FIRST_NUM_KNOTS = 2048
+MAX_NUM_KNOTS = 16384
+
+
+def check_tolerance(tolerance: float):
+    if tolerance < MIN_TOLERANCE:
+        raise ValueError(
+            f"Table tolerance {tolerance:.0e} is below the float32 floor "
+            f"{MIN_TOLERANCE:.0e}"
+        )
+
+
+def _filter_table(conv, rbf_layer, cutoff_upper, num_knots, tolerance):
+    """Table of ``conv``'s filter on ``num_knots`` knots, or, if ``None``, on
+    the smallest power of two meeting ``tolerance``: the next size is
+    predicted from the O(h^4) error and then verified, up to
+    ``MAX_NUM_KNOTS``."""
+
+    def table_on(knots):
+        return build_filter_table(
+            conv.filter_network, rbf_layer, conv.cutoff, cutoff_upper, knots
+        )
+
+    knots = num_knots or FIRST_NUM_KNOTS
+    table, error = table_on(knots)
+    while num_knots is None and error > tolerance and knots < MAX_NUM_KNOTS:
+        predicted = knots * (error / tolerance) ** 0.25
+        knots = min(MAX_NUM_KNOTS, 1 << math.ceil(math.log2(predicted)))
+        previous = error
+        table, error = table_on(knots)
+        if error >= previous:  # at the float32 floor: more knots won't help
+            break
+    if error > tolerance:
+        raise ValueError(
+            f"Filter table error {error:.2e} exceeds {tolerance:.0e} "
+            f"with {knots} knots"
+        )
+    return table
+
+
+def _drop_tables_hook(module, incompatible_keys):
+    module.drop_tables()
 
 
 class FlashSchNet(SchNet):
@@ -15,10 +67,87 @@ class FlashSchNet(SchNet):
     See :class:`SchNet` for the full API documentation.
 
     This implementation replaces the standard message-passing kernels
-    with fused Triton kernels.
+    with fused Triton kernels. After :meth:`build_tables`, in eval mode, every
+    interaction filter is read from a cubic Hermite table instead of being
+    evaluated, with a sync-free neighbor search (inference only; periodic
+    cells as in :mod:`~mlcg.nn.kernels.pbc`). In train
+    mode, or without tables, it runs the filter networks (trainable, double
+    backward). ``train()`` and loading a state dict drop the tables.
     """
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.neighbors = RadiusCSR(float(self.rbf_layer.cutoff.cutoff_upper))
+        self.register_load_state_dict_post_hook(_drop_tables_hook)
+
+    def build_tables(
+        self,
+        num_knots: Optional[int] = None,
+        tolerance: float = TABLE_TOLERANCE,
+    ) -> "FlashSchNet":
+        """Tabulate every interaction filter from the current weights
+        (float64, cubic Hermite over the cutoff), each on the fewest
+        power-of-two knots that keep its relative error within ``tolerance``,
+        or on ``num_knots`` knots if given. Raises ``ValueError`` if a filter
+        can't meet ``tolerance`` (e.g. non-smooth activations) or if
+        ``tolerance`` is below the float32 floor. The tables reflect the
+        weights at this call: weights changed by hand afterwards need another
+        call (``train()`` and ``load_state_dict`` drop the tables)."""
+        check_tolerance(tolerance)
+        cutoff_upper = float(self.rbf_layer.cutoff.cutoff_upper)
+        tables = [
+            _filter_table(
+                block.conv, self.rbf_layer, cutoff_upper, num_knots, tolerance
+            )
+            for block in self.interaction_blocks
+        ]
+        for block, table in zip(self.interaction_blocks, tables):
+            block.conv.table = table
+        return self
+
+    def drop_tables(self):
+        for block in self.interaction_blocks:
+            block.conv.table = None
+
+    @property
+    def tabulated(self) -> bool:
+        return self.interaction_blocks[0].conv.table is not None
+
+    def train(self, mode: bool = True) -> "FlashSchNet":
+        if mode:
+            self.drop_tables()
+        return super().train(mode)
+
     def forward(self, data: AtomicData) -> AtomicData:
+        if not self.training and self.tabulated:
+            return self._forward_tabulated(data)
+        return self._forward_filters(data)
+
+    def _neighbor_graph(self, data: AtomicData):
+        """Sync-free CSR radius graph (minimum image with a cell), the
+        per-graph cells and the ``valid`` factor (1, or NaN)."""
+        ptr = (
+            data.ptr
+            if hasattr(data, "ptr")
+            else data.pos.new_tensor([0, data.pos.shape[0]], dtype=torch.long)
+        )
+        periodic = periodic_cells(
+            data.get("cell"), data.get("pbc"), ptr.numel() - 1, data.pos.device
+        )
+        row_ptr, col, valid = self.neighbors(
+            data.pos.detach(), data.batch, ptr, *periodic
+        )
+        return row_ptr, col, valid, periodic
+
+    def _forward_tabulated(self, data: AtomicData) -> AtomicData:
+        row_ptr, col, valid, periodic = self._neighbor_graph(data)
+        edges = (row_ptr, col, self.neighbors.cutoff, data.batch, *periodic)
+        x = self.embedding_layer(data.atom_types)
+        for block in self.interaction_blocks:
+            x = x + block.tabulated(x, data.pos, *edges)
+        return self._readout(x, data, valid)
+
+    def _forward_filters(self, data: AtomicData) -> AtomicData:
         r"""Forward pass through the SchNet architecture.
 
         Parameters
@@ -35,24 +164,26 @@ class FlashSchNet(SchNet):
            information.
         """
 
+        row_ptr, col, valid, (cell, pbc) = self._neighbor_graph(data)
+        num_edges = int(row_ptr[-1])
+        dst = torch.repeat_interleave(
+            torch.arange(len(row_ptr) - 1, device=col.device),
+            row_ptr.diff(),
+            output_size=num_edges,
+        )
+        src = col[:num_edges].long()
+        edge_index = torch.stack([src, dst])
+        vectors = minimum_image_vectors(
+            data.pos[dst] - data.pos[src], cell, pbc, data.batch[dst]
+        )
+        distances = vectors.norm(dim=1)
         x = self.embedding_layer(data.atom_types)
 
-        edge_index, distances, _ = radius(
-            data.pos, 
-            data.batch, 
-            self.rbf_layer.cutoff.cutoff_upper,
-            data.get("pbc"),
-            data.get("cell"),
-            self.max_num_neighbors
-        )
-
         rbf_expansion = self.rbf_layer(distances)
-        num_graphs = data.ptr.numel() - 1 if hasattr(data, "ptr") else None
 
         csr_data = build_csr_representation_from_edges(edge_index, x.shape[0])
 
-        for i, block in enumerate(self.interaction_blocks):
-
+        for block in self.interaction_blocks:
             x = x + block(
                 x,
                 edge_index,
@@ -61,14 +192,17 @@ class FlashSchNet(SchNet):
                 csr_data=csr_data,
             )
 
-            energy = self.output_network(x, data)
+        return self._readout(x, data, valid)
 
+    def _readout(self, x, data, scale=1.0):
+        energy = self.output_network(x, data) * scale
+        num_graphs = data.ptr.numel() - 1 if hasattr(data, "ptr") else None
         energy = scatter(
             energy, data.batch, dim=0, reduce="sum", dim_size=num_graphs
         )
-
-        energy = energy.flatten()
-        data.out.setdefault(self.name, {}).update({ENERGY_KEY: energy})
+        data.out.setdefault(self.name, {}).update(
+            {ENERGY_KEY: energy.flatten()}
+        )
         return data
 
 
@@ -119,6 +253,9 @@ class FlashInteractionBlock(InteractionBlock):
         x = self.lin(x)
         return x
 
+    def tabulated(self, x, pos, *edges):
+        return self.lin(self.activation(self.conv.tabulated(x, pos, *edges)))
+
 
 class FlashCFConv(CFConv):
     r"""
@@ -126,8 +263,27 @@ class FlashCFConv(CFConv):
 
     This implementation use :func:`fused_cfconv` to fuse
     the message passing operation performed by SchNet without
-    materializing intermediate expanded representations.
+    materializing intermediate expanded representations, or, with a filter
+    table (see :meth:`FlashSchNet.build_tables`), :func:`tabulated_cfconv`.
     """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.register_buffer("table", None, persistent=False)
+
+    def tabulated(self, x, pos, row_ptr, col, cutoff_upper, batch, cell, pbc):
+        x = tabulated_cfconv(
+            self.lin1(x),
+            pos,
+            row_ptr,
+            col,
+            self.table,
+            cutoff_upper,
+            batch,
+            cell,
+            pbc,
+        )
+        return self.lin2(x)
 
     def forward(
         self,
@@ -343,5 +499,15 @@ class StandardFlashSchNet(FlashSchNet):
             aggr=standard_model.interaction_blocks[0].conv.aggr,
         )
         instance.load_state_dict(standard_model.state_dict(), strict=True)
-
-        return instance
+        # the constructor builds every MLP with the block activation; copy the
+        # source's own modules so that each filter keeps its activation
+        for flash_block, block in zip(
+            instance.interaction_blocks, standard_model.interaction_blocks
+        ):
+            flash_block.conv.filter_network = copy.deepcopy(
+                block.conv.filter_network
+            )
+            flash_block.activation = copy.deepcopy(block.activation)
+        instance.output_network = copy.deepcopy(standard_model.output_network)
+        device = next(standard_model.parameters()).device
+        return instance.to(device).train(standard_model.training)

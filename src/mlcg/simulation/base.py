@@ -2,6 +2,7 @@
 # Authors: Brooke Husic, Nick Charron, Jiang Wang
 # Contributors: Dominik Lemm, Andreas Kraemer, Clark Templeton, Iryna Zaporozhets
 
+import inspect
 import warnings
 from typing import List, Optional, Tuple, Union, Callable
 import torch
@@ -122,8 +123,16 @@ class _Simulation(object):
         precision to run the simulation with (single or double)
     sim_subroutine :
         Optional subroutine to run at at the interval specified by
-        subroutine_interval after simulation updates. The subroutine should
-        take only the internal collated `AtomicData` instance as an argument.
+        subroutine_interval after simulation updates. Two signatures are
+        supported:
+
+        - ``f(data) -> data``: for subroutines that do not change the positions.
+        - ``f(data, forces) -> (data, forces)``: required whenever the
+          subroutine modifies the positions. The integrator reuses the forces
+          of the previous step, so a subroutine that moves atoms must also
+          return the forces belonging to the new positions.
+
+        The signature is detected automatically from the number of arguments.
     sim_subroutine_interval :
         Specifies the interval, in simulation steps, between successive calls to
         the subroutine, if specified.
@@ -144,9 +153,18 @@ class _Simulation(object):
         expose known issues with scatter operations and may produce invalid
         outputs or NaN gradients.
     convert_to_flash:
-        If set to True, the script will attempt to convert the loaded model to its flash counterpart,
-        which may provide significant speedups for some models. This option is fully compatible with
-        torch compile.
+        If set to True, the model is prepared for inference with
+        :func:`~mlcg.nn.flash_models.prepare_for_inference`: converted to its
+        flash counterpart, with SchNet filters tabulated. This option is fully
+        compatible with torch compile.
+    cuda_graph:
+        If True, one force evaluation (energy and autograd forces) is
+        captured in a CUDA graph after conversion/compilation and replayed at
+        every step, removing the per-step CPU and launch overhead that
+        dominates small systems. Only positions may change between steps.
+        Falls back to the plain model, with a warning, if the model cannot be
+        captured (e.g. it synchronizes with the host). Defaults to
+        ``convert_to_flash``.
     """
 
     def __init__(
@@ -179,6 +197,7 @@ class _Simulation(object):
         compile_mode: str = "default",
         force_compile: bool = False,
         convert_to_flash: bool = False,
+        cuda_graph: Optional[bool] = None,
     ):
         self.model = None
         self.initial_data = None
@@ -228,6 +247,8 @@ class _Simulation(object):
         self.filename = filename
         self.sim_subroutine = sim_subroutine
         self.sim_subroutine_interval = sim_subroutine_interval
+        # set from the subroutine signature in `input_option_checks`
+        self._sim_subroutine_takes_forces = False
         self.save_subroutine = save_subroutine
         self.tqdm_refresh = tqdm_refresh
         self.sim_t = 0
@@ -247,6 +268,8 @@ class _Simulation(object):
         self.compile_mode = compile_mode
         self.force_compile = force_compile
         self.convert_to_flash = convert_to_flash
+        self.cuda_graph = convert_to_flash if cuda_graph is None else cuda_graph
+        self._graphed_model = None
 
     def attach_model_and_configurations(
         self,
@@ -400,11 +423,23 @@ class _Simulation(object):
                     t=t,
                 )
 
+            # The subroutine runs after `save`, so the frame just recorded is
+            # the pre-subroutine state, but *before* `write`, so that anything
+            # the subroutine logs for this step is still part of the chunk
+            # being exported below (and of the checkpoint written with it).
+            if self.sim_subroutine != None:
+                if (t + 1) % self.sim_subroutine_interval == 0:
+                    if self._sim_subroutine_takes_forces:
+                        data, forces = self.sim_subroutine(data, forces)
+                    else:
+                        data = self.sim_subroutine(data)
+
+            if (t + 1) % self.save_interval == 0:
                 # write numpys to file if relevant; this can be indented here because
                 # it only happens when time points are also recorded
                 if self.export_interval is not None:
                     if (t + 1) % self.export_interval == 0:
-                        self.write()
+                        self.write(data=data)
                         if self.save_subroutine is not None:
                             self.save_subroutine(
                                 data, (t + 1) // self.save_interval
@@ -416,16 +451,18 @@ class _Simulation(object):
                     if int((t + 1) % self.log_interval) == 0:
                         self.log((t + 1) // self.save_interval)
 
-            if self.sim_subroutine != None:
-                if (t + 1) % self.sim_subroutine_interval == 0:
-                    data = self.sim_subroutine(data)
-
+            # reset data outputs to collect the new forces/energies
+            data.out = {}
             if prof:
                 prof.step()
         # if relevant, save the remainder of the simulation
         if self.export_interval is not None:
             if int(t + 1) % self.export_interval > 0:
-                self.write()
+                self.write(data=data)
+                # the save subroutine must run here as well, otherwise the
+                # extra information of the last, partial chunk is never written
+                if self.save_subroutine is not None:
+                    self.save_subroutine(data, (t + 1) // self.save_interval)
 
         # if relevant, log that simulation has been completed
         if self.log_interval is not None:
@@ -452,15 +489,25 @@ class _Simulation(object):
 
     def compile_model(self, data):
         """Compiles the model for faster execution"""
-        # Populate data.out to vaoid some graph breaks during compilation
-        data = self.model(data)
-        if self.convert_to_flash:
-            from ..nn.flash_models.converter import (
-                convert_standard_model_to_flash,
-            )
+        self._compile_model(data)
+        if self.cuda_graph:
+            self._capture_cuda_graph(data)
 
-            model = convert_standard_model_to_flash(self.model)
-            self._attach_model(model)
+    def _capture_cuda_graph(self, data):
+        from ..nn.flash_models import capture_cuda_graph
+
+        self._graphed_model = capture_cuda_graph(self.model, data)
+
+    def _compile_model(self, data):
+        if self.convert_to_flash:
+            from ..nn.flash_models import prepare_for_inference
+
+            # converts, tabulates the filters and populates data.out on the
+            # flash model, so the standard model never sets the memory peak
+            self._attach_model(prepare_for_inference(self.model, data))
+        else:
+            # Populate data.out to avoid some graph breaks during compilation
+            data = self.model(data)
 
         if self.compile:
             if (data.batch.max() == 0) and not self.force_compile:
@@ -550,7 +597,8 @@ class _Simulation(object):
             vector forces predicted by the model
         """
 
-        data = self.model(data)
+        model = self._graphed_model or self.model
+        data = model(data)
         potential = data.out[ENERGY_KEY].detach()
         forces = data.out[FORCE_KEY].detach()
         return potential, forces
@@ -771,6 +819,13 @@ class _Simulation(object):
                 "subroutine interval specified, but subroutine is ambiguous."
             )
 
+        # Subroutines that modify the positions must also hand back the forces
+        # of the new positions (see the `sim_subroutine` docstring). Detect
+        # which of the two supported signatures was supplied.
+        if self.sim_subroutine is not None:
+            n_args = len(inspect.signature(self.sim_subroutine).parameters)
+            self._sim_subroutine_takes_forces = n_args > 1
+
         # Saving extra force components
         if self.save_force_components and (self.force_components is None):
             raise ValueError(
@@ -946,16 +1001,18 @@ class _Simulation(object):
             for key, tensor in self.energy_components.items():  # type: ignore , check for None in input validation
                 tensor[save_ind] = data.out[key][ENERGY_KEY].detach()
 
-        if self.create_checkpoints:
-            self.checkpoint = {}
-            self.checkpoint[POSITIONS_KEY] = (
-                data[POSITIONS_KEY].detach().clone()
-            )
+    def write(self, data: Optional[AtomicData] = None):
+        """Utility to write numpy arrays to disk
 
-            self.checkpoint[VELOCITY_KEY] = data[VELOCITY_KEY].detach().clone()
-
-    def write(self):
-        """Utility to write numpy arrays to disk"""
+        Parameters
+        ----------
+        data:
+            Current state of the simulation. Only needed when
+            `create_checkpoints` is True: the checkpoint is taken here rather
+            than in `save` so that it reflects the state *after* any
+            simulation subroutine of this step (e.g. a replica exchange).
+            Restarting therefore continues exactly as an uninterrupted run.
+        """
         key = self._get_numpy_count()
 
         coords_to_export = self.simulated_coords
@@ -1005,6 +1062,14 @@ class _Simulation(object):
             )
 
         if self.create_checkpoints:
+            self.checkpoint = {}
+            if data is not None:
+                self.checkpoint[POSITIONS_KEY] = (
+                    data[POSITIONS_KEY].detach().clone()
+                )
+                self.checkpoint[VELOCITY_KEY] = (
+                    data[VELOCITY_KEY].detach().clone()
+                )
             self.checkpoint["current_timestep"] = self._npy_file_index + 1
             self.checkpoint["export_interval"] = self.export_interval
             self.checkpoint["save_interval"] = self.save_interval

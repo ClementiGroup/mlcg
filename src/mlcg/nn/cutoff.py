@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Tuple
 import torch
 import torch.nn as nn
 import numpy as np
@@ -23,6 +23,12 @@ class _Cutoff(nn.Module):
 
     def forward(self):
         raise NotImplementedError
+
+    def breakpoints(self) -> Tuple[float, ...]:
+        """Distances inside ``(0, cutoff_upper)`` where the function is not
+        smooth (e.g. a change of formula); tabulated filters put knots
+        there."""
+        return ()
 
 
 class _OneSidedCutoff(_Cutoff):
@@ -152,6 +158,9 @@ class CosineCutoff(_Cutoff):
             )
             return cutoffs
 
+    def breakpoints(self) -> Tuple[float, ...]:
+        return (self.cutoff_lower,) if self.cutoff_lower > 0 else ()
+
 
 class ShiftedCosineCutoff(_OneSidedCutoff):
     r"""Class of Behler cosine cutoff with an additional smoothing parameter.
@@ -205,3 +214,6 @@ class ShiftedCosineCutoff(_OneSidedCutoff):
         cutoffs[distances > self.cutoff_upper] = 0.0
 
         return cutoffs.view(-1)
+
+    def breakpoints(self) -> Tuple[float, ...]:
+        return (self.cutoff_upper - self.smooth_width,)

@@ -160,6 +160,79 @@ def test_non_free_atoms_excluded_from_convergence(ASE_prior_model):
         assert _max_force(model, data, atom_indices=free) <= fmax
 
 
+def test_flat_free_atoms_broadcasts_to_every_structure(ASE_prior_model):
+    # A single flat sequence (rather than one entry per structure) should
+    # apply to every structure alike.
+    data_dictionary = ASE_prior_model()
+    model = data_dictionary["model"]
+    configurations = _build_perturbed_configurations(data_dictionary)
+    original_positions = [data.pos.clone() for data in configurations]
+    n_atoms = configurations[0].pos.shape[0]
+
+    free = [i for i in range(n_atoms) if i != 0]
+    minimized = minimize_energy(
+        model, configurations, free_atoms=free, fmax=1e-3, steps=200
+    )
+
+    for original, data in zip(original_positions, minimized):
+        assert torch.allclose(data.pos[0], original[0], atol=1e-6)
+        assert not torch.allclose(data.pos[1:], original[1:], atol=1e-3)
+
+
+def test_flat_free_atoms_matches_explicit_per_structure_list(ASE_prior_model):
+    data_dictionary = ASE_prior_model()
+    model = data_dictionary["model"]
+    configurations = _build_perturbed_configurations(data_dictionary)
+    n_atoms = configurations[0].pos.shape[0]
+    free = [i for i in range(n_atoms) if i != 0]
+
+    flat = minimize_energy(
+        model, configurations, free_atoms=free, fmax=1e-3, steps=200
+    )
+    explicit = minimize_energy(
+        model,
+        configurations,
+        free_atoms=[free for _ in configurations],
+        fmax=1e-3,
+        steps=200,
+    )
+
+    for a, b in zip(flat, explicit):
+        assert torch.equal(a.pos, b.pos)
+
+
+def test_batch_size_matches_unchunked_result(ASE_prior_model):
+    # Chunking is purely a memory-management device: each structure's own
+    # relaxation is independent of what else shares its batch, so the result
+    # for a given batch_size should closely match one big batch (not
+    # bit-identical, since collating a different set of structures changes
+    # floating point summation order within the model/LBFGS internals).
+    data_dictionary = ASE_prior_model()
+    model = data_dictionary["model"]
+    configurations = _build_perturbed_configurations(
+        data_dictionary, n_configs=5
+    )
+
+    unchunked = minimize_energy(model, configurations, fmax=1e-3, steps=200)
+    chunked = minimize_energy(
+        model, configurations, fmax=1e-3, steps=200, batch_size=2
+    )
+
+    for a, b in zip(unchunked, chunked):
+        assert torch.allclose(a.pos, b.pos, atol=1e-2)
+
+
+def test_rejects_non_positive_batch_size(ASE_prior_model):
+    data_dictionary = ASE_prior_model()
+    model = data_dictionary["model"]
+    configurations = _build_perturbed_configurations(data_dictionary)
+
+    with pytest.raises(ValueError, match="batch_size"):
+        minimize_energy(
+            model, configurations, fmax=1e-3, steps=10, batch_size=0
+        )
+
+
 def test_inputs_are_not_mutated(ASE_prior_model):
     data_dictionary = ASE_prior_model()
     model = data_dictionary["model"]

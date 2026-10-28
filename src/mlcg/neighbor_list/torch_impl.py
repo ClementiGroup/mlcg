@@ -350,7 +350,10 @@ def wrap_positions(data: AtomicData, device: str, eps: float = 1e-7) -> None:
     batch_ids = data.batch
 
     cell_batch = cell[batch_ids]  # [n_atoms, 3, 3]
-    fractional = torch.linalg.solve(cell_batch, pos.unsqueeze(-1)).squeeze(-1)
+    # lattice vectors are the rows of the cell: pos = f @ cell
+    fractional = torch.linalg.solve(
+        cell_batch.transpose(-1, -2), pos.unsqueeze(-1)
+    ).squeeze(-1)
 
     pbc_mask = pbc[batch_ids]  # [n_atoms, 3]
 

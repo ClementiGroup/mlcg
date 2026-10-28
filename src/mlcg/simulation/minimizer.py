@@ -25,6 +25,19 @@ def _num_structures(data: AtomicData) -> int:
     return 1
 
 
+def _broadcast_free_atoms(
+    free_atoms: Optional[List[Any]], n_structures: int
+) -> Optional[List[Optional[Sequence[int]]]]:
+    r"""If ``free_atoms`` is a single flat list of atom indices, repeat it
+    once per structure; otherwise (already one list per structure, or
+    ``None``) return it unchanged. A flat list is recognized by its first
+    element being a plain index rather than a sequence/``None``.
+    """
+    if free_atoms and isinstance(free_atoms[0], (int, np.integer)):
+        return [free_atoms] * n_structures
+    return free_atoms
+
+
 def _validate_configurations_and_free_atoms(
     configurations: List[AtomicData],
     free_atoms: Optional[List[Optional[Sequence[int]]]],
@@ -67,13 +80,14 @@ def _validate_configurations_and_free_atoms(
 def minimize_energy(
     model: torch.nn.Module,
     configurations: List[AtomicData],
-    free_atoms: Optional[List[Optional[Sequence[int]]]] = None,
+    free_atoms: Optional[List[Any]] = None,
     fmax: float = 0.05,
     steps: int = 500,
     device: Union[str, torch.device] = "cpu",
     dtype: torch.dtype = torch.float32,
     optimizer_cls: Type[torch.optim.Optimizer] = torch.optim.LBFGS,
     optimizer_kwargs: Optional[Dict[str, Any]] = None,
+    batch_size: Optional[int] = None,
 ) -> List[AtomicData]:
     r"""Relax all of ``configurations`` to nearby local minima of ``model`` at
     once, optionally restricting relaxation to a subset of atoms.
@@ -108,13 +122,13 @@ def minimize_energy(
         List of single, un-collated :py:class:`AtomicData` structures to
         relax. They are not modified.
     free_atoms:
-        Optional list, parallel to ``configurations``, of atom index
-        sequences that are allowed to move during minimization; every other
-        atom in that structure is held fixed at its input position. Use
-        ``None`` for a given entry (or pass ``free_atoms=None`` altogether,
-        the default) to leave that configuration fully unconstrained. Fixed
-        atoms are held in place by zeroing their gradient, so they never
-        move.
+        Optional atom indices allowed to move during minimization; every
+        other atom is held fixed at its input position. Either a single
+        flat list of indices, applied to every one of ``configurations``
+        alike, or a list with one (optional) index list per configuration
+        for when structures need different atoms free (``None`` for an
+        entry leaves that configuration fully unconstrained). Pass
+        ``free_atoms=None`` (the default) to leave everything unconstrained.
     fmax:
         Convergence threshold on the largest per-atom force magnitude (atoms
         held fixed are excluded, since they are expected to carry a nonzero
@@ -150,6 +164,17 @@ def minimize_energy(
         may invoke its closure more than once.
     optimizer_kwargs:
         Additional keyword arguments forwarded to ``optimizer_cls``.
+    batch_size:
+        Maximum number of structures collated into a single forward pass.
+        ``configurations`` is split into consecutive chunks of at most this
+        size, each relaxed independently (as if by its own
+        :py:func:`minimize_energy` call) with the results concatenated back
+        together -- lower peak memory at the cost of running more, smaller
+        forward passes rather than one large one. ``None`` (the default)
+        keeps the original behavior of collating everything at once. A
+        structure's convergence and step budget are tracked only within its
+        own chunk, so an unconverged-structures warning may fire once per
+        affected chunk rather than once overall.
 
     Returns
     -------
@@ -158,12 +183,52 @@ def minimize_energy(
         configuration, identical to the inputs except for relaxed positions
         (cast back to each input's own dtype/device).
     """
+    free_atoms = _broadcast_free_atoms(free_atoms, len(configurations))
     _validate_configurations_and_free_atoms(configurations, free_atoms)
+    if batch_size is not None and batch_size <= 0:
+        raise ValueError(f"batch_size must be positive, got {batch_size}.")
 
     model = model.eval().to(device=device, dtype=dtype)
     for param in model.parameters():
         param.requires_grad = False
 
+    chunk_size = batch_size or len(configurations)
+    minimized: List[AtomicData] = []
+    for start in range(0, len(configurations), chunk_size):
+        end = start + chunk_size
+        minimized.extend(
+            _minimize_energy_batch(
+                model,
+                configurations[start:end],
+                free_atoms[start:end] if free_atoms is not None else None,
+                fmax=fmax,
+                steps=steps,
+                device=device,
+                dtype=dtype,
+                optimizer_cls=optimizer_cls,
+                optimizer_kwargs=optimizer_kwargs,
+            )
+        )
+    return minimized
+
+
+def _minimize_energy_batch(
+    model: torch.nn.Module,
+    configurations: List[AtomicData],
+    free_atoms: Optional[List[Optional[Sequence[int]]]],
+    fmax: float,
+    steps: int,
+    device: Union[str, torch.device],
+    dtype: torch.dtype,
+    optimizer_cls: Type[torch.optim.Optimizer],
+    optimizer_kwargs: Optional[Dict[str, Any]],
+) -> List[AtomicData]:
+    r"""One chunk of :py:func:`minimize_energy`'s work: collates
+    ``configurations`` into a single batch and relaxes all of them with one
+    model forward call per step. ``model`` is assumed already prepared
+    (eval mode, moved to ``device``/``dtype``, gradients disabled) and
+    ``free_atoms`` already validated and in its per-structure form.
+    """
     n_structures = len(configurations)
     batch, _, _ = collate(
         AtomicData, data_list=configurations, increment=True, add_batch=True
