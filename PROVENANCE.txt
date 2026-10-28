@@ -1,0 +1,3 @@
+Snapshot of /local_scratch/er3887fu/repositories/mlcg-umbrella (git worktree of
+repositories/mlcg, branch kernel_integration_with_umbrella), copied for the
+umbrella_sims run. .git stripped.

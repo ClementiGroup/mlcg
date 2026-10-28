@@ -16,3 +16,4 @@ from .repulsion import (
 from .fourier_series import FourierSeries, Dihedral
 from .polynomial import Polynomial, QuarticAngles, QuarticRawAngles
 from .restricted_bending import RestrictedQuartic
+from .q_restraint import NativeContactQRestraint
