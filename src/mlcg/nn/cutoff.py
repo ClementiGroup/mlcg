@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Optional
 import torch
 import torch.nn as nn
 import numpy as np
@@ -205,3 +205,79 @@ class ShiftedCosineCutoff(_OneSidedCutoff):
         cutoffs[distances > self.cutoff_upper] = 0.0
 
         return cutoffs.view(-1)
+
+class SigmoidSwitch(_Cutoff):
+    r"""Cutoff envelope multiplied by a non-learnable sigmoid switch, which
+    removes the contribution of pairs closer than ``r_switch``. The lower and
+    upper cutoffs of ``base_cutoff`` are unchanged.
+
+    .. math::
+
+        S(r) = \frac{1}{1 + e^{-k (r - r_{switch})}}
+
+    Parameters
+    ----------
+    base_cutoff:
+        cutoff envelope to wrap
+    r_switch:
+        position of the inflection point, where :math:`S = 0.5`
+    steepness:
+        :math:`k`, in inverse distance units
+    cutoff_lower:
+        lower cutoff, only used if not defined in ``base_cutoff``
+    cutoff_upper:
+        upper cutoff, only used if not defined in ``base_cutoff``,
+        e.g. ``r_max`` for the MACE :class:`PolynomialCutoff`
+    """
+
+    def __init__(
+        self,
+        base_cutoff: torch.nn.Module,
+        r_switch: float = 2.0,
+        steepness: float = 10.0,
+        cutoff_lower: float = 0.0,
+        cutoff_upper: Optional[float] = None,
+    ):
+        super(SigmoidSwitch, self).__init__()
+        self.base_cutoff = base_cutoff
+        self.cutoff_lower = getattr(base_cutoff, "cutoff_lower", cutoff_lower)
+        self.cutoff_upper = getattr(base_cutoff, "cutoff_upper", cutoff_upper)
+
+        self.r_switch = float(r_switch)
+        self.steepness = float(steepness)
+        # allows loading checkpoints of models without the switch
+        self._register_load_state_dict_pre_hook(self._load_unwrapped_keys)
+
+    def forward(self, distances: torch.Tensor) -> torch.Tensor:
+        """Applies sigmoid-wrapped cutoff envelope to distances.
+        
+        Parameters
+        ----------
+        distances:
+            Distances of shape (total_num_edges)
+
+        Returns
+        -------
+        cutoffs:
+            Distances multiplied by the wrapped cutoff envelope, with shape
+            (total_num_edges)
+        """
+        sigmoid_switch = torch.sigmoid(
+            self.steepness 
+            * (
+                distances 
+                - self.r_switch
+                )
+            )
+        return self.base_cutoff(distances) * sigmoid_switch
+
+    @staticmethod
+    def _load_unwrapped_keys(state_dict, prefix, *args):
+        r"""Maps ``<prefix><buffer>`` keys of the unwrapped cutoff (e.g. the
+        ``p`` and ``r_max`` buffers of MACE :class:`PolynomialCutoff`) to
+        ``<prefix>base_cutoff.<buffer>``."""
+        for key in list(state_dict.keys()):
+            if key.startswith(prefix) and "." not in key[len(prefix) :]:
+                new_key = prefix + "base_cutoff." + key[len(prefix) :]
+                state_dict[new_key] = state_dict.pop(key)
+

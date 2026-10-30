@@ -76,6 +76,7 @@ from ..neighbor_list.neighbor_list import (
     validate_neighborlist,
 )
 from .radial_basis import RegularizedMACEBasis
+from .cutoff import SigmoidSwitch
 
 
 def refresh_oeq_conv_(module: torch.nn.Module) -> torch.nn.Module:
@@ -538,6 +539,10 @@ class StandardMACE(MACE):
         Method for computing a neighbor list. Supported values are
         `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`
         and `custom_kernel`.
+    short_range_switch (Optional[Dict[str, float]], optional):
+        Sigmoidal switch function that masks short-range basis functions by wrapping 
+        cutoff in a sigmoid that removes pairs closer than ``r_switch``.
+        If None, no masking is applied.
     """
 
     def __init__(
@@ -579,6 +584,7 @@ class StandardMACE(MACE):
         ] = NonLinearReadoutBlock,
         keep_last_layer_irreps: bool = True,  # Default to True for backward compatibility
         nls_distance_method: str = "torch",
+        short_range_switch: Optional[Dict[str, float]] = None,
     ):
         from mlcg.pl.model import get_class_from_str
 
@@ -643,6 +649,12 @@ class StandardMACE(MACE):
             distance_transform=distance_transform,
             apply_cutoff=apply_cutoff,
         )
+        if short_range_switch is not None:
+            radial_embedding.cutoff_fn = SigmoidSwitch(
+                radial_embedding.cutoff_fn,
+                cutoff_upper=r_max,
+                **short_range_switch,
+            )
         edge_feats_irreps = o3.Irreps(f"{radial_embedding.out_dim}x0e")
 
         pair_repulsion_fn = None
@@ -850,6 +862,7 @@ class RBFRegularizedMACE(StandardMACE):
         keep_last_layer_irreps: bool = True,  # Default to True for backward compatibility
         nls_distance_method: str = "torch",
         independent_regularizations: bool = False,
+        short_range_switch: Optional[Dict[str, float]] = None,
     ):
 
         super(RBFRegularizedMACE, self).__init__(
@@ -884,6 +897,7 @@ class RBFRegularizedMACE(StandardMACE):
             readout_cls=readout_cls,
             keep_last_layer_irreps=keep_last_layer_irreps,
             nls_distance_method=nls_distance_method,
+            short_range_switch=short_range_switch,
         )
 
         initial_radial_embedding = self.radial_embedding
