@@ -139,6 +139,7 @@ class SchNet(torch.nn.Module):
                 self.rbf_layer.cutoff.cutoff_upper,
                 self.max_num_neighbors,
             )[self.name]
+            data.neighbor_list["mpnn"] = neighbor_list
 
         edge_index = neighbor_list["index_mapping"]
         distances = compute_distances(
@@ -146,7 +147,6 @@ class SchNet(torch.nn.Module):
             edge_index,
             neighbor_list["cell_shifts"],
         )
-
         rbf_expansion = self.rbf_layer(distances)
         num_batch = data.batch[-1] + 1
         for block in self.interaction_blocks:
