@@ -53,10 +53,14 @@ def generate_graph(graph_type, device):
         # Use the fixed test graph
         senders = SENDERS.to(device)
         receivers = RECEIVERS.to(device)
-        edge_index = torch.stack([senders, receivers])
+        # the flash kernels take a symmetric neighbour list: every edge
+        # also in reverse, with the same distance
+        edge_index = torch.stack(
+            [torch.cat([senders, receivers]), torch.cat([receivers, senders])]
+        )
         distances = (
             torch.rand(senders.shape[0], device=device) * CUTOFF_UPPER
-        )  # 0.1 to 1.0
+        ).repeat(2)
         x = torch.randn(NUM_NODES, FEATURES, device=device)
 
     elif graph_type == "molecules":
