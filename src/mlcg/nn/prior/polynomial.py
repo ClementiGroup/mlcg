@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 from torch_geometric.utils import scatter
 from typing import Optional, Dict
@@ -5,7 +6,9 @@ from typing import Optional, Dict
 
 from .base import _Prior
 from ...data.atomic_data import AtomicData
+from ...geometry.topology import Topology
 from ...geometry.internal_coordinates import (
+    compute_distances,
     compute_angles_cos,
     compute_angles_raw,
 )
@@ -242,3 +245,108 @@ class QuarticRawAngles(Polynomial):
         return compute_angles_raw(
             pos=pos, mapping=mapping, cell_shifts=cell_shifts
         )
+
+
+class QuarticBonds(Polynomial):
+    r"""Wrapper class for bond priors
+    (order 2 Polynomial priors of degree 4)
+
+    .. math::
+
+        V(r) = V_0 + \sum_{n=1}^{n_{deg}} k_n r^n
+    """
+
+    def __init__(self, statistics, name="bonds", n_degs: int = 4) -> None:
+        super(QuarticBonds, self).__init__(
+            statistics, name, order=2, n_degs=n_degs
+        )
+
+    def data2features(self, data: AtomicData) -> torch.Tensor:
+        r"""Computes features for the QuarticBonds interaction from
+        an AtomicData instance)
+        Parameters
+        ----------
+        data:
+            Input `AtomicData` instance
+        Returns
+        -------
+        torch.Tensor:
+            Tensor of computed features
+        """
+        mapping = data.neighbor_list[self.name]["index_mapping"]
+        pbc = getattr(data, "pbc", None)
+        cell = getattr(data, "cell", None)
+        return self.compute_features(
+            pos=data.pos,
+            mapping=mapping,
+            pbc=pbc,
+            cell=cell,
+            batch=data.batch,
+        )
+
+    @staticmethod
+    def neighbor_list(topology: Topology) -> dict:
+        return {"bonds": topology.neighbor_list("bonds")}
+
+    @staticmethod
+    def compute_features(
+        pos: torch.Tensor,
+        mapping: torch.Tensor,
+        pbc: torch.Tensor = None,
+        cell: torch.Tensor = None,
+        batch: torch.Tensor = None,
+    ) -> torch.Tensor:
+        if all([feat != None for feat in [pbc, cell]]):
+            cell_shifts = _Prior._get_cell_shifts(
+                pos, mapping, pbc, cell, batch
+            )
+        else:
+            cell_shifts = None
+        return compute_distances(pos, mapping, cell_shifts)
+
+    @staticmethod
+    def fit_from_potential_estimates(
+        bin_centers_nz: torch.Tensor, dG_nz: torch.Tensor, n_degs: int = 4
+    ) -> Dict:
+        r"""Fits the interaction parameters to a free energy estimate by
+        linear least squares on the powers of :math:`r`.
+
+        Parameters
+        ----------
+        bin_centers_nz:
+            Bin centers from a discrete histogram used to estimate the energy
+            through logarithmic inversion of the associated Boltzmann factor
+        dG_nz:
+            The value of the energy :math:`U` as a function of the bin centers
+        n_degs:
+            Degree of the polynomial
+
+        Returns
+        -------
+        Dict:
+            Dictionary with the fitted "ks" and "v_0"
+        """
+        x = bin_centers_nz.detach().cpu().double().numpy()
+        y = dG_nz.detach().cpu().double().numpy()
+        A = np.stack(
+            [x**n for n in range(1, n_degs + 1)] + [np.ones_like(x)], axis=1
+        )
+        try:
+            coeffs, *_ = np.linalg.lstsq(A, y, rcond=None)
+            stat = {
+                "ks": {
+                    f"k_{n}": torch.tensor(coeffs[n - 1])
+                    for n in range(1, n_degs + 1)
+                },
+                "v_0": torch.tensor(coeffs[-1]),
+            }
+        except np.linalg.LinAlgError:
+            print(f"failed to fit potential estimate for QuarticBonds")
+            stat = {
+                "ks": {
+                    f"k_{n}": torch.tensor(float("nan"))
+                    for n in range(1, n_degs + 1)
+                },
+                "v_0": torch.tensor(float("nan")),
+            }
+        return stat
