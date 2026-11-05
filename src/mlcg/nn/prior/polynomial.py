@@ -253,13 +253,43 @@ class QuarticBonds(Polynomial):
 
     .. math::
 
-        V(r) = V_0 + \sum_{n=1}^{n_{deg}} k_n r^n
+        V(r) = V_0 + \sum_{n=1}^{n_{deg}} k_n (r - r_0)^n
+
+    In addition to "ks" and "v_0", each entry of `statistics` may contain
+    "x_0", the reference bond length :math:`r_0` for that bead pair. If it
+    is missing, :math:`r_0 = 0` is used, which recovers the plain
+    polynomial in :math:`r`.
     """
 
     def __init__(self, statistics, name="bonds", n_degs: int = 4) -> None:
         super(QuarticBonds, self).__init__(
             statistics, name, order=2, n_degs=n_degs
         )
+        x_0 = torch.zeros_like(self.v_0)
+        for key in statistics.keys():
+            x_0[key] = statistics[key].get("x_0", 0.0)
+        self.register_buffer("x_0", x_0)
+
+    def data2parameters(self, data: AtomicData) -> Dict:
+        params = super(QuarticBonds, self).data2parameters(data)
+        mapping = data.neighbor_list[self.name]["index_mapping"]
+        interaction_types = tuple(
+            data.atom_types[mapping[ii]] for ii in range(self.order)
+        )
+        params["x_0s"] = self.x_0[interaction_types].flatten()
+        return params
+
+    def forward(self, data: AtomicData) -> AtomicData:
+        r"""Forward pass through the QuarticBonds interaction, evaluating
+        the polynomial in :math:`r - r_0`.
+        """
+        mapping_batch = data.neighbor_list[self.name]["mapping_batch"]
+        params = self.data2parameters(data)
+        features = self.data2features(data).flatten() - params["x_0s"]
+        y = Polynomial.compute(features, params["ks"].t(), params["v_0s"].t())
+        y = scatter(y, mapping_batch, dim=0, reduce="sum")
+        data.out[self.name] = {"energy": y}
+        return data
 
     def data2features(self, data: AtomicData) -> torch.Tensor:
         r"""Computes features for the QuarticBonds interaction from
@@ -303,50 +333,3 @@ class QuarticBonds(Polynomial):
         else:
             cell_shifts = None
         return compute_distances(pos, mapping, cell_shifts)
-
-    @staticmethod
-    def fit_from_potential_estimates(
-        bin_centers_nz: torch.Tensor, dG_nz: torch.Tensor, n_degs: int = 4
-    ) -> Dict:
-        r"""Fits the interaction parameters to a free energy estimate by
-        linear least squares on the powers of :math:`r`.
-
-        Parameters
-        ----------
-        bin_centers_nz:
-            Bin centers from a discrete histogram used to estimate the energy
-            through logarithmic inversion of the associated Boltzmann factor
-        dG_nz:
-            The value of the energy :math:`U` as a function of the bin centers
-        n_degs:
-            Degree of the polynomial
-
-        Returns
-        -------
-        Dict:
-            Dictionary with the fitted "ks" and "v_0"
-        """
-        x = bin_centers_nz.detach().cpu().double().numpy()
-        y = dG_nz.detach().cpu().double().numpy()
-        A = np.stack(
-            [x**n for n in range(1, n_degs + 1)] + [np.ones_like(x)], axis=1
-        )
-        try:
-            coeffs, *_ = np.linalg.lstsq(A, y, rcond=None)
-            stat = {
-                "ks": {
-                    f"k_{n}": torch.tensor(coeffs[n - 1])
-                    for n in range(1, n_degs + 1)
-                },
-                "v_0": torch.tensor(coeffs[-1]),
-            }
-        except np.linalg.LinAlgError:
-            print(f"failed to fit potential estimate for QuarticBonds")
-            stat = {
-                "ks": {
-                    f"k_{n}": torch.tensor(float("nan"))
-                    for n in range(1, n_degs + 1)
-                },
-                "v_0": torch.tensor(float("nan")),
-            }
-        return stat
