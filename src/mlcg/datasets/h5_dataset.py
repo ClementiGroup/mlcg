@@ -217,7 +217,9 @@ class MolData:
 
         self._excluded_pairs = None
         if excluded_pairs is not None:
-            pairs = torch.as_tensor(np.asarray(excluded_pairs), dtype=torch.long)
+            pairs = torch.as_tensor(
+                np.asarray(excluded_pairs), dtype=torch.long
+            )
             if pairs.dim() != 2 or pairs.shape[0] != 2:
                 raise ValueError(
                     f"excluded_pairs of molecule {name} must have shape "
