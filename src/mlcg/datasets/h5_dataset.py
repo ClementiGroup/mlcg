@@ -129,7 +129,8 @@ An example "loading_options" (as a Python Mappable (e.g., dict)):
                         "coords": "cg_coords",
                         "forces": "cg_delta_forces",
                         # optional: (2, n_pairs) pairs removed from the model neighbor list,
-                        # used as given (no symmetrization). Requires the root attribute
+                        # unordered: (i, j) removes both directions, so storing each
+                        # pair once is enough. Requires the root attribute
                         # `excluded_order` (>= 2) in the HDF5 file, matching the model's one.
                         "excluded_pairs": "attrs:excluded_pairs",
                 },

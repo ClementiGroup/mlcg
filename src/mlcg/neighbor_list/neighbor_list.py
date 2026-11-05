@@ -24,6 +24,14 @@ except ImportError:
     radius_distance = None
 
 
+def _pair_key(index_mapping: torch.Tensor, num_nodes) -> torch.Tensor:
+    """Key of the unordered pair of each column: ``(i, j)`` and ``(j, i)``
+    get the same key."""
+    low = torch.minimum(index_mapping[0], index_mapping[1])
+    high = torch.maximum(index_mapping[0], index_mapping[1])
+    return low * num_nodes + high
+
+
 def atomic_data2neighbor_list(
     data,
     rcut: float,
@@ -89,9 +97,8 @@ def atomic_data2neighbor_list(
             )
         excluded_order = int(excluded_order.item())
         num_nodes = data.n_atoms.sum()
-        excluded_idx = excluded.get("index_mapping")
-        excluded_key = excluded_idx[0] * num_nodes + excluded_idx[1]
-        edge_key = mapping[0] * num_nodes + mapping[1]
+        excluded_key = _pair_key(excluded["index_mapping"], num_nodes)
+        edge_key = _pair_key(mapping, num_nodes)
         mask = torch.isin(edge_key, excluded_key, invert=True)
         mapping = mapping[:, mask]
         cell_shifts = cell_shifts[mask]

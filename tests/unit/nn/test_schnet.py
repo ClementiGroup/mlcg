@@ -142,7 +142,9 @@ def test_prediction(collated_data, out_keys, expected_shapes):
 
 
 def _make_excluded_data(
-    mol_names: List[str], excluded_order: List[int] = None
+    mol_names: List[str],
+    excluded_order: List[int] = None,
+    both_directions: bool = True,
 ) -> AtomicData:
     data_list = []
     for i, name in enumerate(mol_names):
@@ -150,9 +152,11 @@ def _make_excluded_data(
         kwargs = {}
         if excluded_order is not None:
             bonds = Topology.from_ase(mol).bonds2torch()
+            if both_directions:
+                bonds = torch.cat([bonds, bonds.flip(0)], dim=1)
             kwargs["excluded_pairs"] = {
                 "excluded_order": excluded_order[i],
-                "index_mapping": torch.cat([bonds, bonds.flip(0)], dim=1),
+                "index_mapping": bonds,
             }
         data_list.append(
             AtomicData.from_points(
@@ -196,6 +200,20 @@ def test_excluded_pairs_removed_from_neighbor_list():
     assert not torch.isin(excluded_key, edge_key_excl).any()
     assert edge_key_excl.numel() == edge_key_full.numel() - excluded_key.numel()
     assert nl_excl["cell_shifts"].shape[0] == edge_key_excl.numel()
+
+
+def test_excluded_pairs_are_unordered():
+    """Each pair stored once excludes both directions, as both stored."""
+    order = [2] * len(excl_mol_names)
+    nl_both = atomic_data2neighbor_list(
+        _make_excluded_data(excl_mol_names, order), rcut=5.0
+    )
+    nl_once = atomic_data2neighbor_list(
+        _make_excluded_data(excl_mol_names, order, both_directions=False),
+        rcut=5.0,
+    )
+    assert torch.equal(nl_once["index_mapping"], nl_both["index_mapping"])
+    assert torch.equal(nl_once["cell_shifts"], nl_both["cell_shifts"])
 
 
 @pytest.mark.parametrize(
