@@ -447,6 +447,65 @@ def test_graph_follows_a_new_cell(matrix):
         fast(deformed)
 
 
+COMPRESSIONS = (1.0, 0.5, 0.2, 0.02)
+
+
+def assert_all_pairs_at_last_compression(data):
+    pos = data.pos * COMPRESSIONS[-1]
+    for start, end in zip(data.ptr[:-1], data.ptr[1:]):
+        assert torch.cdist(pos[start:end], pos[start:end]).max() < CUTOFF
+
+
+def test_graph_follows_a_compressing_system():
+    """A system compressed during the replays, up to every pair within the
+    cutoff: the all-pairs capacity holds every edge, so the replay equals
+    the plain model at each step."""
+    from mlcg.nn.flash_models import GraphedModel, optimize_for_inference
+
+    network = GradientsOut(
+        build_schnet("exp_normal", "cosine", "tanh"), targets=FORCE_KEY
+    ).cuda()
+    data = random_batch().to("cuda")
+    assert_all_pairs_at_last_compression(data)
+    data.out = {}
+    fast = optimize_for_inference(network, data)
+    assert isinstance(fast, GraphedModel)
+    for scale in COMPRESSIONS:
+        step = data.clone()
+        step.pos = data.pos * scale
+        graphed = fast(step.clone()).out[network.name][FORCE_KEY]
+        plain = fast.model(step.clone()).out[network.name][FORCE_KEY]
+        assert torch.isfinite(graphed).all()
+        torch.testing.assert_close(graphed, plain.detach())
+
+
+def test_checked_mode_runs_without_graph_and_regrows():
+    """Above the all-pairs budget (forced here with a budget of 0), the
+    neighbour search checks the edge count on the host: no CUDA graph, and
+    a compressed system regrows the capacity and equals the all-pairs
+    model."""
+    from mlcg.nn.flash_models import GraphedModel, optimize_for_inference
+
+    network = GradientsOut(
+        build_schnet("exp_normal", "cosine", "tanh"), targets=FORCE_KEY
+    ).cuda()
+    data = random_batch().to("cuda")
+    data.out = {}
+    all_pairs = prepare_for_inference(network, data.clone())
+    network.model.neighbors = RadiusCSR(CUTOFF, all_pairs_budget=0)
+    with pytest.warns(UserWarning, match="CUDA graph capture failed"):
+        fast = optimize_for_inference(network, data.clone())
+    assert not isinstance(fast, GraphedModel)
+    capacity = fast.model.neighbors.capacity
+    for scale in COMPRESSIONS:
+        step = data.clone()
+        step.pos = data.pos * scale
+        forces = fast(step.clone()).out[network.name][FORCE_KEY]
+        reference = all_pairs(step.clone()).out[network.name][FORCE_KEY]
+        torch.testing.assert_close(forces, reference)
+    assert fast.model.neighbors.capacity > capacity
+
+
 def knots_of(flash):
     return [block.conv.table.shape[0] for block in flash.interaction_blocks]
 

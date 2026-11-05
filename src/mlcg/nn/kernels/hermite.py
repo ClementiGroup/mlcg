@@ -40,7 +40,14 @@ def hermite_table(
 ) -> torch.Tensor:
     """Tabulate ``fn: [n] -> [n, F]`` on ``num_knots`` uniform knots over
     ``[0, upper]``. ``fn`` is evaluated in float64 and differentiated with
-    forward-mode AD; the table is returned in float32."""
+    forward-mode AD; the table is returned in float32.
+
+    ``torch.func.jvp(fn, (x,), (ones,))`` returns ``fn(x)`` and the Jacobian
+    of ``fn`` times a vector of ones in one forward pass. ``fn`` acts point
+    by point (row ``i`` of the output depends only on ``x_i``), so the
+    Jacobian is diagonal in the points and this product is
+    ``fn'_f(x_i)`` for every knot and feature at once. Reverse mode would
+    need one backward pass per feature."""
     knots = torch.linspace(
         0.0, upper, num_knots, dtype=torch.float64, device=device
     )
@@ -57,7 +64,16 @@ def hermite_relative_error(
 ) -> float:
     """Largest error of the interpolated value and derivative at the
     segment midpoints (where it peaks), relative to ``max |fn|`` and
-    ``max |fn'|``."""
+    ``max |fn'|``.
+
+    At the midpoint ``t = 1/2`` of a segment the cubic Hermite basis
+    functions are ``h00 = h01 = 1/2``, ``h10 = 1/8``, ``h11 = -1/8``, so the
+    interpolated value is ``v0 + dv / 2 + (m0 - m1) / 8``. Their derivatives
+    are ``h00' = -3/2``, ``h01' = 3/2``, ``h10' = h11' = -1/4``, so the
+    interpolated derivative is ``(3 dv / 2 - (m0 + m1) / 4) / spacing``
+    (the table stores the slopes ``m`` multiplied by ``spacing``). Both are
+    compared with ``fn`` and ``fn'`` from :func:`torch.func.jvp` (see
+    :func:`hermite_table`)."""
     num_knots = table.shape[0]
     spacing = upper / (num_knots - 1)
     mid = torch.arange(num_knots - 1, dtype=torch.float64, device=table.device)

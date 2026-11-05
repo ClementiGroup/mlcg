@@ -10,5 +10,6 @@ of different molecules.
 .. toctree::
 
    atom_data
+   conventions
    fixed_datasets
    h5_datasets

@@ -28,6 +28,7 @@ Contents
    geometry/index
    models/index
    training
+   inference
    simulation/index
    misc/index
    dev/index

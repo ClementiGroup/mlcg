@@ -27,7 +27,12 @@ from .so3krates import So3krates, StandardSo3krates
 from .lr_scheduler import CustomStepLR
 from .utils import sparsify_prior_module, desparsify_prior_module
 from .allegro import StandardAllegro
-from .flash_models import SupportsFlash
+from .flash_models import (
+    SupportsFlash,
+    enable_flash_kernels,
+    optimize_for_inference,
+)
+from .kernels import RadiusCSR, csr_from_edge_index
 
 __all__ = [
     "GradientsOut",
@@ -81,4 +86,8 @@ __all__ = [
     "CustomStepLR",
     "StandardAllegro",
     "SupportsFlash",
+    "enable_flash_kernels",
+    "optimize_for_inference",
+    "RadiusCSR",
+    "csr_from_edge_index",
 ]

@@ -299,6 +299,13 @@ class InteractionBlock(torch.nn.Module):
 class CFConv(SupportsFlash, MessagePassing):
     r"""Continuous filter convolutions for `SchNet`.
 
+    Flash path (:class:`~mlcg.nn.flash_models.SupportsFlash`, ``aggr="add"``
+    only), when called with ``flash=`` (see :meth:`flash_forward`): in eval
+    mode with a table (:meth:`build_table`), :func:`tabulated_cfconv` reads
+    the filter from it; otherwise :func:`fused_cfconv` fuses the message
+    passing on the given edge features, without materializing per-edge
+    messages.
+
     Parameters
     ----------
     filter_net:
@@ -315,12 +322,6 @@ class CFConv(SupportsFlash, MessagePassing):
         Aggregation scheme for continuous filter output. For all options,
         see `here <https://pytorch-geometric.readthedocs.io/en/latest/notes/create_gnn.html?highlight=MessagePassing#the-messagepassing-base-class>`.
 
-    Flash path (:class:`~mlcg.nn.flash_models.SupportsFlash`, ``aggr="add"``
-    only), when called with ``flash=`` (see :meth:`flash_forward`): in eval
-    mode with a table (:meth:`build_table`), :func:`tabulated_cfconv` reads
-    the filter from it; otherwise :func:`fused_cfconv` fuses the message
-    passing on the given edge features, without materializing per-edge
-    messages.
     """
 
     _runtime_attributes = ("_kernels", "_table")

@@ -196,14 +196,60 @@ class RadiusCSR(torch.nn.Module):
     """Radius graph as a destination CSR, with a capacity that never drops
     edges silently.
 
-    The capacity is reserved (one host sync) whenever the number of nodes
-    changes. When all intra-graph pairs fit ``all_pairs_budget`` edges the
-    capacity is all pairs and no edge can be dropped; otherwise it is the
-    exact count plus ``margin``, and every call checks the count (one host
-    sync) and regrows. The returned ``valid`` factor is 1, or NaN if the
-    lists were truncated (e.g. a new batch with the same number of nodes
-    but larger graphs), to multiply into the energy so that it and the
-    forces can never be wrong unnoticed.
+    The capacity is the length of the ``col`` buffer. It is fixed between
+    reservations, so the output shapes don't depend on the positions and a
+    call needs no host sync (CUDA graphs, ``torch.compile``). It is
+    reserved (one host sync) on the first call and whenever the number of
+    nodes changes, in one of two modes:
+
+    - **all pairs**, if the intra-graph pairs ``sum_b n_b (n_b - 1)`` fit
+      in ``all_pairs_budget``: the capacity is all pairs. Every possible
+      edge fits, so any configuration with the same graphs (e.g. a protein
+      that folds during MD and gains edges) is exact, and no call checks
+      the count.
+    - **checked**, otherwise: the capacity is the current edge count plus
+      ``margin``, rounded up to a multiple of ``align``, capped at all
+      pairs. Every call reads the edge count (one host sync) and, if the
+      buffer overflowed, reserves a larger capacity and searches again. The
+      capacity never shrinks. The host sync rules out a CUDA graph, so
+      :func:`~mlcg.nn.flash_models.capture_cuda_graph` falls back to the
+      plain model.
+
+    The returned ``valid`` factor is 1, or NaN if the result can't be
+    trusted. It is multiplied into the energy, so that the energy and the
+    forces become NaN instead of silently wrong. Nothing is repaired: a
+    call reads no edge count or cell on the host. ``valid`` is NaN in two
+    cases:
+
+    - **Truncated lists.** Impossible in the checked mode, and in the
+      all-pairs mode as long as the graphs stay the same (any configuration
+      fits, e.g. a protein that folds). It happens only if a batch has the
+      same number of nodes as the previous call but larger graphs. Call
+      :meth:`reserve` with the new batch, or use a new instance.
+    - **Unsupported cell**: not in reduced form, or a periodic width below
+      ``2 * cutoff`` (:func:`~mlcg.nn.kernels.pbc.check_cells` raises with
+      the reason). Use a box at least ``2 * cutoff`` wide.
+
+    Neither case occurs in an mlcg simulation: the composition and the cell
+    are fixed during a run, and an unsupported cell raises when the model
+    is prepared. In ``mlcg_to_openmm``, ``set_box`` raises before a box
+    below ``2 * cutoff`` is used.
+
+    Parameters
+    ----------
+    cutoff : float
+        Distance cutoff (strict).
+    margin : float
+        Checked mode: relative headroom over the edge count at reservation,
+        so that a slowly growing edge count (e.g. folding) does not reserve
+        again at every step.
+    align : int
+        Checked mode: the capacity is rounded up to a multiple of ``align``
+        edges, so that nearby edge counts give the same buffer size.
+    all_pairs_budget : int
+        Largest number of intra-graph pairs, in edges, for which the
+        all-pairs mode is used (``1 << 25``: 128 MB of int32 ``col``).
+        ``0`` forces the checked mode.
     """
 
     def __init__(
