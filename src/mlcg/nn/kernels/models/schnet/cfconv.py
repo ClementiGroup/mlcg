@@ -1,105 +1,240 @@
 """
-Fused Triton kernels for CFConv operations adopting csr representation
-for more efficient scatter operations.
+CFConv message passing on the destination CSR of
+a symmetric neighbour list
+(:func:`csr_from_edge_index`, or ``RadiusCSR``):
+``out[i] = sum_{e in row i} x[col[e]] * filters[e] * edge_weight[e]``, with
+every per-edge tensor in row order. The backward and double backward are ops
+too (force training).
+
+The neighbour list is symmetric, with the same filter on both directions of
+an edge (a radius graph with filters of the distance). The backward sums
+over the edges *leaving* node ``i``, ``grad_x[i] = sum_j g[j] * W_(i->j)``;
+by symmetry these are the edges of row ``i`` with ``W_(i->j) = W_(j->i)``,
+so every kernel walks rows. The gradients of positions and parameters are
+exact; a per-edge gradient may be attributed to the reverse edge.
+
+Two kernels do all the work, one program per node:
+
+- ``segment_kernel``: a sum over a row of neighbour features times edge
+  weights (forward, ``grad_x``, double-backward ``grad_x`` and
+  ``grad_grad_output``);
+- ``edge_kernel``: the per-edge gradients of the filters and edge weights.
 """
+
+from typing import List
 
 import torch
 import triton
 import triton.language as tl
 from torch.library import triton_op, wrap_triton
 
-from ...utils import ensure_contiguous
-from .cfconv_backward import backward_fused_cfconv
+from ...utils import ensure_contiguous, tile_autotune
 
 
-def filter_configs(configs, named_args, **kwargs):
-    feature_dim = named_args["feature_dim"]
-    filtered = [cfg for cfg in configs if cfg.kwargs["BLOCK_F"] <= feature_dim]
-    return (
-        filtered
-        if filtered
-        else [min(configs, key=lambda c: c.kwargs["BLOCK_F"])]
+def _prune(configs, named_args, **kwargs):
+    fits = [c for c in configs if c.kwargs["BLOCK_F"] <= named_args["F"]]
+    return fits or [configs[0]]
+
+
+def _autotune():
+    return triton.autotune(
+        configs=[
+            triton.Config({"BLOCK_F": 8}, num_warps=2, num_stages=2),
+            triton.Config({"BLOCK_F": 16}, num_warps=2, num_stages=2),
+            triton.Config({"BLOCK_F": 32}, num_warps=2, num_stages=2),
+            triton.Config({"BLOCK_F": 32}, num_warps=4, num_stages=3),
+            triton.Config({"BLOCK_F": 64}, num_warps=4, num_stages=2),
+            triton.Config({"BLOCK_F": 64}, num_warps=8, num_stages=3),
+            triton.Config({"BLOCK_F": 128}, num_warps=4, num_stages=2),
+            triton.Config({"BLOCK_F": 128}, num_warps=8, num_stages=3),
+        ],
+        key=["F"],
+        prune_configs_by={"early_config_prune": _prune},
     )
 
 
-@triton.autotune(
-    configs=[
-        triton.Config({"BLOCK_F": 8}, num_warps=2, num_stages=2),
-        triton.Config({"BLOCK_F": 16}, num_warps=2, num_stages=2),
-        triton.Config({"BLOCK_F": 32}, num_warps=2, num_stages=2),
-        triton.Config({"BLOCK_F": 32}, num_warps=4, num_stages=3),
-        triton.Config({"BLOCK_F": 64}, num_warps=4, num_stages=2),
-        triton.Config({"BLOCK_F": 64}, num_warps=8, num_stages=3),
-        triton.Config({"BLOCK_F": 128}, num_warps=4, num_stages=2),
-        triton.Config({"BLOCK_F": 128}, num_warps=8, num_stages=3),
-    ],
-    key=["feature_dim"],
-    prune_configs_by={"early_config_prune": filter_configs},
-)
+@_autotune()
 @triton.jit
-def fused_cfconv_kernel(
-    # Input pointers
-    x_ptr,  # [num_nodes, feature_dim] - node features
-    filters_ptr,  # [num_edges, feature_dim] - filters outputs (original order, FP32 or FP16)
-    edge_weight_ptr,  # [num_edges] - Cutoff(distances) (original order)
-    edge_src_ptr,  # [num_edges] - source indices (original order)
-    dst_perm_ptr,  # [num_edges] - CSR permutation
-    dst_ptr_ptr,  # [num_nodes + 1] - CSR row pointers
-    # Output pointer
-    output_ptr,  # [num_nodes, feature_dim]
-    # Parameters
-    num_nodes,
-    feature_dim: tl.constexpr,
-    # Block size
+def segment_kernel(
+    node_ptr,
+    node2_ptr,
+    filters_ptr,
+    weight_ptr,
+    d_filters_ptr,
+    d_weight_ptr,
+    row_ptr,
+    col_ptr,
+    out_ptr,
+    F: tl.constexpr,
+    TANGENT: tl.constexpr,
+    NODE2: tl.constexpr,
     BLOCK_F: tl.constexpr,
 ):
-    """
-    Fused CSR-based CFConv kernel.
-    Performs
-
-    output[dst] = sum_{src} (x_{src} * filters_{e} * cutoff_{e})
-
-    Grid: (num_nodes,) - one block per destination
-    """
-    node_idx = tl.program_id(0)
-
-    if node_idx >= num_nodes:
-        return
-
-    # Get segment bounds from CSR row pointers
-    seg_start = tl.load(dst_ptr_ptr + node_idx)
-    seg_end = tl.load(dst_ptr_ptr + node_idx + 1)
-
-    for f_start in range(0, feature_dim, BLOCK_F):
-        f_offsets = f_start + tl.arange(0, BLOCK_F)
-        f_mask = f_offsets < feature_dim
-
+    """``out[i] = sum_e node[n] * w_t + node2[n] * w`` over the edges
+    ``e = (n -> i)`` of row ``i``, with ``w = filters[e] * weight[e]`` and
+    ``w_t = w``, or with ``TANGENT``
+    ``d_filters[e] * weight[e] + filters[e] * d_weight[e]``."""
+    i = tl.program_id(0).to(tl.int64)
+    start = tl.load(row_ptr + i).to(tl.int64)
+    end = tl.load(row_ptr + i + 1).to(tl.int64)
+    for f0 in range(0, F, BLOCK_F):
+        f = f0 + tl.arange(0, BLOCK_F)
+        f_ok = f < F
         acc = tl.zeros([BLOCK_F], dtype=tl.float32)
-        for e_csr in range(seg_start, seg_end):
-            edge_idx = tl.load(dst_perm_ptr + e_csr)
-            src_node = tl.load(edge_src_ptr + edge_idx)
+        for e in range(start, end):
+            n = tl.load(col_ptr + e).to(tl.int64)
+            c = tl.load(weight_ptr + e)
+            phi = tl.load(filters_ptr + e * F + f, mask=f_ok, other=0.0)
+            w = phi * c
+            w_t = w
+            if TANGENT:
+                d_phi = tl.load(d_filters_ptr + e * F + f, mask=f_ok, other=0.0)
+                w_t = d_phi * c + phi * tl.load(d_weight_ptr + e)
+            acc += tl.load(node_ptr + n * F + f, mask=f_ok, other=0.0) * w_t
+            if NODE2:
+                acc += tl.load(node2_ptr + n * F + f, mask=f_ok, other=0.0) * w
+        tl.store(out_ptr + i * F + f, acc, mask=f_ok)
 
-            C = tl.load(edge_weight_ptr + edge_idx)
-            filters_val = tl.load(
-                filters_ptr + edge_idx * feature_dim + f_offsets,
-                mask=f_mask,
-                other=0.0,
-            )
 
-            W = filters_val * C
-            x_j = tl.load(
-                x_ptr + src_node * feature_dim + f_offsets,
-                mask=f_mask,
-                other=0.0,
-            )
+@tile_autotune(
+    [
+        {"BLOCK_E": e, "BLOCK_F": f}
+        for e in (4, 8, 16, 32)
+        for f in (32, 64, 128)
+    ]
+)
+@triton.jit
+def edge_kernel(
+    grad_ptr,
+    node_ptr,
+    node2_ptr,
+    a_filters_ptr,
+    a_weight_ptr,
+    filters_ptr,
+    weight_ptr,
+    row_ptr,
+    col_ptr,
+    grad_filters_ptr,
+    grad_weight_ptr,
+    F: tl.constexpr,
+    NODE2: tl.constexpr,
+    NEED_FILTERS: tl.constexpr,
+    NEED_WEIGHT: tl.constexpr,
+    BLOCK_E: tl.constexpr,
+    BLOCK_F: tl.constexpr,
+):
+    """For the edges ``e = (n -> i)`` of row ``i``, ``BLOCK_E`` at a time:
+    ``grad_filters[e] = grad[i] * (node[n] * a_weight[e] + node2[n] * weight[e])``,
+    ``grad_weight[e] = sum_f grad[i] * (node[n] * a_filters[e] + node2[n] * filters[e])``
+    (the ``node2`` terms only with ``NODE2``)."""
+    i = tl.program_id(0).to(tl.int64)
+    start = tl.load(row_ptr + i).to(tl.int64)
+    end = tl.load(row_ptr + i + 1).to(tl.int64)
+    for e0 in range(start, end, BLOCK_E):
+        e = e0 + tl.arange(0, BLOCK_E)
+        e_ok = e < end
+        n = tl.load(col_ptr + e, mask=e_ok, other=0).to(tl.int64)[:, None]
+        a_weight = tl.load(a_weight_ptr + e, mask=e_ok, other=0.0)[:, None]
+        weight = tl.load(weight_ptr + e, mask=e_ok, other=0.0)[:, None]
+        acc = tl.zeros([BLOCK_E], dtype=tl.float32)
+        for f0 in range(0, F, BLOCK_F):
+            f = f0 + tl.arange(0, BLOCK_F)
+            mask = e_ok[:, None] & (f < F)[None, :]
+            edge_f = e[:, None] * F + f[None, :]
+            g = tl.load(grad_ptr + i * F + f, mask=f < F, other=0.0)[None, :]
+            node = tl.load(node_ptr + n * F + f[None, :], mask=mask, other=0.0)
+            if NODE2:
+                node2 = tl.load(
+                    node2_ptr + n * F + f[None, :], mask=mask, other=0.0
+                )
+            if NEED_FILTERS:
+                grad_phi = node * a_weight
+                if NODE2:
+                    grad_phi += node2 * weight
+                tl.store(grad_filters_ptr + edge_f, g * grad_phi, mask=mask)
+            if NEED_WEIGHT:
+                term = node * tl.load(
+                    a_filters_ptr + edge_f, mask=mask, other=0.0
+                )
+                if NODE2:
+                    term += node2 * tl.load(
+                        filters_ptr + edge_f, mask=mask, other=0.0
+                    )
+                acc += tl.sum(g * term, axis=1)
+        if NEED_WEIGHT:
+            tl.store(grad_weight_ptr + e, acc, mask=e_ok)
 
-            acc += x_j * W
 
-        tl.store(
-            output_ptr + node_idx * feature_dim + f_offsets,
-            acc,
-            mask=f_mask,
+def _segment(node, filters, weight, row_ptr, col, node2=None, tangent=None):
+    out = torch.zeros_like(node)
+    if node.shape[0]:
+        d_filters, d_weight = (filters, weight) if tangent is None else tangent
+        wrap_triton(segment_kernel)[(node.shape[0],)](
+            node,
+            node if node2 is None else node2,
+            filters,
+            weight,
+            d_filters,
+            d_weight,
+            row_ptr,
+            col,
+            out,
+            node.shape[1],
+            TANGENT=tangent is not None,
+            NODE2=node2 is not None,
         )
+    return out
+
+
+def _edge_grads(
+    grad,
+    node,
+    a_filters,
+    a_weight,
+    filters,
+    weight,
+    row_ptr,
+    col,
+    need_filters,
+    need_weight,
+    node2=None,
+):
+    grad_filters = (
+        torch.zeros_like(filters) if need_filters else filters.new_empty(0)
+    )
+    grad_weight = (
+        torch.zeros_like(weight) if need_weight else weight.new_empty(0)
+    )
+    if (need_filters or need_weight) and grad.shape[0]:
+        wrap_triton(edge_kernel)[(grad.shape[0],)](
+            grad,
+            node,
+            node if node2 is None else node2,
+            a_filters,
+            a_weight,
+            filters,
+            weight,
+            row_ptr,
+            col,
+            grad_filters,
+            grad_weight,
+            node.shape[1],
+            NODE2=node2 is not None,
+            NEED_FILTERS=need_filters,
+            NEED_WEIGHT=need_weight,
+        )
+    return grad_filters, grad_weight
+
+
+def csr_from_edge_index(edge_index: torch.Tensor, num_nodes: int):
+    """``(row_ptr, col, order)`` of a symmetric ``[2, E]`` list (sources,
+    destinations) in any order: edges sorted by destination, then source;
+    per-edge tensors in row order are ``t[order]``."""
+    src, dst = edge_index
+    order = torch.sort(dst * num_nodes + src).indices
+    nodes = torch.arange(num_nodes + 1, device=dst.device)
+    row_ptr = torch.searchsorted(dst[order], nodes, out_int32=True)
+    return row_ptr, src[order].int(), order
 
 
 @triton_op("mlcg_kernels::fused_cfconv", mutates_args={})
@@ -108,180 +243,218 @@ def fused_cfconv(
     x: torch.Tensor,
     filters: torch.Tensor,
     edge_weight: torch.Tensor,
-    edge_src: torch.Tensor,
-    edge_dst: torch.Tensor,
-    dst_ptr: torch.Tensor,
-    dst_perm: torch.Tensor,
-    num_nodes: int,
-    src_ptr: torch.Tensor,
-    src_perm: torch.Tensor,
+    row_ptr: torch.Tensor,
+    col: torch.Tensor,
 ) -> torch.Tensor:
     """
-    Fused CSR-based CFConv operation.
-
-    This is a drop-in replacement for fused_cutoff_gather_multiply_scatter
-    that uses CSR format for efficient aggregation without atomics.
-
     Parameters
     ----------
-    x : torch.Tensor
-        Node features [num_nodes, feature_dim]
-    filters : torch.Tensor
-        filters outputs [num_edges, feature_dim], can be FP32 or FP16
-    edge_weight : torch.Tensor
-        Edge weights (Cutoff(distances)) [num_edges]
-    edge_src : torch.Tensor
-        Source node indices [num_edges]
-    edge_dst : torch.Tensor
-        Destination node indices [num_edges]
-    dst_ptr : torch.Tensor
-        CSR row pointers [num_nodes + 1]
-    dst_perm : torch.Tensor
-        CSR permutation [num_edges]
-    num_nodes : int
-        Number of nodes
-    src_ptr : torch.Tensor
-        Src-CSR row pointers [num_nodes + 1]. Along with src_perm,
-        enables atomic-free grad_x computation in backward.
-    src_perm : torch.Tensor
-        Src-CSR permutation [num_edges].
+    x : [num_nodes, F] node features
+    filters : [num_edges, F] filter values, in row order (FP32 or FP16)
+    edge_weight : [num_edges] cutoff of each edge, in row order
+    row_ptr, col : destination CSR of a symmetric neighbour list
+        (:func:`csr_from_edge_index`)
 
     Returns
     -------
-    torch.Tensor
-        Output [num_nodes, feature_dim] in FP32
+    [num_nodes, F]
     """
-    feature_dim = x.shape[1]
-
-    output = torch.zeros(
-        num_nodes, feature_dim, device=x.device, dtype=x.dtype
-    ).contiguous()
-
-    num_edges = edge_src.shape[0]
-    if num_edges == 0:
-        return output
-
-    grid = (num_nodes,)
-    wrap_triton(fused_cfconv_kernel)[grid](
-        x,
-        filters,
-        edge_weight,
-        edge_src,
-        dst_perm,
-        dst_ptr,
-        output,
-        num_nodes,
-        feature_dim,
-    )
-
-    return output
+    return _segment(x, filters, edge_weight, row_ptr, col)
 
 
-def setup_context(ctx, inputs, output):
-    (
-        x,
-        filters,
-        edge_weight,
-        edge_src,
-        edge_dst,
-        dst_ptr,
-        dst_perm,
-        num_nodes,
-        src_ptr,
-        src_perm,
-    ) = inputs
-    ctx.save_for_backward(
-        x,
-        filters,
-        edge_weight,
-        edge_src,
-        edge_dst,
-        src_ptr,
-        src_perm,
-        dst_ptr,
-        dst_perm,
-    )
-    ctx.num_nodes = num_nodes
-
-
-def backward(ctx, grad_output):
-
-    (
-        x,
-        filters,
-        edge_weight,
-        edge_src,
-        edge_dst,
-        src_ptr,
-        src_perm,
-        dst_ptr,
-        dst_perm,
-    ) = ctx.saved_tensors
-    num_nodes = ctx.num_nodes
-
-    need_grad_x = ctx.needs_input_grad[0]
-    need_grad_filters = ctx.needs_input_grad[1]
-    need_grad_edge_weight = ctx.needs_input_grad[2]
-
-    grad_x, grad_filters, grad_edge_weight = backward_fused_cfconv(
+@triton_op("mlcg_kernels::backward_fused_cfconv", mutates_args={})
+@ensure_contiguous
+def backward_fused_cfconv(
+    grad_output: torch.Tensor,
+    x: torch.Tensor,
+    filters: torch.Tensor,
+    edge_weight: torch.Tensor,
+    row_ptr: torch.Tensor,
+    col: torch.Tensor,
+    need_grad_x: bool,
+    need_grad_filters: bool,
+    need_grad_edge_weight: bool,
+) -> List[torch.Tensor]:
+    """Gradients of ``<grad_output, fused_cfconv(x, filters, edge_weight)>``
+    wrt ``x``, ``filters`` and ``edge_weight`` (empty if not needed)."""
+    grad_filters, grad_weight = _edge_grads(
         grad_output,
         x,
         filters,
         edge_weight,
-        edge_src,
-        edge_dst,
-        src_ptr,
-        src_perm,
-        dst_ptr,
-        dst_perm,
-        num_nodes,
-        need_grad_x,
+        filters,
+        edge_weight,
+        row_ptr,
+        col,
         need_grad_filters,
         need_grad_edge_weight,
     )
-
-    if not need_grad_x:
-        grad_x = None
-    if not need_grad_filters:
-        grad_filters = None
-    if not need_grad_edge_weight:
-        grad_edge_weight = None
-
-    return (
-        grad_x,
-        grad_filters,
-        grad_edge_weight,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
+    grad_x = (
+        _segment(grad_output, filters, edge_weight, row_ptr, col)
+        if need_grad_x
+        else x.new_empty(0)
     )
+    return [grad_x, grad_filters, grad_weight]
 
 
-fused_cfconv.register_autograd(backward, setup_context=setup_context)
-
-
-@fused_cfconv.register_kernel("cpu")
-def _(
+@triton_op("mlcg_kernels::double_backward_fused_cfconv", mutates_args={})
+@ensure_contiguous
+def double_backward_fused_cfconv(
+    grad_grad_x: torch.Tensor,
+    grad_grad_filters: torch.Tensor,
+    grad_grad_edge_weight: torch.Tensor,
+    grad_output: torch.Tensor,
     x: torch.Tensor,
     filters: torch.Tensor,
     edge_weight: torch.Tensor,
-    edge_src: torch.Tensor,
-    edge_dst: torch.Tensor,
-    dst_ptr: torch.Tensor,
-    csr_perm: torch.Tensor,
-    num_nodes: int,
-    src_ptr: torch.Tensor,
-    src_perm: torch.Tensor,
-) -> torch.Tensor:
-    """
-    CPU fallback for fused_cfconv
-    """
+    row_ptr: torch.Tensor,
+    col: torch.Tensor,
+    need_grad_grad_output: bool,
+    need_grad_x: bool,
+    need_grad_filters: bool,
+    need_grad_edge_weight: bool,
+) -> List[torch.Tensor]:
+    """Gradients of ``<grad_grad_*, backward_fused_cfconv(...)>`` wrt
+    ``grad_output``, ``x``, ``filters`` and ``edge_weight``."""
+    tangent = (grad_grad_filters, grad_grad_edge_weight)
+    grad_filters, grad_weight = _edge_grads(
+        grad_output,
+        x,
+        *tangent,
+        filters,
+        edge_weight,
+        row_ptr,
+        col,
+        need_grad_filters,
+        need_grad_edge_weight,
+        node2=grad_grad_x,
+    )
+    grad_x = (
+        _segment(
+            grad_output, filters, edge_weight, row_ptr, col, tangent=tangent
+        )
+        if need_grad_x
+        else x.new_empty(0)
+    )
+    grad_grad_output = (
+        _segment(
+            x,
+            filters,
+            edge_weight,
+            row_ptr,
+            col,
+            node2=grad_grad_x,
+            tangent=tangent,
+        )
+        if need_grad_grad_output
+        else x.new_empty(0)
+    )
+    return [grad_grad_output, grad_x, grad_filters, grad_weight]
 
-    messages = x[edge_src] * filters * edge_weight.unsqueeze(-1)
-    out = torch.zeros_like(x)
-    out = out.index_add(0, edge_dst, messages)
-    return out
+
+def _setup_context(ctx, inputs, output):
+    ctx.save_for_backward(*inputs)
+
+
+def _backward(ctx, grad_output):
+    x, filters, edge_weight, *graph = ctx.saved_tensors
+    grads = backward_fused_cfconv(
+        grad_output, x, filters, edge_weight, *graph, *ctx.needs_input_grad[:3]
+    )
+    grads = [
+        g if need else None for g, need in zip(grads, ctx.needs_input_grad)
+    ]
+    return (*grads, None, None)
+
+
+def _setup_backward_context(ctx, inputs, output):
+    ctx.save_for_backward(*inputs[:6])
+
+
+def _double_backward(ctx, grad_grads):
+    grad_output, x, filters, edge_weight, *graph = ctx.saved_tensors
+    # a gradient the backward didn't compute was returned empty
+    grad_grads = [
+        g if g.numel() else torch.zeros_like(p)
+        for g, p in zip(grad_grads, (x, filters, edge_weight))
+    ]
+    needs = ctx.needs_input_grad[:4]
+    grads = double_backward_fused_cfconv(
+        *grad_grads, grad_output, x, filters, edge_weight, *graph, *needs
+    )
+    grads = [g if need else None for g, need in zip(grads, needs)]
+    return (*grads, *([None] * 5))
+
+
+fused_cfconv.register_autograd(_backward, setup_context=_setup_context)
+backward_fused_cfconv.register_autograd(
+    _double_backward, setup_context=_setup_backward_context
+)
+
+
+def _edge_nodes(row_ptr, col, num_edges):
+    """Source and destination of every edge, in row order."""
+    nodes = torch.arange(row_ptr.numel() - 1, device=col.device)
+    dst = torch.repeat_interleave(nodes, row_ptr.diff(), output_size=num_edges)
+    return col[:num_edges].long(), dst
+
+
+@fused_cfconv.register_kernel("cpu")
+def _(x, filters, edge_weight, row_ptr, col):
+    src, dst = _edge_nodes(row_ptr, col, filters.shape[0])
+    messages = x[src] * filters * edge_weight[:, None]
+    return torch.zeros_like(x).index_add(0, dst, messages)
+
+
+@backward_fused_cfconv.register_kernel("cpu")
+def _(
+    grad_output,
+    x,
+    filters,
+    edge_weight,
+    row_ptr,
+    col,
+    need_grad_x,
+    need_grad_filters,
+    need_grad_edge_weight,
+):
+    src, dst = _edge_nodes(row_ptr, col, filters.shape[0])
+    g, x_src = grad_output[dst], x[src]
+    grad_x = torch.zeros_like(x).index_add(
+        0, src, g * filters * edge_weight[:, None]
+    )
+    grad_filters = g * x_src * edge_weight[:, None]
+    grad_weight = (g * x_src * filters).sum(-1)
+    return [grad_x, grad_filters, grad_weight]
+
+
+@double_backward_fused_cfconv.register_kernel("cpu")
+def _(
+    grad_grad_x,
+    grad_grad_filters,
+    grad_grad_edge_weight,
+    grad_output,
+    x,
+    filters,
+    edge_weight,
+    row_ptr,
+    col,
+    need_grad_grad_output,
+    need_grad_x,
+    need_grad_filters,
+    need_grad_edge_weight,
+):
+    src, dst = _edge_nodes(row_ptr, col, filters.shape[0])
+    g, x_src, ggx_src = grad_output[dst], x[src], grad_grad_x[src]
+    C, ggC = edge_weight[:, None], grad_grad_edge_weight[:, None]
+    grad_filters = (ggC * x_src + ggx_src * C) * g
+    grad_weight = ((grad_grad_filters * x_src + ggx_src * filters) * g).sum(-1)
+    grad_x = torch.zeros_like(x).index_add(
+        0, src, (grad_grad_filters * C + ggC * filters) * g
+    )
+    grad_grad_output = torch.zeros_like(x).index_add(
+        0,
+        dst,
+        grad_grad_filters * x_src * C + (ggC * x_src + ggx_src * C) * filters,
+    )
+    return [grad_grad_output, grad_x, grad_filters, grad_weight]

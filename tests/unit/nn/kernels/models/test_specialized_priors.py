@@ -1,3 +1,5 @@
+import copy
+
 import pytest
 import torch
 
@@ -11,7 +13,7 @@ from mlcg.nn.prior import (
 from mlcg.nn import SumOut
 from mlcg.mol_utils import _ASE_prior_model
 from mlcg.simulation.specialize_prior import condense_all_priors_for_simulation
-from mlcg.nn.flash_models.converter import convert_standard_model_to_flash
+from mlcg.nn.flash_models import enable_flash_kernels
 
 CUTOFF_UPPER = 4.0
 DEVICES = ["cpu"] + (["cuda"] if torch.cuda.is_available() else [])
@@ -35,7 +37,7 @@ def create_data(prior):
     specialized_prior, data_list = condense_all_priors_for_simulation(
         base_prior, model_with_data["data_list"]
     )
-    flash_specialized_prior = convert_standard_model_to_flash(specialized_prior)
+    flash_specialized_prior = enable_flash_kernels(copy.deepcopy(specialized_prior))
 
     collated_specialized_data, _, _ = collate(
         data_list[0].__class__,

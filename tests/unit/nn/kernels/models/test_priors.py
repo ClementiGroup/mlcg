@@ -1,3 +1,5 @@
+import copy
+
 import pytest
 import torch
 
@@ -7,7 +9,7 @@ from mlcg.nn import GradientsOut
 
 from mlcg.mol_utils import MolDatabase, _ASE_prior_model
 from mlcg.neighbor_list.neighbor_list import atomic_data2neighbor_list
-from mlcg.nn.flash_models.converter import convert_standard_model_to_flash
+from mlcg.nn.flash_models import enable_flash_kernels
 
 CUTOFF_UPPER = 4.0
 DEVICES = ["cpu"] + (["cuda"] if torch.cuda.is_available() else [])
@@ -48,7 +50,7 @@ def create_data(prior):
             f"Test doesn't support prior {prior.name}, please add neighborlist support in create_data function"
         )
 
-    flash_prior = convert_standard_model_to_flash(base_prior)
+    flash_prior = enable_flash_kernels(copy.deepcopy(base_prior))
     return data, base_prior, flash_prior
 
 

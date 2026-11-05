@@ -186,16 +186,6 @@ def _(pos, batch, ptr, cutoff, capacity, cell, pbc):
     return [row_ptr.clamp(max=capacity), col, num_edges]
 
 
-@radius_csr.register_fake
-def _(pos, batch, ptr, cutoff, capacity, cell, pbc):
-    N = pos.shape[0]
-    return [
-        pos.new_empty(N + 1, dtype=torch.int32),
-        pos.new_empty(capacity, dtype=torch.int32),
-        pos.new_empty(1, dtype=torch.int32),
-    ]
-
-
 def max_edges(ptr: torch.Tensor) -> int:
     """Number of directed pairs inside the graphs, the largest edge count."""
     sizes = ptr.diff()

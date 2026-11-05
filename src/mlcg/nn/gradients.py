@@ -70,6 +70,9 @@ class SumOut(torch.nn.Module):
         if targets is None:
             targets = [ENERGY_KEY, FORCE_KEY]
         self.targets = targets
+        if not isinstance(models, torch.nn.ModuleDict):
+            # a plain dict would leave the models unregistered (.to, .eval)
+            models = torch.nn.ModuleDict(models)
         self.models = models
         self.own_nl_models = set(own_nl_models) if own_nl_models else set()
 

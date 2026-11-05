@@ -1,14 +1,4 @@
-from .flash_schnet import FlashSchNet, StandardFlashSchNet
-from .prior import (
-    FlashDihedral,
-    FlashHarmonicBonds,
-    FlashHarmonicAngles,
-    FlashRepulsion,
-)
-from .converter import (
-    convert_single_standard_model_to_flash,
-    convert_standard_model_to_flash,
-)
+from .mixin import SupportsFlash, enable_flash_kernels
 from .inference import (
     GraphedModel,
     capture_cuda_graph,
@@ -17,14 +7,8 @@ from .inference import (
 )
 
 __all__ = [
-    "FlashSchNet",
-    "StandardFlashSchNet",
-    "FlashDihedral",
-    "FlashHarmonicBonds",
-    "FlashHarmonicAngles",
-    "FlashRepulsion",
-    "convert_single_standard_model_to_flash",
-    "convert_standard_model_to_flash",
+    "SupportsFlash",
+    "enable_flash_kernels",
     "GraphedModel",
     "capture_cuda_graph",
     "optimize_for_inference",

@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 
 import torch
-from mlcg.nn.flash_models import convert_standard_model_to_flash
 from mlcg.nn.gradients import SumOut
 from mlcg.pl.utils import (
     extract_model_from_checkpoint,
@@ -26,11 +25,6 @@ def parse_cli():
         help="path to the prior model. Must be a valid .pt file.",
     )
     parser.add_argument(
-        "--convert_to_flash",
-        action="store_true",
-        help="if set, the script will attempt to convert the loaded model to its flash counterpart",
-    )
-    parser.add_argument(
         "--out",
         default="combined_model.pt",
         type=str,
@@ -50,9 +44,6 @@ def main():
         )
     else:
         full_model = extract_model_from_checkpoint(args.ckpt, None)
-
-    if args.convert_to_flash:
-        full_model = convert_standard_model_to_flash(full_model)
 
     full_model.to("cpu")
     torch.save(full_model, args.out)

@@ -1,4 +1,5 @@
 import copy
+import io
 
 import pytest
 import torch
@@ -7,11 +8,7 @@ from torch_geometric.data.collate import collate
 from mlcg.data.atomic_data import AtomicData
 from mlcg.data._keys import ENERGY_KEY, FORCE_KEY
 from mlcg.nn.cutoff import CosineCutoff, IdentityCutoff, ShiftedCosineCutoff
-from mlcg.nn.flash_models import (
-    StandardFlashSchNet,
-    convert_standard_model_to_flash,
-    prepare_for_inference,
-)
+from mlcg.nn.flash_models import enable_flash_kernels, prepare_for_inference
 from mlcg.nn.gradients import GradientsOut
 from mlcg.nn.kernels import RadiusCSR, radius
 from mlcg.nn.kernels.pbc import periodic_cells
@@ -22,7 +19,7 @@ from mlcg.nn.radial_basis import (
     RIGTOBasis,
     SpacedExpBasis,
 )
-from mlcg.nn.schnet import StandardSchNet
+from mlcg.nn.schnet import RBFRegularizedSchNet, StandardSchNet
 
 pytestmark = pytest.mark.skipif(
     not torch.cuda.is_available(), reason="Triton kernels need CUDA"
@@ -82,11 +79,28 @@ def build_schnet(basis, cutoff, activation, num_interactions=2):
     )
 
 
+def flash_of(standard):
+    """A copy of ``standard`` with its flash kernels on."""
+    flash = copy.deepcopy(standard)
+    flash.enable_kernels()
+    return flash
+
+
+def build_tables(flash, **kwargs):
+    """Filter tables of every block of ``flash``; raises if one fails."""
+    for block in flash.interaction_blocks:
+        block.conv.build_table(flash.rbf_layer, **kwargs)
+    return flash
+
+
+def tabulated(schnet):
+    return all(b.conv.table is not None for b in schnet.interaction_blocks)
+
+
 def tabulate(standard, tolerance=1e-4):
-    """The inference model: flash conversion, filter tables, eval mode. The
+    """The inference model: flash kernels, filter tables, eval mode. The
     accuracy tests were frozen with the 1e-4 table tolerance of 02."""
-    flash = StandardFlashSchNet.flash_from_standard(standard)
-    return flash.build_tables(tolerance=tolerance).eval()
+    return build_tables(flash_of(standard), tolerance=tolerance).eval()
 
 
 def energy_forces(model, data, dtype):
@@ -123,9 +137,7 @@ def test_tabulated_activations(activation):
 
 
 def non_smooth_flash_schnet():
-    flash = StandardFlashSchNet.flash_from_standard(
-        build_schnet("exp_normal", "cosine", "tanh").cuda()
-    )
+    flash = flash_of(build_schnet("exp_normal", "cosine", "tanh").cuda())
     for block in flash.interaction_blocks:
         block.conv.filter_network.layers[1] = torch.nn.ReLU()
     return flash
@@ -133,44 +145,42 @@ def non_smooth_flash_schnet():
 
 def test_build_tables_rejects_non_smooth_filter():
     with pytest.raises(ValueError, match="Filter table error"):
-        non_smooth_flash_schnet().build_tables()
+        build_tables(non_smooth_flash_schnet())
 
 
 def test_prepare_for_inference_keeps_filters_when_not_tabulable():
     model = GradientsOut(non_smooth_flash_schnet(), targets=FORCE_KEY)
     with pytest.warns(UserWarning, match="Filter table error"):
         model = prepare_for_inference(model, random_batch().to("cuda"))
-    assert not model.model.tabulated and not model.training
+    assert not tabulated(model.model) and not model.training
 
 
 def test_conversion_keeps_the_filter_activation():
     standard = build_schnet("exp_normal", "cosine", "tanh").cuda()
     for block in standard.interaction_blocks:
         block.conv.filter_network.layers[1] = torch.nn.SiLU()
-    flash = StandardFlashSchNet.flash_from_standard(standard)
+    flash = flash_of(standard)
     for block in flash.interaction_blocks:
         assert isinstance(block.conv.filter_network.layers[1], torch.nn.SiLU)
         assert isinstance(block.activation, torch.nn.Tanh)
     data = random_batch()
     assert_matches_float64(standard, flash, data)
-    assert_matches_float64(standard, flash.build_tables().eval(), data)
+    assert_matches_float64(standard, build_tables(flash).eval(), data)
 
 
-def test_converter_is_trainable_and_idempotent():
+def test_enable_flash_kernels_is_trainable_and_idempotent():
     standard = GradientsOut(
         build_schnet("exp_normal", "cosine", "tanh"), targets=FORCE_KEY
     ).cuda()
-    flash = convert_standard_model_to_flash(standard)
-    assert isinstance(flash.model, StandardFlashSchNet)
-    assert not flash.model.tabulated
-    assert convert_standard_model_to_flash(flash).model is flash.model
+    flash = enable_flash_kernels(copy.deepcopy(standard))
+    assert flash.model._kernels and not tabulated(flash.model)
+    assert flash.training == standard.training
+    assert enable_flash_kernels(flash) is flash and flash.model._kernels
 
 
 def test_eval_without_tables_is_the_filter_path():
     model = GradientsOut(
-        StandardFlashSchNet.flash_from_standard(
-            build_schnet("exp_normal", "cosine", "tanh").cuda()
-        ),
+        flash_of(build_schnet("exp_normal", "cosine", "tanh").cuda()),
         targets=FORCE_KEY,
     )
     data = random_batch().to("cuda")
@@ -181,7 +191,7 @@ def test_eval_without_tables_is_the_filter_path():
         batch.out = {}
         out = model(batch).out[model.name]
         outputs.append((out[ENERGY_KEY].detach(), out[FORCE_KEY].detach()))
-    assert not model.model.tabulated
+    assert not tabulated(model.model)
     for train, evaluated in zip(*outputs):
         torch.testing.assert_close(train, evaluated)
 
@@ -190,11 +200,11 @@ def test_train_and_load_state_dict_drop_tables():
     flash = tabulate(build_schnet("exp_normal", "cosine", "tanh").cuda())
     assert all(b.conv.table is not None for b in flash.interaction_blocks)
     flash.train()
-    assert not flash.tabulated
+    assert not tabulated(flash)
     assert all(b.conv.table is None for b in flash.interaction_blocks)
-    flash.build_tables().eval()
+    build_tables(flash).eval()
     flash.load_state_dict(flash.state_dict())
-    assert not flash.tabulated
+    assert not tabulated(flash)
 
 
 def test_state_dict_is_standard():
@@ -442,19 +452,17 @@ def knots_of(flash):
 
 
 def test_adaptive_grid_uses_fewest_power_of_two_knots():
-    flash = StandardFlashSchNet.flash_from_standard(
-        build_schnet("exp_normal", "cosine", "tanh").cuda()
-    )
-    knots = knots_of(flash.build_tables(tolerance=1e-5))
+    flash = flash_of(build_schnet("exp_normal", "cosine", "tanh").cuda())
+    knots = knots_of(build_tables(flash, tolerance=1e-5))
     assert all(k & (k - 1) == 0 for k in knots)
     for k in set(knots):
         if k > 2048:
             with pytest.raises(ValueError, match="Filter table error"):
-                flash.build_tables(num_knots=k // 2, tolerance=1e-5)
-    tighter = knots_of(flash.build_tables(tolerance=1e-6))
+                build_tables(flash, num_knots=k // 2, tolerance=1e-5)
+    tighter = knots_of(build_tables(flash, tolerance=1e-6))
     assert all(t >= k for t, k in zip(tighter, knots))
     assert (
-        knots_of(flash.build_tables(num_knots=3000, tolerance=1)) == [3000] * 2
+        knots_of(build_tables(flash, num_knots=3000, tolerance=1)) == [3000] * 2
     )
 
 
@@ -471,10 +479,10 @@ def test_adaptive_grid_refines_sharp_filters():
         num_interactions=1,
         activation=torch.nn.Tanh(),
     ).cuda()
-    flash = StandardFlashSchNet.flash_from_standard(standard)
+    flash = flash_of(standard)
     with pytest.raises(ValueError, match="Filter table error"):
-        flash.build_tables(num_knots=2048, tolerance=1e-5)
-    assert knots_of(flash.build_tables(tolerance=1e-5))[0] > 2048
+        build_tables(flash, num_knots=2048, tolerance=1e-5)
+    assert knots_of(build_tables(flash, tolerance=1e-5))[0] > 2048
     assert_matches_float64(standard, flash.eval(), random_batch())
 
 
@@ -483,9 +491,7 @@ def test_tolerance_below_float32_floor_raises():
         build_schnet("exp_normal", "cosine", "tanh"), targets=FORCE_KEY
     ).cuda()
     with pytest.raises(ValueError, match="float32 floor"):
-        StandardFlashSchNet.flash_from_standard(model.model).build_tables(
-            tolerance=1e-9
-        )
+        build_tables(flash_of(model.model), tolerance=1e-9)
     with pytest.raises(ValueError, match="float32 floor"):
         prepare_for_inference(model, random_batch().to("cuda"), tolerance=1e-9)
 
@@ -495,7 +501,7 @@ def test_filter_path_pbc_matches_float64(cells):
     """The non-tabulated (training) path on the sync-free neighbour list,
     with periodic cells, against the standard model with all images."""
     standard = build_schnet("exp_normal", "cosine", "tanh")
-    flash = StandardFlashSchNet.flash_from_standard(standard.cuda())
+    flash = flash_of(standard.cuda())
     data = periodic_batch([CELLS[c] for c in cells])
     assert_matches_float64(standard, flash, data)
 
@@ -508,7 +514,7 @@ def test_filter_path_force_matching_gradients():
     standard = GradientsOut(
         build_schnet("exp_normal", "cosine", "tanh"), targets=FORCE_KEY
     ).cuda()
-    flash = convert_standard_model_to_flash(copy.deepcopy(standard))
+    flash = enable_flash_kernels(copy.deepcopy(standard))
     data = periodic_batch([CELLS["triclinic"], CELLS["cubic"]]).to("cuda")
 
     def gradients(model, dtype):
@@ -550,10 +556,129 @@ def test_cutoff_breakpoints_get_knots(basis, cutoff):
     put there, so their filters meet the default tolerance."""
     torch.manual_seed(0)
     standard = build_schnet(basis, cutoff, "tanh").cuda()
-    flash = StandardFlashSchNet.flash_from_standard(standard).build_tables()
+    flash = build_tables(flash_of(standard))
     for block in flash.interaction_blocks:
         knots = block.conv.table.shape[0] - 1
         breakpoint = block.conv.cutoff.breakpoints()[0]
         offset = breakpoint / CUTOFF * knots
         assert abs(offset - round(offset)) <= 1e-3
     assert_matches_float64(standard, flash.eval(), random_batch())
+
+
+def test_saved_model_is_the_standard_model():
+    """Pickling drops the flash state (kernels, tables, neighbour search);
+    a deep copy keeps it."""
+    model = GradientsOut(
+        build_schnet("exp_normal", "cosine", "tanh"), targets=FORCE_KEY
+    ).cuda()
+    data = random_batch().to("cuda")
+    fast = prepare_for_inference(model, data)
+    assert tabulated(copy.deepcopy(fast).model)
+    buffer = io.BytesIO()
+    torch.save(fast, buffer)
+    buffer.seek(0)
+    loaded = torch.load(buffer, weights_only=False)
+    for module in loaded.modules():
+        state = (vars(module), module._buffers, module._modules)
+        for name in getattr(module, "_runtime_attributes", ()):
+            assert not any(name in s for s in state)
+    torch.testing.assert_close(loaded.state_dict(), model.state_dict())
+    torch.testing.assert_close(  # float32 tolerances: atomic-add scatter
+        energy_forces(loaded.model, random_batch(), torch.float32),
+        energy_forces(model.model, random_batch(), torch.float32),
+        rtol=1.3e-6,
+        atol=1e-5,
+    )
+
+
+class HalvedBlock(torch.nn.Module):
+    """A custom block (not an InteractionBlock) that wraps a standard one."""
+
+    def __init__(self, block):
+        super().__init__()
+        self.block = block
+
+    def forward(self, x, *args):
+        return 0.5 * self.block(x, *args)
+
+
+def test_standard_schnet_needs_flash_blocks():
+    standard = build_schnet("exp_normal", "cosine", "tanh").cuda()
+    blocks = standard.interaction_blocks
+    blocks[1] = HalvedBlock(blocks[1])
+    with pytest.warns(UserWarning, match="blocks are not all InteractionBlock"):
+        assert not flash_of(standard)._kernels
+
+
+class NewForward(StandardSchNet):
+    def forward(self, data):
+        return super().forward(data)
+
+
+class NewForwardAndFlash(NewForward):
+    def flash_forward(self, data):
+        return super().flash_forward(data)
+
+
+def test_forward_override_needs_flash_forward():
+    """A subclass that changes forward would otherwise inherit the flash
+    path of its parent's model."""
+    standard = build_schnet("exp_normal", "cosine", "tanh")
+    standard.__class__ = NewForward
+    with pytest.warns(UserWarning, match="without a flash_forward"):
+        assert not flash_of(standard)._kernels
+    standard.__class__ = NewForwardAndFlash
+    assert flash_of(standard)._kernels
+
+
+def rbf_regularized_schnet():
+    torch.manual_seed(0)
+    model = RBFRegularizedSchNet(
+        BASES["exp_normal"](CUTOFFS["cosine"]()),
+        CUTOFFS["cosine"](),
+        [40],
+        hidden_channels=48,
+        embedding_size=10,
+        num_filters=48,
+        num_interactions=2,
+        activation=torch.nn.Tanh(),
+        independent_regularizations=True,
+    )
+    for regularization in model.rbf_layer.regularization:
+        regularization.w.data.uniform_(0.0, 1.0)
+    return GradientsOut(model, targets=FORCE_KEY).cuda()
+
+
+def test_rbf_regularized_flash_matches_float64():
+    """Exact kernels with a regularized expansion per block (no tables: the
+    filters depend on the bead types), through ``prepare_for_inference``
+    and in training: energies, forces and the parameter gradients of a force
+    loss as close to the standard model in float64 as the standard model in
+    float32 is (2x: the float32 error varies between runs, see
+    tests_benchmarks/32_flash_blocks)."""
+    torch.backends.cuda.matmul.allow_tf32 = False
+    standard = rbf_regularized_schnet()
+    data = random_batch()
+    fast = prepare_for_inference(standard, copy.deepcopy(data).to("cuda"))
+    assert fast.model._kernels
+    assert not fast.model.interaction_blocks[0].conv.tabulated
+    flash = enable_flash_kernels(copy.deepcopy(standard))
+
+    def gradients(model, dtype):
+        model = copy.deepcopy(model).to(dtype).train()
+        batch = copy.deepcopy(data).to("cuda")
+        batch.pos = batch.pos.to(dtype)
+        batch.out = {}
+        loss = model(batch).out[model.name][FORCE_KEY].square().sum()
+        grads = torch.autograd.grad(loss, list(model.parameters()))
+        return torch.cat([g.flatten().double() for g in grads])
+
+    def outputs(evaluated, trained, dtype):
+        energy, forces = energy_forces(evaluated, data, dtype)
+        return energy, forces, gradients(trained, dtype)
+
+    reference = outputs(standard.model, standard, torch.float64)
+    standard_32 = outputs(standard.model, standard, torch.float32)
+    flash_32 = outputs(fast.model, flash, torch.float32)
+    for s32, f32, ref in zip(standard_32, flash_32, reference):
+        assert (f32 - ref).abs().max() <= 2 * (s32 - ref).abs().max()

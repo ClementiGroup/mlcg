@@ -154,9 +154,10 @@ class _Simulation(object):
         outputs or NaN gradients.
     convert_to_flash:
         If set to True, the model is prepared for inference with
-        :func:`~mlcg.nn.flash_models.prepare_for_inference`: converted to its
-        flash counterpart, with SchNet filters tabulated. This option is fully
-        compatible with torch compile.
+        :func:`~mlcg.nn.flash_models.prepare_for_inference`: a copy with the
+        flash kernels of every supporting module (SchNet, priors) and the
+        SchNet filters tabulated. This option is fully compatible with torch
+        compile.
     cuda_graph:
         If True, one force evaluation (energy and autograd forces) is
         captured in a CUDA graph after conversion/compilation and replayed at

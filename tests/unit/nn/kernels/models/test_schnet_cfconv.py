@@ -3,9 +3,8 @@ import torch
 from torch.autograd import grad
 
 from mlcg.nn import MLP, CosineCutoff, GaussianBasis
-from mlcg.nn.kernels.csr import build_csr_representation_from_edges
+from mlcg.nn.kernels import csr_from_edge_index
 from mlcg.nn.schnet import CFConv as StandardCFConv
-from mlcg.nn.flash_models.flash_schnet import FlashCFConv as FlashCFConv
 from mlcg.neighbor_list.neighbor_list import atomic_data2neighbor_list
 from mlcg.geometry.internal_coordinates import compute_distances
 
@@ -91,6 +90,12 @@ def zero_grad(model: torch.nn.Module):
             param.grad.zero_()
 
 
+def flash_graph(edge_index, distances, edge_attr, num_nodes):
+    """The flash path's graph: CSR of the edge list, features in row order."""
+    row_ptr, col, order = csr_from_edge_index(edge_index, num_nodes)
+    return row_ptr, col, (distances[order], edge_attr[order])
+
+
 def create_models(device):
     """Create standard and flash CFConv layers with same weights."""
     cutoff = CosineCutoff(cutoff_upper=CUTOFF_UPPER)
@@ -109,7 +114,7 @@ def create_models(device):
         aggr="add",
     ).to(device)
 
-    flash_cfconv = FlashCFConv(
+    flash_cfconv = StandardCFConv(
         filter_network=filter_network,
         cutoff=cutoff,
         in_channels=FEATURES,
@@ -117,6 +122,7 @@ def create_models(device):
         num_filters=FEATURES,
         aggr="add",
     ).to(device)
+    flash_cfconv.enable_kernels()
 
     flash_cfconv.load_state_dict(standard_cfconv.state_dict())
 
@@ -135,7 +141,6 @@ def test_standard_vs_flash_cfconv(device, graph_type):
     activation = torch.nn.Tanh()
 
     standard_cfconv, flash_cfconv, rbf = create_models(device)
-    csr_data = build_csr_representation_from_edges(edge_index, x.shape[0])
 
     x.requires_grad_(True)
     distances.requires_grad_(True)
@@ -168,10 +173,7 @@ def test_standard_vs_flash_cfconv(device, graph_type):
         activation(
             flash_cfconv(
                 x,
-                edge_index,
-                distances,
-                edge_attr,
-                csr_data,
+                flash=flash_graph(edge_index, distances, edge_attr, x.shape[0]),
             )
         )
     ) ** 2
@@ -231,7 +233,6 @@ def test_compiled_standard_vs_flash_cfconv(device, graph_type):
 
     standard_cfconv, _flash_cfconv, rbf = create_models(device)
     flash_cfconv = torch.compile(_flash_cfconv)
-    csr_data = build_csr_representation_from_edges(edge_index, x.shape[0])
 
     x.requires_grad_(True)
     distances.requires_grad_(True)
@@ -255,10 +256,7 @@ def test_compiled_standard_vs_flash_cfconv(device, graph_type):
         activation(
             flash_cfconv(
                 x,
-                edge_index,
-                distances,
-                edge_attr,
-                csr_data,
+                flash=flash_graph(edge_index, distances, edge_attr, x.shape[0]),
             )
         )
     ) ** 2

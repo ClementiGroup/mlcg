@@ -13,7 +13,6 @@ periodic boundary conditions, ``d_ij`` is the minimum-image distance
 """
 
 import copy
-from functools import partial
 from typing import List, Tuple
 
 import torch
@@ -31,30 +30,7 @@ from ...hermite import (
     locate_knot,
 )
 from ...pbc import minimum_image
-from ...utils import ensure_contiguous
-
-
-def _prune(configs, named_args, tile_per_thread, **kwargs):
-    """Drop configs wider than the features or whose [BLOCK_E, BLOCK_F]
-    tiles exceed ``tile_per_thread`` elements per thread (they spill)."""
-    width = triton.next_power_of_2(named_args["F"])
-
-    def fits(c):
-        block_f = c.kwargs.get("BLOCK_F", width)
-        tile = c.kwargs["BLOCK_E"] * block_f / (32 * c.num_warps)
-        return block_f <= width and tile <= tile_per_thread
-
-    return [c for c in configs if fits(c)] or [
-        min(configs, key=lambda c: c.kwargs["BLOCK_E"])
-    ]
-
-
-def _configs(blocks, warps):
-    return [
-        triton.Config(dict(block), num_warps=w)
-        for block in blocks
-        for w in warps
-    ]
+from ...utils import ensure_contiguous, tile_autotune
 
 
 @triton.jit
@@ -92,19 +68,12 @@ def _neighbor_tile(
     return j, dx, dy, dz, d, in_row & (d < cutoff)
 
 
-@triton.autotune(
-    configs=_configs(
-        [
-            {"BLOCK_E": e, "BLOCK_F": f}
-            for e in (8, 16, 32, 64)
-            for f in (32, 64, 128)
-        ],
-        (2, 4, 8),
-    ),
-    key=["F"],
-    prune_configs_by={
-        "early_config_prune": partial(_prune, tile_per_thread=16)
-    },
+@tile_autotune(
+    [
+        {"BLOCK_E": e, "BLOCK_F": f}
+        for e in (8, 16, 32, 64)
+        for f in (32, 64, 128)
+    ]
 )
 @triton.jit
 def tabulated_cfconv_kernel(
@@ -158,13 +127,7 @@ def tabulated_cfconv_kernel(
     tl.store(out_ptr + i * F + f, tl.sum(acc, axis=0), mask=f_ok)
 
 
-@triton.autotune(
-    configs=_configs([{"BLOCK_E": e} for e in (2, 4, 8, 16)], (2, 4, 8)),
-    key=["F"],
-    prune_configs_by={
-        "early_config_prune": partial(_prune, tile_per_thread=16)
-    },
-)
+@tile_autotune([{"BLOCK_E": e} for e in (2, 4, 8, 16)])
 @triton.jit
 def tabulated_cfconv_backward_kernel(
     grad_out_ptr,
@@ -338,16 +301,6 @@ def tabulated_cfconv_backward(
         BLOCK_F=triton.next_power_of_2(F),
     )
     return [grad_x, grad_pos]
-
-
-@tabulated_cfconv.register_fake
-def _(x, pos, row_ptr, col, table, cutoff, batch, cell, pbc):
-    return torch.empty_like(x)
-
-
-@tabulated_cfconv_backward.register_fake
-def _(grad_out, x, pos, row_ptr, col, table, cutoff, batch, cell, pbc):
-    return [torch.empty_like(x), torch.empty_like(pos)]
 
 
 def _setup_context(ctx, inputs, output):

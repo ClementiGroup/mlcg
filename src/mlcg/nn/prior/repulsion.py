@@ -4,6 +4,7 @@ from typing import Final, Optional, Dict
 from torch_geometric.utils import scatter
 
 from .base import _Prior
+from ..kernels.models.prior import flash_repulsion
 from ...data.atomic_data import AtomicData
 from ...geometry.topology import Topology
 from ...geometry.internal_coordinates import (
@@ -43,6 +44,7 @@ class Repulsion(_Prior):
 
     name: Final[str] = "repulsion"
     _neighbor_list_name = "fully connected"
+    _kernel_op = staticmethod(flash_repulsion)
 
     def __init__(self, statistics: Dict) -> None:
         super(Repulsion, self).__init__()
@@ -106,6 +108,8 @@ class Repulsion(_Prior):
             example/structure
         """
 
+        if self._uses_kernels(data):
+            return self._kernel_forward(data, sigma=self.sigma)
         mapping = data.neighbor_list[self.name]["index_mapping"]
         mapping_batch = data.neighbor_list[self.name]["mapping_batch"]
         interaction_types = tuple(
@@ -241,6 +245,8 @@ class Repulsion(_Prior):
 
 
 class CutoffRepulsion(Repulsion):
+    _kernel_op = None
+
     def __init__(
         self, statistics: Dict, cutoff: float, name: str = "repulsion"
     ) -> None:

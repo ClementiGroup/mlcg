@@ -7,6 +7,7 @@ from typing import Final, Dict
 
 
 from .base import _Prior
+from ..kernels.models.prior import flash_harmonic_angles, flash_harmonic_bonds
 from ...data.atomic_data import AtomicData
 from ...geometry.topology import Topology
 from ...geometry.internal_coordinates import (
@@ -107,6 +108,9 @@ class Harmonic(_Prior):
             populated with the predicted energies for each
             example/structure
         """
+        if self._uses_kernels(data):
+            params = self.data2parameters(data)
+            return self._kernel_forward(data, k=params["k"], x_0=params["x0"])
         mapping_batch = data.neighbor_list[self.name]["mapping_batch"]
         params = self.data2parameters(data)
         features = self.data2features(data).flatten()
@@ -204,6 +208,7 @@ class HarmonicBonds(Harmonic):
 
     name: Final[str] = "bonds"
     _order = 2
+    _kernel_op = staticmethod(flash_harmonic_bonds)
 
     def __init__(self, statistics) -> None:
         super(HarmonicBonds, self).__init__(
@@ -259,6 +264,7 @@ class HarmonicAngles(Harmonic):
 
     name: Final[str] = "angles"
     _order = 3
+    _kernel_op = staticmethod(flash_harmonic_angles)
 
     def __init__(self, statistics: Dict) -> None:
         super(HarmonicAngles, self).__init__(
@@ -492,6 +498,7 @@ class GeneralBonds(Harmonic):
 
     name: Final[str] = "bonds"
     _order = 2
+    _kernel_op = staticmethod(flash_harmonic_bonds)
 
     def __init__(self, statistics, name) -> None:
         super(GeneralBonds, self).__init__(
@@ -533,6 +540,7 @@ class GeneralAngles(Harmonic):
 
     name: Final[str] = "angles"
     _order = 3
+    _kernel_op = staticmethod(flash_harmonic_angles)
 
     def __init__(self, statistics, name) -> None:
         super(GeneralAngles, self).__init__(

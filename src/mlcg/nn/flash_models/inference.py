@@ -1,7 +1,8 @@
 """
 One entry point for fast inference (MD) with an mlcg model:
 :func:`optimize_for_inference`, built from :func:`prepare_for_inference`
-(flash conversion, filter tables, eval mode) and :func:`capture_cuda_graph`.
+(flash kernels and inference state of every :class:`SupportsFlash`
+module, eval mode) and :func:`capture_cuda_graph`.
 """
 
 import copy
@@ -13,9 +14,12 @@ import torch
 
 from ...data.atomic_data import AtomicData
 from ...data._keys import CELL_KEY, PBC_KEY, POSITIONS_KEY
-from ..kernels.pbc import check_cells
-from .converter import convert_standard_model_to_flash
-from .flash_schnet import TABLE_TOLERANCE, FlashSchNet, check_tolerance
+from .mixin import (
+    TABLE_TOLERANCE,
+    SupportsFlash,
+    check_tolerance,
+    enable_flash_kernels,
+)
 
 
 def prepare_for_inference(
@@ -24,22 +28,17 @@ def prepare_for_inference(
     num_knots: Optional[int] = None,
     tolerance: float = TABLE_TOLERANCE,
 ) -> torch.nn.Module:
-    """Flash-convert ``model``, tabulate the filters of every flash SchNet
-    (falling back to its filter networks, with a warning, if they can't be
-    tabulated) and freeze it in eval mode. Raises ``ValueError`` for a
-    periodic cell the tabulated path can't handle (see
+    """A copy of ``model`` with the flash kernels and the inference state
+    (e.g. SchNet filter tables) of every :class:`SupportsFlash` module,
+    frozen in eval mode; ``model`` itself is unchanged. Raises
+    ``ValueError`` for a periodic cell a module can't handle (see
     :func:`~mlcg.nn.kernels.pbc.check_cells`). One forward on ``data`` fills
     ``data.out``, so that compiling it later traces fewer graphs."""
     check_tolerance(tolerance)
-    model = convert_standard_model_to_flash(model)
-    schnets = [m for m in model.modules() if isinstance(m, FlashSchNet)]
-    for schnet in schnets:
-        cutoff = float(schnet.rbf_layer.cutoff.cutoff_upper)
-        check_cells(data.get("cell"), data.get("pbc"), cutoff)
-        try:
-            schnet.build_tables(num_knots, tolerance)
-        except ValueError as error:
-            warnings.warn(f"{error}; {schnet.name} uses its filter networks")
+    model = enable_flash_kernels(copy.deepcopy(model))
+    for module in model.modules():
+        if isinstance(module, SupportsFlash):
+            module.prepare_inference(data, num_knots, tolerance)
     model.eval().requires_grad_(False)
     model(data)
     return model

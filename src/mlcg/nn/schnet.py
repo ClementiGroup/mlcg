@@ -1,3 +1,4 @@
+import math
 import warnings
 from typing import Optional, List, Final
 import torch
@@ -18,6 +19,14 @@ from .attention import (
 )
 
 from .radial_basis import RegularizedBasis
+from .flash_models.mixin import SupportsFlash, TABLE_TOLERANCE, check_tolerance
+from .kernels import (
+    RadiusCSR,
+    build_filter_table,
+    fused_cfconv,
+    tabulated_cfconv,
+)
+from .kernels.pbc import check_cells, minimum_image_vectors, periodic_cells
 
 try:
     from mlcg_opt_radius.radius import radius_distance
@@ -27,6 +36,9 @@ except ImportError:
         + "`opt_radius` folder and follow the instructions."
     )
     radius_distance = None
+
+FIRST_NUM_KNOTS = 2048
+MAX_NUM_KNOTS = 16384
 
 
 class SchNet(torch.nn.Module):
@@ -232,10 +244,11 @@ class InteractionBlock(torch.nn.Module):
     def forward(
         self,
         x: torch.Tensor,
-        edge_index: torch.Tensor,
-        edge_weight: torch.Tensor,
-        edge_attr: torch.Tensor,
+        edge_index: Optional[torch.Tensor] = None,
+        edge_weight: Optional[torch.Tensor] = None,
+        edge_attr: Optional[torch.Tensor] = None,
         *args,
+        flash: Optional[tuple] = None,
     ) -> torch.Tensor:
         r"""Forward pass through the interaction block.
 
@@ -251,6 +264,13 @@ class InteractionBlock(torch.nn.Module):
         edge_attr:
             Graph edge attributes (eg, expanded distances), of shape
             (total_num_edges, num_rbf)
+        flash:
+            Flash path only (keyword), in place of the edge arguments: the
+            graph ``(row_ptr, col, features, pos, batch, cell, pbc,
+            cutoff)``, where ``row_ptr``, ``col`` are the destination CSR of
+            a *symmetric* neighbour list (int32) and ``features`` is
+            ``(distances, rbf)`` in row order, or ``None`` when the filter
+            table is used (see :meth:`CFConv.flash_forward`).
 
         Returns
         -------
@@ -258,14 +278,25 @@ class InteractionBlock(torch.nn.Module):
             Updated embedded features of shape (num_examples * num_atoms,
             hidden_channels)
         """
-
-        x = self.conv(x, edge_index, edge_weight, edge_attr)
+        if flash is None:
+            x = self.conv(x, edge_index, edge_weight, edge_attr)
+        else:
+            x = self.conv(x, flash=flash)
         x = self.activation(x)
         x = self.lin(x)
         return x
 
+    def has_flash_path(self) -> bool:
+        """Whether this block takes ``flash=``: its ``forward`` is this
+        class's and its convolution has a flash path."""
+        return (
+            type(self).forward is InteractionBlock.forward
+            and isinstance(self.conv, CFConv)
+            and self.conv.has_flash_path()
+        )
 
-class CFConv(MessagePassing):
+
+class CFConv(SupportsFlash, MessagePassing):
     r"""Continuous filter convolutions for `SchNet`.
 
     Parameters
@@ -283,7 +314,16 @@ class CFConv(MessagePassing):
     aggr:
         Aggregation scheme for continuous filter output. For all options,
         see `here <https://pytorch-geometric.readthedocs.io/en/latest/notes/create_gnn.html?highlight=MessagePassing#the-messagepassing-base-class>`.
+
+    Flash path (:class:`~mlcg.nn.flash_models.SupportsFlash`, ``aggr="add"``
+    only), when called with ``flash=`` (see :meth:`flash_forward`): in eval
+    mode with a table (:meth:`build_table`), :func:`tabulated_cfconv` reads
+    the filter from it; otherwise :func:`fused_cfconv` fuses the message
+    passing on the given edge features, without materializing per-edge
+    messages.
     """
+
+    _runtime_attributes = ("_kernels", "_table")
 
     def __init__(
         self,
@@ -315,9 +355,10 @@ class CFConv(MessagePassing):
     def forward(
         self,
         x: torch.Tensor,
-        edge_index: torch.Tensor,
-        edge_weight: torch.Tensor,
-        edge_attr: torch.Tensor,
+        edge_index: Optional[torch.Tensor] = None,
+        edge_weight: Optional[torch.Tensor] = None,
+        edge_attr: Optional[torch.Tensor] = None,
+        flash: Optional[tuple] = None,
     ) -> torch.Tensor:
         r"""Forward pass through the continuous filter convolution.
 
@@ -326,13 +367,20 @@ class CFConv(MessagePassing):
         x:
             Embedded features of shape (num_examples * num_atoms,
             hidden_channels)
-        edge_index
+        edge_index:
             Graph edge index tensor of shape (2, total_num_edges)
         edge_weight:
             Graph edge weight (eg, distances), of shape (total_num_edges)
         edge_attr:
             Graph edge attributes (eg, expanded distances), of shape
             (total_num_edges, num_rbf)
+        flash:
+            Flash path only (keyword), in place of the edge arguments: the
+            graph ``(row_ptr, col, features, pos, batch, cell, pbc,
+            cutoff)``, where ``row_ptr``, ``col`` are the destination CSR of
+            a *symmetric* neighbour list (int32) and ``features`` is
+            ``(distances, rbf)`` in row order, or ``None`` when the filter
+            table is used (see :meth:`CFConv.flash_forward`).
 
         Returns
         -------
@@ -340,6 +388,8 @@ class CFConv(MessagePassing):
             Updated embedded features of shape (num_examples * num_atoms,
             hidden_channels)
         """
+        if flash is not None:
+            return self.flash_forward(x, *flash)
         C = self.cutoff(edge_weight)
         W = self.filter_network(edge_attr) * C.view(-1, 1)
 
@@ -370,11 +420,115 @@ class CFConv(MessagePassing):
         """
         return x_j * W
 
+    def has_flash_path(self) -> bool:
+        """Whether :meth:`flash_forward` computes what ``forward`` does: no
+        ``forward`` override without its own ``flash_forward``, ``message``
+        is this class's and ``aggr="add"``."""
+        return (
+            self._flash_forward_is_current()
+            and type(self).message is CFConv.message
+            and self.aggr == "add"
+        )
 
-class StandardSchNet(SchNet):
+    def drop_inference(self):
+        self._buffers.pop("_table", None)
+
+    @property
+    def table(self) -> Optional[torch.Tensor]:
+        """Hermite table of the filter, ``[num_knots, 3, num_filters]``."""
+        return self._buffers.get("_table")
+
+    @property
+    def tabulated(self) -> bool:
+        """Whether :meth:`flash_forward` reads the table (eval mode only)."""
+        return self.table is not None and not self.training
+
+    def flash_forward(
+        self,
+        x,
+        row_ptr,
+        col,
+        features=None,
+        pos=None,
+        batch=None,
+        cell=None,
+        pbc=None,
+        cutoff=None,
+    ):
+        """Message passing on a destination CSR (``row_ptr``, ``col``) of a
+        *symmetric* neighbour list. If :attr:`tabulated`: the filter table,
+        with distances recomputed from ``pos`` (minimum image with
+        ``cell``/``pbc``, edges beyond ``cutoff`` ignored). Otherwise the
+        exact fused kernels (trainable) on ``features = (distances, rbf)``
+        in row order."""
+        x = self.lin1(x)
+        if self.tabulated:
+            x = tabulated_cfconv(
+                x, pos, row_ptr, col, self.table, cutoff, batch, cell, pbc
+            )
+        else:
+            distances, rbf = features
+            filters = self.filter_network(rbf)
+            weight = self.cutoff(distances)
+            x = fused_cfconv(x, filters, weight, row_ptr, col)
+        return self.lin2(x)
+
+    def build_table(
+        self,
+        rbf_layer: torch.nn.Module,
+        num_knots: Optional[int] = None,
+        tolerance: float = TABLE_TOLERANCE,
+    ):
+        """Tabulates the filter (times the cutoff) of ``rbf_layer``'s
+        expansion from the current weights (float64, cubic Hermite over
+        ``rbf_layer``'s cutoff) and keeps it as :attr:`table`. It uses
+        ``num_knots`` knots, or, if ``None``, the smallest power of two
+        meeting ``tolerance`` (relative): the next size is predicted from
+        the O(h^4) error and then verified, up to ``MAX_NUM_KNOTS``. Raises
+        ``ValueError`` if the filter can't meet ``tolerance`` (e.g.
+        non-smooth activations) or if ``tolerance`` is below the float32
+        floor. Weights changed by hand afterwards need another call
+        (``train()`` and ``load_state_dict`` drop the table)."""
+        check_tolerance(tolerance)
+        cutoff_upper = float(rbf_layer.cutoff.cutoff_upper)
+
+        def table_on(knots):
+            return build_filter_table(
+                self.filter_network, rbf_layer, self.cutoff, cutoff_upper, knots
+            )
+
+        knots = num_knots or FIRST_NUM_KNOTS
+        table, error = table_on(knots)
+        while num_knots is None and error > tolerance and knots < MAX_NUM_KNOTS:
+            predicted = knots * (error / tolerance) ** 0.25
+            knots = min(MAX_NUM_KNOTS, 1 << math.ceil(math.log2(predicted)))
+            previous = error
+            table, error = table_on(knots)
+            if error >= previous:  # at the float32 floor: more knots won't help
+                break
+        if error > tolerance:
+            raise ValueError(
+                f"Filter table error {error:.2e} exceeds {tolerance:.0e} "
+                f"with {knots} knots"
+            )
+        self.register_buffer("_table", table, persistent=False)
+
+
+class StandardSchNet(SupportsFlash, SchNet):
     """Small wrapper class for :ref:`mlcg.nn.SchNet` to simplify the definition of the
     SchNet model through an input file. The upper distance cutoff attribute
     in is set by default to match the upper cutoff value in the cutoff function.
+
+    Flash path (:class:`~mlcg.nn.flash_models.SupportsFlash`): with
+    :meth:`enable_kernels`, the radius graph comes from a sync-free
+    neighbour search (a CSR) and every block runs fused Triton kernels
+    (trainable, double backward). After
+    :meth:`prepare_inference`, in eval mode, the filters are read from cubic
+    Hermite tables instead of being evaluated (inference only; periodic
+    cells as in :mod:`~mlcg.nn.kernels.pbc`). ``train()`` and loading a
+    state dict drop the tables. Needs every block to be an
+    :class:`InteractionBlock` with a flash path
+    (:meth:`InteractionBlock.has_flash_path`).
 
     Parameters
     ----------
@@ -409,6 +563,8 @@ class StandardSchNet(SchNet):
         and `custom_kernel`.
 
     """
+
+    _runtime_attributes = ("_kernels", "neighbors")
 
     def __init__(
         self,
@@ -476,6 +632,119 @@ class StandardSchNet(SchNet):
             max_num_neighbors=max_num_neighbors,
             nls_distance_method=nls_distance_method,
         )
+
+    def forward(self, data: AtomicData) -> AtomicData:
+        if self._kernels:
+            return self.flash_forward(data)
+        return super().forward(data)
+
+    def enable_kernels(self, enabled: bool = True):
+        """Switches the flash path of every block on or off. Refused, with a
+        warning, unless every block is an :class:`InteractionBlock` with a
+        flash path (and as in :meth:`SupportsFlash.enable_kernels`)."""
+        if enabled and not all(
+            isinstance(block, InteractionBlock) and block.has_flash_path()
+            for block in self.interaction_blocks
+        ):
+            warnings.warn(
+                f"{type(self).__name__} has no flash path: its blocks are not "
+                "all InteractionBlock + CFConv with aggr='add'"
+            )
+            return
+        super().enable_kernels(enabled)
+        if self._kernels and not hasattr(self, "neighbors"):
+            cutoff = float(self.rbf_layer.cutoff.cutoff_upper)
+            self.neighbors = RadiusCSR(cutoff)
+
+    def prepare_inference(
+        self,
+        data: AtomicData,
+        num_knots: Optional[int] = None,
+        tolerance: float = TABLE_TOLERANCE,
+    ):
+        """Filter tables of the blocks (:meth:`CFConv.build_table`); a block
+        whose filter can't be tabulated keeps its filter network, with a
+        warning. Raises ``ValueError`` for a periodic cell the flash path
+        can't handle (see :func:`~mlcg.nn.kernels.pbc.check_cells`)."""
+        if not self._kernels:
+            return
+        check_cells(data.get("cell"), data.get("pbc"), self.neighbors.cutoff)
+        for i, block in enumerate(self.interaction_blocks):
+            try:
+                block.conv.build_table(self.rbf_layer, num_knots, tolerance)
+            except ValueError as error:
+                warnings.warn(
+                    f"{error}; block {i} of {self.name} uses its filter network"
+                )
+
+    def flash_forward(self, data: AtomicData) -> AtomicData:
+        """Flash path: the blocks get the radius graph as ``flash=(row_ptr,
+        col, features, pos, batch, cell, pbc, cutoff)`` and read their filter
+        tables in eval mode, or run the exact fused kernels on ``features =
+        (distances, rbf)`` in row order. The per-edge tensors (and their
+        host sync) are computed only if a block has no table in use.
+        Energies of graphs whose neighbour search overflowed are NaN."""
+        row_ptr, col, valid, cell, pbc = self._radius_graph(data)
+        features = None
+        if not all(block.conv.tabulated for block in self.interaction_blocks):
+            _, _, distances = self._edge_distances(
+                data, row_ptr, col, cell, pbc
+            )
+            features = (distances, self.rbf_layer(distances))
+        graph = (
+            row_ptr,
+            col,
+            features,
+            data.pos,
+            data.batch,
+            cell,
+            pbc,
+            self.neighbors.cutoff,
+        )
+        x = self.embedding_layer(data.atom_types)
+        for block in self.interaction_blocks:
+            x = x + block(x, flash=graph)
+        energy = self.output_network(x, data) * valid
+        num_graphs = data.ptr.numel() - 1 if hasattr(data, "ptr") else None
+        energy = scatter(
+            energy, data.batch, dim=0, reduce="sum", dim_size=num_graphs
+        )
+        data.out.setdefault(self.name, {}).update(
+            {ENERGY_KEY: energy.flatten()}
+        )
+        return data
+
+    def _radius_graph(self, data: AtomicData):
+        """The sync-free radius graph as a destination CSR of a symmetric
+        list (minimum image with a cell): ``row_ptr, col, valid, cell, pbc``,
+        with ``valid`` 1, or NaN for a graph whose search overflowed."""
+        ptr = (
+            data.ptr
+            if hasattr(data, "ptr")
+            else data.pos.new_tensor([0, data.pos.shape[0]], dtype=torch.long)
+        )
+        cell, pbc = periodic_cells(
+            data.get("cell"), data.get("pbc"), ptr.numel() - 1, data.pos.device
+        )
+        row_ptr, col, valid = self.neighbors(
+            data.pos.detach(), data.batch, ptr, cell, pbc
+        )
+        return row_ptr, col, valid, cell, pbc
+
+    def _edge_distances(self, data: AtomicData, row_ptr, col, cell, pbc):
+        """Sources, destinations and distances of the edges in row order (one
+        host sync: the number of edges)."""
+        num_edges = int(row_ptr[-1])
+        dst = torch.repeat_interleave(
+            torch.arange(len(row_ptr) - 1, device=col.device),
+            row_ptr.diff(),
+            output_size=num_edges,
+        )
+        src = col[:num_edges].long()
+        vectors = minimum_image_vectors(
+            data.pos[dst] - data.pos[src], cell, pbc, data.batch[dst]
+        )
+        return src, dst, vectors.norm(dim=1)
 
 
 class AttentiveSchNet(SchNet):
@@ -685,6 +954,8 @@ class RBFRegularizedSchNet(StandardSchNet):
     This is a StandardSchNet model where the RBF components are weighted via Hadamard product with couple-specific
     vectors. Each tuple of bead types has its own vector.
     The models also adds the key radial_filters to the output dictionary, containing the regularization parameters.
+    Flash path (:meth:`flash_forward`): the exact fused kernels only, without
+    filter tables, since the filters depend on the bead types.
 
     """
         + __params_onwards
@@ -733,6 +1004,8 @@ class RBFRegularizedSchNet(StandardSchNet):
 
     def forward(self, data: AtomicData) -> AtomicData:
         r"""Forward pass through the SchNet architecture with independent regularizations."""
+        if self._kernels:
+            return self.flash_forward(data)
         x = self.embedding_layer(data.atom_types)
 
         neighbor_list = data.neighbor_list.get(self.name)
@@ -775,4 +1048,51 @@ class RBFRegularizedSchNet(StandardSchNet):
             "radial_filters": self.rbf_layer.get_regularization_parameters(),
         }
 
+        return data
+
+    def prepare_inference(
+        self,
+        data: AtomicData,
+        num_knots: Optional[int] = None,
+        tolerance: float = TABLE_TOLERANCE,
+    ):
+        """No filter tables: the filters depend on the types of the pair, not
+        only on the distance. Raises ``ValueError`` for a periodic cell the
+        flash path can't handle (see :func:`~mlcg.nn.kernels.pbc.check_cells`).
+        """
+        if self._kernels:
+            check_cells(
+                data.get("cell"), data.get("pbc"), self.neighbors.cutoff
+            )
+
+    def flash_forward(self, data: AtomicData) -> AtomicData:
+        """Flash path: the exact fused kernels on the radius graph of the
+        sync-free neighbour search, each block with its own regularized
+        expansion (per-edge tensors: one host sync per step). The expansion
+        is symmetric in the pair, as the kernels need."""
+        row_ptr, col, valid, cell, pbc = self._radius_graph(data)
+        src, dst, distances = self._edge_distances(
+            data, row_ptr, col, cell, pbc
+        )
+        types = data.atom_types
+        rbf_expansion = self.rbf_layer(distances, types[src], types[dst])
+        x = self.embedding_layer(types)
+        for block, rbf in zip(self.interaction_blocks, rbf_expansion):
+            graph = (
+                row_ptr,
+                col,
+                (distances, rbf),
+                data.pos,
+                data.batch,
+                cell,
+                pbc,
+                self.neighbors.cutoff,
+            )
+            x = x + block(x, flash=graph)
+        energy = self.output_network(x, data) * valid
+        energy = scatter(energy, data.batch, dim=0, reduce="sum")
+        data.out[self.name] = {
+            ENERGY_KEY: energy.flatten(),
+            "radial_filters": self.rbf_layer.get_regularization_parameters(),
+        }
         return data

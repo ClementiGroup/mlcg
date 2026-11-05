@@ -1,5 +1,7 @@
 import functools
+
 import torch
+import triton
 
 
 def ensure_contiguous(fn):
@@ -59,3 +61,38 @@ def ensure_contiguous(fn):
         return fn(*args, **kwargs)
 
     return wrapper
+
+
+def _fitting_tiles(configs, named_args, tile_per_thread, **kwargs):
+    """Drop configs wider than the features ``F`` or whose
+    ``[BLOCK_E, BLOCK_F]`` tiles exceed ``tile_per_thread`` elements per
+    thread (they spill); a config without ``BLOCK_F`` spans all features."""
+    width = triton.next_power_of_2(named_args["F"])
+
+    def fits(c):
+        block_f = c.kwargs.get("BLOCK_F", width)
+        tile = c.kwargs["BLOCK_E"] * block_f / (32 * c.num_warps)
+        return block_f <= width and tile <= tile_per_thread
+
+    return [c for c in configs if fits(c)] or [
+        min(configs, key=lambda c: c.kwargs["BLOCK_E"])
+    ]
+
+
+def tile_autotune(blocks, warps=(2, 4, 8), tile_per_thread=16):
+    """``triton.autotune`` over ``blocks`` x ``warps`` for kernels that loop
+    over ``[BLOCK_E, BLOCK_F]`` tiles of edges and features ``F``, keyed on
+    ``F`` and pruned by :func:`_fitting_tiles`."""
+    return triton.autotune(
+        configs=[
+            triton.Config(dict(block), num_warps=w)
+            for block in blocks
+            for w in warps
+        ],
+        key=["F"],
+        prune_configs_by={
+            "early_config_prune": functools.partial(
+                _fitting_tiles, tile_per_thread=tile_per_thread
+            )
+        },
+    )

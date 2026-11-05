@@ -20,7 +20,7 @@ from mlcg.data._keys import (
 )
 from mlcg.mol_utils import _get_initial_data, _ASE_prior_model
 
-from mlcg.nn.flash_models.flash_schnet import StandardFlashSchNet
+from mlcg.nn.schnet import StandardSchNet
 from mlcg.nn.radial_basis import ExpNormalBasis
 from mlcg.nn.cutoff import CosineCutoff
 from mlcg.nn import GradientsOut, SumOut
@@ -601,7 +601,8 @@ def test_pt_velocity_init(tmp_path):
 def flash_cgschnet_model():
     standard_basis = ExpNormalBasis(cutoff=5)
     standard_cutoff = CosineCutoff(cutoff_upper=5)
-    test_flash_schnet = StandardFlashSchNet(
+    test_flash_schnet = StandardSchNet(
         standard_basis, standard_cutoff, [128, 128]
     )
+    test_flash_schnet.enable_kernels()
     return GradientsOut(test_flash_schnet, targets=[FORCE_KEY])

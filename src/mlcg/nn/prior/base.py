@@ -1,5 +1,6 @@
 import torch
 from ...data import AtomicData
+from ..flash_models.mixin import SupportsFlash
 
 
 def compute_cell_shifts(
@@ -63,7 +64,7 @@ def compute_cell_shifts(
     return cell_shifts
 
 
-class _Prior(torch.nn.Module):
+class _Prior(SupportsFlash, torch.nn.Module):
     r"""Abstract prior class
 
     Priors are torch.nn.Module objects that should represent an energy term that has
@@ -76,7 +77,16 @@ class _Prior(torch.nn.Module):
     The different parameters needed for different beads in this interactions should
     be stored in `torch.nn.parameter.Buffer` objects to avoid any backwards passes
     over this parameters.
+
+    Flash path (:class:`~mlcg.nn.flash_models.SupportsFlash`): a prior class
+    with a fused energy op sets ``_kernel_op``; :meth:`enable_kernels` then
+    computes its energy with that op from the parameters of
+    ``data2parameters`` (per-type tables or the per-interaction buffers of
+    a specialised prior). The ops have no periodic cell shifts, so
+    periodic data runs the standard path.
     """
+
+    _kernel_op = None
 
     def __init__(self) -> None:
         r"""
@@ -87,6 +97,28 @@ class _Prior(torch.nn.Module):
         method.
         """
         super(_Prior, self).__init__()
+
+    def enable_kernels(self, enabled: bool = True):
+        self._kernels = enabled and self._kernel_op is not None
+
+    def _uses_kernels(self, data: AtomicData) -> bool:
+        return self._kernels and (
+            data.get("pbc") is None or data.get("cell") is None
+        )
+
+    def _kernel_forward(self, data: AtomicData, **params) -> AtomicData:
+        neighbor_list = data.neighbor_list[self.name]
+        num_graphs = data.ptr.numel() - 1 if hasattr(data, "ptr") else None
+        energy = self._kernel_op(
+            data.pos,
+            data.atom_types,
+            neighbor_list["index_mapping"],
+            neighbor_list["mapping_batch"],
+            num_graphs=num_graphs,
+            **params,
+        )
+        data.out.setdefault(self.name, {})["energy"] = energy
+        return data
 
     def forward(self, data: AtomicData) -> AtomicData:
         r"""
