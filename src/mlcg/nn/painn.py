@@ -303,6 +303,10 @@ class PaiNN(nn.Module):
     nls_distance_method:
         Method for computing a neighbor list. Supported values are
         `torch`, `nvalchemi_naive`, `nvalchemi_cell` and custom.
+    excluded_order:
+        Order of excluded interaction in neighbor list computation:
+        1 no exclusion, 2 excludes up to first bonds, 3 excludes up to second bonds
+        and so on. Default is 1 meaning no exclusion.
     """
 
     name: Final[str] = "PaiNN"
@@ -316,6 +320,7 @@ class PaiNN(nn.Module):
         output_network: nn.Module,
         max_num_neighbors: int,
         nls_distance_method: str = "torch",
+        excluded_order: int = 1,
     ):
         super(PaiNN, self).__init__()
 
@@ -348,6 +353,11 @@ class PaiNN(nn.Module):
         self.rbf_layer = rbf_layer
         self.max_num_neighbors = max_num_neighbors
         self.nls_distance_method = nls_distance_method
+        if excluded_order < 1:
+            raise ValueError(
+                f"excluded order must be at least 1 (no exclusion), you provided {excluded_order}"
+            )
+        self.excluded_order = excluded_order
 
         self.reset_parameters()
 
@@ -383,6 +393,12 @@ class PaiNN(nn.Module):
             neighbor_list = self.neighbor_list(
                 data, self.rbf_layer.cutoff.cutoff_upper, self.max_num_neighbors
             )[self.name]
+        if neighbor_list["excluded_order"] != getattr(
+            self, "excluded_order", 1
+        ):
+            raise ValueError(
+                f'Input has {neighbor_list["excluded_order"]} excluded_order while model has {getattr(self, "excluded_order", 1)}'
+            )
 
         edge_index = neighbor_list["index_mapping"]
 
@@ -423,6 +439,7 @@ class PaiNN(nn.Module):
                 nl["order"] == 2
                 and nl["self_interaction"] is False
                 and nl["rcut"] == self.cutoff.cutoff_upper
+                and nl["excluded_order"] == getattr(self, "excluded_order", 1)
             ):
                 is_compatible = True
         return is_compatible
@@ -483,6 +500,10 @@ class StandardPaiNN(PaiNN):
         Method for computing a neighbor list. Supported values are
         `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`
         and `custom_kernel`.
+    excluded_order:
+        Order of excluded interaction in neighbor list computation:
+        1 no exclusion, 2 excludes up to first bonds, 3 excludes up to second bonds
+        and so on. Default is 1 meaning no exclusion.
     """
 
     def __init__(
@@ -498,6 +519,7 @@ class StandardPaiNN(PaiNN):
         aggr: str = "add",
         epsilon: float = 1e-8,
         nls_distance_method: str = "torch",
+        excluded_order: int = 1,
     ):
         if num_interactions < 1:
             raise ValueError("At least one interaction block must be specified")
@@ -545,6 +567,7 @@ class StandardPaiNN(PaiNN):
             output_network,
             max_num_neighbors,
             nls_distance_method=nls_distance_method,
+            excluded_order=excluded_order,
         )
 
 
@@ -585,6 +608,10 @@ class RBFRegularizedPaiNN(StandardPaiNN):
         Method for computing a neighbor list. Supported values are
         `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`
         and `custom_kernel`.
+    excluded_order:
+        Order of excluded interaction in neighbor list computation:
+        1 no exclusion, 2 excludes up to first bonds, 3 excludes up to second bonds
+        and so on. Default is 1 meaning no exclusion.
 
     CLASS SPECIFIC PARAMETERS -------------------------------------------------------------
 
@@ -607,6 +634,7 @@ class RBFRegularizedPaiNN(StandardPaiNN):
         aggr: str = "add",
         epsilon: float = 1e-8,
         nls_distance_method: str = "torch",
+        excluded_order: int = 1,
         independent_regularizations: bool = False,
     ):
         rbf_layer = RegularizedBasis(
@@ -627,6 +655,7 @@ class RBFRegularizedPaiNN(StandardPaiNN):
             aggr=aggr,
             epsilon=epsilon,
             nls_distance_method=nls_distance_method,
+            excluded_order=excluded_order,
         )
 
     def forward(self, data: AtomicData):
@@ -651,6 +680,12 @@ class RBFRegularizedPaiNN(StandardPaiNN):
             neighbor_list = self.neighbor_list(
                 data, self.rbf_layer.cutoff.cutoff_upper, self.max_num_neighbors
             )[self.name]
+        if neighbor_list["excluded_order"] != getattr(
+            self, "excluded_order", 1
+        ):
+            raise ValueError(
+                f'Input has {neighbor_list["excluded_order"]} excluded_order while model has {getattr(self, "excluded_order", 1)}'
+            )
 
         edge_index = neighbor_list["index_mapping"]
 

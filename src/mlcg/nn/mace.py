@@ -283,6 +283,10 @@ class MACE(torch.nn.Module):
         Method for computing a neighbor list. Supported values are
         `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`
         and `custom_kernel`.
+    excluded_order:
+        Order of excluded interaction in neighbor list computation:
+        1 no exclusion, 2 excludes up to first bonds, 3 excludes up to second bonds
+        and so on. Default is 1 meaning no exclusion.
     """
 
     name: Final[str] = "mace"
@@ -300,6 +304,7 @@ class MACE(torch.nn.Module):
         max_num_neighbors: int,
         pair_repulsion_fn: torch.nn.Module = None,
         nls_distance_method: str = "torch",
+        excluded_order: int = 1,
     ):
         super().__init__()
 
@@ -322,6 +327,11 @@ class MACE(torch.nn.Module):
         self.types_mapping[atomic_numbers] = torch.arange(
             atomic_numbers.shape[0]
         )
+        if excluded_order < 1:
+            raise ValueError(
+                f"excluded order must be at least 1 (no exclusion), you provided {excluded_order}"
+            )
+        self.excluded_order = excluded_order
 
     def __setstate__(self, state):
         super().__setstate__(state)
@@ -360,6 +370,12 @@ class MACE(torch.nn.Module):
             neighbor_list = self.neighbor_list(
                 data, self.r_max, self.max_num_neighbors
             )[self.name]
+        if neighbor_list["excluded_order"] != getattr(
+            self, "excluded_order", 1
+        ):
+            raise ValueError(
+                f'Input has {neighbor_list["excluded_order"]} excluded_order while model has {getattr(self, "excluded_order", 1)}'
+            )
 
         edge_index = neighbor_list["index_mapping"]
 
@@ -436,6 +452,7 @@ class MACE(torch.nn.Module):
                 nl["order"] == 2
                 and nl["self_interaction"] is False
                 and nl["rcut"] == self.r_max
+                and nl["excluded_order"] == getattr(self, "excluded_order", 1)
             ):
                 is_compatible = True
         return is_compatible
@@ -538,6 +555,10 @@ class StandardMACE(MACE):
         Method for computing a neighbor list. Supported values are
         `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`
         and `custom_kernel`.
+    excluded_order:
+        Order of excluded interaction in neighbor list computation:
+        1 no exclusion, 2 excludes up to first bonds, 3 excludes up to second bonds
+        and so on. Default is 1 meaning no exclusion.
     """
 
     def __init__(
@@ -579,6 +600,7 @@ class StandardMACE(MACE):
         ] = NonLinearReadoutBlock,
         keep_last_layer_irreps: bool = True,  # Default to True for backward compatibility
         nls_distance_method: str = "torch",
+        excluded_order: int = 1,
     ):
         from mlcg.pl.model import get_class_from_str
 
@@ -789,6 +811,7 @@ class StandardMACE(MACE):
             max_num_neighbors,
             pair_repulsion_fn,
             nls_distance_method=nls_distance_method,
+            excluded_order=excluded_order,
         )
 
 
@@ -849,6 +872,7 @@ class RBFRegularizedMACE(StandardMACE):
         ] = NonLinearReadoutBlock,
         keep_last_layer_irreps: bool = True,  # Default to True for backward compatibility
         nls_distance_method: str = "torch",
+        excluded_order: int = 1,
         independent_regularizations: bool = False,
     ):
 
@@ -884,6 +908,7 @@ class RBFRegularizedMACE(StandardMACE):
             readout_cls=readout_cls,
             keep_last_layer_irreps=keep_last_layer_irreps,
             nls_distance_method=nls_distance_method,
+            excluded_order=excluded_order,
         )
 
         initial_radial_embedding = self.radial_embedding
@@ -925,6 +950,12 @@ class RBFRegularizedMACE(StandardMACE):
             neighbor_list = self.neighbor_list(
                 data, self.r_max, self.max_num_neighbors
             )[self.name]
+        if neighbor_list["excluded_order"] != getattr(
+            self, "excluded_order", 1
+        ):
+            raise ValueError(
+                f'Input has {neighbor_list["excluded_order"]} excluded_order while model has {getattr(self, "excluded_order", 1)}'
+            )
 
         edge_index = neighbor_list["index_mapping"]
 

@@ -11,6 +11,7 @@ from mlcg.nn.cutoff import IdentityCutoff, CosineCutoff
 from mlcg.geometry import Topology
 from mlcg.data.atomic_data import AtomicData
 from mlcg.data._keys import ENERGY_KEY, FORCE_KEY
+from mlcg.neighbor_list.neighbor_list import atomic_data2neighbor_list
 from ase.build import molecule
 
 
@@ -138,3 +139,156 @@ def test_prediction(collated_data, out_keys, expected_shapes):
     for key, shape in zip(out_keys, expected_shapes):
         assert key in collated_data.out[model.name].keys()
         assert collated_data.out[model.name][key].shape == shape
+
+
+def _make_excluded_data(
+    mol_names: List[str],
+    excluded_order: List[int] = None,
+    both_directions: bool = True,
+) -> AtomicData:
+    data_list = []
+    for i, name in enumerate(mol_names):
+        mol = molecule(name)
+        kwargs = {}
+        if excluded_order is not None:
+            bonds = Topology.from_ase(mol).bonds2torch()
+            if both_directions:
+                bonds = torch.cat([bonds, bonds.flip(0)], dim=1)
+            kwargs["excluded_pairs"] = {
+                "excluded_order": excluded_order[i],
+                "index_mapping": bonds,
+            }
+        data_list.append(
+            AtomicData.from_points(
+                pos=torch.tensor(mol.get_positions()).float(),
+                atom_types=torch.tensor(mol.get_atomic_numbers()),
+                **kwargs,
+            )
+        )
+    collated_data, _, _ = collate(
+        data_list[0].__class__,
+        data_list=data_list,
+        increment=True,
+        add_batch=True,
+    )
+    return collated_data
+
+
+excl_mol_names = ["CH3CN", "C6H6", "trans-butane"]
+
+
+def test_excluded_pairs_removed_from_neighbor_list():
+    data_no_excl = _make_excluded_data(excl_mol_names)
+    data_excl = _make_excluded_data(excl_mol_names, [2] * len(excl_mol_names))
+
+    nl_full = atomic_data2neighbor_list(data_no_excl, rcut=5.0)
+    nl_excl = atomic_data2neighbor_list(data_excl, rcut=5.0)
+
+    num_nodes = data_excl.pos.shape[0]
+    excluded = data_excl.excluded_pairs["index_mapping"]
+    excluded_key = excluded[0] * num_nodes + excluded[1]
+    edge_key_full = (
+        nl_full["index_mapping"][0] * num_nodes + nl_full["index_mapping"][1]
+    )
+    edge_key_excl = (
+        nl_excl["index_mapping"][0] * num_nodes + nl_excl["index_mapping"][1]
+    )
+
+    assert nl_full["excluded_order"] == 1
+    assert nl_excl["excluded_order"] == 2
+    assert torch.isin(excluded_key, edge_key_full).all()
+    assert not torch.isin(excluded_key, edge_key_excl).any()
+    assert edge_key_excl.numel() == edge_key_full.numel() - excluded_key.numel()
+    assert nl_excl["cell_shifts"].shape[0] == edge_key_excl.numel()
+
+
+def test_excluded_pairs_are_unordered():
+    """Each pair stored once excludes both directions, as both stored."""
+    order = [2] * len(excl_mol_names)
+    nl_both = atomic_data2neighbor_list(
+        _make_excluded_data(excl_mol_names, order), rcut=5.0
+    )
+    nl_once = atomic_data2neighbor_list(
+        _make_excluded_data(excl_mol_names, order, both_directions=False),
+        rcut=5.0,
+    )
+    assert torch.equal(nl_once["index_mapping"], nl_both["index_mapping"])
+    assert torch.equal(nl_once["cell_shifts"], nl_both["cell_shifts"])
+
+
+@pytest.mark.parametrize(
+    "model_excluded_order, data_excluded_order, expect_error",
+    [
+        (2, 2, False),
+        (2, None, True),
+        (1, 2, True),
+        (1, None, False),
+    ],
+)
+def test_excluded_order_consistency(
+    model_excluded_order, data_excluded_order, expect_error
+):
+    data_excluded_order = (
+        None
+        if data_excluded_order is None
+        else [data_excluded_order] * len(excl_mol_names)
+    )
+    data = _make_excluded_data(excl_mol_names, data_excluded_order)
+    model = StandardSchNet(
+        GaussianBasis(cutoff=5),
+        IdentityCutoff(cutoff_lower=0, cutoff_upper=5),
+        [128, 128],
+        excluded_order=model_excluded_order,
+    )
+    if expect_error:
+        with pytest.raises(ValueError):
+            model(data)
+    else:
+        model(data)
+
+
+@pytest.mark.parametrize(
+    "data_excluded_order, expect_error", [(None, False), (2, True)]
+)
+def test_excluded_order_old_model(data_excluded_order, expect_error):
+    """Models pickled before `excluded_order` existed lack the attribute
+    and must behave as `excluded_order=1`."""
+    data_excluded_order = (
+        None
+        if data_excluded_order is None
+        else [data_excluded_order] * len(excl_mol_names)
+    )
+    data = _make_excluded_data(excl_mol_names, data_excluded_order)
+    model = StandardSchNet(
+        GaussianBasis(cutoff=5),
+        IdentityCutoff(cutoff_lower=0, cutoff_upper=5),
+        [128, 128],
+    )
+    del model.excluded_order
+    if expect_error:
+        with pytest.raises(ValueError):
+            model(data)
+    else:
+        model(data)
+
+
+def test_inconsistent_excluded_order_in_batch():
+    data = _make_excluded_data(excl_mol_names, [2, 3, 2])
+    model = StandardSchNet(
+        GaussianBasis(cutoff=5),
+        IdentityCutoff(cutoff_lower=0, cutoff_upper=5),
+        [128, 128],
+        excluded_order=2,
+    )
+    with pytest.raises(ValueError):
+        model(data)
+
+
+def test_invalid_excluded_order():
+    with pytest.raises(ValueError):
+        StandardSchNet(
+            GaussianBasis(cutoff=5),
+            IdentityCutoff(cutoff_lower=0, cutoff_upper=5),
+            [128, 128],
+            excluded_order=0,
+        )

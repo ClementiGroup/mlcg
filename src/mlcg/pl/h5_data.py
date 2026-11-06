@@ -49,13 +49,11 @@ class H5DataModule(pl.LightningDataModule):
             "hdf_key_mapping": default_key_mapping
         },
         subsample_using_weights: bool = False,
-        exclude_listed_pairs: bool = False,
     ):
         super(H5DataModule, self).__init__()
         self.save_hyperparameters()
         self._h5_file_path = h5_file_path
         self._subsample_using_weights = subsample_using_weights
-        self._exclude_listed_pairs = exclude_listed_pairs
 
         def get_options(options_or_path):
             if isinstance(options_or_path, Mapping):
@@ -104,7 +102,6 @@ class H5DataModule(pl.LightningDataModule):
             self._part_options,
             self._process_load_options,
             self._subsample_using_weights,
-            self._exclude_listed_pairs,
         )
         if use_ddp:
             sample_info = [None] * num_replicas
