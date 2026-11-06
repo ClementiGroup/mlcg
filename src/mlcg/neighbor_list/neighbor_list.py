@@ -24,6 +24,14 @@ except ImportError:
     radius_distance = None
 
 
+def _pair_key(index_mapping: torch.Tensor, num_nodes) -> torch.Tensor:
+    """Key of the unordered pair of each column: ``(i, j)`` and ``(j, i)``
+    get the same key."""
+    low = torch.minimum(index_mapping[0], index_mapping[1])
+    high = torch.maximum(index_mapping[0], index_mapping[1])
+    return low * num_nodes + high
+
+
 def atomic_data2neighbor_list(
     data,
     rcut: float,
@@ -79,6 +87,23 @@ def atomic_data2neighbor_list(
 
     mapping = torch.cat([idx_i.unsqueeze(0), idx_j.unsqueeze(0)], dim=0)
     order = mapping.shape[0]
+    excluded_order = 1
+    # Eventually remove excluded pairs
+    excluded = data.get("excluded_pairs")
+    if excluded:
+        excluded_order = torch.as_tensor(excluded["excluded_order"]).unique()
+        if excluded_order.numel() != 1:
+            raise ValueError(
+                f"Inconsistent excluded_order within batch: {excluded_order.tolist()}"
+            )
+        excluded_order = int(excluded_order.item())
+        num_nodes = data.n_atoms.sum()
+        excluded_key = _pair_key(excluded["index_mapping"], num_nodes)
+        edge_key = _pair_key(mapping, num_nodes)
+        mask = torch.isin(edge_key, excluded_key, invert=True)
+        mapping = mapping[:, mask]
+        cell_shifts = cell_shifts[mask]
+
     if "batch" not in data:
         batch = torch.zeros(
             data.pos.shape[0], dtype=torch.long, device=data.pos.device
@@ -99,6 +124,7 @@ def atomic_data2neighbor_list(
         cell_shifts=cell_shifts,
         rcut=rcut,
         self_interaction=self_interaction,
+        excluded_order=excluded_order,
     )
 
 
@@ -110,6 +136,7 @@ def make_neighbor_list(
     cell_shifts: Optional[torch.Tensor] = None,
     rcut: Optional[float] = None,
     self_interaction: Optional[bool] = None,
+    excluded_order: Optional[int] = None,
 ) -> Dict:
     """Build a neighbor_list dictionary.
 
@@ -135,6 +162,8 @@ def make_neighbor_list(
         cutoff radius used to compute the connectivity
     self_interaction:
         whether the mapping includes self referring mappings, e.g. mappings where `i` == `j`.
+    excluded_order:
+        order of excluded interaction (2 for up to first bonds, 3 for up to second bonds...)
 
     Returns
     -------
@@ -160,6 +189,7 @@ def make_neighbor_list(
         rcut=rcut,
         self_interaction=self_interaction,
         mapping_batch=mapping_batch,
+        excluded_order=excluded_order,
     )
 
 
@@ -187,6 +217,7 @@ def validate_neighborlist(inp: Dict) -> bool:
         "cell_shifts": [torch.Tensor],
         "rcut": [float],
         "self_interaction": [bool],
+        "excluded_order": [int],
     }
     is_validated = False
     if isinstance(inp, Mapping):
