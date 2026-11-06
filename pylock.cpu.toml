@@ -1611,7 +1611,7 @@ name = "torch-cluster"
 version = "1.6.3"
 marker = "sys_platform == 'darwin'"
 index = "https://data.pyg.org/whl/torch-2.11.0+cpu.html"
-wheels = [{ url = "https://data.pyg.org/whl/torch-2.11.0%2Bcpu/torch_cluster-1.6.3-cp312-cp312-macosx_10_13_universal2.whl", hashes = {} }]
+wheels = [{ url = "https://data.pyg.org/whl/torch-2.11.0%2Bcpu/torch_cluster-1.6.3-cp312-cp312-macosx_10_13_universal2.whl", hashes = { sha256 = "49b55d6bf7af143ba4bf8fb3a330251e19b4217d80b1482de49c2dfea9f0f1bb" } }]
 
 [[packages]]
 name = "torch-cluster"
@@ -1619,9 +1619,9 @@ version = "1.6.3+pt211cpu"
 marker = "sys_platform != 'darwin'"
 index = "https://data.pyg.org/whl/torch-2.11.0+cpu.html"
 wheels = [
-    { url = "https://data.pyg.org/whl/torch-2.11.0%2Bcpu/torch_cluster-1.6.3%2Bpt211cpu-cp312-cp312-linux_aarch64.whl", hashes = {} },
-    { url = "https://data.pyg.org/whl/torch-2.11.0%2Bcpu/torch_cluster-1.6.3%2Bpt211cpu-cp312-cp312-linux_x86_64.whl", hashes = {} },
-    { url = "https://data.pyg.org/whl/torch-2.11.0%2Bcpu/torch_cluster-1.6.3%2Bpt211cpu-cp312-cp312-win_amd64.whl", hashes = {} },
+    { url = "https://data.pyg.org/whl/torch-2.11.0%2Bcpu/torch_cluster-1.6.3%2Bpt211cpu-cp312-cp312-linux_aarch64.whl", hashes = { sha256 = "fcafc61f28b41bac852ffb5e8220e3c1e1795caf295c23927404b46af5b7b9ff" } },
+    { url = "https://data.pyg.org/whl/torch-2.11.0%2Bcpu/torch_cluster-1.6.3%2Bpt211cpu-cp312-cp312-linux_x86_64.whl", hashes = { sha256 = "8acc2444f1f2a74eb1eaa1c30727993b3e73d9827a781e42125cd9134b256c2b" } },
+    { url = "https://data.pyg.org/whl/torch-2.11.0%2Bcpu/torch_cluster-1.6.3%2Bpt211cpu-cp312-cp312-win_amd64.whl", hashes = { sha256 = "0bf3c8e92fda0a8af1232c7cf8530a413adc27c977d23eb7904473f4fccd6c64" } },
 ]
 
 [[packages]]

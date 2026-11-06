@@ -47,6 +47,8 @@ PROPERTY_KEYS: Final[List[str]] = (ENERGY_KEY, FORCE_KEY)
 
 BATCH_KEY: Final[str] = "batch"
 
+EXCLUDED_PAIRS_KEY: Final[str] = "excluded_pairs"
+
 #: Make a list of allowed keys
 ALLOWED_KEYS: List[str] = [
     getattr(sys.modules[__name__], k)

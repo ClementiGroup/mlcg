@@ -633,9 +633,13 @@ class So3krates(nn.Module):
         normalize_sph (bool):
             Whether to normalize spherical harmonics, default is True.
         nls_distance_method:
-        Method for computing a neighbor list. Supported values are
-        `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`
-        and `custom_kernel`.
+            Method for computing a neighbor list. Supported values are
+            `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`
+            and `custom_kernel`.
+        excluded_order:
+            Order of excluded interaction in neighbor list computation:
+            1 no exclusion, 2 excludes up to first bonds, 3 excludes up to second bonds
+            and so on. Default is 1 meaning no exclusion.
     """
 
     name: Final[str] = "So3krates"
@@ -651,6 +655,7 @@ class So3krates(nn.Module):
         max_num_neighbors: int = 1000,
         normalize_sph: bool = True,
         nls_distance_method: str = "torch",
+        excluded_order: int = 1,
     ):
         super().__init__()
 
@@ -681,6 +686,12 @@ class So3krates(nn.Module):
         # Total number of spherical harmonic coefficients
         self.m_tot = sum(2 * l + 1 for l in degrees)
 
+        if excluded_order < 1:
+            raise ValueError(
+                f"excluded order must be at least 1 (no exclusion), you provided {excluded_order}"
+            )
+        self.excluded_order = excluded_order
+
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -696,6 +707,12 @@ class So3krates(nn.Module):
             neighbor_list = self.neighbor_list(
                 data, self.rbf_layer.cutoff.cutoff_upper, self.max_num_neighbors
             )[self.name]
+        if neighbor_list["excluded_order"] != getattr(
+            self, "excluded_order", 1
+        ):
+            raise ValueError(
+                f'Input has {neighbor_list["excluded_order"]} excluded_order while model has {getattr(self, "excluded_order", 1)}'
+            )
 
         edge_index = neighbor_list["index_mapping"]
 
@@ -738,6 +755,7 @@ class So3krates(nn.Module):
                 nl["order"] == 2
                 and nl["self_interaction"] is False
                 and nl["rcut"] == self.cutoff.cutoff_upper
+                and nl["excluded_order"] == getattr(self, "excluded_order", 1)
             ):
                 is_compatible = True
         return is_compatible
@@ -796,6 +814,10 @@ class StandardSo3krates(So3krates):
             Method for computing a neighbor list. Supported values are
             `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`
             and `custom_kernel`.
+        excluded_order:
+            Order of excluded interaction in neighbor list computation:
+            1 no exclusion, 2 excludes up to first bonds, 3 excludes up to second bonds
+            and so on. Default is 1 meaning no exclusion.
     """
 
     def __init__(
@@ -812,6 +834,7 @@ class StandardSo3krates(So3krates):
         max_num_neighbors: int = 1000,
         normalize_sph: bool = True,
         nls_distance_method: str = "torch",
+        excluded_order: int = 1,
     ):
         if num_interactions < 1:
             raise ValueError("At least one interaction block must be specified")
@@ -881,4 +904,5 @@ class StandardSo3krates(So3krates):
             max_num_neighbors,
             normalize_sph,
             nls_distance_method=nls_distance_method,
+            excluded_order=excluded_order,
         )

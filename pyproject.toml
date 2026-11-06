@@ -72,6 +72,7 @@ cu128 = [
     "cuequivariance-torch",
     "cuequivariance-ops-torch-cu12",
     "nvalchemi-toolkit-ops[torch]",
+    "openequivariance",
 ]
 cu130 = [
     "torch==2.11.0",
@@ -80,6 +81,7 @@ cu130 = [
     "cuequivariance-torch",
     "cuequivariance-ops-torch-cu13",
     "nvalchemi-toolkit-ops[torch]",
+    "openequivariance",
 ]
 rocm72 = [
     "torch==2.11.0",
