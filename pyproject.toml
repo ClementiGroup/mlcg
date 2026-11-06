@@ -90,6 +90,7 @@ cu132 = [
     "cuequivariance-torch",
     "cuequivariance-ops-torch-cu13",
     "nvalchemi-toolkit-ops[torch]",
+    "openequivariance",
 ]
 # pyg-lib-rocm is a third-party build (github.com/Looong01/pyg-rocm-build) that
 # re-publishes the same pyg_lib version for each torch release, so the
