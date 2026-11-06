@@ -6,6 +6,7 @@ from torch_geometric.nn import MessagePassing
 from torch_geometric.utils import scatter
 from ..neighbor_list.neighbor_list import (
     atomic_data2neighbor_list,
+    data_excluded_order,
     validate_neighborlist,
 )
 from ..data.atomic_data import AtomicData, ENERGY_KEY
@@ -688,11 +689,14 @@ class StandardSchNet(SupportsFlash, SchNet):
     ):
         """Filter tables of the blocks (:meth:`CFConv.build_table`); a block
         whose filter can't be tabulated keeps its filter network, with a
-        warning. Raises ``ValueError`` for a periodic cell the flash path
-        can't handle (see :func:`~mlcg.nn.kernels.pbc.check_cells`)."""
+        warning, and the CSR of ``data``'s excluded pairs, used while the
+        pairs keep their shape (other pairs of that shape give NaN
+        energies). Raises ``ValueError`` for a periodic cell the flash path
+        can't handle (see :func:`~mlcg.nn.kernels.pbc.check_cells`) or
+        excluded pairs of another order than the model's."""
         if not self._kernels:
             return
-        check_cells(data.get("cell"), data.get("pbc"), self.neighbors.cutoff)
+        self._prepare_search(data)
         for i, block in enumerate(self.interaction_blocks):
             try:
                 block.conv.build_table(self.rbf_layer, num_knots, tolerance)
@@ -751,9 +755,62 @@ class StandardSchNet(SupportsFlash, SchNet):
             data.get("cell"), data.get("pbc"), ptr.numel() - 1, data.pos.device
         )
         row_ptr, col, valid = self.neighbors(
-            data.pos.detach(), data.batch, ptr, cell, pbc
+            data.pos.detach(),
+            data.batch,
+            ptr,
+            cell,
+            pbc,
+            self._excluded_pairs(data),
         )
         return row_ptr, col, valid, cell, pbc
+
+    def _excluded_pairs(self, data: AtomicData) -> Optional[torch.Tensor]:
+        """The data's excluded pairs, ``None`` without them. Every call
+        checks only that they are present exactly when the model excludes
+        pairs (no host sync); their order is checked once, where the data
+        enters the flash path (:meth:`_check_flash_data`)."""
+        excluded = data.get("excluded_pairs")
+        order = getattr(self, "excluded_order", 1)
+        # branches, not `bool(excluded) != (order > 1)`: under
+        # torch.compile(dynamic=True) `order` is a SymInt
+        if excluded:
+            if order == 1:
+                raise ValueError(
+                    "The data has excluded pairs, the model excludes none "
+                    "(excluded_order 1)"
+                )
+            return excluded["index_mapping"]
+        if order > 1:
+            raise ValueError(
+                f"The model has excluded_order {order}, the data has no "
+                "excluded pairs"
+            )
+        return None
+
+    def drop_inference(self):
+        if hasattr(self, "neighbors"):
+            self.neighbors.store_exclusions(None)
+
+    def _prepare_search(self, data: AtomicData):
+        """Checks ``data`` (:meth:`_check_flash_data`) and stores the CSR
+        of its excluded pairs for the following calls (``data`` may be
+        an empty ``AtomicData`` for a model without exclusions)."""
+        self._check_flash_data(data)
+        pairs = self._excluded_pairs(data)
+        self.neighbors.store_exclusions(
+            pairs, 0 if pairs is None else data.pos.shape[0]
+        )
+
+    def _check_flash_data(self, data: AtomicData):
+        """Raises for data the flash path can't use: an unsupported cell, or
+        excluded pairs of another order than the model's (one host sync)."""
+        check_cells(data.get("cell"), data.get("pbc"), self.neighbors.cutoff)
+        order = getattr(self, "excluded_order", 1)
+        if data_excluded_order(data) != order:
+            raise ValueError(
+                f"The data has excluded_order {data_excluded_order(data)}, "
+                f"the model {order}"
+            )
 
     def _edge_distances(self, data: AtomicData, row_ptr, col, cell, pbc):
         """Sources, destinations and distances of the edges in row order (one
@@ -1099,9 +1156,7 @@ class RBFRegularizedSchNet(StandardSchNet):
         flash path can't handle (see :func:`~mlcg.nn.kernels.pbc.check_cells`).
         """
         if self._kernels:
-            check_cells(
-                data.get("cell"), data.get("pbc"), self.neighbors.cutoff
-            )
+            self._prepare_search(data)
 
     def flash_forward(self, data: AtomicData) -> AtomicData:
         """Flash path: the exact fused kernels on the radius graph of the

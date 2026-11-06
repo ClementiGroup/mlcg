@@ -1,3 +1,4 @@
+import copy
 import torch
 from torch_geometric.data.collate import collate
 import pytest
@@ -194,3 +195,92 @@ def test_flash_reaches_nested_modules():
     enable_flash_kernels(model)
     assert schnet._kernels and bonds._kernels
     assert all(block.conv._kernels for block in schnet.interaction_blocks)
+
+
+def _excluded_data(excluded_order):
+    """Three molecules, their bonds stored once each as excluded pairs."""
+    data_list = []
+    for name in ["CH3CN", "C6H6", "trans-butane"]:
+        mol = molecule(name)
+        extra = {}
+        if excluded_order > 1:
+            extra["excluded_pairs"] = {
+                "excluded_order": excluded_order,
+                "index_mapping": Topology.from_ase(mol).bonds2torch(),
+            }
+        data_list.append(
+            AtomicData.from_points(
+                pos=torch.tensor(mol.get_positions()).float(),
+                atom_types=torch.tensor(mol.get_atomic_numbers()),
+                **extra,
+            )
+        )
+    data, _, _ = collate(
+        AtomicData, data_list=data_list, increment=True, add_batch=True
+    )
+    return data
+
+
+def _excluded_models(excluded_order):
+    schnet = StandardSchNet(
+        standard_basis,
+        standard_cutoff,
+        [128, 128],
+        excluded_order=excluded_order,
+    )
+    normal = GradientsOut(schnet, targets=FORCE_KEY).float()
+    flash = enable_flash_kernels(copy.deepcopy(normal))
+    return normal, flash
+
+
+def test_flash_vs_normal_excluded_pairs():
+    """The flash graph leaves out the excluded pairs as the standard
+    neighbour list does: same energies and forces, which differ from those
+    without exclusions."""
+    data = _excluded_data(2)
+    normal, flash = _excluded_models(2)
+    out_normal = normal(copy.deepcopy(data)).out["SchNet"]
+    out_flash = flash(copy.deepcopy(data)).out["SchNet"]
+    for key in [ENERGY_KEY, FORCE_KEY]:
+        torch.testing.assert_close(out_flash[key], out_normal[key])
+    normal.model.excluded_order = 1
+    full = normal(_excluded_data(1)).out["SchNet"][ENERGY_KEY]
+    assert not torch.allclose(full, out_normal[ENERGY_KEY])
+
+
+@pytest.mark.parametrize("model_order, data_order", [(2, 1), (1, 2), (3, 2)])
+def test_flash_excluded_order_mismatch_raises(model_order, data_order):
+    """Preparing checks the order; every call checks that the pairs are
+    present exactly when the model excludes some (no host sync)."""
+    _, flash = _excluded_models(model_order)
+    data = _excluded_data(data_order)
+    with pytest.raises(ValueError):
+        flash.model.prepare_inference(data)
+    if (model_order > 1) != (data_order > 1):
+        with pytest.raises(ValueError):
+            flash(data)
+
+
+def test_stored_exclusions():
+    """prepare_inference stores the exclusion CSR: same graph as building
+    it per call; other pairs of the same shape give NaN; pairs of another
+    shape are built per call; train() drops it."""
+    _, flash = _excluded_models(2)
+    data = _excluded_data(2)
+    model = flash.model
+    pairs = data.excluded_pairs["index_mapping"]
+    args = model._radius_graph(data)[:2]
+    model.prepare_inference(data)
+    assert model.neighbors.exclusions is not None
+    row_ptr, col, valid, _, _ = model._radius_graph(data)
+    assert torch.equal(row_ptr, args[0]) and valid.item() == 1.0
+    assert torch.equal(col[: int(row_ptr[-1])], args[1][: int(row_ptr[-1])])
+    data.excluded_pairs["index_mapping"] = pairs + 1
+    assert model._radius_graph(data)[2].isnan()
+    data.excluded_pairs["index_mapping"] = pairs[:, 1:]
+    assert model._radius_graph(data)[2].item() == 1.0
+    flash.train()
+    assert model.neighbors.exclusions is None
+    _, flash = _excluded_models(1)
+    flash.model.prepare_inference(AtomicData())
+    assert flash.model.neighbors.exclusions is None

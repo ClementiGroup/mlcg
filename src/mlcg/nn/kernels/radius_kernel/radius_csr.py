@@ -1,11 +1,12 @@
 import math
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import torch
 import triton
 import triton.language as tl
 from torch.library import triton_op, wrap_triton
 
+from ..models.schnet.cfconv import csr_from_edge_index
 from ..pbc import cell_validity, minimum_image, minimum_image_vectors
 from ..utils import ensure_contiguous
 
@@ -24,11 +25,14 @@ def radius_csr_kernel(
     num_edges_ptr,
     cell_ptr,
     pbc_ptr,
+    excl_ptr,
+    excl_col_ptr,
     cutoff_sq,
     N,
     capacity,
     WRITE: tl.constexpr,
     PBC: tl.constexpr,
+    EXCLUDE: tl.constexpr,
     BLOCK_I: tl.constexpr,
     BLOCK_J: tl.constexpr,
 ):
@@ -37,6 +41,7 @@ def radius_csr_kernel(
     ``WRITE=False`` stores the row degrees in ``row_ptr[1:]``.
     ``WRITE=True`` reads the row offsets, writes each row's neighbours in
     increasing ``j`` and clamps ``row_ptr`` to ``capacity``.
+    ``EXCLUDE`` drops the ``j`` listed in row ``i`` of the exclusion CSR.
     """
     pid = tl.program_id(0)
     first = pid * BLOCK_I
@@ -50,6 +55,10 @@ def radius_csr_kernel(
     xi = tl.load(pos_ptr + i * 3 + 0, mask=i_ok, other=0.0)
     yi = tl.load(pos_ptr + i * 3 + 1, mask=i_ok, other=0.0)
     zi = tl.load(pos_ptr + i * 3 + 2, mask=i_ok, other=0.0)
+    if EXCLUDE:
+        excl_start = tl.load(excl_ptr + i, mask=i_ok, other=0)
+        num_excl = tl.load(excl_ptr + i + 1, mask=i_ok, other=0) - excl_start
+        max_excl = tl.max(num_excl)
 
     if WRITE:
         start = tl.load(row_ptr + i, mask=i_ok, other=0)
@@ -72,6 +81,14 @@ def radius_csr_kernel(
             & (i[:, None] != j[None, :])
             & (dx * dx + dy * dy + dz * dz < cutoff_sq)
         )
+        if EXCLUDE:
+            for k in range(0, max_excl):
+                excluded = tl.load(
+                    excl_col_ptr + excl_start + k,
+                    mask=i_ok & (k < num_excl),
+                    other=-1,
+                )
+                is_edge &= excluded[:, None] != j[None, :]
         hits = is_edge.to(tl.int32)
         if WRITE:
             slot = cursor[:, None] + tl.cumsum(hits, axis=1) - hits
@@ -101,11 +118,14 @@ def radius_csr(
     capacity: int,
     cell: torch.Tensor,
     pbc: torch.Tensor,
+    excl_ptr: torch.Tensor,
+    excl_col: torch.Tensor,
 ) -> List[torch.Tensor]:
     """Radius graph as a destination CSR, without host synchronization.
 
     Row ``i`` holds every ``j != i`` of the same graph with
-    ``|pos[j] - pos[i]| < cutoff``, sorted by ``j``. Output shapes depend
+    ``|pos[j] - pos[i]| < cutoff`` that row ``i`` of the exclusions doesn't
+    list, sorted by ``j``. Output shapes depend
     only on ``N`` and ``capacity``, so the op is CUDA-graph capturable.
 
     Parameters
@@ -124,6 +144,9 @@ def radius_csr(
         ``(B, 9)`` reduced cells and ``(B, 3)`` periodic flags (float) of
         :func:`~mlcg.nn.kernels.pbc.periodic_cells`, or empty tensors for no
         periodic boundary conditions (minimum image, see that module).
+    excl_ptr, excl_col : torch.Tensor
+        ``(N + 1,)`` and ``(X,)`` int32 CSR of the excluded neighbours of each
+        node (:func:`exclusion_csr`), or empty tensors for no exclusions.
 
     Returns
     -------
@@ -153,11 +176,14 @@ def radius_csr(
             num_edges,
             cell,
             pbc,
+            excl_ptr,
+            excl_col,
             cutoff * cutoff,
             N,
             capacity,
             WRITE=write,
             PBC=cell.numel() > 0,
+            EXCLUDE=excl_ptr.numel() > 0,
             BLOCK_I=BLOCK_I,
             BLOCK_J=BLOCK_J,
             num_warps=NUM_WARPS,
@@ -166,7 +192,7 @@ def radius_csr(
 
 
 @radius_csr.register_kernel("cpu")
-def _(pos, batch, ptr, cutoff, capacity, cell, pbc):
+def _(pos, batch, ptr, cutoff, capacity, cell, pbc, excl_ptr, excl_col):
     N = pos.shape[0]
     graph = batch[:, None].expand(N, N).reshape(-1)
     d = (pos[None, :, :] - pos[:, None, :]).reshape(-1, 3)
@@ -176,6 +202,9 @@ def _(pos, batch, ptr, cutoff, capacity, cell, pbc):
         & ~torch.eye(N, dtype=torch.bool)
         & ((d * d).sum(-1) < cutoff * cutoff)
     )
+    if excl_ptr.numel():
+        rows = torch.repeat_interleave(torch.arange(N), excl_ptr.diff())
+        is_edge[rows, excl_col.long()] = False
     cols = is_edge.nonzero()[:, 1].to(torch.int32)
     row_ptr = torch.zeros(N + 1, dtype=torch.int32)
     row_ptr[1:] = is_edge.sum(1).cumsum(0)
@@ -184,6 +213,21 @@ def _(pos, batch, ptr, cutoff, capacity, cell, pbc):
     col[:kept] = cols[:kept]
     num_edges = torch.tensor([cols.numel()], dtype=torch.int32)
     return [row_ptr.clamp(max=capacity), col, num_edges]
+
+
+def exclusion_csr(
+    pairs: Optional[torch.Tensor], num_nodes: int, device: torch.device
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    """``(excl_ptr, excl_col)`` of :func:`radius_csr` from ``[2, X]``
+    unordered pairs (each excludes both directions), or empty tensors for
+    ``None``."""
+    if pairs is None:
+        empty = torch.empty(0, dtype=torch.int32, device=device)
+        return empty, empty
+    row_ptr, col, _ = csr_from_edge_index(
+        torch.cat([pairs, pairs.flip(0)], dim=1), num_nodes
+    )
+    return row_ptr, col
 
 
 def max_edges(ptr: torch.Tensor) -> int:
@@ -267,6 +311,38 @@ class RadiusCSR(torch.nn.Module):
         self.num_nodes = -1
         self.capacity = 0
         self.check_every_call = False
+        self.exclusions = None
+
+    def store_exclusions(
+        self, pairs: Optional[torch.Tensor], num_nodes: int = 0
+    ):
+        """Builds the exclusion CSR of ``pairs`` once, for the following
+        calls with these pairs (fixed during a simulation); ``None`` drops
+        it."""
+        self.exclusions = (
+            None
+            if pairs is None
+            else (
+                pairs.clone(),
+                num_nodes,
+                *exclusion_csr(pairs, num_nodes, pairs.device),
+            )
+        )
+
+    def _exclusions(self, pairs, num_nodes, device):
+        """``(excl_ptr, excl_col)`` of ``pairs`` and, if the stored CSR is
+        used, whether ``pairs`` differ from the stored ones (on the device).
+        The stored CSR is used for pairs of its shape and number of nodes,
+        otherwise the CSR is built now."""
+        stored = self.exclusions
+        if (
+            pairs is None
+            or stored is None
+            or stored[0].shape != pairs.shape
+            or stored[1] != num_nodes
+        ):
+            return exclusion_csr(pairs, num_nodes, device), None
+        return stored[2:], (stored[0] != pairs).any()
 
     @torch.compiler.disable
     def reserve(self, pos, batch, ptr, cell, pbc, num_edges=None):
@@ -277,9 +353,10 @@ class RadiusCSR(torch.nn.Module):
             self.capacity = max(1, limit)
             return
         if num_edges is None:
-            num_edges = radius_csr(pos, batch, ptr, self.cutoff, 0, cell, pbc)[
-                2
-            ]
+            no_exclusions = exclusion_csr(None, pos.shape[0], pos.device)
+            num_edges = radius_csr(
+                pos, batch, ptr, self.cutoff, 0, cell, pbc, *no_exclusions
+            )[2]
         padded = math.ceil(int(num_edges) * (1 + self.margin) / self.align)
         self.capacity = max(1, min(padded * self.align, limit))
 
@@ -297,20 +374,29 @@ class RadiusCSR(torch.nn.Module):
         ptr: torch.Tensor,
         cell: torch.Tensor,
         pbc: torch.Tensor,
+        excluded_pairs: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """``cell``, ``pbc``: from :func:`~mlcg.nn.kernels.pbc.periodic_cells`
         (empty without periodic boundary conditions). An unsupported cell
-        also makes ``valid`` NaN."""
+        also makes ``valid`` NaN. ``excluded_pairs``: ``[2, X]`` unordered
+        pairs left out of the graph (the capacity is reserved without
+        them); pairs of the shape of the stored ones (:meth:`store_exclusions`)
+        but another content also make ``valid`` NaN."""
         if pos.shape[0] != self.num_nodes:
             self.reserve(pos, batch, ptr, cell, pbc)
+        exclusions, changed = self._exclusions(
+            excluded_pairs, pos.shape[0], pos.device
+        )
         row_ptr, col, num_edges = radius_csr(
-            pos, batch, ptr, self.cutoff, self.capacity, cell, pbc
+            pos, batch, ptr, self.cutoff, self.capacity, cell, pbc, *exclusions
         )
         if self.check_every_call and self._grow_if_needed(
             pos, batch, ptr, cell, pbc, num_edges
         ):
-            return self.forward(pos, batch, ptr, cell, pbc)
+            return self.forward(pos, batch, ptr, cell, pbc, excluded_pairs)
         ok = num_edges <= self.capacity
+        if changed is not None:
+            ok = ok & ~changed
         if cell.numel():
             ok = ok & cell_validity(cell, pbc, self.cutoff).all()
         valid = torch.where(ok, 1.0, float("nan"))

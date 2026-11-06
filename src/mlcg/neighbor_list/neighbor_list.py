@@ -32,6 +32,20 @@ def _pair_key(index_mapping: torch.Tensor, num_nodes) -> torch.Tensor:
     return low * num_nodes + high
 
 
+def data_excluded_order(data) -> int:
+    """``excluded_order`` of the data's excluded pairs, 1 without them.
+    Raises if the structures of a batch disagree."""
+    excluded = data.get("excluded_pairs")
+    if not excluded:
+        return 1
+    orders = torch.as_tensor(excluded["excluded_order"]).unique()
+    if orders.numel() != 1:
+        raise ValueError(
+            f"Inconsistent excluded_order within batch: {orders.tolist()}"
+        )
+    return int(orders.item())
+
+
 def atomic_data2neighbor_list(
     data,
     rcut: float,
@@ -87,16 +101,9 @@ def atomic_data2neighbor_list(
 
     mapping = torch.cat([idx_i.unsqueeze(0), idx_j.unsqueeze(0)], dim=0)
     order = mapping.shape[0]
-    excluded_order = 1
-    # Eventually remove excluded pairs
+    excluded_order = data_excluded_order(data)
     excluded = data.get("excluded_pairs")
     if excluded:
-        excluded_order = torch.as_tensor(excluded["excluded_order"]).unique()
-        if excluded_order.numel() != 1:
-            raise ValueError(
-                f"Inconsistent excluded_order within batch: {excluded_order.tolist()}"
-            )
-        excluded_order = int(excluded_order.item())
         num_nodes = data.n_atoms.sum()
         excluded_key = _pair_key(excluded["index_mapping"], num_nodes)
         edge_key = _pair_key(mapping, num_nodes)
