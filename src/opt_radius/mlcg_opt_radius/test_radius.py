@@ -7,7 +7,7 @@ from typing import NamedTuple
 from .utils import to_set, enforce_mnn, remove_loop, reference_index
 from torch.autograd import gradcheck, gradgradcheck
 
-from torch_cluster import radius_graph as rgo
+from mlcg.neighbor_list.torch_impl import safe_radius_graph as rgo
 
 skip_test = False
 try:

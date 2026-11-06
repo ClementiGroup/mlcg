@@ -53,7 +53,7 @@ def nvalchemi_naive_neighbor_list(
     num_workers:
         Not used, leaved for compatiblity issues.
     max_number_neighbors
-        kwarg for radius_graph function from torch_cluster package,
+        kwarg for radius_graph function from pyg_lib package,
         specifying the maximum number of neighbors for each atom
 
     Returns
@@ -136,7 +136,7 @@ def nvalchemi_cell_neighbor_list(
     num_workers:
         Not used, leaved for compatiblity issues.
     max_number_neighbors
-        kwarg for radius_graph function from torch_cluster package,
+        kwarg for radius_graph function from pyg_lib package,
         specifying the maximum number of neighbors for each atom
 
     Returns
