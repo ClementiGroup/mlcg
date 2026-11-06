@@ -67,6 +67,10 @@ class SchNet(torch.nn.Module):
         Method for computing a neighbor list. Supported values are
         `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`
         and `custom_kernel`.
+    excluded_order:
+        Order of excluded interaction in neighbor list computation:
+        1 no exclusion, 2 excludes up to first bonds, 3 excludes up to second bonds
+        and so on. Default is 1 meaning no exclusion.
     """
 
     name: Final[str] = "SchNet"
@@ -80,6 +84,7 @@ class SchNet(torch.nn.Module):
         self_interaction: bool = False,
         max_num_neighbors: int = 1000,
         nls_distance_method: str = "torch",
+        excluded_order: int = 1,
     ):
         super(SchNet, self).__init__()
 
@@ -103,6 +108,11 @@ class SchNet(torch.nn.Module):
             )
         self.nls_distance_method = nls_distance_method
         self.output_network = output_network
+        if excluded_order < 1:
+            raise ValueError(
+                f"excluded order must be at least 1 (no exclusion), you provided {excluded_order}"
+            )
+        self.excluded_order = excluded_order
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -139,6 +149,12 @@ class SchNet(torch.nn.Module):
                 self.rbf_layer.cutoff.cutoff_upper,
                 self.max_num_neighbors,
             )[self.name]
+        if neighbor_list["excluded_order"] != getattr(
+            self, "excluded_order", 1
+        ):
+            raise ValueError(
+                f'Input has {neighbor_list["excluded_order"]} excluded_order while model has {getattr(self, "excluded_order", 1)}'
+            )
 
         edge_index = neighbor_list["index_mapping"]
         distances = compute_distances(
@@ -168,6 +184,7 @@ class SchNet(torch.nn.Module):
                 nl["order"] == 2
                 and nl["self_interaction"] == False
                 and nl["rcut"] == self.cutoff.cutoff_upper
+                and nl["excluded_order"] == getattr(self, "excluded_order", 1)
             ):
                 is_compatible = True
         return is_compatible
@@ -404,6 +421,10 @@ class StandardSchNet(SchNet):
         Method for computing a neighbor list. Supported values are
         `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`
         and `custom_kernel`.
+    excluded_order:
+        Order of excluded interaction in neighbor list computation:
+        1 no exclusion, 2 excludes up to first bonds, 3 excludes up to second bonds
+        and so on. Default is 1 meaning no exclusion.
 
     """
 
@@ -420,6 +441,7 @@ class StandardSchNet(SchNet):
         max_num_neighbors: int = 1000,
         aggr: str = "add",
         nls_distance_method: str = "torch",
+        excluded_order: int = 1,
     ):
         if num_interactions < 1:
             raise ValueError("At least one interaction block must be specified")
@@ -472,6 +494,7 @@ class StandardSchNet(SchNet):
             output_network,
             max_num_neighbors=max_num_neighbors,
             nls_distance_method=nls_distance_method,
+            excluded_order=excluded_order,
         )
 
 
@@ -524,6 +547,10 @@ class AttentiveSchNet(SchNet):
         Method for computing a neighbor list. Supported values are
         `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`
         and `custom_kernel`.
+    excluded_order:
+        Order of excluded interaction in neighbor list computation:
+        1 no exclusion, 2 excludes up to first bonds, 3 excludes up to second bonds
+        and so on. Default is 1 meaning no exclusion.
 
     """
 
@@ -549,6 +576,7 @@ class AttentiveSchNet(SchNet):
         aggr: str = "add",
         attention_version: str = "normal",
         nls_distance_method: str = "torch",
+        excluded_order: int = 1,
     ):
         if layer_widths is None:
             layer_widths = [128, 128]
@@ -671,6 +699,7 @@ class AttentiveSchNet(SchNet):
             output_network=output_network,
             max_num_neighbors=max_num_neighbors,
             nls_distance_method=nls_distance_method,
+            excluded_order=excluded_order,
         )
 
 
@@ -705,6 +734,7 @@ class RBFRegularizedSchNet(StandardSchNet):
         max_num_neighbors: int = 1000,
         aggr: str = "add",
         nls_distance_method: str = "torch",
+        excluded_order: int = 1,
         independent_regularizations: bool = False,
     ):
 
@@ -726,6 +756,7 @@ class RBFRegularizedSchNet(StandardSchNet):
             max_num_neighbors=max_num_neighbors,
             aggr=aggr,
             nls_distance_method=nls_distance_method,
+            excluded_order=excluded_order,
         )
 
     def forward(self, data: AtomicData) -> AtomicData:
@@ -740,6 +771,12 @@ class RBFRegularizedSchNet(StandardSchNet):
                 self.rbf_layer.cutoff.cutoff_upper,
                 self.max_num_neighbors,
             )[self.name]
+        if neighbor_list["excluded_order"] != getattr(
+            self, "excluded_order", 1
+        ):
+            raise ValueError(
+                f'Input has {neighbor_list["excluded_order"]} excluded_order while model has {getattr(self, "excluded_order", 1)}'
+            )
 
         edge_index = neighbor_list["index_mapping"]
         distances = compute_distances(
