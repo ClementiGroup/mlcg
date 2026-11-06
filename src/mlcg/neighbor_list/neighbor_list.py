@@ -89,7 +89,8 @@ def atomic_data2neighbor_list(
     order = mapping.shape[0]
     excluded_order = 1
     # Eventually remove excluded pairs
-    if excluded := data.get("excluded_pairs"):
+    excluded = data.get("excluded_pairs")
+    if excluded:
         excluded_order = torch.as_tensor(excluded["excluded_order"]).unique()
         if excluded_order.numel() != 1:
             raise ValueError(
