@@ -1,4 +1,4 @@
-from .radius_kernel import RadiusCSR, max_edges, radius, radius_csr
+from .radius_kernel import RadiusCSR, max_edges, radius_csr
 from .models import (
     build_filter_table,
     csr_from_edge_index,
@@ -12,7 +12,6 @@ from .models import (
 
 __all__ = [
     "csr_from_edge_index",
-    "radius",
     "radius_csr",
     "RadiusCSR",
     "max_edges",

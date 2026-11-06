@@ -7,10 +7,11 @@ from torch_geometric.data.collate import collate
 
 from mlcg.data.atomic_data import AtomicData
 from mlcg.data._keys import ENERGY_KEY, FORCE_KEY
+from mlcg.neighbor_list.neighbor_list import atomic_data2neighbor_list
 from mlcg.nn.cutoff import CosineCutoff, IdentityCutoff, ShiftedCosineCutoff
 from mlcg.nn.flash_models import enable_flash_kernels, prepare_for_inference
 from mlcg.nn.gradients import GradientsOut
-from mlcg.nn.kernels import RadiusCSR, radius
+from mlcg.nn.kernels import RadiusCSR
 from mlcg.nn.kernels.pbc import periodic_cells
 from mlcg.nn.radial_basis import (
     ExpNormalBasis,
@@ -346,12 +347,12 @@ def csr_sets(row_ptr, col):
     ]
 
 
-def test_radius_csr_matches_radius():
+def test_radius_csr_matches_standard_neighbor_list():
     data = random_batch().to("cuda")
     row_ptr, col, valid = RadiusCSR(CUTOFF)(
         data.pos, data.batch, data.ptr, *NO_CELL
     )
-    edge_index, _, _ = radius(data.pos, data.batch, CUTOFF)
+    edge_index = atomic_data2neighbor_list(data, CUTOFF)["index_mapping"]
     expected = [[] for _ in range(data.pos.shape[0])]
     for src, dst in edge_index.t().tolist():
         expected[dst].append(src)
