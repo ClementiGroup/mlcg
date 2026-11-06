@@ -1255,12 +1255,12 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/0c/c3/44f3fbbfa403ea2
 
 [[packages]]
 name = "pyg-lib"
-version = "0.9.0+pt211cpu"
-index = "https://data.pyg.org/whl/torch-2.11.0+cpu.html"
+version = "0.9.0+pt213cpu"
+index = "https://data.pyg.org/whl/torch-2.13.0+cpu.html"
 wheels = [
-    { url = "https://data.pyg.org/whl/torch-2.11.0%2Bcpu/pyg_lib-0.9.0%2Bpt211cpu-cp310-abi3-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hashes = { sha256 = "956c5be0c9a56417f8610d4652115e90071688e2d1329d6f4e5cde457ee1dd7d" } },
-    { url = "https://data.pyg.org/whl/torch-2.11.0%2Bcpu/pyg_lib-0.9.0%2Bpt211cpu-cp310-abi3-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hashes = { sha256 = "2da8e7998dfda3001e03b34808cd01f434baa50e0456bd1f7488a9cce90dd3c9" } },
-    { url = "https://data.pyg.org/whl/torch-2.11.0%2Bcpu/pyg_lib-0.9.0%2Bpt211cpu-cp310-abi3-win_amd64.whl", hashes = { sha256 = "6223704272ab1881e858304b14b42290f26bf2689e39bfa823f436fdabac1892" } },
+    { url = "https://data.pyg.org/whl/torch-2.13.0%2Bcpu/pyg_lib-0.9.0%2Bpt213cpu-cp310-abi3-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hashes = {} },
+    { url = "https://data.pyg.org/whl/torch-2.13.0%2Bcpu/pyg_lib-0.9.0%2Bpt213cpu-cp310-abi3-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hashes = {} },
+    { url = "https://data.pyg.org/whl/torch-2.13.0%2Bcpu/pyg_lib-0.9.0%2Bpt213cpu-cp310-abi3-win_amd64.whl", hashes = {} },
 ]
 
 [[packages]]
@@ -1599,21 +1599,22 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/33/f0/3fe8c6e69135a84
 
 [[packages]]
 name = "torch"
-version = "2.11.0"
+version = "2.13.0"
 marker = "sys_platform == 'darwin'"
 index = "https://download.pytorch.org/whl/cpu"
-wheels = [{ url = "https://download-r2.pytorch.org/whl/cpu/torch-2.11.0-cp312-cp312-macosx_11_0_arm64.whl", upload-time = 2026-03-23T15:16:58Z, hashes = { sha256 = "43b35116802c85fb88d99f4a396b8bd4472bfca1dd82e69499e5a4f9b8b4e252" } }]
+wheels = [{ url = "https://download-r2.pytorch.org/whl/cpu/torch-2.13.0-cp312-cp312-macosx_14_0_arm64.whl", upload-time = 2026-07-08T12:26:18Z, hashes = { sha256 = "2fe228aba290d14b9f31b049be550dbd469c3fd3013d7a19705b30454da97027" } }]
 
 [[packages]]
 name = "torch"
-version = "2.11.0+cpu"
+version = "2.13.0+cpu"
 marker = "sys_platform != 'darwin'"
 index = "https://download.pytorch.org/whl/cpu"
 wheels = [
-    { url = "https://download-r2.pytorch.org/whl/cpu/torch-2.11.0%2Bcpu-cp312-cp312-linux_s390x.whl", upload-time = 2026-04-28T00:06:06Z, hashes = { sha256 = "2db3ae5404e32cb42b5fcbd94f13607761eaec0cf1687fde95095289d1e26cfb" } },
-    { url = "https://download-r2.pytorch.org/whl/cpu/torch-2.11.0%2Bcpu-cp312-cp312-manylinux_2_28_aarch64.whl", upload-time = 2026-04-28T00:06:14Z, hashes = { sha256 = "70ecb2659af6373b7c5336e692e665605b0201ea21ff51aaea47e1d75ea6b5aa" } },
-    { url = "https://download-r2.pytorch.org/whl/cpu/torch-2.11.0%2Bcpu-cp312-cp312-manylinux_2_28_x86_64.whl", upload-time = 2026-04-28T00:06:24Z, hashes = { sha256 = "f82e2ae20c1545bb03997d1cc3143d94e14b800038669ee1aca45808a9acc338" } },
-    { url = "https://download-r2.pytorch.org/whl/cpu/torch-2.11.0%2Bcpu-cp312-cp312-win_amd64.whl", upload-time = 2026-04-28T00:06:34Z, hashes = { sha256 = "1abeaa46fa7532ed35ed79146f4de5d7a9d4b30462c98052ea4ddfe781ea3eca" } },
+    { url = "https://download-r2.pytorch.org/whl/cpu/torch-2.13.0%2Bcpu-cp312-cp312-linux_s390x.whl", upload-time = 2026-07-08T19:28:41Z, hashes = { sha256 = "ffadde149901c8afa138daa38d898264003cfcf1a3336ca5cd964b5af227d867" } },
+    { url = "https://download-r2.pytorch.org/whl/cpu/torch-2.13.0%2Bcpu-cp312-cp312-manylinux_2_28_aarch64.whl", upload-time = 2026-07-08T19:28:51Z, hashes = { sha256 = "6f307c2c32d764ffc6ff6893b801fad6d4752f3e67966cb8abf1843427c02604" } },
+    { url = "https://download-r2.pytorch.org/whl/cpu/torch-2.13.0%2Bcpu-cp312-cp312-manylinux_2_28_x86_64.whl", upload-time = 2026-07-08T19:29:03Z, hashes = { sha256 = "4ca4a9394b0c771238a4f73590fdbbc4debad85ed0fa63d026ae1b085da7d6e2" } },
+    { url = "https://download-r2.pytorch.org/whl/cpu/torch-2.13.0%2Bcpu-cp312-cp312-win_amd64.whl", upload-time = 2026-07-08T19:29:15Z, hashes = { sha256 = "a8b450c1e58e5800e5b4691dac412f8d2d65a1dc3298166f91596603a3531e6f" } },
+    { url = "https://download-r2.pytorch.org/whl/cpu/torch-2.13.0%2Bcpu-cp312-cp312-win_arm64.whl", upload-time = 2026-07-08T19:29:21Z, hashes = { sha256 = "fa0762705b933624d59f6823db9ce7ec2e35b3e1e9c319c9db51fbeecfc3e319" } },
 ]
 
 [[packages]]
