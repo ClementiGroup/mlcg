@@ -241,7 +241,9 @@ class NeighborSharingSumOut(SumOut):
         # in the original entries so they are not rebuilt every call
         for name in shared_names:
             if name in original_nl and "exclusion_table" in new_nl[name]:
-                original_nl[name]["exclusion_table"] = new_nl[name]["exclusion_table"]
+                original_nl[name]["exclusion_table"] = new_nl[name][
+                    "exclusion_table"
+                ]
         data.neighbor_list = original_nl
         return data
 
