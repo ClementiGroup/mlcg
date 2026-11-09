@@ -214,6 +214,12 @@ class RadiusCSR(torch.nn.Module):
     lists were truncated (e.g. a new batch with the same number of nodes
     but larger graphs), to multiply into the energy so that it and the
     forces can never be wrong unnoticed.
+
+    ``num_nodes`` and ``capacity`` are kept as the lengths of two one-element
+    stride-0 CPU tensors, not as python ints: ``torch.compile`` treats a
+    module's ints as constants, so each new number of nodes (molecule, batch
+    size) or regrown capacity would recompile, while tensor lengths are
+    symbolic with ``dynamic=True``. Only their lengths are ever read.
     """
 
     def __init__(
@@ -228,9 +234,39 @@ class RadiusCSR(torch.nn.Module):
         self.margin = margin
         self.align = align
         self.all_pairs_budget = all_pairs_budget
-        self.num_nodes = -1
+        self.num_nodes = 0
         self.capacity = 0
         self.check_every_call = False
+
+    @staticmethod
+    def _length(value: int) -> torch.Tensor:
+        return torch.empty(1).expand(max(value, 0))
+
+    @property
+    def num_nodes(self) -> int:
+        """Number of nodes the capacity was reserved for (0: none yet)."""
+        return self._num_nodes.shape[0]
+
+    @num_nodes.setter
+    def num_nodes(self, value: int):
+        self._num_nodes = self._length(value)
+
+    @property
+    def capacity(self) -> int:
+        """Number of ``col`` slots."""
+        return self._capacity.shape[0]
+
+    @capacity.setter
+    def capacity(self, value: int):
+        self._capacity = self._length(value)
+
+    def __setstate__(self, state):
+        # Pickled before num_nodes and capacity became tensor lengths
+        old = {k: state.pop(k) for k in ("num_nodes", "capacity") if k in state}
+        super().__setstate__(state)
+        if old:
+            self.num_nodes = old.get("num_nodes", 0)
+            self.capacity = old.get("capacity", 0)
 
     @torch.compiler.disable
     def reserve(self, pos, batch, ptr, cell, pbc, num_edges=None):

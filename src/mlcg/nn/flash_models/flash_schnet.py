@@ -59,7 +59,13 @@ def _filter_table(conv, rbf_layer, cutoff_upper, num_knots, tolerance):
 
 
 def _drop_tables_hook(module, incompatible_keys):
-    module.drop_tables()
+    """Loaded weights invalidate the tables: rebuilt if they are used in
+    training, dropped otherwise."""
+    if module.tables_in_training:
+        num_knots, tolerance = module._table_options
+        module.build_tables(num_knots, tolerance, in_training=True)
+    else:
+        module.drop_tables()
 
 
 class FlashSchNet(SchNet):
@@ -69,11 +75,16 @@ class FlashSchNet(SchNet):
     This implementation replaces the standard message-passing kernels
     with fused Triton kernels. After :meth:`build_tables`, in eval mode, every
     interaction filter is read from a cubic Hermite table instead of being
-    evaluated, with a sync-free neighbor search (inference only; periodic
-    cells as in :mod:`~mlcg.nn.kernels.pbc`). In train
-    mode, or without tables, it runs the filter networks (trainable, double
-    backward). ``train()`` and loading a state dict drop the tables.
+    evaluated, with a sync-free neighbor search (periodic cells as in
+    :mod:`~mlcg.nn.kernels.pbc`). In train mode, or without tables, it runs
+    the filter networks (trainable, double backward). ``train()`` and loading
+    a state dict drop the tables, unless they were built with
+    ``in_training=True``: then they are used in train mode too, for training
+    the other weights with frozen filters (first-order gradients only).
     """
+
+    # class attribute, so that models pickled before it existed default to it
+    tables_in_training = False
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -84,6 +95,8 @@ class FlashSchNet(SchNet):
         self,
         num_knots: Optional[int] = None,
         tolerance: float = TABLE_TOLERANCE,
+        *,
+        in_training: bool = False,
     ) -> "FlashSchNet":
         """Tabulate every interaction filter from the current weights
         (float64, cubic Hermite over the cutoff), each on the fewest
@@ -92,8 +105,15 @@ class FlashSchNet(SchNet):
         can't meet ``tolerance`` (e.g. non-smooth activations) or if
         ``tolerance`` is below the float32 floor. The tables reflect the
         weights at this call: weights changed by hand afterwards need another
-        call (``train()`` and ``load_state_dict`` drop the tables)."""
+        call (``train()`` and ``load_state_dict`` drop the tables).
+
+        With ``in_training``, the tables are also used in train mode, kept by
+        ``train()`` and rebuilt by ``load_state_dict``. The filter networks,
+        radial basis and cutoff must then be frozen (``ValueError``
+        otherwise), here and at every ``train()``."""
         check_tolerance(tolerance)
+        if in_training:
+            self._check_filters_frozen()
         cutoff_upper = float(self.rbf_layer.cutoff.cutoff_upper)
         tables = [
             _filter_table(
@@ -103,23 +123,42 @@ class FlashSchNet(SchNet):
         ]
         for block, table in zip(self.interaction_blocks, tables):
             block.conv.table = table
+        self.tables_in_training = in_training
+        self._table_options = (num_knots, tolerance)
         return self
 
     def drop_tables(self):
         for block in self.interaction_blocks:
             block.conv.table = None
+        self.tables_in_training = False
 
     @property
     def tabulated(self) -> bool:
         return self.interaction_blocks[0].conv.table is not None
 
+    def _check_filters_frozen(self):
+        """The tables are a function of these weights only."""
+        modules = [self.rbf_layer] + [
+            m
+            for block in self.interaction_blocks
+            for m in (block.conv.filter_network, block.conv.cutoff)
+        ]
+        if any(p.requires_grad for m in modules for p in m.parameters()):
+            raise ValueError(
+                "Tables in training need frozen filter networks, radial "
+                "basis and cutoff"
+            )
+
     def train(self, mode: bool = True) -> "FlashSchNet":
         if mode:
-            self.drop_tables()
+            if self.tables_in_training:
+                self._check_filters_frozen()
+            else:
+                self.drop_tables()
         return super().train(mode)
 
     def forward(self, data: AtomicData) -> AtomicData:
-        if not self.training and self.tabulated:
+        if self.tabulated and (self.tables_in_training or not self.training):
             return self._forward_tabulated(data)
         return self._forward_filters(data)
 

@@ -1,4 +1,5 @@
 import copy
+import pickle
 
 import pytest
 import torch
@@ -197,6 +198,88 @@ def test_train_and_load_state_dict_drop_tables():
     assert not flash.tabulated
 
 
+def freeze_filters(model):
+    """Freeze what the tables are made of (filter networks, radial basis,
+    cutoff), as when training the other weights with tables."""
+    model.rbf_layer.requires_grad_(False)
+    for block in model.interaction_blocks:
+        block.conv.filter_network.requires_grad_(False)
+        block.conv.cutoff.requires_grad_(False)
+    return model
+
+
+def training_tables(standard):
+    flash = StandardFlashSchNet.flash_from_standard(standard)
+    return freeze_filters(flash).build_tables(in_training=True)
+
+
+def energy_gradients(model, data, dtype, pos_grad=False):
+    """Energies, in train mode, and the gradients of their sum wrt the
+    trainable weights."""
+    model = copy.deepcopy(model).to("cuda", dtype).train()
+    batch = copy.deepcopy(data).to("cuda")
+    batch.pos = batch.pos.to(dtype).requires_grad_(pos_grad)
+    batch.out = {}
+    energy = model(batch).out[model.name][ENERGY_KEY]
+    weights = [p for p in model.parameters() if p.requires_grad]
+    gradients = torch.autograd.grad(energy.sum(), weights)
+    return energy.detach().double(), [g.double() for g in gradients]
+
+
+def test_tables_in_training_match_float64():
+    """With frozen filters, train mode reads the tables (same energies as
+    in eval mode) and gives the weight gradients of the standard model."""
+    torch.backends.cuda.matmul.allow_tf32 = False
+    standard = freeze_filters(build_schnet("exp_normal", "cosine", "tanh"))
+    flash = training_tables(standard.cuda())
+    data = random_batch()
+    e_ref, g_ref = energy_gradients(standard, data, torch.float64)
+    e, g = energy_gradients(flash, data, torch.float32)
+    e_eval, _ = energy_forces(flash, data, torch.float32)
+    # same kernels, but the GPU sums are not reproducible to the last bit
+    torch.testing.assert_close(e, e_eval, rtol=1e-6, atol=1e-5)
+    assert (e - e_ref).abs().max() <= 1e-4 * e_ref.abs().max() + 1e-5
+    assert len(g) == len(g_ref)
+    for a, b in zip(g, g_ref):
+        assert (a - b).norm() <= 1e-4 * b.norm()
+
+
+def test_tables_in_training_survive_train_and_load_state_dict():
+    flash = training_tables(build_schnet("exp_normal", "cosine", "tanh").cuda())
+    tables = [b.conv.table.clone() for b in flash.interaction_blocks]
+    flash.train()
+    assert flash.tabulated
+    flash.load_state_dict(flash.state_dict())
+    for block, table in zip(flash.interaction_blocks, tables):
+        torch.testing.assert_close(block.conv.table, table, rtol=0, atol=0)
+    flash.drop_tables()
+    flash.build_tables().train()
+    assert not flash.tabulated
+
+
+def test_tables_in_training_need_frozen_filters():
+    flash = StandardFlashSchNet.flash_from_standard(
+        build_schnet("exp_normal", "cosine", "tanh").cuda()
+    )
+    with pytest.raises(ValueError, match="frozen"):
+        flash.build_tables(in_training=True)
+    freeze_filters(flash).build_tables(in_training=True)
+    flash.interaction_blocks[0].conv.filter_network.requires_grad_(True)
+    with pytest.raises(ValueError, match="frozen"):
+        flash.train()
+
+
+def test_weight_gradients_without_position_gradients():
+    """The backward skips grad_pos when pos doesn't need it; the weight
+    gradients are the same either way."""
+    flash = training_tables(build_schnet("exp_normal", "cosine", "tanh").cuda())
+    data = random_batch()
+    _, with_pos = energy_gradients(flash, data, torch.float32, pos_grad=True)
+    _, without = energy_gradients(flash, data, torch.float32)
+    for a, b in zip(without, with_pos):
+        assert (a - b).norm() <= 1e-5 * b.norm()
+
+
 def test_state_dict_is_standard():
     standard = build_schnet("exp_normal", "cosine", "tanh").cuda()
     flash = tabulate(standard)
@@ -359,6 +442,63 @@ def test_radius_csr_regrows_when_checked():
     row_ptr, col, valid = neighbors(*args)
     assert neighbors.capacity > 8
     assert csr_sets(row_ptr, col) == reference and valid.item() == 1.0
+
+
+@pytest.mark.parametrize("all_pairs_budget", [1 << 25, 0])
+def test_radius_csr_compiles_once_for_new_sizes(all_pairs_budget):
+    """New numbers of nodes and a regrown capacity are tensor lengths, not
+    module ints, so they do not recompile (as with batches of different
+    molecules or batch sizes in training)."""
+    from torch._dynamo.testing import CompileCounter
+
+    torch._dynamo.reset()
+    counter = CompileCounter()
+    eager = RadiusCSR(CUTOFF, all_pairs_budget=all_pairs_budget)
+    compiled = torch.compile(
+        copy.deepcopy(eager), backend=counter, dynamic=True
+    )
+    # at least 3 molecules: with 2, ptr has the length of pos's last dimension
+    # and duck sizing would equate the two
+    batches = [
+        random_batch(sizes=sizes, seed=seed).to("cuda")
+        for seed, sizes in enumerate(
+            [(7, 30, 30), (30, 64, 7), (1, 7, 30, 64), (64, 64, 64), (30, 7, 1)]
+        )
+    ]
+    frames = None
+    for i, data in enumerate(batches):
+        args = (data.pos, data.batch, data.ptr, *NO_CELL)
+        row_ptr, col, valid = compiled(*args)
+        assert csr_sets(row_ptr, col) == csr_sets(*eager(*args)[:2])
+        assert valid.item() == 1.0
+        if i == 1:
+            frames = counter.frame_count
+    assert counter.frame_count == frames
+
+
+def test_radius_csr_sizes_survive_pickle_and_deepcopy():
+    data = random_batch().to("cuda")
+    args = (data.pos, data.batch, data.ptr, *NO_CELL)
+    neighbors = RadiusCSR(CUTOFF)
+    reference = csr_sets(*neighbors(*args)[:2])
+    for clone in (copy.deepcopy(neighbors), pickle.loads(pickle.dumps(neighbors))):
+        assert (clone.num_nodes, clone.capacity) == (
+            neighbors.num_nodes,
+            neighbors.capacity,
+        )
+        assert clone._capacity.untyped_storage().nbytes() == 4
+        assert csr_sets(*clone(*args)[:2]) == reference
+
+    # RadiusCSR pickled when num_nodes and capacity were python ints
+    old = RadiusCSR(CUTOFF)
+    state = old.__dict__.copy()
+    for name in ("_num_nodes", "_capacity"):
+        state.pop(name)
+    state.update(num_nodes=-1, capacity=0)
+    restored = RadiusCSR.__new__(RadiusCSR)
+    restored.__setstate__(state)
+    assert (restored.num_nodes, restored.capacity) == (0, 0)
+    assert csr_sets(*restored(*args)[:2]) == reference
 
 
 def test_tabulated_poisons_truncated_neighbor_lists():

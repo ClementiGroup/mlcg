@@ -7,7 +7,9 @@ The graph is a destination CSR ``(row_ptr, col)`` of a *symmetric* neighbor
 list (``j in N(i)`` iff ``i in N(j)``), which lets the backward pass gather
 ``grad_x`` and ``grad_pos`` per node without atomics, a source CSR or a
 per-edge filter. Edges with ``d >= cutoff`` contribute nothing. The table
-freezes the filter weights: inference only, no double backward. With
+freezes the filter weights: no gradient to them and no double backward, so
+it serves inference and first-order training of the other weights;
+``grad_pos`` is only computed when ``pos`` requires it. With
 periodic boundary conditions, ``d_ij`` is the minimum-image distance
 (:mod:`~mlcg.nn.kernels.pbc`).
 """
@@ -160,7 +162,7 @@ def tabulated_cfconv_kernel(
 
 @triton.autotune(
     configs=_configs([{"BLOCK_E": e} for e in (2, 4, 8, 16)], (2, 4, 8)),
-    key=["F"],
+    key=["F", "NEED_POS"],
     prune_configs_by={
         "early_config_prune": partial(_prune, tile_per_thread=16)
     },
@@ -182,13 +184,15 @@ def tabulated_cfconv_backward_kernel(
     num_knots,
     F: tl.constexpr,
     PBC: tl.constexpr,
+    NEED_POS: tl.constexpr,
     BLOCK_F: tl.constexpr,
     BLOCK_E: tl.constexpr,
 ):
     """Per node ``i`` (symmetric graph):
     ``grad_x[i] = sum_j g[j] * phi(d_ij)``,
     ``grad_pos[i] = sum_j (p_i - p_j) / d_ij
-    * sum_f phi'_f(d_ij) (g[i, f] x[j, f] + g[j, f] x[i, f])``."""
+    * sum_f phi'_f(d_ij) (g[i, f] x[j, f] + g[j, f] x[i, f])``,
+    the latter only if ``NEED_POS``."""
     i = tl.program_id(0).to(tl.int64)
     mol = _graph_index(batch_ptr, i, PBC)
     f = tl.arange(0, BLOCK_F)
@@ -197,8 +201,9 @@ def tabulated_cfconv_backward_kernel(
     end = tl.load(row_ptr + i + 1)
     px, py, pz = _load_pos(pos_ptr, i)
     cutoff = tl.cast(cutoff, tl.float32)
-    g_i = tl.load(grad_out_ptr + i * F + f, mask=f_ok, other=0.0)[None, :]
-    x_i = tl.load(x_ptr + i * F + f, mask=f_ok, other=0.0)[None, :]
+    if NEED_POS:
+        g_i = tl.load(grad_out_ptr + i * F + f, mask=f_ok, other=0.0)[None, :]
+        x_i = tl.load(x_ptr + i * F + f, mask=f_ok, other=0.0)[None, :]
 
     acc_x = tl.zeros([BLOCK_E, BLOCK_F], dtype=tl.float32)
     acc_px = tl.zeros([BLOCK_E], dtype=tl.float32)
@@ -224,22 +229,24 @@ def tabulated_cfconv_backward_kernel(
         v0, m0, dv, m1 = load_hermite_segment(table_ptr, k, f, mask, F)
         node_j = j[:, None] * F + f[None, :]
         g_j = tl.load(grad_out_ptr + node_j, mask=mask, other=0.0)
-        x_j = tl.load(x_ptr + node_j, mask=mask, other=0.0)
 
         t = t[:, None]
         acc_x += g_j * hermite_value(t, v0, m0, dv, m1)
-        slope = hermite_slope(t, v0, m0, dv, m1)
-        grad_d = tl.sum(slope * (g_i * x_j + g_j * x_i), axis=1)
-        scale = grad_d * (num_knots - 1) / (d * cutoff)
-        scale = tl.where(valid & (d > 0), scale, 0.0)
-        acc_px += scale * dx
-        acc_py += scale * dy
-        acc_pz += scale * dz
+        if NEED_POS:
+            x_j = tl.load(x_ptr + node_j, mask=mask, other=0.0)
+            slope = hermite_slope(t, v0, m0, dv, m1)
+            grad_d = tl.sum(slope * (g_i * x_j + g_j * x_i), axis=1)
+            scale = grad_d * (num_knots - 1) / (d * cutoff)
+            scale = tl.where(valid & (d > 0), scale, 0.0)
+            acc_px += scale * dx
+            acc_py += scale * dy
+            acc_pz += scale * dz
 
     tl.store(grad_x_ptr + i * F + f, tl.sum(acc_x, axis=0), mask=f_ok)
-    tl.store(grad_pos_ptr + i * 3, tl.sum(acc_px))
-    tl.store(grad_pos_ptr + i * 3 + 1, tl.sum(acc_py))
-    tl.store(grad_pos_ptr + i * 3 + 2, tl.sum(acc_pz))
+    if NEED_POS:
+        tl.store(grad_pos_ptr + i * 3, tl.sum(acc_px))
+        tl.store(grad_pos_ptr + i * 3 + 1, tl.sum(acc_py))
+        tl.store(grad_pos_ptr + i * 3 + 2, tl.sum(acc_pz))
 
 
 @triton_op("mlcg_kernels::tabulated_cfconv", mutates_args={})
@@ -311,12 +318,14 @@ def tabulated_cfconv_backward(
     batch: torch.Tensor,
     cell: torch.Tensor,
     pbc: torch.Tensor,
+    need_pos: bool,
 ) -> List[torch.Tensor]:
     """Gradients of ``<grad_out, tabulated_cfconv(x, pos, ...)>`` wrt
-    ``x`` and ``pos``. Requires a symmetric neighbor list."""
+    ``x`` and, if ``need_pos``, ``pos`` (otherwise an empty [0, 3] tensor).
+    Requires a symmetric neighbor list."""
     num_nodes, F = x.shape
     grad_x = torch.empty_like(x)
-    grad_pos = torch.empty_like(pos)
+    grad_pos = torch.empty_like(pos) if need_pos else pos.new_empty(0, 3)
     if num_nodes == 0:
         return [grad_x, grad_pos]
     wrap_triton(tabulated_cfconv_backward_kernel)[(num_nodes,)](
@@ -335,6 +344,7 @@ def tabulated_cfconv_backward(
         table.shape[0],
         F,
         PBC=cell.numel() > 0,
+        NEED_POS=need_pos,
         BLOCK_F=triton.next_power_of_2(F),
     )
     return [grad_x, grad_pos]
@@ -346,8 +356,11 @@ def _(x, pos, row_ptr, col, table, cutoff, batch, cell, pbc):
 
 
 @tabulated_cfconv_backward.register_fake
-def _(grad_out, x, pos, row_ptr, col, table, cutoff, batch, cell, pbc):
-    return [torch.empty_like(x), torch.empty_like(pos)]
+def _(
+    grad_out, x, pos, row_ptr, col, table, cutoff, batch, cell, pbc, need_pos
+):
+    grad_pos = torch.empty_like(pos) if need_pos else pos.new_empty(0, 3)
+    return [torch.empty_like(x), grad_pos]
 
 
 def _setup_context(ctx, inputs, output):
@@ -358,16 +371,30 @@ def _setup_context(ctx, inputs, output):
 
 def _backward(ctx, grad_out):
     x, pos, row_ptr, col, table, batch, cell, pbc = ctx.saved_tensors
+    need_pos = ctx.needs_input_grad[1]
     grad_x, grad_pos = tabulated_cfconv_backward(
-        grad_out, x, pos, row_ptr, col, table, ctx.cutoff, batch, cell, pbc
+        grad_out,
+        x,
+        pos,
+        row_ptr,
+        col,
+        table,
+        ctx.cutoff,
+        batch,
+        cell,
+        pbc,
+        need_pos,
     )
+    if not need_pos:
+        grad_pos = None
     return grad_x, grad_pos, None, None, None, None, None, None, None
 
 
 def _no_double_backward(ctx, *grads):
     raise NotImplementedError(
-        "tabulated_cfconv has no double backward: the filter table is an "
-        "inference-only (MD) path. Use the standard CFConv for force training."
+        "tabulated_cfconv has no double backward: the filter table serves "
+        "MD and first-order training with frozen filters. Use the standard "
+        "CFConv for force training."
     )
 
 
