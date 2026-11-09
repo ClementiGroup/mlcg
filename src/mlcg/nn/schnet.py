@@ -20,7 +20,13 @@ from .attention import (
 )
 
 from .radial_basis import RegularizedBasis
-from .flash_models.mixin import SupportsFlash, TABLE_TOLERANCE, check_tolerance
+from .flash_models.mixin import (
+    SupportsFlash,
+    TABLE_TOLERANCE,
+    check_tolerance,
+    FIRST_NUM_KNOTS,
+    MAX_NUM_KNOTS,
+)
 from .kernels import (
     RadiusCSR,
     build_filter_table,
@@ -28,18 +34,6 @@ from .kernels import (
     tabulated_cfconv,
 )
 from .kernels.pbc import check_cells, minimum_image_vectors, periodic_cells
-
-try:
-    from mlcg_opt_radius.radius import radius_distance
-except ImportError:
-    print(
-        "`mlcg_opt_radius` not installed. Please check the"
-        + "`opt_radius` folder and follow the instructions."
-    )
-    radius_distance = None
-
-FIRST_NUM_KNOTS = 2048
-MAX_NUM_KNOTS = 16384
 
 
 class SchNet(torch.nn.Module):

@@ -21,38 +21,26 @@ from .....geometry import compute_distances
 @triton.jit
 def repulsion_edge_fwd_kernel(
     pos_ptr,  # *fp16/fp32, [N,3]
-    atom_types_ptr,  # *i32/i64,   [N]
     index_mapping_ptr,  # *i32,       [2, E]
-    sigma_ptr,  # *fp16/fp32, [T,T]
+    sigma_ptr,  # *fp16/fp32, [E]
     eedge_ptr,  # *fp32,      [E]
     E,
     eps: tl.constexpr,
-    TYPE_DTYPE: tl.constexpr,  # 32 or 64
-    SIG_STRIDE0: tl.constexpr,
     BLOCK: tl.constexpr,
 ):
     """Compute per-edge repulsion energy from atomic positions and types."""
     pid = tl.program_id(0)
-    k = pid * BLOCK + tl.arange(0, BLOCK)
-    mask = k < E
+    blk_idx = pid * BLOCK + tl.arange(0, BLOCK)
+    mask = blk_idx < E
 
-    off_i = k
-    off_j = k + E
+    off_i = blk_idx
+    off_j = blk_idx + E
     i = tl.load(index_mapping_ptr + off_i, mask=mask, other=0).to(
         tl.int32
     )  # FIXME: indeces are int64 do we want them in int32?
     j = tl.load(index_mapping_ptr + off_j, mask=mask, other=0).to(tl.int32)
 
-    if TYPE_DTYPE == 32:
-        ti = tl.load(atom_types_ptr + i, mask=mask, other=0).to(tl.int32)
-        tj = tl.load(atom_types_ptr + j, mask=mask, other=0).to(tl.int32)
-    else:
-        ti = tl.load(atom_types_ptr + i, mask=mask, other=0).to(tl.int64)
-        tj = tl.load(atom_types_ptr + j, mask=mask, other=0).to(tl.int64)
-
-    sig = tl.load(sigma_ptr + ti * SIG_STRIDE0 + tj, mask=mask, other=0.0).to(
-        tl.float32
-    )
+    sig = tl.load(sigma_ptr + blk_idx, mask=mask, other=0.0).to(tl.float32)
 
     # positions
     i3 = i * 3
@@ -76,7 +64,7 @@ def repulsion_edge_fwd_kernel(
     sig6 = sig6 * sig6 * sig6
 
     e = sig6 * inv_r6
-    tl.store(eedge_ptr + k, e, mask=mask)
+    tl.store(eedge_ptr + blk_idx, e, mask=mask)
 
 
 @triton_op("mlcg_kernels::flash_repulsion", mutates_args={})
@@ -108,18 +96,21 @@ def flash_repulsion(
     ).contiguous()
     y = torch.zeros((num_graphs,), device=pos.device, dtype=torch.float32)
 
+    if not (sigma.ndim == 1):
+        interaction_types = tuple(
+            atom_types[index_mapping[ii]] for ii in range(2)
+        )
+        sigma = sigma[interaction_types]
+
     wrap_triton(repulsion_edge_fwd_kernel)[
         lambda meta: (triton.cdiv(E, meta["BLOCK"]),)
     ](
         pos,
-        atom_types,
         index_mapping,
         sigma,
         eedge,
         E=E,
         eps=eps,
-        TYPE_DTYPE=32 if atom_types.dtype == torch.int32 else 64,
-        SIG_STRIDE0=sigma.stride(0),
     )
 
     return y.index_add_(0, mapping_batch, eedge)
@@ -184,9 +175,14 @@ def cpu_flash_repulsion(
     eps: float = 1e-12,
 ) -> torch.Tensor:
     """CPU reference implementation for repulsion energy aggregation."""
-    interaction_types = tuple(atom_types[index_mapping[ii]] for ii in range(2))
+    if not (sigma.ndim == 1):
+        interaction_types = tuple(
+            atom_types[index_mapping[ii]] for ii in range(2)
+        )
+        sigma = sigma[interaction_types]
+
     distances = compute_distances(pos, index_mapping)
-    special = sigma[interaction_types] / distances
+    special = sigma / distances
     y_edge = torch.pow(special, 6)
     y = torch.zeros(num_graphs, device=y_edge.device, dtype=y_edge.dtype)
     return y.index_add_(0, mapping_batch, y_edge)
@@ -206,27 +202,24 @@ def cpu_flash_repulsion(
 @triton.jit
 def repulsion_pos_bwd_kernel(
     pos_ptr,  # *fp16/fp32, [N,3] (read)
-    atom_types_ptr,  # *i32/i64,   [N]
     index_mapping_ptr,  # *i32,       [2,E]
     mapping_batch_ptr,  # *i32/i64,   [E]
-    sigma_ptr,  # *fp16/fp32, [T,T]
+    sigma_ptr,  # *fp16/fp32, [E]
     grad_y_ptr,  # *fp32,      [B]
     grad_pos_ptr,  # *fp32,      [N,3] (atomic add)
     E,
     B,
     eps: tl.constexpr,
-    TYPE_DTYPE: tl.constexpr,  # 32 or 64
     BATCH_DTYPE: tl.constexpr,  # 32 or 64
-    SIG_STRIDE0: tl.constexpr,
     BLOCK: tl.constexpr,
 ):
     """Compute gradients of repulsion energy with respect to atomic positions."""
     pid = tl.program_id(0)
-    k = pid * BLOCK + tl.arange(0, BLOCK)
-    mask = k < E
+    blk_idx = pid * BLOCK + tl.arange(0, BLOCK)
+    mask = blk_idx < E
 
-    off_i = k
-    off_j = k + E
+    off_i = blk_idx
+    off_j = blk_idx + E
     i = tl.load(index_mapping_ptr + off_i, mask=mask, other=0).to(
         tl.int32
     )  # FIXME: indeces are int64 do we want them in int32?
@@ -234,23 +227,18 @@ def repulsion_pos_bwd_kernel(
 
     # grad multiplier per edge from upstream grad_y[batch]
     if BATCH_DTYPE == 32:
-        b = tl.load(mapping_batch_ptr + k, mask=mask, other=0).to(tl.int32)
+        b = tl.load(mapping_batch_ptr + blk_idx, mask=mask, other=0).to(
+            tl.int32
+        )
     else:
-        b = tl.load(mapping_batch_ptr + k, mask=mask, other=0).to(tl.int64)
+        b = tl.load(mapping_batch_ptr + blk_idx, mask=mask, other=0).to(
+            tl.int64
+        )
     gy = tl.load(grad_y_ptr + b, mask=mask & (b >= 0) & (b < B), other=0.0).to(
         tl.float32
     )
 
-    if TYPE_DTYPE == 32:
-        ti = tl.load(atom_types_ptr + i, mask=mask, other=0).to(tl.int32)
-        tj = tl.load(atom_types_ptr + j, mask=mask, other=0).to(tl.int32)
-    else:
-        ti = tl.load(atom_types_ptr + i, mask=mask, other=0).to(tl.int64)
-        tj = tl.load(atom_types_ptr + j, mask=mask, other=0).to(tl.int64)
-
-    sig = tl.load(sigma_ptr + ti * SIG_STRIDE0 + tj, mask=mask, other=0.0).to(
-        tl.float32
-    )
+    sig = tl.load(sigma_ptr + blk_idx, mask=mask, other=0.0).to(tl.float32)
 
     # positions
     i3 = i * 3
@@ -316,11 +304,16 @@ def repulsion_pos_bwd(
 
     E = index_mapping.shape[1]
 
+    if not (sigma.ndim == 1):
+        interaction_types = tuple(
+            atom_types[index_mapping[ii]] for ii in range(2)
+        )
+        sigma = sigma[interaction_types]
+
     wrap_triton(repulsion_pos_bwd_kernel)[
         lambda meta: (triton.cdiv(E, meta["BLOCK"]),)
     ](
         pos,
-        atom_types,
         index_mapping,
         mapping_batch,
         sigma,
@@ -329,9 +322,7 @@ def repulsion_pos_bwd(
         E=E,
         B=num_graphs,
         eps=eps,
-        TYPE_DTYPE=32 if atom_types.dtype == torch.int32 else 64,
         BATCH_DTYPE=32 if mapping_batch.dtype == torch.int32 else 64,
-        SIG_STRIDE0=sigma.stride(0),
     )
     return grad_pos
 
@@ -350,13 +341,15 @@ def cpu_repulsion_pos_bwd(
     """CPU reference backward implementation for repulsion position gradients."""
     grad_pos = torch.zeros_like(pos)
 
+    if not (sigma.ndim == 1):
+        interaction_types = tuple(
+            atom_types[index_mapping[ii]] for ii in range(2)
+        )
+        sig = sigma[interaction_types]
+
     i = index_mapping[0].long()
     j = index_mapping[1].long()
     b = mapping_batch.long()
-
-    ti = atom_types[i].long()
-    tj = atom_types[j].long()
-    sig = sigma[ti, tj].float()
 
     dx = pos[i] - pos[j]  # [E, 3]
     r2 = (dx * dx).sum(dim=1)  # [E]

@@ -21,15 +21,11 @@ from .....geometry import compute_distances
 @triton.jit
 def harmonic_bonds_edge_fwd_kernel(
     pos_ptr,  # *fp16/fp32, [N,3]
-    atom_types_ptr,  # *i32/i64,   [N]
-    index_mapping_ptr,  # *i32,       [E,2] (may be non-contiguous)
-    k_ptr,
-    x_ptr,  # *fp16/fp32, [T,T]
-    eedge_ptr,  # *fp32,      [E]
+    index_mapping_ptr,  # *i32,       [2,E]
+    k_ptr,  # [E]
+    x_ptr,  # [E]
+    eedge_ptr,  # [E]
     E,
-    TYPE_DTYPE: tl.constexpr,  # 32 or 64
-    K_STRIDE0: tl.constexpr,
-    X_0_STRIDE0: tl.constexpr,
     BLOCK: tl.constexpr,
 ):
     pid = tl.program_id(0)
@@ -43,19 +39,8 @@ def harmonic_bonds_edge_fwd_kernel(
     )  # FIXME: indeces are int64 do we want them in int32?
     j = tl.load(index_mapping_ptr + off_j, mask=mask, other=0).to(tl.int32)
 
-    if TYPE_DTYPE == 32:
-        ti = tl.load(atom_types_ptr + i, mask=mask, other=0).to(tl.int32)
-        tj = tl.load(atom_types_ptr + j, mask=mask, other=0).to(tl.int32)
-    else:
-        ti = tl.load(atom_types_ptr + i, mask=mask, other=0).to(tl.int64)
-        tj = tl.load(atom_types_ptr + j, mask=mask, other=0).to(tl.int64)
-
-    k_ener = tl.load(k_ptr + ti * K_STRIDE0 + tj, mask=mask, other=0.0).to(
-        tl.float32
-    )
-    x_0 = tl.load(x_ptr + ti * X_0_STRIDE0 + tj, mask=mask, other=0.0).to(
-        tl.float32
-    )
+    k_ener = tl.load(k_ptr + blk_idx, mask=mask, other=0.0).to(tl.float32)
+    x_0 = tl.load(x_ptr + blk_idx, mask=mask, other=0.0).to(tl.float32)
 
     # positions
     i3 = i * 3
@@ -64,11 +49,11 @@ def harmonic_bonds_edge_fwd_kernel(
     yi = tl.load(pos_ptr + i3 + 1, mask=mask, other=0.0).to(tl.float32)
     zi = tl.load(pos_ptr + i3 + 2, mask=mask, other=0.0).to(tl.float32)
     xj = tl.load(pos_ptr + j3 + 0, mask=mask, other=0.0).to(tl.float32)
-    xy = tl.load(pos_ptr + j3 + 1, mask=mask, other=0.0).to(tl.float32)
+    yj = tl.load(pos_ptr + j3 + 1, mask=mask, other=0.0).to(tl.float32)
     zj = tl.load(pos_ptr + j3 + 2, mask=mask, other=0.0).to(tl.float32)
 
     dx = xi - xj
-    gy = yi - xy
+    gy = yi - yj
     gz = zi - zj
 
     x = tl.sqrt(dx * dx + gy * gy + gz * gz)
@@ -96,20 +81,23 @@ def flash_harmonic_bonds(
     ).contiguous()
     y = torch.zeros((num_graphs,), device=pos.device, dtype=torch.float32)
 
+    if not (k.ndim == 1):
+        interaction_types = tuple(
+            atom_types[index_mapping[ii]] for ii in range(2)
+        )
+        k = k[interaction_types].contiguous()
+        x_0 = x_0[interaction_types].contiguous()
+
     # grid = (triton.cdiv(E, block),)
     wrap_triton(harmonic_bonds_edge_fwd_kernel)[
         lambda meta: (triton.cdiv(E, meta["BLOCK"]),)
     ](
         pos,
-        atom_types,
         index_mapping,
         k,
         x_0,
         eedge,
         E=E,
-        TYPE_DTYPE=32 if atom_types.dtype == torch.int32 else 64,
-        K_STRIDE0=k.stride(0),
-        X_0_STRIDE0=x_0.stride(0),
     )
 
     return y.index_add_(0, mapping_batch, eedge)
@@ -175,10 +163,16 @@ def cpu_flash_harmonic_bonds(
     num_graphs: int,
 ) -> torch.Tensor:
 
-    interaction_types = tuple(atom_types[index_mapping[ii]] for ii in range(2))
+    if not (k.ndim == 1):
+        interaction_types = tuple(
+            atom_types[index_mapping[ii]] for ii in range(2)
+        )
+        k = k[interaction_types]
+        x_0 = x_0[interaction_types]
+
     distances = compute_distances(pos, index_mapping)
-    xdiff = distances - x_0[interaction_types]
-    y_edge = k[interaction_types] * xdiff * xdiff
+    xdiff = distances - x_0
+    y_edge = k * xdiff * xdiff
     y = torch.zeros(num_graphs, device=y_edge.device, dtype=y_edge.dtype)
     return y.index_add_(0, mapping_batch, y_edge)
 
@@ -197,19 +191,15 @@ def cpu_flash_harmonic_bonds(
 @triton.jit
 def harmonic_bonds_pos_bwd_kernel(
     pos_ptr,  # *fp16/fp32, [N,3] (read)
-    atom_types_ptr,  # *i32/i64,   [N]
     index_mapping_ptr,  # *i32,       [2,E]
     mapping_batch_ptr,  # *i32/i64,   [E]
-    k_ptr,
-    x_ptr,
+    k_ptr,  # [E]
+    x_ptr,  # [E]
     grad_y_ptr,  # *fp32,      [B]
     grad_pos_ptr,  # *fp32,      [N,3] (atomic add)
     E,
     B,
-    TYPE_DTYPE: tl.constexpr,  # 32 or 64
     BATCH_DTYPE: tl.constexpr,  # 32 or 64
-    K_STRIDE0: tl.constexpr,
-    X_0_STRIDE0: tl.constexpr,
     BLOCK: tl.constexpr,
 ):
     pid = tl.program_id(0)
@@ -237,19 +227,8 @@ def harmonic_bonds_pos_bwd_kernel(
         tl.float32
     )
 
-    if TYPE_DTYPE == 32:
-        ti = tl.load(atom_types_ptr + i, mask=mask, other=0).to(tl.int32)
-        tj = tl.load(atom_types_ptr + j, mask=mask, other=0).to(tl.int32)
-    else:
-        ti = tl.load(atom_types_ptr + i, mask=mask, other=0).to(tl.int64)
-        tj = tl.load(atom_types_ptr + j, mask=mask, other=0).to(tl.int64)
-
-    k_ener = tl.load(k_ptr + ti * K_STRIDE0 + tj, mask=mask, other=0.0).to(
-        tl.float32
-    )
-    x_0 = tl.load(x_ptr + ti * X_0_STRIDE0 + tj, mask=mask, other=0.0).to(
-        tl.float32
-    )
+    k_ener = tl.load(k_ptr + blk_idx, mask=mask, other=0.0).to(tl.float32)
+    x_0 = tl.load(x_ptr + blk_idx, mask=mask, other=0.0).to(tl.float32)
 
     # positions
     i3 = i * 3
@@ -300,11 +279,15 @@ def harmonic_bonds_pos_bwd(
     grad_pos = torch.zeros_like(pos).contiguous()
     E = index_mapping.shape[1]
 
+    if not (k.ndim == 1):
+        i, j = index_mapping
+        k = (k[atom_types[i], atom_types[j]]).contiguous()
+        x_0 = (x_0[atom_types[i], atom_types[j]]).contiguous()
+
     wrap_triton(harmonic_bonds_pos_bwd_kernel)[
         lambda meta: (triton.cdiv(E, meta["BLOCK"]),)
     ](
         pos,
-        atom_types,
         index_mapping,
         mapping_batch,
         k,
@@ -313,10 +296,7 @@ def harmonic_bonds_pos_bwd(
         grad_pos,
         E=E,
         B=num_graphs,
-        TYPE_DTYPE=32 if atom_types.dtype == torch.int32 else 64,
         BATCH_DTYPE=32 if mapping_batch.dtype == torch.int32 else 64,
-        K_STRIDE0=k.stride(0),
-        X_0_STRIDE0=x_0.stride(0),
     )
 
     return grad_pos
@@ -335,22 +315,23 @@ def cpu_harmonic_bonds_pos_bwd(
 ) -> torch.Tensor:
     grad_pos = torch.zeros_like(pos)
 
+    if not (k.ndim == 1):
+        interaction_types = tuple(
+            atom_types[index_mapping[ii]] for ii in range(2)
+        )
+        k = k[interaction_types]
+        x_0 = x_0[interaction_types]
+
     i = index_mapping[0].long()
     j = index_mapping[1].long()
     b = mapping_batch.long()
 
-    ti = atom_types[i].long()
-    tj = atom_types[j].long()
-
-    k_ener = k[ti, tj].float()
-    x0 = x_0[ti, tj].float()
-
     dx = pos[i] - pos[j]  # [E, 3]
     r = dx.norm(dim=1).clamp(min=1e-12)  # [E]
-    xdiff = r - x0  # [E]
+    xdiff = r - x_0  # [E]
 
     gy = grad_y[b]  # [E]
-    scale = (2.0 * k_ener * xdiff / r) * gy  # [E]
+    scale = (2.0 * k * xdiff / r) * gy  # [E]
 
     g = scale.unsqueeze(1) * dx  # [E, 3]
 

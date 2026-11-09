@@ -23,19 +23,13 @@ from .utils import _backnorm
 @triton.jit
 def dihedral_fwd_kernel(
     pos_ptr,  # [B*N, 3] float32/float64
-    atom_types_ptr,  # [B*N] int32
     index_mapping_ptr,  # [4, E] int32
-    k1_ptr,  # [deg, n_types, n_types, n_types, n_types] float32/float64
-    k2_ptr,  # [deg, n_types, n_types, n_types, n_types] float32/float64
-    v_0_ptr,  # [n_types, n_types, n_types, n_types] float32/float64
+    k1_ptr,  # [E, deg] float32/float64
+    k2_ptr,  # [E, deg] float32/float64
+    v_0_ptr,  # [E] float32/float64
     out_E_ptr,  # [E] float32/float64
     E,
     deg: tl.constexpr,  # runtime passed as tl.constexpr by specialization (<=6 typical)
-    stride_km: tl.constexpr,
-    stride_ki: tl.constexpr,
-    stride_kj: tl.constexpr,
-    stride_kk: tl.constexpr,
-    stride_kl: tl.constexpr,
     BLOCK: tl.constexpr,
 ):
     pid = tl.program_id(0)
@@ -51,12 +45,6 @@ def dihedral_fwd_kernel(
     j = tl.load(index_mapping_ptr + off_j, mask=mask, other=0).to(tl.int64)
     k = tl.load(index_mapping_ptr + off_k, mask=mask, other=0).to(tl.int64)
     l = tl.load(index_mapping_ptr + off_l, mask=mask, other=0).to(tl.int64)
-
-    # types -> key
-    type_i = tl.load(atom_types_ptr + i, mask=mask, other=-1).to(tl.int64)
-    type_j = tl.load(atom_types_ptr + j, mask=mask, other=-2).to(tl.int64)
-    type_k = tl.load(atom_types_ptr + k, mask=mask, other=-3).to(tl.int64)
-    type_l = tl.load(atom_types_ptr + l, mask=mask, other=-4).to(tl.int64)
 
     # positions
     i3 = i * 3
@@ -129,23 +117,17 @@ def dihedral_fwd_kernel(
     y = mx * n2x + my * n2y + mz * n2z
     phi = libdevice.atan2(-y, x)
 
-    # key = (((type_i * n_types + type_j) * n_types + type_k) * n_types + type_l).to(tl.int32)
-    key = (
-        type_i * stride_ki
-        + type_j * stride_kj
-        + type_k * stride_kk
-        + type_l * stride_kl
-    ).to(tl.int32)
-
-    v_0_loc = tl.load(v_0_ptr + key, mask=mask).to(tl.float32)
+    v_0_loc = tl.load(v_0_ptr + blk_idx, mask=mask).to(tl.float32)
     ener_edge = tl.zeros((BLOCK,), tl.float32) + v_0_loc
 
     for mm in range(deg):
         m = mm + 1
-        k1 = tl.load(k1_ptr + mm * stride_km + key, mask=mask, other=0.0).to(
+        # k1 = tl.load(k1_ptr + mm * E + blk_idx, mask=mask, other=0.0).to(
+        k1 = tl.load(k1_ptr + mm + blk_idx * deg, mask=mask, other=0.0).to(
             tl.float32
         )
-        k2 = tl.load(k2_ptr + mm * stride_km + key, mask=mask, other=0.0).to(
+        # k2 = tl.load(k2_ptr + mm * E + blk_idx, mask=mask, other=0.0).to(
+        k2 = tl.load(k2_ptr + mm + blk_idx * deg, mask=mask, other=0.0).to(
             tl.float32
         )
         ang = phi * m
@@ -179,25 +161,39 @@ def flash_dihedral(
     out_E = torch.zeros(
         (E,), device=pos.device, dtype=torch.float32
     ).contiguous()
-    n_types = k1.shape[1]
-
+    if not (k1.ndim == 2):
+        interaction_types = tuple(
+            atom_types[index_mapping[ii]] for ii in range(4)
+        )
+        # the parameters have shape n_features x n_degs
+        k1s = (
+            torch.vstack([k1[ii][interaction_types] for ii in range(deg)])
+            .t()
+            .contiguous()
+        )
+        k2s = (
+            torch.vstack([k2[ii][interaction_types] for ii in range(deg)])
+            .t()
+            .contiguous()
+        )
+        v_0s = v_0[interaction_types].view(-1, 1)[:, 0].contiguous()
+    else:
+        k1s = k1
+        k2s = k2
+        v_0s = v_0
+        if v_0s.ndim > 1:
+            v_0s = (v_0s[:, 0]).contiguous()
     wrap_triton(dihedral_fwd_kernel)[
         lambda meta: (triton.cdiv(E, meta["BLOCK"]),)
     ](
         pos,
-        atom_types,
         index_mapping,
-        k1,
-        k2,
-        v_0,
+        k1s,
+        k2s,
+        v_0s,
         out_E_ptr=out_E,
         E=E,
         deg=deg,
-        stride_km=k1.stride(0),
-        stride_ki=k1.stride(1),
-        stride_kj=k1.stride(2),
-        stride_kk=k1.stride(3),
-        stride_kl=k1.stride(4),
     )
     y = torch.zeros((num_graphs,), device=pos.device, dtype=torch.float32)
     return y.index_add_(0, mapping_batch, out_E)
@@ -269,11 +265,18 @@ def cpu_flash_dihedral(
     num_graphs: int,
 ) -> torch.Tensor:
 
-    interaction_types = tuple(atom_types[index_mapping[ii]] for ii in range(4))
-    # the parameters have shape n_features x n_degs
-    k1s = torch.vstack([k1[ii][interaction_types] for ii in range(deg)]).t()
-    k2s = torch.vstack([k2[ii][interaction_types] for ii in range(deg)]).t()
-    v_0s = v_0[interaction_types].view(-1, 1)
+    if not (k1.ndim == 2):
+        interaction_types = tuple(
+            atom_types[index_mapping[ii]] for ii in range(4)
+        )
+        # the parameters have shape n_features x n_degs
+        k1s = torch.vstack([k1[ii][interaction_types] for ii in range(deg)]).t()
+        k2s = torch.vstack([k2[ii][interaction_types] for ii in range(deg)]).t()
+        v_0s = v_0[interaction_types].view(-1, 1)
+    else:
+        k1s = k1
+        k2s = k2
+        v_0s = v_0
 
     phis = compute_torsions(pos, index_mapping).flatten()
 
@@ -307,21 +310,15 @@ def cpu_flash_dihedral(
 )
 @triton.jit
 def dihedral_pos_bwd_kernel(
-    pos_ptr,
-    atom_types_ptr,
-    index_mapping_ptr,
-    k1_ptr,
-    k2_ptr,
+    pos_ptr,  # [B*N, 3] float32/float64
+    index_mapping_ptr,  # [4, E] int32
+    k1_ptr,  # [deg, E] float32/float64
+    k2_ptr,  # [deg, E] float32/float64
     E,
     upstream_dE_ptr,  # [T]
     mapping_batch_ptr,  # [T]
     grad_pos_ptr,  # [B, N, 3] (atomic adds)
     deg: tl.constexpr,
-    stride_km: tl.constexpr,
-    stride_ki: tl.constexpr,
-    stride_kj: tl.constexpr,
-    stride_kk: tl.constexpr,
-    stride_kl: tl.constexpr,
     BLOCK: tl.constexpr,
 ):
     pid = tl.program_id(0)
@@ -337,12 +334,6 @@ def dihedral_pos_bwd_kernel(
     j = tl.load(index_mapping_ptr + off_j, mask=mask, other=0).to(tl.int64)
     k = tl.load(index_mapping_ptr + off_k, mask=mask, other=0).to(tl.int64)
     l = tl.load(index_mapping_ptr + off_l, mask=mask, other=0).to(tl.int64)
-
-    # types -> key
-    type_i = tl.load(atom_types_ptr + i, mask=mask, other=-1).to(tl.int64)
-    type_j = tl.load(atom_types_ptr + j, mask=mask, other=-2).to(tl.int64)
-    type_k = tl.load(atom_types_ptr + k, mask=mask, other=-3).to(tl.int64)
-    type_l = tl.load(atom_types_ptr + l, mask=mask, other=-4).to(tl.int64)
 
     # positions
     i3 = i * 3
@@ -415,21 +406,16 @@ def dihedral_pos_bwd_kernel(
     y = mx * n2x + my * n2y + mz * n2z
     phi = libdevice.atan2(-y, x)
 
-    key = (
-        type_i * stride_ki
-        + type_j * stride_kj
-        + type_k * stride_kk
-        + type_l * stride_kl
-    ).to(tl.int32)
-
     # dE/dphi = sum_m m*(k1_m cos(m phi) - k2_m sin(m phi))
     dEdphi = tl.zeros([BLOCK], tl.float32)
     for mm in range(0, deg):
         m = mm + 1
-        k1 = tl.load(k1_ptr + mm * stride_km + key, mask=mask, other=0.0).to(
+        # k1 = tl.load(k1_ptr + mm * E + blk_idx, mask=mask, other=0.0).to(
+        k1 = tl.load(k1_ptr + mm + blk_idx * deg, mask=mask, other=0.0).to(
             tl.float32
         )
-        k2 = tl.load(k2_ptr + mm * stride_km + key, mask=mask, other=0.0).to(
+        # k2 = tl.load(k2_ptr + mm * E + blk_idx, mask=mask, other=0.0).to(
+        k2 = tl.load(k2_ptr + mm + blk_idx * deg, mask=mask, other=0.0).to(
             tl.float32
         )
         ang = phi * m
@@ -525,24 +511,37 @@ def dihedral_pos_bwd(
 ) -> torch.Tensor:
     grad_pos = torch.zeros_like(pos, dtype=torch.float32).contiguous()
     E = index_mapping.shape[1]
+    if not (k1.ndim == 2):
+        interaction_types = tuple(
+            atom_types[index_mapping[ii]] for ii in range(4)
+        )
+        # the parameters have shape n_features x n_degs
+        k1s = (
+            torch.vstack([k1[ii][interaction_types] for ii in range(deg)])
+            .t()
+            .contiguous()
+        )
+        k2s = (
+            torch.vstack([k2[ii][interaction_types] for ii in range(deg)])
+            .t()
+            .contiguous()
+        )
+    else:
+        k1s = k1
+        k2s = k2
+
     wrap_triton(dihedral_pos_bwd_kernel)[
         lambda meta: (triton.cdiv(E, meta["BLOCK"]),)
     ](
         pos,
-        atom_types,
         index_mapping,
-        k1,
-        k2,
+        k1s,
+        k2s,
         E,
         grad_y,
         mapping_batch,
         grad_pos,
         deg=deg,
-        stride_km=k1.stride(0),
-        stride_ki=k1.stride(1),
-        stride_kj=k1.stride(2),
-        stride_kk=k1.stride(3),
-        stride_kl=k1.stride(4),
     )
     return grad_pos
 
@@ -577,9 +576,16 @@ def cpu_bwd_dihedral(
     phis = torch.atan2(-y, x)
 
     # Compute dE/dphi
-    interaction_types = tuple(atom_types[index_mapping[ii]] for ii in range(4))
-    k1s = torch.vstack([k1[ii][interaction_types] for ii in range(deg)]).t()
-    k2s = torch.vstack([k2[ii][interaction_types] for ii in range(deg)]).t()
+    if not (k1.ndim == 2):
+        interaction_types = tuple(
+            atom_types[index_mapping[ii]] for ii in range(4)
+        )
+        k1s = torch.vstack([k1[ii][interaction_types] for ii in range(deg)]).t()
+        k2s = torch.vstack([k2[ii][interaction_types] for ii in range(deg)]).t()
+    else:
+        k1s = k1
+        k2s = k2
+
     _, n_k = k1s.shape
     n_degs = torch.arange(1, n_k + 1, dtype=phis.dtype, device=phis.device)
     angles = phis.view(-1, 1) * n_degs.view(1, -1)

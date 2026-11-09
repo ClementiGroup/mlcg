@@ -37,7 +37,9 @@ def create_data(prior):
     specialized_prior, data_list = condense_all_priors_for_simulation(
         base_prior, model_with_data["data_list"]
     )
-    flash_specialized_prior = enable_flash_kernels(copy.deepcopy(specialized_prior))
+    flash_specialized_prior = enable_flash_kernels(
+        copy.deepcopy(specialized_prior)
+    )
 
     collated_specialized_data, _, _ = collate(
         data_list[0].__class__,
@@ -95,7 +97,9 @@ def test_base_vs_kernel(device, base_prior):
     specialized_energy = specialized_data.out[prior_name]["energy"]
     specialized_forces = specialized_data.out[prior_name]["forces"]
     torch.testing.assert_close(base_energy, specialized_energy)
-    torch.testing.assert_close(base_forces, specialized_forces, rtol=1e-5, atol=1e-4)
+    torch.testing.assert_close(
+        base_forces, specialized_forces, rtol=1e-5, atol=1e-4
+    )
 
     specialized_data.out = {}
     specialized_data = flash_specialized_prior(specialized_data)
@@ -111,4 +115,6 @@ def test_base_vs_kernel(device, base_prior):
         compiled_flash_forces = specialized_data.out[prior_name]["forces"]
 
         torch.testing.assert_close(base_energy, compiled_flash_energy)
-        torch.testing.assert_close(base_forces, compiled_flash_forces, rtol=1e-5, atol=1e-4)
+        torch.testing.assert_close(
+            base_forces, compiled_flash_forces, rtol=1e-5, atol=1e-4
+        )

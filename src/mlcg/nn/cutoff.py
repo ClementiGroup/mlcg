@@ -28,7 +28,7 @@ class _Cutoff(nn.Module):
         """Distances inside ``(0, cutoff_upper)`` where the function is not
         smooth (e.g. a change of formula); tabulated filters put knots
         there."""
-        return ()
+        return (self.cutoff_lower,) if self.cutoff_lower > 0 else ()
 
 
 class _OneSidedCutoff(_Cutoff):
@@ -157,9 +157,6 @@ class CosineCutoff(_Cutoff):
                 distances.dtype
             )
             return cutoffs
-
-    def breakpoints(self) -> Tuple[float, ...]:
-        return (self.cutoff_lower,) if self.cutoff_lower > 0 else ()
 
 
 class ShiftedCosineCutoff(_OneSidedCutoff):

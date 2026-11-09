@@ -125,6 +125,8 @@ import torch
 
 TABLE_TOLERANCE = 1e-5
 MIN_TOLERANCE = 1e-7  # float32 storage and arithmetic floor
+MAX_NUM_KNOTS = 16384
+FIRST_NUM_KNOTS = 2048
 
 
 def check_tolerance(tolerance: float):

@@ -20,17 +20,11 @@ from .....geometry import compute_angles_cos
 @triton.jit
 def harmonic_angles_edge_fwd_kernel(
     pos_ptr,  # *fp16/fp32, [N,3]
-    atom_types_ptr,  # *i32/i64,   [N]
-    index_mapping_ptr,  # *i32,       [E,2] (may be non-contiguous)
+    index_mapping_ptr,  # *i32,       [3,E]
     k_ptr,
     x_ptr,  # *fp16/fp32, [T,T]
     eedge_ptr,  # *fp32,      [E]
     E,
-    TYPE_DTYPE: tl.constexpr,  # 32 or 64
-    K_STRIDE0: tl.constexpr,
-    K_STRIDE1: tl.constexpr,
-    X_0_STRIDE0: tl.constexpr,
-    X_0_STRIDE1: tl.constexpr,
     BLOCK: tl.constexpr,
 ):
     pid = tl.program_id(0)
@@ -45,21 +39,8 @@ def harmonic_angles_edge_fwd_kernel(
     j = tl.load(index_mapping_ptr + off_j, mask=mask, other=0).to(tl.int32)
     k = tl.load(index_mapping_ptr + off_k, mask=mask, other=0).to(tl.int32)
 
-    if TYPE_DTYPE == 32:
-        ti = tl.load(atom_types_ptr + i, mask=mask, other=0).to(tl.int32)
-        tj = tl.load(atom_types_ptr + j, mask=mask, other=0).to(tl.int32)
-        tk = tl.load(atom_types_ptr + k, mask=mask, other=0).to(tl.int32)
-    else:
-        ti = tl.load(atom_types_ptr + i, mask=mask, other=0).to(tl.int64)
-        tj = tl.load(atom_types_ptr + j, mask=mask, other=0).to(tl.int64)
-        tk = tl.load(atom_types_ptr + k, mask=mask, other=0).to(tl.int64)
-
-    k_ener = tl.load(
-        k_ptr + ti * K_STRIDE0 + tj * K_STRIDE1 + tk, mask=mask, other=0.0
-    ).to(tl.float32)
-    x_0 = tl.load(
-        x_ptr + ti * X_0_STRIDE0 + tj * X_0_STRIDE1 + tk, mask=mask, other=0.0
-    ).to(tl.float32)
+    k_ener = tl.load(k_ptr + blk_idx, mask=mask, other=0.0).to(tl.float32)
+    x_0 = tl.load(x_ptr + blk_idx, mask=mask, other=0.0).to(tl.float32)
 
     # positions
     i3 = i * 3
@@ -120,21 +101,22 @@ def flash_harmonic_angles(
         (num_graphs,), device=pos.device, dtype=torch.float32
     ).contiguous()
 
+    if not (k.ndim == 1):
+        interaction_types = tuple(
+            atom_types[index_mapping[ii]] for ii in range(3)
+        )
+        k = k[interaction_types].contiguous()
+        x_0 = x_0[interaction_types].contiguous()
+
     wrap_triton(harmonic_angles_edge_fwd_kernel)[
         lambda meta: (triton.cdiv(E, meta["BLOCK"]),)
     ](
         pos,
-        atom_types,
         index_mapping,
         k,
         x_0,
         eedge,
         E=E,
-        TYPE_DTYPE=32 if atom_types.dtype == torch.int32 else 64,
-        K_STRIDE0=k.stride(0),
-        K_STRIDE1=k.stride(1),
-        X_0_STRIDE0=x_0.stride(0),
-        X_0_STRIDE1=x_0.stride(1),
     )
     return y.index_add_(0, mapping_batch, eedge)
 
@@ -196,10 +178,15 @@ def cpu_flash_harmonic_angles(
     x_0: torch.Tensor,
     num_graphs: int,
 ) -> torch.Tensor:
-    interaction_types = tuple(atom_types[index_mapping[ii]] for ii in range(3))
+    if not (k.ndim == 1):
+        interaction_types = tuple(
+            atom_types[index_mapping[ii]] for ii in range(3)
+        )
+        k = k[interaction_types]
+        x_0 = x_0[interaction_types]
     distances = compute_angles_cos(pos, index_mapping)
-    xdiff = distances - x_0[interaction_types]
-    ey = k[interaction_types] * xdiff * xdiff
+    xdiff = distances - x_0
+    ey = k * xdiff * xdiff
     y = torch.zeros((num_graphs,), device=pos.device, dtype=pos.dtype)
     return y.index_add_(0, mapping_batch, ey)
 
@@ -218,8 +205,7 @@ def cpu_flash_harmonic_angles(
 @triton.jit
 def harmonic_angles_pos_bwd_kernel(
     pos_ptr,  # *fp16/fp32, [N,3] (read)
-    atom_types_ptr,  # *i32/i64,   [N]
-    index_mapping_ptr,  # *i32,       [E,3]
+    index_mapping_ptr,  # *i32,       [3,E]
     mapping_batch_ptr,  # *i32/i64,   [E]
     k_ptr,
     x_ptr,
@@ -227,12 +213,7 @@ def harmonic_angles_pos_bwd_kernel(
     grad_pos_ptr,  # *fp32,      [N,3] (atomic add)
     E,
     B,
-    TYPE_DTYPE: tl.constexpr,  # 32 or 64
     BATCH_DTYPE: tl.constexpr,  # 32 or 64
-    K_STRIDE0: tl.constexpr,
-    K_STRIDE1: tl.constexpr,
-    X_0_STRIDE0: tl.constexpr,
-    X_0_STRIDE1: tl.constexpr,
     BLOCK: tl.constexpr,
 ):
     pid = tl.program_id(0)
@@ -247,15 +228,6 @@ def harmonic_angles_pos_bwd_kernel(
     j = tl.load(index_mapping_ptr + off_j, mask=mask, other=0).to(tl.int32)
     k = tl.load(index_mapping_ptr + off_k, mask=mask, other=0).to(tl.int32)
 
-    if TYPE_DTYPE == 32:
-        ti = tl.load(atom_types_ptr + i, mask=mask, other=0).to(tl.int32)
-        tj = tl.load(atom_types_ptr + j, mask=mask, other=0).to(tl.int32)
-        tk = tl.load(atom_types_ptr + k, mask=mask, other=0).to(tl.int32)
-    else:
-        ti = tl.load(atom_types_ptr + i, mask=mask, other=0).to(tl.int64)
-        tj = tl.load(atom_types_ptr + j, mask=mask, other=0).to(tl.int64)
-        tk = tl.load(atom_types_ptr + k, mask=mask, other=0).to(tl.int64)
-
     # grad multiplier per edge from upstream grad_y[batch]
     if BATCH_DTYPE == 32:
         b = tl.load(mapping_batch_ptr + blk_idx, mask=mask, other=0).to(
@@ -269,12 +241,8 @@ def harmonic_angles_pos_bwd_kernel(
         tl.float32
     )
 
-    k_ener = tl.load(
-        k_ptr + ti * K_STRIDE0 + tj * K_STRIDE1 + tk, mask=mask, other=0.0
-    ).to(tl.float32)
-    x_0 = tl.load(
-        x_ptr + ti * X_0_STRIDE0 + tj * X_0_STRIDE1 + tk, mask=mask, other=0.0
-    ).to(tl.float32)
+    k_ener = tl.load(k_ptr + blk_idx, mask=mask, other=0.0).to(tl.float32)
+    x_0 = tl.load(x_ptr + blk_idx, mask=mask, other=0.0).to(tl.float32)
 
     # positions
     i3 = i * 3
@@ -370,11 +338,18 @@ def harmonic_angles_pos_bwd(
         (pos.shape[0], 3), device=pos.device, dtype=torch.float32
     ).contiguous()
     E = index_mapping.shape[1]
+
+    if not (k.ndim == 1):
+        interaction_types = tuple(
+            atom_types[index_mapping[ii]] for ii in range(3)
+        )
+        k = k[interaction_types].contiguous()
+        x_0 = x_0[interaction_types].contiguous()
+
     wrap_triton(harmonic_angles_pos_bwd_kernel)[
         lambda meta: (triton.cdiv(E, meta["BLOCK"]),)
     ](
         pos,
-        atom_types,
         index_mapping,
         mapping_batch,
         k,
@@ -383,12 +358,7 @@ def harmonic_angles_pos_bwd(
         grad_pos,
         E=E,
         B=num_graphs,
-        TYPE_DTYPE=32 if atom_types.dtype == torch.int32 else 64,
         BATCH_DTYPE=32 if mapping_batch.dtype == torch.int32 else 64,
-        K_STRIDE0=k.stride(0),
-        K_STRIDE1=k.stride(1),
-        X_0_STRIDE0=x_0.stride(0),
-        X_0_STRIDE1=x_0.stride(1),
     )
 
     return grad_pos
@@ -422,11 +392,14 @@ def cpu_bwd_flash_harmonic_angles(
     dot = (dij * dkj).sum(dim=1)
     cosang = dot * invAB
 
-    interaction_types = tuple(atom_types[index_mapping[ii]] for ii in range(3))
-    k_ener = k[interaction_types].float()
-    x0 = x_0[interaction_types].float()
-    xdiff = cosang - x0  # [E]
-    de = 2 * k_ener * xdiff
+    if not (k.ndim == 1):
+        interaction_types = tuple(
+            atom_types[index_mapping[ii]] for ii in range(3)
+        )
+        k = k[interaction_types].float()
+        x_0 = x_0[interaction_types].float()
+    xdiff = cosang - x_0  # [E]
+    de = 2 * k * xdiff
 
     dca = dkj * invAB.unsqueeze(1) - (
         dij * invA2.unsqueeze(1)
