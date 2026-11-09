@@ -1,5 +1,5 @@
 import torch
-from typing import Sequence, Any, List
+from typing import Sequence, Any, List, Optional
 from ..data.atomic_data import AtomicData
 from ..data._keys import *
 
@@ -63,8 +63,8 @@ class SumOut(torch.nn.Module):
     def __init__(
         self,
         models: torch.nn.ModuleDict,
-        targets: List[str] = None,
-        own_nl_models: Sequence[str] = None,
+        targets: Optional[List[str]] = None,
+        own_nl_models: Optional[Sequence[str]] = None,
     ):
         super(SumOut, self).__init__()
         if targets is None:
@@ -186,9 +186,16 @@ class NeighborSharingSumOut(SumOut):
         nls_model_key: str,
         models: torch.nn.ModuleDict,
         shared_nl_models: Sequence[str],
-        targets: List[str] = None,
-        own_nl_models: Sequence[str] = None,
+        targets: Optional[List[str]] = None,
+        own_nl_models: Optional[Sequence[str]] = None,
     ):
+        # Deferred imports: `schnet` and `prior` import `mlcg.geometry`, which
+        # in turn imports `mlcg.nn.prior`, so importing them at module level
+        # creates a circular import through `mlcg.nn.__init__`.
+        # TODO: remove the statistics module which is not being used anymore
+        from .prior.repulsion import _BaseFastRepulsion
+        from .schnet import SchNet
+
         super().__init__(models, targets, own_nl_models)
         if nls_model_key not in models:
             raise ValueError(f"{nls_model_key=} is not a key of `models`")
@@ -196,6 +203,14 @@ class NeighborSharingSumOut(SumOut):
             raise ValueError(
                 f"{nls_model_key=} can't be contained in {own_nl_models=}"
             )
+        nls_model = models[nls_model_key]
+        # Guard for only using SchNet 
+        # TOOO: create an interface for extracting cutoff of different MPNNs
+        if not isinstance(getattr(nls_model, "model", nls_model), SchNet):
+            raise TypeError(
+                "Only subclasses of SchNet are supported as root for the nls"
+            )
+
         shared_nl_models = list(shared_nl_models)
         for key in shared_nl_models:
             if key not in models:
@@ -205,12 +220,20 @@ class NeighborSharingSumOut(SumOut):
                     f"shared model {key!r} can't be `nls_model_key` or be "
                     "contained in `own_nl_models`"
                 )
+            shared = models[key]
+            if not isinstance(
+                getattr(shared, "model", shared), _BaseFastRepulsion
+            ):
+                raise TypeError(
+                    "Only subclasses of _BaseFastRepulsion are supported for sharing the nls"
+                )
         self.nls_model_key = nls_model_key
         self.shared_nl_models = shared_nl_models
 
     def _network_neighbor_list(self, data: AtomicData):
         model = self.models[self.nls_model_key]
         network = getattr(model, "model", model)  # unwrap GradientsOut
+        # extract cutoff:
         nl = network.neighbor_list(
             data,
             network.rbf_layer.cutoff.cutoff_upper,
@@ -265,7 +288,7 @@ class EnergyOut(torch.nn.Module):
     def __init__(
         self,
         model: torch.nn.Module,
-        targets: List[str] = None,
+        targets: Optional[List[str]] = None,
     ):
         super().__init__()
         if targets is None:
