@@ -139,7 +139,6 @@ class SchNet(torch.nn.Module):
                 self.rbf_layer.cutoff.cutoff_upper,
                 self.max_num_neighbors,
             )[self.name]
-            data.neighbor_list["mpnn"] = neighbor_list
 
         edge_index = neighbor_list["index_mapping"]
         distances = compute_distances(
@@ -167,7 +166,7 @@ class SchNet(torch.nn.Module):
             if (
                 nl["order"] == 2
                 and nl["self_interaction"] == False
-                and nl["rcut"] == self.cutoff.cutoff_upper
+                and nl["rcut"] == self.rbf_layer.cutoff.cutoff_upper
             ):
                 is_compatible = True
         return is_compatible

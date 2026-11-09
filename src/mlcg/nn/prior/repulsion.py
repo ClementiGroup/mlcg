@@ -603,17 +603,18 @@ class FastCutoffRepulsion(CutoffRepulsion, _BaseFastRepulsion):
                 data.pos.shape[0],
             )
             data.neighbor_list[self.name]["exc_table"] = exc_table
-        # get relevant information for network neighborlist
+        # the network neighbor list is shared under this prior's name
+        # (see `NLSSharingSumOut`)
         mask = self.pair_mask(
-            data.neighbor_list["mpnn"]["index_mapping"], exc_table
+            data.neighbor_list[self.name]["index_mapping"], exc_table
         )
-        mapping = data.neighbor_list["mpnn"]["index_mapping"][:, mask]
-        cell_shifts = data.neighbor_list["mpnn"]["cell_shifts"][mask, :]
-        mapping_batch = data.neighbor_list["mpnn"]["mapping_batch"][mask]
+        mapping = data.neighbor_list[self.name]["index_mapping"][:, mask]
+        cell_shifts = data.neighbor_list[self.name]["cell_shifts"][mask, :]
+        mapping_batch = data.neighbor_list[self.name]["mapping_batch"][mask]
         # compute features
         features = compute_distances(data.pos, mapping, cell_shifts)
 
-        cutoff = data.neighbor_list["mpnn"]["rcut"]
+        cutoff = data.neighbor_list[self.name]["rcut"]
 
         interaction_types = tuple(
             data.atom_types[mapping[ii]] for ii in range(self.order)
@@ -627,7 +628,6 @@ class FastCutoffRepulsion(CutoffRepulsion, _BaseFastRepulsion):
         y = y - yc - (features - cutoff) * (dyc)
         y = scatter(y, mapping_batch, dim=0, reduce="sum")
         data.out[self.name] = {"energy": y}
-        data.neighbor_list.pop("mpnn")
         return data
 
     @classmethod
@@ -676,17 +676,18 @@ class FastCutoffExpRepulsion(CutoffExpRepulsion, _BaseFastRepulsion):
                 data.pos.shape[0],
             )
             data.neighbor_list[self.name]["exc_table"] = exc_table
-        # get relevant information for network neighborlist
+        # the network neighbor list is shared under this prior's name
+        # (see `NLSSharingSumOut`)
         mask = self.pair_mask(
-            data.neighbor_list["mpnn"]["index_mapping"], exc_table
+            data.neighbor_list[self.name]["index_mapping"], exc_table
         )
-        mapping = data.neighbor_list["mpnn"]["index_mapping"][:, mask]
-        cell_shifts = data.neighbor_list["mpnn"]["cell_shifts"][mask, :]
-        mapping_batch = data.neighbor_list["mpnn"]["mapping_batch"][mask]
+        mapping = data.neighbor_list[self.name]["index_mapping"][:, mask]
+        cell_shifts = data.neighbor_list[self.name]["cell_shifts"][mask, :]
+        mapping_batch = data.neighbor_list[self.name]["mapping_batch"][mask]
         # compute features
         features = compute_distances(data.pos, mapping, cell_shifts)
 
-        cutoff = data.neighbor_list["mpnn"]["rcut"]
+        cutoff = data.neighbor_list[self.name]["rcut"]
         interaction_types = tuple(
             data.atom_types[mapping[ii]] for ii in range(self.order)
         )
@@ -704,8 +705,6 @@ class FastCutoffExpRepulsion(CutoffExpRepulsion, _BaseFastRepulsion):
         # we can override the
         y = scatter(y, mapping_batch, dim=0, reduce="sum")
         data.out[self.name] = {"energy": y}
-        # remove unwanted network neighborlist
-        data.neighbor_list.pop("mpnn")
         return data
 
     @classmethod

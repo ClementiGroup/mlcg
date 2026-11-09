@@ -5,6 +5,7 @@ import torch
 from torch_geometric.data.collate import collate
 
 from mlcg.data import AtomicData
+from mlcg.nn import NLSSharingSumOut
 from mlcg.nn.prior.repulsion import FastCutoffRepulsion, FastCutoffExpRepulsion
 
 try:
@@ -49,6 +50,22 @@ def col_data(request):
     return _load_collated_data(request.param, n_replicas)
 
 
+def _build_nls_sharing_model(model_file: str, fast_cls, nls_distance_method):
+    """Load the reference model from `model_file` and rebuild it as an
+    `NLSSharingSumOut` in which the SchNet neighbor list is shared with a
+    `fast_cls` version of the `non_bonded` repulsion prior."""
+    model = torch.load(os.path.join(ASSETS_DIR, model_file), weights_only=False)
+    models = model.models
+    models["non_bonded"].model = fast_cls.from_base(models["non_bonded"].model)
+    models["SchNet"].model.nls_distance_method = nls_distance_method
+    return NLSSharingSumOut(
+        nls_model_key="SchNet",
+        models=models,
+        shared_nl_models=["non_bonded"],
+        targets=model.targets,
+    )
+
+
 @pytest.mark.parametrize(
     "nls_distance_method", ["torch", "nvalchemi_naive", "nvalchemi_cell"]
 )
@@ -58,9 +75,10 @@ def test_fast_cutoff_exp_repulsion_and_network_nls_match(
     """
     A model using `FastCutoffExpRepulsion` (a cutoff-table based
     reimplementation of `CutoffExpRepulsion`) together with the
-    `nls_distance_method` neighbor list method should produce the same
-    energies and forces as the reference model, which uses the base
-    repulsion prior and the default `torch` neighbor list. Consistency
+    `nls_distance_method` neighbor list method, with the SchNet neighbor
+    list shared with the prior through `NLSSharingSumOut`, should produce
+    the same energies and forces as the reference model, which uses the
+    base repulsion prior and the default `torch` neighbor list. Consistency
     is checked over many steps of a randomly perturbed trajectory so
     that both implementations are exercised over an evolving set of
     neighbor lists.
@@ -71,13 +89,9 @@ def test_fast_cutoff_exp_repulsion_and_network_nls_match(
     model = torch.load(
         os.path.join(ASSETS_DIR, "exp_rep_model.pt"), weights_only=False
     )
-    new_model = torch.load(
-        os.path.join(ASSETS_DIR, "exp_rep_model.pt"), weights_only=False
+    new_model = _build_nls_sharing_model(
+        "exp_rep_model.pt", FastCutoffExpRepulsion, nls_distance_method
     )
-    new_model.models["non_bonded"].model = FastCutoffExpRepulsion.from_base(
-        model.models["non_bonded"].model
-    )
-    new_model.models["SchNet"].model.nls_distance_method = nls_distance_method
 
     model = model.to("cuda")
     new_model = new_model.to("cuda")
@@ -116,18 +130,6 @@ def test_fast_cutoff_exp_repulsion_and_network_nls_match(
     )
 
 
-@pytest.fixture(
-    params=[
-        "dissolved_with_nonbonded_exclusion",
-        "ordered_with_nonbonded_exclusion",
-        "circular_with_nonbonded_exclusion",
-    ]
-)
-def col_data(request):
-    n_replicas = 3
-    return _load_collated_data(request.param, n_replicas)
-
-
 @pytest.mark.parametrize(
     "nls_distance_method", ["torch", "nvalchemi_naive", "nvalchemi_cell"]
 )
@@ -137,9 +139,10 @@ def test_fast_cutoff_repulsion_and_network_nls_match(
     """
     A model using `FastCutoffRepulsion` (a cutoff-table based
     reimplementation of `CutoffRepulsion`) together with the
-    `nls_distance_method` neighbor list method should produce the same
-    energies and forces as the reference model, which uses the base
-    repulsion prior and the default `torch` neighbor list. Consistency
+    `nls_distance_method` neighbor list method, with the SchNet neighbor
+    list shared with the prior through `NLSSharingSumOut`, should produce
+    the same energies and forces as the reference model, which uses the
+    base repulsion prior and the default `torch` neighbor list. Consistency
     is checked over many steps of a randomly perturbed trajectory so
     that both implementations are exercised over an evolving set of
     neighbor lists.
@@ -150,13 +153,9 @@ def test_fast_cutoff_repulsion_and_network_nls_match(
     model = torch.load(
         os.path.join(ASSETS_DIR, "rep_model.pt"), weights_only=False
     )
-    new_model = torch.load(
-        os.path.join(ASSETS_DIR, "rep_model.pt"), weights_only=False
+    new_model = _build_nls_sharing_model(
+        "rep_model.pt", FastCutoffRepulsion, nls_distance_method
     )
-    new_model.models["non_bonded"].model = FastCutoffRepulsion.from_base(
-        model.models["non_bonded"].model
-    )
-    new_model.models["SchNet"].model.nls_distance_method = nls_distance_method
 
     model = model.to("cuda")
     new_model = new_model.to("cuda")
