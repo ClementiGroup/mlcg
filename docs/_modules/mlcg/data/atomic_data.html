@@ -200,198 +200,202 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="48"><span class="sd">        :ref:`mlcg.neighbor_list.neighbor_list.make_neighbor_list`.</span>
 </span><span data-line="49"><span class="sd">    batch: [n_atoms]</span>
 </span><span data-line="50"><span class="sd">        maps the atoms to their structure index (from 0 to n_structures-1)</span>
-</span><span data-line="51"><span class="sd">    &quot;&quot;&quot;</span>
-</span><span data-line="52">
-</span><span data-line="53">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-</span><span data-line="54">        <span class="bp">self</span><span class="p">,</span>
-</span><span data-line="55">        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-</span><span data-line="56">    <span class="p">):</span>
-</span><span data-line="57"><span class="w">        </span><span class="sd">&quot;&quot;&quot;kwargs:</span>
-</span><span data-line="58"><span class="sd">        Allowed fields are defined in :ref:`ALLOWED_KEYS`</span>
-</span><span data-line="59"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="60">        <span class="n">validate_keys</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-</span><span data-line="61">
-</span><span data-line="62">        <span class="nb">super</span><span class="p">(</span><span class="n">AtomicData</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-</span><span data-line="63">
-</span><span data-line="64">        <span class="bp">self</span><span class="o">.</span><span class="n">out</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span data-line="51"><span class="sd">    excluded_pairs: Dict[str, Any] (Optional)</span>
+</span><span data-line="52"><span class="sd">        contains information about excluded pairs from the model neighborlist</span>
+</span><span data-line="53"><span class="sd">        in particular `excluded_order: int` and `index_mapping: [2, n_excluded]`,</span>
+</span><span data-line="54"><span class="sd">        unordered pairs: `(i, j)` excludes both directions</span>
+</span><span data-line="55"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="56">
+</span><span data-line="57">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+</span><span data-line="58">        <span class="bp">self</span><span class="p">,</span>
+</span><span data-line="59">        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+</span><span data-line="60">    <span class="p">):</span>
+</span><span data-line="61"><span class="w">        </span><span class="sd">&quot;&quot;&quot;kwargs:</span>
+</span><span data-line="62"><span class="sd">        Allowed fields are defined in :ref:`ALLOWED_KEYS`</span>
+</span><span data-line="63"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="64">        <span class="n">validate_keys</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
 </span><span data-line="65">
-</span><span data-line="66">        <span class="c1"># check the sanity of the inputs</span>
-</span><span data-line="67">        <span class="k">if</span> <span class="n">N_ATOMS_KEY</span> <span class="ow">in</span> <span class="bp">self</span> <span class="ow">and</span> <span class="n">POSITIONS_KEY</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
-</span><span data-line="68">            <span class="k">assert</span> <span class="p">(</span>
-</span><span data-line="69">                <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_atoms</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-</span><span data-line="70">            <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;number of atoms </span><span class="si">{</span><span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_atoms</span><span class="p">)</span><span class="si">}</span><span class="s2"> and number of positions </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span data-line="71">
-</span><span data-line="72">            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span>
-</span><span data-line="73">        <span class="k">if</span> <span class="n">MASS_KEY</span> <span class="ow">in</span> <span class="bp">self</span> <span class="ow">and</span> <span class="n">POSITIONS_KEY</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
-</span><span data-line="74">            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">masses</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</span><span data-line="66">        <span class="nb">super</span><span class="p">(</span><span class="n">AtomicData</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</span><span data-line="67">
+</span><span data-line="68">        <span class="bp">self</span><span class="o">.</span><span class="n">out</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span data-line="69">
+</span><span data-line="70">        <span class="c1"># check the sanity of the inputs</span>
+</span><span data-line="71">        <span class="k">if</span> <span class="n">N_ATOMS_KEY</span> <span class="ow">in</span> <span class="bp">self</span> <span class="ow">and</span> <span class="n">POSITIONS_KEY</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+</span><span data-line="72">            <span class="k">assert</span> <span class="p">(</span>
+</span><span data-line="73">                <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_atoms</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</span><span data-line="74">            <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;number of atoms </span><span class="si">{</span><span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_atoms</span><span class="p">)</span><span class="si">}</span><span class="s2"> and number of positions </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
 </span><span data-line="75">
-</span><span data-line="76">        <span class="k">if</span> <span class="n">CELL_KEY</span> <span class="ow">in</span> <span class="bp">self</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">cell</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="77">            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">3</span>
-</span><span data-line="78">            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
-</span><span data-line="79">            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">dtype</span>
-</span><span data-line="80">        <span class="k">if</span> <span class="n">FORCE_KEY</span> <span class="ow">in</span> <span class="bp">self</span> <span class="ow">and</span> <span class="bp">self</span><span class="p">[</span><span class="n">FORCE_KEY</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="81">            <span class="k">assert</span> <span class="bp">self</span><span class="p">[</span><span class="n">FORCE_KEY</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="bp">self</span><span class="p">[</span><span class="n">POSITIONS_KEY</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
-</span><span data-line="82">            <span class="k">assert</span> <span class="bp">self</span><span class="p">[</span><span class="n">FORCE_KEY</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="bp">self</span><span class="p">[</span><span class="n">POSITIONS_KEY</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span>
-</span><span data-line="83">        <span class="k">if</span> <span class="n">VELOCITY_KEY</span> <span class="ow">in</span> <span class="bp">self</span> <span class="ow">and</span> <span class="bp">self</span><span class="p">[</span><span class="n">VELOCITY_KEY</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="84">            <span class="k">assert</span> <span class="bp">self</span><span class="p">[</span><span class="n">VELOCITY_KEY</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="bp">self</span><span class="p">[</span><span class="n">POSITIONS_KEY</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
-</span><span data-line="85">            <span class="k">assert</span> <span class="bp">self</span><span class="p">[</span><span class="n">VELOCITY_KEY</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="bp">self</span><span class="p">[</span><span class="n">POSITIONS_KEY</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span>
-</span><span data-line="86">        <span class="k">if</span> <span class="n">ENERGY_KEY</span> <span class="ow">in</span> <span class="bp">self</span> <span class="ow">and</span> <span class="bp">self</span><span class="p">[</span><span class="n">ENERGY_KEY</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="87">            <span class="k">assert</span> <span class="bp">self</span><span class="p">[</span><span class="n">ENERGY_KEY</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="bp">self</span><span class="p">[</span><span class="n">N_ATOMS_KEY</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
-</span><span data-line="88">            <span class="k">assert</span> <span class="bp">self</span><span class="p">[</span><span class="n">ENERGY_KEY</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="bp">self</span><span class="p">[</span><span class="n">POSITIONS_KEY</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span>
-</span><span data-line="89">        <span class="k">if</span> <span class="n">PBC_KEY</span> <span class="ow">in</span> <span class="bp">self</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">pbc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="90">            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">pbc</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">2</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;dim </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">pbc</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span data-line="91">            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">pbc</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">(</span>
-</span><span data-line="92">                <span class="p">[</span><span class="mi">3</span><span class="p">]</span>
-</span><span data-line="93">            <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;shape </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">pbc</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span data-line="94">            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">pbc</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">bool</span>
-</span><span data-line="95">
-</span><span data-line="96">    <span class="k">def</span><span class="w"> </span><span class="nf">__inc__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-</span><span data-line="97"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Method for incrementing nested values during collation&quot;&quot;&quot;</span>
-</span><span data-line="98">        <span class="k">if</span> <span class="s2">&quot;index&quot;</span> <span class="ow">in</span> <span class="n">key</span> <span class="ow">or</span> <span class="s2">&quot;face&quot;</span> <span class="ow">in</span> <span class="n">key</span><span class="p">:</span>
-</span><span data-line="99">            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_nodes</span>
-</span><span data-line="100">        <span class="k">elif</span> <span class="s2">&quot;mapping_batch&quot;</span> <span class="o">==</span> <span class="n">key</span><span class="p">:</span>
-</span><span data-line="101">            <span class="k">return</span> <span class="mi">1</span>
-</span><span data-line="102">        <span class="k">else</span><span class="p">:</span>
-</span><span data-line="103">            <span class="k">return</span> <span class="mi">0</span>
-</span><span data-line="104">
+</span><span data-line="76">            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span>
+</span><span data-line="77">        <span class="k">if</span> <span class="n">MASS_KEY</span> <span class="ow">in</span> <span class="bp">self</span> <span class="ow">and</span> <span class="n">POSITIONS_KEY</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+</span><span data-line="78">            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">masses</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</span><span data-line="79">
+</span><span data-line="80">        <span class="k">if</span> <span class="n">CELL_KEY</span> <span class="ow">in</span> <span class="bp">self</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">cell</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="81">            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">3</span>
+</span><span data-line="82">            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+</span><span data-line="83">            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">dtype</span>
+</span><span data-line="84">        <span class="k">if</span> <span class="n">FORCE_KEY</span> <span class="ow">in</span> <span class="bp">self</span> <span class="ow">and</span> <span class="bp">self</span><span class="p">[</span><span class="n">FORCE_KEY</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="85">            <span class="k">assert</span> <span class="bp">self</span><span class="p">[</span><span class="n">FORCE_KEY</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="bp">self</span><span class="p">[</span><span class="n">POSITIONS_KEY</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+</span><span data-line="86">            <span class="k">assert</span> <span class="bp">self</span><span class="p">[</span><span class="n">FORCE_KEY</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="bp">self</span><span class="p">[</span><span class="n">POSITIONS_KEY</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span>
+</span><span data-line="87">        <span class="k">if</span> <span class="n">VELOCITY_KEY</span> <span class="ow">in</span> <span class="bp">self</span> <span class="ow">and</span> <span class="bp">self</span><span class="p">[</span><span class="n">VELOCITY_KEY</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="88">            <span class="k">assert</span> <span class="bp">self</span><span class="p">[</span><span class="n">VELOCITY_KEY</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="bp">self</span><span class="p">[</span><span class="n">POSITIONS_KEY</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+</span><span data-line="89">            <span class="k">assert</span> <span class="bp">self</span><span class="p">[</span><span class="n">VELOCITY_KEY</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="bp">self</span><span class="p">[</span><span class="n">POSITIONS_KEY</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span>
+</span><span data-line="90">        <span class="k">if</span> <span class="n">ENERGY_KEY</span> <span class="ow">in</span> <span class="bp">self</span> <span class="ow">and</span> <span class="bp">self</span><span class="p">[</span><span class="n">ENERGY_KEY</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="91">            <span class="k">assert</span> <span class="bp">self</span><span class="p">[</span><span class="n">ENERGY_KEY</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="bp">self</span><span class="p">[</span><span class="n">N_ATOMS_KEY</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+</span><span data-line="92">            <span class="k">assert</span> <span class="bp">self</span><span class="p">[</span><span class="n">ENERGY_KEY</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="bp">self</span><span class="p">[</span><span class="n">POSITIONS_KEY</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span>
+</span><span data-line="93">        <span class="k">if</span> <span class="n">PBC_KEY</span> <span class="ow">in</span> <span class="bp">self</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">pbc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="94">            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">pbc</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">2</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;dim </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">pbc</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span data-line="95">            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">pbc</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">(</span>
+</span><span data-line="96">                <span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+</span><span data-line="97">            <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;shape </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">pbc</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span data-line="98">            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">pbc</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">bool</span>
+</span><span data-line="99">
+</span><span data-line="100">    <span class="k">def</span><span class="w"> </span><span class="nf">__inc__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+</span><span data-line="101"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Method for incrementing nested values during collation&quot;&quot;&quot;</span>
+</span><span data-line="102">        <span class="k">if</span> <span class="s2">&quot;index&quot;</span> <span class="ow">in</span> <span class="n">key</span> <span class="ow">or</span> <span class="s2">&quot;face&quot;</span> <span class="ow">in</span> <span class="n">key</span><span class="p">:</span>
+</span><span data-line="103">            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_nodes</span>
+</span><span data-line="104">        <span class="k">elif</span> <span class="s2">&quot;mapping_batch&quot;</span> <span class="o">==</span> <span class="n">key</span><span class="p">:</span>
+</span><span data-line="105">            <span class="k">return</span> <span class="mi">1</span>
+</span><span data-line="106">        <span class="k">else</span><span class="p">:</span>
+</span><span data-line="107">            <span class="k">return</span> <span class="mi">0</span>
+</span><span data-line="108">
 <div class="viewcode-block" id="AtomicData.from_ase">
 <a class="viewcode-back" href="../../../autodoc.html#mlcg.data.atomic_data.AtomicData.from_ase">[docs]</a>
-</span><span data-line="105">    <span class="nd">@staticmethod</span>
-</span><span data-line="106">    <span class="k">def</span><span class="w"> </span><span class="nf">from_ase</span><span class="p">(</span>
-</span><span data-line="107">        <span class="n">frame</span><span class="p">,</span>
-</span><span data-line="108">        <span class="n">energy_tag</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">ENERGY_KEY</span><span class="p">,</span>
-</span><span data-line="109">        <span class="n">force_tag</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">FORCE_KEY</span><span class="p">,</span>
-</span><span data-line="110">    <span class="p">):</span>
-</span><span data-line="111"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Method for constructing an AtomicData instance from</span>
-</span><span data-line="112"><span class="sd">        an ASE Atoms instance. Atom types are taken from atomic</span>
-</span><span data-line="113"><span class="sd">        numbers, while periodic flags, masses, cell vectors, and</span>
-</span><span data-line="114"><span class="sd">        configuration tags are taken from the ASE Atoms attributes.</span>
-</span><span data-line="115">
-</span><span data-line="116"><span class="sd">        Parameters</span>
-</span><span data-line="117"><span class="sd">        ----------</span>
-</span><span data-line="118"><span class="sd">        frame:</span>
-</span><span data-line="119"><span class="sd">            Input ase.atom.Atoms instance</span>
-</span><span data-line="120"><span class="sd">        energy_tag:</span>
-</span><span data-line="121"><span class="sd">            String value used to access the ASE energy</span>
-</span><span data-line="122"><span class="sd">        force_tag:</span>
-</span><span data-line="123"><span class="sd">            String value used to access the ASE forces</span>
-</span><span data-line="124">
-</span><span data-line="125"><span class="sd">        Returns</span>
-</span><span data-line="126"><span class="sd">        -------</span>
-</span><span data-line="127"><span class="sd">        data:</span>
-</span><span data-line="128"><span class="sd">            Populated AtomicData instance</span>
-</span><span data-line="129"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="130">
-</span><span data-line="131">        <span class="n">z</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">get_atomic_numbers</span><span class="p">())</span>
-</span><span data-line="132">        <span class="n">pos</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">get_positions</span><span class="p">())</span>
-</span><span data-line="133">        <span class="n">masses</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">get_masses</span><span class="p">())</span>
-</span><span data-line="134">        <span class="n">pbc</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">get_pbc</span><span class="p">())</span>
-</span><span data-line="135">        <span class="n">cell</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">get_cell</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">pos</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
-</span><span data-line="136">
-</span><span data-line="137">        <span class="n">tag</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tag&quot;</span><span class="p">)</span>
-</span><span data-line="138">
-</span><span data-line="139">        <span class="n">energy</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">energy_tag</span><span class="p">)</span>
-</span><span data-line="140">        <span class="n">forces</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">arrays</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">force_tag</span><span class="p">)</span>
-</span><span data-line="141">
-</span><span data-line="142">        <span class="k">return</span> <span class="n">AtomicData</span><span class="o">.</span><span class="n">from_points</span><span class="p">(</span>
-</span><span data-line="143">            <span class="n">pos</span><span class="o">=</span><span class="n">pos</span><span class="p">,</span>
-</span><span data-line="144">            <span class="n">atom_types</span><span class="o">=</span><span class="n">z</span><span class="p">,</span>
-</span><span data-line="145">            <span class="n">masses</span><span class="o">=</span><span class="n">masses</span><span class="p">,</span>
-</span><span data-line="146">            <span class="n">pbc</span><span class="o">=</span><span class="n">pbc</span><span class="p">,</span>
-</span><span data-line="147">            <span class="n">cell</span><span class="o">=</span><span class="n">cell</span><span class="p">,</span>
-</span><span data-line="148">            <span class="n">tag</span><span class="o">=</span><span class="n">tag</span><span class="p">,</span>
-</span><span data-line="149">            <span class="n">energy</span><span class="o">=</span><span class="n">energy</span><span class="p">,</span>
-</span><span data-line="150">            <span class="n">forces</span><span class="o">=</span><span class="n">forces</span><span class="p">,</span>
-</span><span data-line="151">        <span class="p">)</span></div>
+</span><span data-line="109">    <span class="nd">@staticmethod</span>
+</span><span data-line="110">    <span class="k">def</span><span class="w"> </span><span class="nf">from_ase</span><span class="p">(</span>
+</span><span data-line="111">        <span class="n">frame</span><span class="p">,</span>
+</span><span data-line="112">        <span class="n">energy_tag</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">ENERGY_KEY</span><span class="p">,</span>
+</span><span data-line="113">        <span class="n">force_tag</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">FORCE_KEY</span><span class="p">,</span>
+</span><span data-line="114">    <span class="p">):</span>
+</span><span data-line="115"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Method for constructing an AtomicData instance from</span>
+</span><span data-line="116"><span class="sd">        an ASE Atoms instance. Atom types are taken from atomic</span>
+</span><span data-line="117"><span class="sd">        numbers, while periodic flags, masses, cell vectors, and</span>
+</span><span data-line="118"><span class="sd">        configuration tags are taken from the ASE Atoms attributes.</span>
+</span><span data-line="119">
+</span><span data-line="120"><span class="sd">        Parameters</span>
+</span><span data-line="121"><span class="sd">        ----------</span>
+</span><span data-line="122"><span class="sd">        frame:</span>
+</span><span data-line="123"><span class="sd">            Input ase.atom.Atoms instance</span>
+</span><span data-line="124"><span class="sd">        energy_tag:</span>
+</span><span data-line="125"><span class="sd">            String value used to access the ASE energy</span>
+</span><span data-line="126"><span class="sd">        force_tag:</span>
+</span><span data-line="127"><span class="sd">            String value used to access the ASE forces</span>
+</span><span data-line="128">
+</span><span data-line="129"><span class="sd">        Returns</span>
+</span><span data-line="130"><span class="sd">        -------</span>
+</span><span data-line="131"><span class="sd">        data:</span>
+</span><span data-line="132"><span class="sd">            Populated AtomicData instance</span>
+</span><span data-line="133"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="134">
+</span><span data-line="135">        <span class="n">z</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">get_atomic_numbers</span><span class="p">())</span>
+</span><span data-line="136">        <span class="n">pos</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">get_positions</span><span class="p">())</span>
+</span><span data-line="137">        <span class="n">masses</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">get_masses</span><span class="p">())</span>
+</span><span data-line="138">        <span class="n">pbc</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">get_pbc</span><span class="p">())</span>
+</span><span data-line="139">        <span class="n">cell</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">get_cell</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">pos</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+</span><span data-line="140">
+</span><span data-line="141">        <span class="n">tag</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tag&quot;</span><span class="p">)</span>
+</span><span data-line="142">
+</span><span data-line="143">        <span class="n">energy</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">energy_tag</span><span class="p">)</span>
+</span><span data-line="144">        <span class="n">forces</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">arrays</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">force_tag</span><span class="p">)</span>
+</span><span data-line="145">
+</span><span data-line="146">        <span class="k">return</span> <span class="n">AtomicData</span><span class="o">.</span><span class="n">from_points</span><span class="p">(</span>
+</span><span data-line="147">            <span class="n">pos</span><span class="o">=</span><span class="n">pos</span><span class="p">,</span>
+</span><span data-line="148">            <span class="n">atom_types</span><span class="o">=</span><span class="n">z</span><span class="p">,</span>
+</span><span data-line="149">            <span class="n">masses</span><span class="o">=</span><span class="n">masses</span><span class="p">,</span>
+</span><span data-line="150">            <span class="n">pbc</span><span class="o">=</span><span class="n">pbc</span><span class="p">,</span>
+</span><span data-line="151">            <span class="n">cell</span><span class="o">=</span><span class="n">cell</span><span class="p">,</span>
+</span><span data-line="152">            <span class="n">tag</span><span class="o">=</span><span class="n">tag</span><span class="p">,</span>
+</span><span data-line="153">            <span class="n">energy</span><span class="o">=</span><span class="n">energy</span><span class="p">,</span>
+</span><span data-line="154">            <span class="n">forces</span><span class="o">=</span><span class="n">forces</span><span class="p">,</span>
+</span><span data-line="155">        <span class="p">)</span></div>
 
-</span><span data-line="152">
+</span><span data-line="156">
 <div class="viewcode-block" id="AtomicData.from_points">
 <a class="viewcode-back" href="../../../autodoc.html#mlcg.data.atomic_data.AtomicData.from_points">[docs]</a>
-</span><span data-line="153">    <span class="nd">@staticmethod</span>
-</span><span data-line="154">    <span class="k">def</span><span class="w"> </span><span class="nf">from_points</span><span class="p">(</span>
-</span><span data-line="155">        <span class="n">pos</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-</span><span data-line="156">        <span class="n">atom_types</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-</span><span data-line="157">        <span class="n">masses</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="158">        <span class="n">pbc</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="159">        <span class="n">cell</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="160">        <span class="n">tag</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="161">        <span class="n">energy</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="162">        <span class="n">forces</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="163">        <span class="n">velocities</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="164">        <span class="n">neighborlist</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="165">        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-</span><span data-line="166">    <span class="p">):</span>
-</span><span data-line="167"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Method for constructing an AtomicData instance directly</span>
-</span><span data-line="168"><span class="sd">        from input tensors</span>
-</span><span data-line="169">
-</span><span data-line="170"><span class="sd">        Parameters</span>
-</span><span data-line="171"><span class="sd">        ----------</span>
-</span><span data-line="172"><span class="sd">        pos:</span>
-</span><span data-line="173"><span class="sd">            Cartesian coordinates of a single configuration, of shape</span>
-</span><span data-line="174"><span class="sd">            (n_atoms, 3)</span>
-</span><span data-line="175"><span class="sd">        atom_types:</span>
-</span><span data-line="176"><span class="sd">            Atom type labels of shape (n_atoms)</span>
-</span><span data-line="177"><span class="sd">        masses:</span>
-</span><span data-line="178"><span class="sd">            Atom masses of shape (n_atoms)</span>
-</span><span data-line="179"><span class="sd">        pbc:</span>
-</span><span data-line="180"><span class="sd">            Period boundary condition flags for the frame</span>
-</span><span data-line="181"><span class="sd">        cell:</span>
-</span><span data-line="182"><span class="sd">            Box vectors for the configuration, for computing periodic</span>
-</span><span data-line="183"><span class="sd">            images, of shape (3,3)</span>
-</span><span data-line="184"><span class="sd">        tag:</span>
-</span><span data-line="185"><span class="sd">            String tag for the configuration</span>
-</span><span data-line="186"><span class="sd">        energy:</span>
-</span><span data-line="187"><span class="sd">            Reference scalar energy for the configuration</span>
-</span><span data-line="188"><span class="sd">        forces:</span>
-</span><span data-line="189"><span class="sd">            Reference cartesian forces for the configuration, of</span>
-</span><span data-line="190"><span class="sd">            shape (n_atoms, 3)</span>
-</span><span data-line="191"><span class="sd">        velocities:</span>
-</span><span data-line="192"><span class="sd">            Atomic velocities, of shape (n_atoms, 3)</span>
-</span><span data-line="193"><span class="sd">        neighborlist:</span>
-</span><span data-line="194"><span class="sd">            Neighborlist dictionary for tagged features. Eg,</span>
-</span><span data-line="195">
-</span><span data-line="196"><span class="sd">        Returns</span>
-</span><span data-line="197"><span class="sd">        -------</span>
-</span><span data-line="198"><span class="sd">        data:</span>
-</span><span data-line="199"><span class="sd">            Populated AtomicData instance</span>
-</span><span data-line="200"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="201">
-</span><span data-line="202">        <span class="n">data</span> <span class="o">=</span> <span class="p">{}</span>
-</span><span data-line="203">        <span class="n">data</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-</span><span data-line="204">        <span class="n">data</span><span class="p">[</span><span class="n">ATOM_TYPE_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">atom_types</span><span class="p">)</span>
-</span><span data-line="205">        <span class="n">data</span><span class="p">[</span><span class="n">POSITIONS_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span>
-</span><span data-line="206">        <span class="n">data</span><span class="p">[</span><span class="n">N_ATOMS_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
-</span><span data-line="207">            <span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="n">ATOM_TYPE_KEY</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span>
-</span><span data-line="208">        <span class="p">)</span>
-</span><span data-line="209">
-</span><span data-line="210">        <span class="k">if</span> <span class="n">masses</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="211">            <span class="k">assert</span> <span class="nb">all</span><span class="p">([</span><span class="n">m</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">masses</span><span class="p">])</span>
-</span><span data-line="212">            <span class="n">data</span><span class="p">[</span><span class="n">MASS_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">masses</span><span class="p">)</span>
-</span><span data-line="213">        <span class="k">if</span> <span class="n">energy</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="214">            <span class="n">data</span><span class="p">[</span><span class="n">ENERGY_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span>
-</span><span data-line="215">                <span class="n">energy</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="n">POSITIONS_KEY</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span>
-</span><span data-line="216">            <span class="p">)</span>
-</span><span data-line="217">        <span class="k">if</span> <span class="n">forces</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="218">            <span class="n">data</span><span class="p">[</span><span class="n">FORCE_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span>
-</span><span data-line="219">                <span class="n">forces</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="n">POSITIONS_KEY</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span>
+</span><span data-line="157">    <span class="nd">@staticmethod</span>
+</span><span data-line="158">    <span class="k">def</span><span class="w"> </span><span class="nf">from_points</span><span class="p">(</span>
+</span><span data-line="159">        <span class="n">pos</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+</span><span data-line="160">        <span class="n">atom_types</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+</span><span data-line="161">        <span class="n">masses</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="162">        <span class="n">pbc</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="163">        <span class="n">cell</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="164">        <span class="n">tag</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="165">        <span class="n">energy</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="166">        <span class="n">forces</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="167">        <span class="n">velocities</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="168">        <span class="n">neighborlist</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="169">        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+</span><span data-line="170">    <span class="p">):</span>
+</span><span data-line="171"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Method for constructing an AtomicData instance directly</span>
+</span><span data-line="172"><span class="sd">        from input tensors</span>
+</span><span data-line="173">
+</span><span data-line="174"><span class="sd">        Parameters</span>
+</span><span data-line="175"><span class="sd">        ----------</span>
+</span><span data-line="176"><span class="sd">        pos:</span>
+</span><span data-line="177"><span class="sd">            Cartesian coordinates of a single configuration, of shape</span>
+</span><span data-line="178"><span class="sd">            (n_atoms, 3)</span>
+</span><span data-line="179"><span class="sd">        atom_types:</span>
+</span><span data-line="180"><span class="sd">            Atom type labels of shape (n_atoms)</span>
+</span><span data-line="181"><span class="sd">        masses:</span>
+</span><span data-line="182"><span class="sd">            Atom masses of shape (n_atoms)</span>
+</span><span data-line="183"><span class="sd">        pbc:</span>
+</span><span data-line="184"><span class="sd">            Period boundary condition flags for the frame</span>
+</span><span data-line="185"><span class="sd">        cell:</span>
+</span><span data-line="186"><span class="sd">            Box vectors for the configuration, for computing periodic</span>
+</span><span data-line="187"><span class="sd">            images, of shape (3,3)</span>
+</span><span data-line="188"><span class="sd">        tag:</span>
+</span><span data-line="189"><span class="sd">            String tag for the configuration</span>
+</span><span data-line="190"><span class="sd">        energy:</span>
+</span><span data-line="191"><span class="sd">            Reference scalar energy for the configuration</span>
+</span><span data-line="192"><span class="sd">        forces:</span>
+</span><span data-line="193"><span class="sd">            Reference cartesian forces for the configuration, of</span>
+</span><span data-line="194"><span class="sd">            shape (n_atoms, 3)</span>
+</span><span data-line="195"><span class="sd">        velocities:</span>
+</span><span data-line="196"><span class="sd">            Atomic velocities, of shape (n_atoms, 3)</span>
+</span><span data-line="197"><span class="sd">        neighborlist:</span>
+</span><span data-line="198"><span class="sd">            Neighborlist dictionary for tagged features. Eg,</span>
+</span><span data-line="199">
+</span><span data-line="200"><span class="sd">        Returns</span>
+</span><span data-line="201"><span class="sd">        -------</span>
+</span><span data-line="202"><span class="sd">        data:</span>
+</span><span data-line="203"><span class="sd">            Populated AtomicData instance</span>
+</span><span data-line="204"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="205">
+</span><span data-line="206">        <span class="n">data</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span data-line="207">        <span class="n">data</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</span><span data-line="208">        <span class="n">data</span><span class="p">[</span><span class="n">ATOM_TYPE_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">atom_types</span><span class="p">)</span>
+</span><span data-line="209">        <span class="n">data</span><span class="p">[</span><span class="n">POSITIONS_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span>
+</span><span data-line="210">        <span class="n">data</span><span class="p">[</span><span class="n">N_ATOMS_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
+</span><span data-line="211">            <span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="n">ATOM_TYPE_KEY</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span>
+</span><span data-line="212">        <span class="p">)</span>
+</span><span data-line="213">
+</span><span data-line="214">        <span class="k">if</span> <span class="n">masses</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="215">            <span class="k">assert</span> <span class="nb">all</span><span class="p">([</span><span class="n">m</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">masses</span><span class="p">])</span>
+</span><span data-line="216">            <span class="n">data</span><span class="p">[</span><span class="n">MASS_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">masses</span><span class="p">)</span>
+</span><span data-line="217">        <span class="k">if</span> <span class="n">energy</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="218">            <span class="n">data</span><span class="p">[</span><span class="n">ENERGY_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span>
+</span><span data-line="219">                <span class="n">energy</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="n">POSITIONS_KEY</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span>
 </span><span data-line="220">            <span class="p">)</span>
-</span><span data-line="221">        <span class="k">if</span> <span class="n">velocities</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="222">            <span class="n">data</span><span class="p">[</span><span class="n">VELOCITY_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span>
-</span><span data-line="223">                <span class="n">velocities</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="n">POSITIONS_KEY</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span>
+</span><span data-line="221">        <span class="k">if</span> <span class="n">forces</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="222">            <span class="n">data</span><span class="p">[</span><span class="n">FORCE_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span>
+</span><span data-line="223">                <span class="n">forces</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="n">POSITIONS_KEY</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span>
 </span><span data-line="224">            <span class="p">)</span>
-</span><span data-line="225">
-</span><span data-line="226">        <span class="n">data</span><span class="p">[</span><span class="n">TAG_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="n">tag</span>
-</span><span data-line="227">        <span class="k">if</span> <span class="n">neighborlist</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="228">            <span class="n">data</span><span class="p">[</span><span class="n">NEIGHBOR_LIST_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-</span><span data-line="229">        <span class="k">else</span><span class="p">:</span>
-</span><span data-line="230">            <span class="n">data</span><span class="p">[</span><span class="n">NEIGHBOR_LIST_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="n">neighborlist</span>
-</span><span data-line="231">
-</span><span data-line="232">        <span class="k">if</span> <span class="n">pbc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="233">            <span class="n">data</span><span class="p">[</span><span class="n">PBC_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">pbc</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
-</span><span data-line="234">        <span class="k">if</span> <span class="n">cell</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="235">            <span class="n">data</span><span class="p">[</span><span class="n">CELL_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
-</span><span data-line="236">
-</span><span data-line="237">        <span class="k">return</span> <span class="n">AtomicData</span><span class="p">(</span><span class="o">**</span><span class="n">data</span><span class="p">)</span></div>
+</span><span data-line="225">        <span class="k">if</span> <span class="n">velocities</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="226">            <span class="n">data</span><span class="p">[</span><span class="n">VELOCITY_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span>
+</span><span data-line="227">                <span class="n">velocities</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="n">POSITIONS_KEY</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span>
+</span><span data-line="228">            <span class="p">)</span>
+</span><span data-line="229">
+</span><span data-line="230">        <span class="n">data</span><span class="p">[</span><span class="n">TAG_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="n">tag</span>
+</span><span data-line="231">        <span class="k">if</span> <span class="n">neighborlist</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="232">            <span class="n">data</span><span class="p">[</span><span class="n">NEIGHBOR_LIST_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span data-line="233">        <span class="k">else</span><span class="p">:</span>
+</span><span data-line="234">            <span class="n">data</span><span class="p">[</span><span class="n">NEIGHBOR_LIST_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="n">neighborlist</span>
+</span><span data-line="235">
+</span><span data-line="236">        <span class="k">if</span> <span class="n">pbc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="237">            <span class="n">data</span><span class="p">[</span><span class="n">PBC_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">pbc</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+</span><span data-line="238">        <span class="k">if</span> <span class="n">cell</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="239">            <span class="n">data</span><span class="p">[</span><span class="n">CELL_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+</span><span data-line="240">
+</span><span data-line="241">        <span class="k">return</span> <span class="n">AtomicData</span><span class="p">(</span><span class="o">**</span><span class="n">data</span><span class="p">)</span></div>
 </div>
 
 </span></pre></div>

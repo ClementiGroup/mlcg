@@ -127,6 +127,7 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#mlcg.data.atomic_data.AtomicData.velocities"><code class="docutils literal notranslate">velocities</span></code></a></li>
 <li><a class="reference internal" href="#mlcg.data.atomic_data.AtomicData.neighbor_list"><code class="docutils literal notranslate">neighbor_list</span></code></a></li>
 <li><a class="reference internal" href="#mlcg.data.atomic_data.AtomicData.batch"><code class="docutils literal notranslate">batch</span></code></a></li>
+<li><a class="reference internal" href="#mlcg.data.atomic_data.AtomicData.excluded_pairs"><code class="docutils literal notranslate">excluded_pairs</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -290,6 +291,19 @@ The attribute names are defined in <code class="xref py py-data docutils literal
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>[<a class="reference internal" href="../geometry/topology.html#mlcg.geometry.topology.Topology.n_atoms" title="mlcg.geometry.topology.Topology.n_atoms">n_atoms</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mlcg.data.atomic_data.AtomicData.excluded_pairs">
+<span class="sig-name descname"><span class="pre">excluded_pairs</span></span><a class="headerlink" href="#mlcg.data.atomic_data.AtomicData.excluded_pairs" title="Link to this definition">¶</a></dt>
+<dd><p>contains information about excluded pairs from the model neighborlist
+in particular <cite>excluded_order: int</cite> and <cite>index_mapping: [2, n_excluded]</cite>,
+unordered pairs: <cite>(i, j)</cite> excludes both directions</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[str, Any] (Optional)</p>
 </dd>
 </dl>
 </dd></dl>

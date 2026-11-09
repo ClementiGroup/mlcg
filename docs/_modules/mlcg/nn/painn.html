@@ -482,410 +482,445 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="303"><span class="sd">    nls_distance_method:</span>
 </span><span data-line="304"><span class="sd">        Method for computing a neighbor list. Supported values are</span>
 </span><span data-line="305"><span class="sd">        `torch`, `nvalchemi_naive`, `nvalchemi_cell` and custom.</span>
-</span><span data-line="306"><span class="sd">    &quot;&quot;&quot;</span>
-</span><span data-line="307">
-</span><span data-line="308">    <span class="n">name</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;PaiNN&quot;</span>
-</span><span data-line="309">
-</span><span data-line="310">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-</span><span data-line="311">        <span class="bp">self</span><span class="p">,</span>
-</span><span data-line="312">        <span class="n">embedding_layer</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
-</span><span data-line="313">        <span class="n">interaction_blocks</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">PaiNNInteraction</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">PaiNNInteraction</span><span class="p">]],</span>
-</span><span data-line="314">        <span class="n">mixing_blocks</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">PaiNNMixing</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">PaiNNMixing</span><span class="p">]],</span>
-</span><span data-line="315">        <span class="n">rbf_layer</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
-</span><span data-line="316">        <span class="n">output_network</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
-</span><span data-line="317">        <span class="n">max_num_neighbors</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-</span><span data-line="318">        <span class="n">nls_distance_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;torch&quot;</span><span class="p">,</span>
-</span><span data-line="319">    <span class="p">):</span>
-</span><span data-line="320">        <span class="nb">super</span><span class="p">(</span><span class="n">PaiNN</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-</span><span data-line="321">
-</span><span data-line="322">        <span class="bp">self</span><span class="o">.</span><span class="n">embedding_layer</span> <span class="o">=</span> <span class="n">embedding_layer</span>
-</span><span data-line="323">        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">interaction_blocks</span><span class="p">,</span> <span class="n">List</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span>
-</span><span data-line="324">            <span class="n">interaction_blocks</span><span class="p">,</span> <span class="n">PaiNNInteraction</span>
-</span><span data-line="325">        <span class="p">):</span>
-</span><span data-line="326">            <span class="bp">self</span><span class="o">.</span><span class="n">interaction_blocks</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">(</span><span class="n">interaction_blocks</span><span class="p">)</span>
-</span><span data-line="327">        <span class="k">else</span><span class="p">:</span>
-</span><span data-line="328">            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-</span><span data-line="329">                <span class="s2">&quot;interaction_blocks must be a single PaiNNInteractionBlock or &quot;</span>
-</span><span data-line="330">                <span class="s2">&quot;a list of PaiNNInteractionBlocks.&quot;</span>
-</span><span data-line="331">            <span class="p">)</span>
-</span><span data-line="332">        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mixing_blocks</span><span class="p">,</span> <span class="n">List</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span>
-</span><span data-line="333">            <span class="n">mixing_blocks</span><span class="p">,</span> <span class="n">PaiNNMixing</span>
-</span><span data-line="334">        <span class="p">):</span>
-</span><span data-line="335">            <span class="bp">self</span><span class="o">.</span><span class="n">mixing_blocks</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">(</span><span class="n">mixing_blocks</span><span class="p">)</span>
-</span><span data-line="336">        <span class="k">else</span><span class="p">:</span>
-</span><span data-line="337">            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-</span><span data-line="338">                <span class="s2">&quot;mixing_blocks must be a single PaiNNMixing or &quot;</span>
-</span><span data-line="339">                <span class="s2">&quot;a list of PaiNNMixing.&quot;</span>
-</span><span data-line="340">            <span class="p">)</span>
-</span><span data-line="341">        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mixing_blocks</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interaction_blocks</span><span class="p">):</span>
+</span><span data-line="306"><span class="sd">    excluded_order:</span>
+</span><span data-line="307"><span class="sd">        Order of excluded interaction in neighbor list computation:</span>
+</span><span data-line="308"><span class="sd">        1 no exclusion, 2 excludes up to first bonds, 3 excludes up to second bonds</span>
+</span><span data-line="309"><span class="sd">        and so on. Default is 1 meaning no exclusion.</span>
+</span><span data-line="310"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="311">
+</span><span data-line="312">    <span class="n">name</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;PaiNN&quot;</span>
+</span><span data-line="313">
+</span><span data-line="314">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+</span><span data-line="315">        <span class="bp">self</span><span class="p">,</span>
+</span><span data-line="316">        <span class="n">embedding_layer</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+</span><span data-line="317">        <span class="n">interaction_blocks</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">PaiNNInteraction</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">PaiNNInteraction</span><span class="p">]],</span>
+</span><span data-line="318">        <span class="n">mixing_blocks</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">PaiNNMixing</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">PaiNNMixing</span><span class="p">]],</span>
+</span><span data-line="319">        <span class="n">rbf_layer</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+</span><span data-line="320">        <span class="n">output_network</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+</span><span data-line="321">        <span class="n">max_num_neighbors</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span data-line="322">        <span class="n">nls_distance_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;torch&quot;</span><span class="p">,</span>
+</span><span data-line="323">        <span class="n">excluded_order</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+</span><span data-line="324">    <span class="p">):</span>
+</span><span data-line="325">        <span class="nb">super</span><span class="p">(</span><span class="n">PaiNN</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+</span><span data-line="326">
+</span><span data-line="327">        <span class="bp">self</span><span class="o">.</span><span class="n">embedding_layer</span> <span class="o">=</span> <span class="n">embedding_layer</span>
+</span><span data-line="328">        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">interaction_blocks</span><span class="p">,</span> <span class="n">List</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span>
+</span><span data-line="329">            <span class="n">interaction_blocks</span><span class="p">,</span> <span class="n">PaiNNInteraction</span>
+</span><span data-line="330">        <span class="p">):</span>
+</span><span data-line="331">            <span class="bp">self</span><span class="o">.</span><span class="n">interaction_blocks</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">(</span><span class="n">interaction_blocks</span><span class="p">)</span>
+</span><span data-line="332">        <span class="k">else</span><span class="p">:</span>
+</span><span data-line="333">            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+</span><span data-line="334">                <span class="s2">&quot;interaction_blocks must be a single PaiNNInteractionBlock or &quot;</span>
+</span><span data-line="335">                <span class="s2">&quot;a list of PaiNNInteractionBlocks.&quot;</span>
+</span><span data-line="336">            <span class="p">)</span>
+</span><span data-line="337">        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mixing_blocks</span><span class="p">,</span> <span class="n">List</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span>
+</span><span data-line="338">            <span class="n">mixing_blocks</span><span class="p">,</span> <span class="n">PaiNNMixing</span>
+</span><span data-line="339">        <span class="p">):</span>
+</span><span data-line="340">            <span class="bp">self</span><span class="o">.</span><span class="n">mixing_blocks</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">(</span><span class="n">mixing_blocks</span><span class="p">)</span>
+</span><span data-line="341">        <span class="k">else</span><span class="p">:</span>
 </span><span data-line="342">            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-</span><span data-line="343">                <span class="s2">&quot;The number of mixing and interaction blocks must be equal &quot;</span>
-</span><span data-line="344">                <span class="sa">f</span><span class="s2">&quot;but you provided </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mixing_blocks</span><span class="p">)</span><span class="si">}</span><span class="s2"> mixing &quot;</span>
-</span><span data-line="345">                <span class="sa">f</span><span class="s2">&quot;and </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interaction_blocks</span><span class="p">)</span><span class="si">}</span><span class="s2"> interactions&quot;</span>
-</span><span data-line="346">            <span class="p">)</span>
-</span><span data-line="347">        <span class="bp">self</span><span class="o">.</span><span class="n">output_network</span> <span class="o">=</span> <span class="n">output_network</span>
-</span><span data-line="348">        <span class="bp">self</span><span class="o">.</span><span class="n">rbf_layer</span> <span class="o">=</span> <span class="n">rbf_layer</span>
-</span><span data-line="349">        <span class="bp">self</span><span class="o">.</span><span class="n">max_num_neighbors</span> <span class="o">=</span> <span class="n">max_num_neighbors</span>
-</span><span data-line="350">        <span class="bp">self</span><span class="o">.</span><span class="n">nls_distance_method</span> <span class="o">=</span> <span class="n">nls_distance_method</span>
-</span><span data-line="351">
-</span><span data-line="352">        <span class="bp">self</span><span class="o">.</span><span class="n">reset_parameters</span><span class="p">()</span>
-</span><span data-line="353">
+</span><span data-line="343">                <span class="s2">&quot;mixing_blocks must be a single PaiNNMixing or &quot;</span>
+</span><span data-line="344">                <span class="s2">&quot;a list of PaiNNMixing.&quot;</span>
+</span><span data-line="345">            <span class="p">)</span>
+</span><span data-line="346">        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mixing_blocks</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interaction_blocks</span><span class="p">):</span>
+</span><span data-line="347">            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+</span><span data-line="348">                <span class="s2">&quot;The number of mixing and interaction blocks must be equal &quot;</span>
+</span><span data-line="349">                <span class="sa">f</span><span class="s2">&quot;but you provided </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mixing_blocks</span><span class="p">)</span><span class="si">}</span><span class="s2"> mixing &quot;</span>
+</span><span data-line="350">                <span class="sa">f</span><span class="s2">&quot;and </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interaction_blocks</span><span class="p">)</span><span class="si">}</span><span class="s2"> interactions&quot;</span>
+</span><span data-line="351">            <span class="p">)</span>
+</span><span data-line="352">        <span class="bp">self</span><span class="o">.</span><span class="n">output_network</span> <span class="o">=</span> <span class="n">output_network</span>
+</span><span data-line="353">        <span class="bp">self</span><span class="o">.</span><span class="n">rbf_layer</span> <span class="o">=</span> <span class="n">rbf_layer</span>
+</span><span data-line="354">        <span class="bp">self</span><span class="o">.</span><span class="n">max_num_neighbors</span> <span class="o">=</span> <span class="n">max_num_neighbors</span>
+</span><span data-line="355">        <span class="bp">self</span><span class="o">.</span><span class="n">nls_distance_method</span> <span class="o">=</span> <span class="n">nls_distance_method</span>
+</span><span data-line="356">        <span class="k">if</span> <span class="n">excluded_order</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+</span><span data-line="357">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+</span><span data-line="358">                <span class="sa">f</span><span class="s2">&quot;excluded order must be at least 1 (no exclusion), you provided </span><span class="si">{</span><span class="n">excluded_order</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span data-line="359">            <span class="p">)</span>
+</span><span data-line="360">        <span class="bp">self</span><span class="o">.</span><span class="n">excluded_order</span> <span class="o">=</span> <span class="n">excluded_order</span>
+</span><span data-line="361">
+</span><span data-line="362">        <span class="bp">self</span><span class="o">.</span><span class="n">reset_parameters</span><span class="p">()</span>
+</span><span data-line="363">
 <div class="viewcode-block" id="PaiNN.reset_parameters">
 <a class="viewcode-back" href="../../../autodoc.html#mlcg.nn.painn.PaiNN.reset_parameters">[docs]</a>
-</span><span data-line="354">    <span class="k">def</span><span class="w"> </span><span class="nf">reset_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="355"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Method for resetting linear layers in each PaiNN component&quot;&quot;&quot;</span>
-</span><span data-line="356">        <span class="bp">self</span><span class="o">.</span><span class="n">embedding_layer</span><span class="o">.</span><span class="n">reset_parameters</span><span class="p">()</span>
-</span><span data-line="357">        <span class="bp">self</span><span class="o">.</span><span class="n">rbf_layer</span><span class="o">.</span><span class="n">reset_parameters</span><span class="p">()</span>
-</span><span data-line="358">        <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">interaction_blocks</span><span class="p">:</span>
-</span><span data-line="359">            <span class="n">block</span><span class="o">.</span><span class="n">reset_parameters</span><span class="p">()</span>
-</span><span data-line="360">        <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mixing_blocks</span><span class="p">:</span>
-</span><span data-line="361">            <span class="n">block</span><span class="o">.</span><span class="n">reset_parameters</span><span class="p">()</span>
-</span><span data-line="362">        <span class="bp">self</span><span class="o">.</span><span class="n">output_network</span><span class="o">.</span><span class="n">reset_parameters</span><span class="p">()</span></div>
+</span><span data-line="364">    <span class="k">def</span><span class="w"> </span><span class="nf">reset_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span data-line="365"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Method for resetting linear layers in each PaiNN component&quot;&quot;&quot;</span>
+</span><span data-line="366">        <span class="bp">self</span><span class="o">.</span><span class="n">embedding_layer</span><span class="o">.</span><span class="n">reset_parameters</span><span class="p">()</span>
+</span><span data-line="367">        <span class="bp">self</span><span class="o">.</span><span class="n">rbf_layer</span><span class="o">.</span><span class="n">reset_parameters</span><span class="p">()</span>
+</span><span data-line="368">        <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">interaction_blocks</span><span class="p">:</span>
+</span><span data-line="369">            <span class="n">block</span><span class="o">.</span><span class="n">reset_parameters</span><span class="p">()</span>
+</span><span data-line="370">        <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mixing_blocks</span><span class="p">:</span>
+</span><span data-line="371">            <span class="n">block</span><span class="o">.</span><span class="n">reset_parameters</span><span class="p">()</span>
+</span><span data-line="372">        <span class="bp">self</span><span class="o">.</span><span class="n">output_network</span><span class="o">.</span><span class="n">reset_parameters</span><span class="p">()</span></div>
 
-</span><span data-line="363">
+</span><span data-line="373">
 <div class="viewcode-block" id="PaiNN.forward">
 <a class="viewcode-back" href="../../../autodoc.html#mlcg.nn.painn.PaiNN.forward">[docs]</a>
-</span><span data-line="364">    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">):</span>
-</span><span data-line="365"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Forward pass through the PaiNN architecture.</span>
-</span><span data-line="366">
-</span><span data-line="367"><span class="sd">        Parameters</span>
-</span><span data-line="368"><span class="sd">        ----------</span>
-</span><span data-line="369"><span class="sd">        data:</span>
-</span><span data-line="370"><span class="sd">            Input data object containing batch atom/bead positions</span>
-</span><span data-line="371"><span class="sd">            and atom/bead types.</span>
-</span><span data-line="372">
-</span><span data-line="373"><span class="sd">        Returns</span>
-</span><span data-line="374"><span class="sd">        -------</span>
-</span><span data-line="375"><span class="sd">        data:</span>
-</span><span data-line="376"><span class="sd">           Data dictionary, updated with predicted energy of shape</span>
-</span><span data-line="377"><span class="sd">           (num_examples * num_atoms, 1), as well as neighbor list</span>
-</span><span data-line="378"><span class="sd">           information.</span>
-</span><span data-line="379"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="380">        <span class="n">neighbor_list</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-</span><span data-line="381">
-</span><span data-line="382">        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_nl_compatible</span><span class="p">(</span><span class="n">neighbor_list</span><span class="p">):</span>
-</span><span data-line="383">            <span class="n">neighbor_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">(</span>
-</span><span data-line="384">                <span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rbf_layer</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_upper</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_num_neighbors</span>
-</span><span data-line="385">            <span class="p">)[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
-</span><span data-line="386">
-</span><span data-line="387">        <span class="n">edge_index</span> <span class="o">=</span> <span class="n">neighbor_list</span><span class="p">[</span><span class="s2">&quot;index_mapping&quot;</span><span class="p">]</span>
-</span><span data-line="388">
-</span><span data-line="389">        <span class="n">distances</span><span class="p">,</span> <span class="n">normdir</span> <span class="o">=</span> <span class="n">compute_distance_vectors</span><span class="p">(</span>
-</span><span data-line="390">            <span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span>
-</span><span data-line="391">            <span class="n">edge_index</span><span class="p">,</span>
-</span><span data-line="392">            <span class="n">neighbor_list</span><span class="p">[</span><span class="s2">&quot;cell_shifts&quot;</span><span class="p">],</span>
-</span><span data-line="393">        <span class="p">)</span>
-</span><span data-line="394">
-</span><span data-line="395">        <span class="n">rbf_expansion</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rbf_layer</span><span class="p">(</span><span class="n">distances</span><span class="p">)</span>
-</span><span data-line="396">
-</span><span data-line="397">        <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_layer</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">atom_types</span><span class="p">)</span>  <span class="c1"># (n_atoms, n_features)</span>
-</span><span data-line="398">        <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># (n_atoms, 1, n_features)</span>
-</span><span data-line="399">        <span class="n">mu</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
-</span><span data-line="400">            <span class="p">(</span><span class="n">q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">3</span><span class="p">,</span> <span class="n">q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="n">device</span><span class="o">=</span><span class="n">q</span><span class="o">.</span><span class="n">device</span>
-</span><span data-line="401">        <span class="p">)</span>  <span class="c1"># (n_atoms, 3, n_features)</span>
+</span><span data-line="374">    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">):</span>
+</span><span data-line="375"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Forward pass through the PaiNN architecture.</span>
+</span><span data-line="376">
+</span><span data-line="377"><span class="sd">        Parameters</span>
+</span><span data-line="378"><span class="sd">        ----------</span>
+</span><span data-line="379"><span class="sd">        data:</span>
+</span><span data-line="380"><span class="sd">            Input data object containing batch atom/bead positions</span>
+</span><span data-line="381"><span class="sd">            and atom/bead types.</span>
+</span><span data-line="382">
+</span><span data-line="383"><span class="sd">        Returns</span>
+</span><span data-line="384"><span class="sd">        -------</span>
+</span><span data-line="385"><span class="sd">        data:</span>
+</span><span data-line="386"><span class="sd">           Data dictionary, updated with predicted energy of shape</span>
+</span><span data-line="387"><span class="sd">           (num_examples * num_atoms, 1), as well as neighbor list</span>
+</span><span data-line="388"><span class="sd">           information.</span>
+</span><span data-line="389"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="390">        <span class="n">neighbor_list</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+</span><span data-line="391">
+</span><span data-line="392">        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_nl_compatible</span><span class="p">(</span><span class="n">neighbor_list</span><span class="p">):</span>
+</span><span data-line="393">            <span class="n">neighbor_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">(</span>
+</span><span data-line="394">                <span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rbf_layer</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_upper</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_num_neighbors</span>
+</span><span data-line="395">            <span class="p">)[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+</span><span data-line="396">        <span class="k">if</span> <span class="n">neighbor_list</span><span class="p">[</span><span class="s2">&quot;excluded_order&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="nb">getattr</span><span class="p">(</span>
+</span><span data-line="397">            <span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;excluded_order&quot;</span><span class="p">,</span> <span class="mi">1</span>
+</span><span data-line="398">        <span class="p">):</span>
+</span><span data-line="399">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+</span><span data-line="400">                <span class="sa">f</span><span class="s1">&#39;Input has </span><span class="si">{</span><span class="n">neighbor_list</span><span class="p">[</span><span class="s2">&quot;excluded_order&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1"> excluded_order while model has </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;excluded_order&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span>
+</span><span data-line="401">            <span class="p">)</span>
 </span><span data-line="402">
-</span><span data-line="403">        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">interaction</span><span class="p">,</span> <span class="n">mixing</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span>
-</span><span data-line="404">            <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interaction_blocks</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mixing_blocks</span><span class="p">)</span>
-</span><span data-line="405">        <span class="p">):</span>
-</span><span data-line="406">            <span class="n">q</span><span class="p">,</span> <span class="n">mu</span> <span class="o">=</span> <span class="n">interaction</span><span class="p">(</span>
-</span><span data-line="407">                <span class="n">q</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">normdir</span><span class="p">,</span> <span class="n">edge_index</span><span class="p">,</span> <span class="n">distances</span><span class="p">,</span> <span class="n">rbf_expansion</span>
-</span><span data-line="408">            <span class="p">)</span>
-</span><span data-line="409">            <span class="n">q</span><span class="p">,</span> <span class="n">mu</span> <span class="o">=</span> <span class="n">mixing</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">mu</span><span class="p">)</span>
-</span><span data-line="410">        <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-</span><span data-line="411">
-</span><span data-line="412">        <span class="n">energy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_network</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
-</span><span data-line="413">        <span class="n">energy</span> <span class="o">=</span> <span class="n">scatter</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">batch</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">reduce</span><span class="o">=</span><span class="s2">&quot;sum&quot;</span><span class="p">)</span>
-</span><span data-line="414">        <span class="n">energy</span> <span class="o">=</span> <span class="n">energy</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
-</span><span data-line="415">        <span class="n">data</span><span class="o">.</span><span class="n">out</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">ENERGY_KEY</span><span class="p">:</span> <span class="n">energy</span><span class="p">}</span>
-</span><span data-line="416">
-</span><span data-line="417">        <span class="k">return</span> <span class="n">data</span></div>
-
+</span><span data-line="403">        <span class="n">edge_index</span> <span class="o">=</span> <span class="n">neighbor_list</span><span class="p">[</span><span class="s2">&quot;index_mapping&quot;</span><span class="p">]</span>
+</span><span data-line="404">
+</span><span data-line="405">        <span class="n">distances</span><span class="p">,</span> <span class="n">normdir</span> <span class="o">=</span> <span class="n">compute_distance_vectors</span><span class="p">(</span>
+</span><span data-line="406">            <span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span>
+</span><span data-line="407">            <span class="n">edge_index</span><span class="p">,</span>
+</span><span data-line="408">            <span class="n">neighbor_list</span><span class="p">[</span><span class="s2">&quot;cell_shifts&quot;</span><span class="p">],</span>
+</span><span data-line="409">        <span class="p">)</span>
+</span><span data-line="410">
+</span><span data-line="411">        <span class="n">rbf_expansion</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rbf_layer</span><span class="p">(</span><span class="n">distances</span><span class="p">)</span>
+</span><span data-line="412">
+</span><span data-line="413">        <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_layer</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">atom_types</span><span class="p">)</span>  <span class="c1"># (n_atoms, n_features)</span>
+</span><span data-line="414">        <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># (n_atoms, 1, n_features)</span>
+</span><span data-line="415">        <span class="n">mu</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+</span><span data-line="416">            <span class="p">(</span><span class="n">q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">3</span><span class="p">,</span> <span class="n">q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="n">device</span><span class="o">=</span><span class="n">q</span><span class="o">.</span><span class="n">device</span>
+</span><span data-line="417">        <span class="p">)</span>  <span class="c1"># (n_atoms, 3, n_features)</span>
 </span><span data-line="418">
-</span><span data-line="419">    <span class="k">def</span><span class="w"> </span><span class="nf">is_nl_compatible</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nl</span><span class="p">):</span>
-</span><span data-line="420">        <span class="n">is_compatible</span> <span class="o">=</span> <span class="kc">False</span>
-</span><span data-line="421">        <span class="k">if</span> <span class="n">validate_neighborlist</span><span class="p">(</span><span class="n">nl</span><span class="p">):</span>
-</span><span data-line="422">            <span class="k">if</span> <span class="p">(</span>
-</span><span data-line="423">                <span class="n">nl</span><span class="p">[</span><span class="s2">&quot;order&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span>
-</span><span data-line="424">                <span class="ow">and</span> <span class="n">nl</span><span class="p">[</span><span class="s2">&quot;self_interaction&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">False</span>
-</span><span data-line="425">                <span class="ow">and</span> <span class="n">nl</span><span class="p">[</span><span class="s2">&quot;rcut&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_upper</span>
-</span><span data-line="426">            <span class="p">):</span>
-</span><span data-line="427">                <span class="n">is_compatible</span> <span class="o">=</span> <span class="kc">True</span>
-</span><span data-line="428">        <span class="k">return</span> <span class="n">is_compatible</span>
-</span><span data-line="429">
+</span><span data-line="419">        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">interaction</span><span class="p">,</span> <span class="n">mixing</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span>
+</span><span data-line="420">            <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interaction_blocks</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mixing_blocks</span><span class="p">)</span>
+</span><span data-line="421">        <span class="p">):</span>
+</span><span data-line="422">            <span class="n">q</span><span class="p">,</span> <span class="n">mu</span> <span class="o">=</span> <span class="n">interaction</span><span class="p">(</span>
+</span><span data-line="423">                <span class="n">q</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">normdir</span><span class="p">,</span> <span class="n">edge_index</span><span class="p">,</span> <span class="n">distances</span><span class="p">,</span> <span class="n">rbf_expansion</span>
+</span><span data-line="424">            <span class="p">)</span>
+</span><span data-line="425">            <span class="n">q</span><span class="p">,</span> <span class="n">mu</span> <span class="o">=</span> <span class="n">mixing</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">mu</span><span class="p">)</span>
+</span><span data-line="426">        <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span><span data-line="427">
+</span><span data-line="428">        <span class="n">energy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_network</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+</span><span data-line="429">        <span class="n">energy</span> <span class="o">=</span> <span class="n">scatter</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">batch</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">reduce</span><span class="o">=</span><span class="s2">&quot;sum&quot;</span><span class="p">)</span>
+</span><span data-line="430">        <span class="n">energy</span> <span class="o">=</span> <span class="n">energy</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+</span><span data-line="431">        <span class="n">data</span><span class="o">.</span><span class="n">out</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">ENERGY_KEY</span><span class="p">:</span> <span class="n">energy</span><span class="p">}</span>
+</span><span data-line="432">
+</span><span data-line="433">        <span class="k">return</span> <span class="n">data</span></div>
+
+</span><span data-line="434">
+</span><span data-line="435">    <span class="k">def</span><span class="w"> </span><span class="nf">is_nl_compatible</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nl</span><span class="p">):</span>
+</span><span data-line="436">        <span class="n">is_compatible</span> <span class="o">=</span> <span class="kc">False</span>
+</span><span data-line="437">        <span class="k">if</span> <span class="n">validate_neighborlist</span><span class="p">(</span><span class="n">nl</span><span class="p">):</span>
+</span><span data-line="438">            <span class="k">if</span> <span class="p">(</span>
+</span><span data-line="439">                <span class="n">nl</span><span class="p">[</span><span class="s2">&quot;order&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span>
+</span><span data-line="440">                <span class="ow">and</span> <span class="n">nl</span><span class="p">[</span><span class="s2">&quot;self_interaction&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">False</span>
+</span><span data-line="441">                <span class="ow">and</span> <span class="n">nl</span><span class="p">[</span><span class="s2">&quot;rcut&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_upper</span>
+</span><span data-line="442">                <span class="ow">and</span> <span class="n">nl</span><span class="p">[</span><span class="s2">&quot;excluded_order&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;excluded_order&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</span><span data-line="443">            <span class="p">):</span>
+</span><span data-line="444">                <span class="n">is_compatible</span> <span class="o">=</span> <span class="kc">True</span>
+</span><span data-line="445">        <span class="k">return</span> <span class="n">is_compatible</span>
+</span><span data-line="446">
 <div class="viewcode-block" id="PaiNN.neighbor_list">
 <a class="viewcode-back" href="../../../autodoc.html#mlcg.nn.painn.PaiNN.neighbor_list">[docs]</a>
-</span><span data-line="430">    <span class="k">def</span><span class="w"> </span><span class="nf">neighbor_list</span><span class="p">(</span>
-</span><span data-line="431">        <span class="bp">self</span><span class="p">,</span>
-</span><span data-line="432">        <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">,</span>
-</span><span data-line="433">        <span class="n">rcut</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-</span><span data-line="434">        <span class="n">max_num_neighbors</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
-</span><span data-line="435">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span data-line="436"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Computes the neighborlist for :obj:`data` using a strict cutoff of :obj:`rcut`.&quot;&quot;&quot;</span>
-</span><span data-line="437">        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;nls_distance_method&quot;</span><span class="p">):</span>
-</span><span data-line="438">            <span class="bp">self</span><span class="o">.</span><span class="n">nls_distance_method</span> <span class="o">=</span> <span class="s2">&quot;torch&quot;</span>
-</span><span data-line="439">        <span class="k">return</span> <span class="p">{</span>
-</span><span data-line="440">            <span class="n">PaiNN</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">atomic_data2neighbor_list</span><span class="p">(</span>
-</span><span data-line="441">                <span class="n">data</span><span class="p">,</span>
-</span><span data-line="442">                <span class="n">rcut</span><span class="p">,</span>
-</span><span data-line="443">                <span class="n">self_interaction</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-</span><span data-line="444">                <span class="n">max_num_neighbors</span><span class="o">=</span><span class="n">max_num_neighbors</span><span class="p">,</span>
-</span><span data-line="445">                <span class="n">nls_distance_method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nls_distance_method</span><span class="p">,</span>
-</span><span data-line="446">            <span class="p">)</span>
-</span><span data-line="447">        <span class="p">}</span></div>
+</span><span data-line="447">    <span class="k">def</span><span class="w"> </span><span class="nf">neighbor_list</span><span class="p">(</span>
+</span><span data-line="448">        <span class="bp">self</span><span class="p">,</span>
+</span><span data-line="449">        <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">,</span>
+</span><span data-line="450">        <span class="n">rcut</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+</span><span data-line="451">        <span class="n">max_num_neighbors</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
+</span><span data-line="452">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="453"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Computes the neighborlist for :obj:`data` using a strict cutoff of :obj:`rcut`.&quot;&quot;&quot;</span>
+</span><span data-line="454">        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;nls_distance_method&quot;</span><span class="p">):</span>
+</span><span data-line="455">            <span class="bp">self</span><span class="o">.</span><span class="n">nls_distance_method</span> <span class="o">=</span> <span class="s2">&quot;torch&quot;</span>
+</span><span data-line="456">        <span class="k">return</span> <span class="p">{</span>
+</span><span data-line="457">            <span class="n">PaiNN</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">atomic_data2neighbor_list</span><span class="p">(</span>
+</span><span data-line="458">                <span class="n">data</span><span class="p">,</span>
+</span><span data-line="459">                <span class="n">rcut</span><span class="p">,</span>
+</span><span data-line="460">                <span class="n">self_interaction</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+</span><span data-line="461">                <span class="n">max_num_neighbors</span><span class="o">=</span><span class="n">max_num_neighbors</span><span class="p">,</span>
+</span><span data-line="462">                <span class="n">nls_distance_method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nls_distance_method</span><span class="p">,</span>
+</span><span data-line="463">            <span class="p">)</span>
+</span><span data-line="464">        <span class="p">}</span></div>
 </div>
 
-</span><span data-line="448">
-</span><span data-line="449">
+</span><span data-line="465">
+</span><span data-line="466">
 <div class="viewcode-block" id="StandardPaiNN">
 <a class="viewcode-back" href="../../../models/mlip.html#mlcg.nn.painn.StandardPaiNN">[docs]</a>
-</span><span data-line="450"><span class="k">class</span><span class="w"> </span><span class="nc">StandardPaiNN</span><span class="p">(</span><span class="n">PaiNN</span><span class="p">):</span>
-</span><span data-line="451"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Small wrapper class for :ref:`PaiNN` to simplify the definition of the</span>
-</span><span data-line="452"><span class="sd">    PaiNN model through an input file. The upper distance cutoff attribute</span>
-</span><span data-line="453"><span class="sd">    in is set by default to match the upper cutoff value in the cutoff function.</span>
-</span><span data-line="454">
-</span><span data-line="455"><span class="sd">    Parameters</span>
-</span><span data-line="456"><span class="sd">    ----------</span>
-</span><span data-line="457"><span class="sd">    rbf_layer:</span>
-</span><span data-line="458"><span class="sd">        Radial basis function used to project the distances :math:`r_{ij}`.</span>
-</span><span data-line="459"><span class="sd">    cutoff:</span>
-</span><span data-line="460"><span class="sd">        Smooth cutoff function to supply to the PaiNNInteraction.</span>
-</span><span data-line="461"><span class="sd">    output_hidden_layer_widths:</span>
-</span><span data-line="462"><span class="sd">        List giving the number of hidden nodes of each hidden layer of the MLP</span>
-</span><span data-line="463"><span class="sd">        used to predict the target property from the learned scalar representation.</span>
-</span><span data-line="464"><span class="sd">    hidden_channels:</span>
-</span><span data-line="465"><span class="sd">        Dimension of the learned representation, i.e. dimension of the embedding projection, convolution layers, and interaction block.</span>
-</span><span data-line="466"><span class="sd">    embedding_size:</span>
-</span><span data-line="467"><span class="sd">        Dimension of the input embeddings (should be larger than :obj:`AtomicData.atom_types.max()+1`).</span>
-</span><span data-line="468"><span class="sd">    num_interactions:</span>
-</span><span data-line="469"><span class="sd">        Number of interaction blocks.</span>
-</span><span data-line="470"><span class="sd">    activation:</span>
-</span><span data-line="471"><span class="sd">        Activation function.</span>
-</span><span data-line="472"><span class="sd">    max_num_neighbors:</span>
-</span><span data-line="473"><span class="sd">        The maximum number of neighbors to return for each atom in :obj:`data`.</span>
-</span><span data-line="474"><span class="sd">        If the number of actual neighbors is greater than</span>
-</span><span data-line="475"><span class="sd">        :obj:`max_num_neighbors`, returned neighbors are picked randomly.</span>
-</span><span data-line="476"><span class="sd">    aggr:</span>
-</span><span data-line="477"><span class="sd">        Aggregation scheme for continuous filter output. For all options,</span>
-</span><span data-line="478"><span class="sd">        see `here &lt;https://pytorch-geometric.readthedocs.io/en/latest/notes/create_gnn.html?highlight=MessagePassing#the-messagepassing-base-class&gt;`_</span>
-</span><span data-line="479"><span class="sd">        for more options.</span>
-</span><span data-line="480"><span class="sd">    epsilon:</span>
-</span><span data-line="481"><span class="sd">        Stability constant added in norm to prevent numerical instabilities.</span>
-</span><span data-line="482"><span class="sd">    nls_distance_method:</span>
-</span><span data-line="483"><span class="sd">        Method for computing a neighbor list. Supported values are</span>
-</span><span data-line="484"><span class="sd">        `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`</span>
-</span><span data-line="485"><span class="sd">        and `custom_kernel`.</span>
-</span><span data-line="486"><span class="sd">    &quot;&quot;&quot;</span>
-</span><span data-line="487">
-</span><span data-line="488">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-</span><span data-line="489">        <span class="bp">self</span><span class="p">,</span>
-</span><span data-line="490">        <span class="n">rbf_layer</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
-</span><span data-line="491">        <span class="n">cutoff</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
-</span><span data-line="492">        <span class="n">output_hidden_layer_widths</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
-</span><span data-line="493">        <span class="n">hidden_channels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">128</span><span class="p">,</span>
-</span><span data-line="494">        <span class="n">embedding_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
-</span><span data-line="495">        <span class="n">num_interactions</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
-</span><span data-line="496">        <span class="n">activation</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Tanh</span><span class="p">(),</span>
-</span><span data-line="497">        <span class="n">max_num_neighbors</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
-</span><span data-line="498">        <span class="n">aggr</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;add&quot;</span><span class="p">,</span>
-</span><span data-line="499">        <span class="n">epsilon</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-8</span><span class="p">,</span>
-</span><span data-line="500">        <span class="n">nls_distance_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;torch&quot;</span><span class="p">,</span>
-</span><span data-line="501">    <span class="p">):</span>
-</span><span data-line="502">        <span class="k">if</span> <span class="n">num_interactions</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
-</span><span data-line="503">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;At least one interaction block must be specified&quot;</span><span class="p">)</span>
-</span><span data-line="504">
-</span><span data-line="505">        <span class="k">if</span> <span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_lower</span> <span class="o">!=</span> <span class="n">rbf_layer</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_lower</span><span class="p">:</span>
-</span><span data-line="506">            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-</span><span data-line="507">                <span class="s2">&quot;Cutoff function lower cutoff, </span><span class="si">{}</span><span class="s2">, and radial basis function &quot;</span>
-</span><span data-line="508">                <span class="s2">&quot; lower cutoff, </span><span class="si">{}</span><span class="s2">, do not match.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-</span><span data-line="509">                    <span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_lower</span><span class="p">,</span> <span class="n">rbf_layer</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_lower</span>
-</span><span data-line="510">                <span class="p">)</span>
-</span><span data-line="511">            <span class="p">)</span>
-</span><span data-line="512">        <span class="k">if</span> <span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_upper</span> <span class="o">!=</span> <span class="n">rbf_layer</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_upper</span><span class="p">:</span>
-</span><span data-line="513">            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-</span><span data-line="514">                <span class="s2">&quot;Cutoff function upper cutoff, </span><span class="si">{}</span><span class="s2">, and radial basis function &quot;</span>
-</span><span data-line="515">                <span class="s2">&quot; upper cutoff, </span><span class="si">{}</span><span class="s2">, do not match.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-</span><span data-line="516">                    <span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_upper</span><span class="p">,</span> <span class="n">rbf_layer</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_upper</span>
-</span><span data-line="517">                <span class="p">)</span>
-</span><span data-line="518">            <span class="p">)</span>
-</span><span data-line="519">
-</span><span data-line="520">        <span class="n">embedding_layer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span><span class="n">embedding_size</span><span class="p">,</span> <span class="n">hidden_channels</span><span class="p">)</span>
-</span><span data-line="521">
-</span><span data-line="522">        <span class="n">interaction_blocks</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span data-line="523">        <span class="n">mixing_blocks</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span data-line="524">        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_interactions</span><span class="p">):</span>
-</span><span data-line="525">            <span class="n">interaction_blocks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-</span><span data-line="526">                <span class="n">PaiNNInteraction</span><span class="p">(</span>
-</span><span data-line="527">                    <span class="n">hidden_channels</span><span class="p">,</span> <span class="n">rbf_layer</span><span class="o">.</span><span class="n">num_rbf</span><span class="p">,</span> <span class="n">cutoff</span><span class="p">,</span> <span class="n">activation</span><span class="p">,</span> <span class="n">aggr</span>
-</span><span data-line="528">                <span class="p">)</span>
-</span><span data-line="529">            <span class="p">)</span>
-</span><span data-line="530">            <span class="n">mixing_blocks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-</span><span data-line="531">                <span class="n">PaiNNMixing</span><span class="p">(</span><span class="n">hidden_channels</span><span class="p">,</span> <span class="n">activation</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">)</span>
-</span><span data-line="532">            <span class="p">)</span>
-</span><span data-line="533">
-</span><span data-line="534">        <span class="n">output_layer_widths</span> <span class="o">=</span> <span class="p">(</span>
-</span><span data-line="535">            <span class="p">[</span><span class="n">hidden_channels</span><span class="p">]</span> <span class="o">+</span> <span class="n">output_hidden_layer_widths</span> <span class="o">+</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-</span><span data-line="536">        <span class="p">)</span>
-</span><span data-line="537">        <span class="n">output_network</span> <span class="o">=</span> <span class="n">MLP</span><span class="p">(</span>
-</span><span data-line="538">            <span class="n">output_layer_widths</span><span class="p">,</span> <span class="n">activation_func</span><span class="o">=</span><span class="n">activation</span><span class="p">,</span> <span class="n">last_bias</span><span class="o">=</span><span class="kc">False</span>
-</span><span data-line="539">        <span class="p">)</span>
-</span><span data-line="540">        <span class="nb">super</span><span class="p">(</span><span class="n">StandardPaiNN</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-</span><span data-line="541">            <span class="n">embedding_layer</span><span class="p">,</span>
-</span><span data-line="542">            <span class="n">interaction_blocks</span><span class="p">,</span>
-</span><span data-line="543">            <span class="n">mixing_blocks</span><span class="p">,</span>
-</span><span data-line="544">            <span class="n">rbf_layer</span><span class="p">,</span>
-</span><span data-line="545">            <span class="n">output_network</span><span class="p">,</span>
-</span><span data-line="546">            <span class="n">max_num_neighbors</span><span class="p">,</span>
-</span><span data-line="547">            <span class="n">nls_distance_method</span><span class="o">=</span><span class="n">nls_distance_method</span><span class="p">,</span>
-</span><span data-line="548">        <span class="p">)</span></div>
+</span><span data-line="467"><span class="k">class</span><span class="w"> </span><span class="nc">StandardPaiNN</span><span class="p">(</span><span class="n">PaiNN</span><span class="p">):</span>
+</span><span data-line="468"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Small wrapper class for :ref:`PaiNN` to simplify the definition of the</span>
+</span><span data-line="469"><span class="sd">    PaiNN model through an input file. The upper distance cutoff attribute</span>
+</span><span data-line="470"><span class="sd">    in is set by default to match the upper cutoff value in the cutoff function.</span>
+</span><span data-line="471">
+</span><span data-line="472"><span class="sd">    Parameters</span>
+</span><span data-line="473"><span class="sd">    ----------</span>
+</span><span data-line="474"><span class="sd">    rbf_layer:</span>
+</span><span data-line="475"><span class="sd">        Radial basis function used to project the distances :math:`r_{ij}`.</span>
+</span><span data-line="476"><span class="sd">    cutoff:</span>
+</span><span data-line="477"><span class="sd">        Smooth cutoff function to supply to the PaiNNInteraction.</span>
+</span><span data-line="478"><span class="sd">    output_hidden_layer_widths:</span>
+</span><span data-line="479"><span class="sd">        List giving the number of hidden nodes of each hidden layer of the MLP</span>
+</span><span data-line="480"><span class="sd">        used to predict the target property from the learned scalar representation.</span>
+</span><span data-line="481"><span class="sd">    hidden_channels:</span>
+</span><span data-line="482"><span class="sd">        Dimension of the learned representation, i.e. dimension of the embedding projection, convolution layers, and interaction block.</span>
+</span><span data-line="483"><span class="sd">    embedding_size:</span>
+</span><span data-line="484"><span class="sd">        Dimension of the input embeddings (should be larger than :obj:`AtomicData.atom_types.max()+1`).</span>
+</span><span data-line="485"><span class="sd">    num_interactions:</span>
+</span><span data-line="486"><span class="sd">        Number of interaction blocks.</span>
+</span><span data-line="487"><span class="sd">    activation:</span>
+</span><span data-line="488"><span class="sd">        Activation function.</span>
+</span><span data-line="489"><span class="sd">    max_num_neighbors:</span>
+</span><span data-line="490"><span class="sd">        The maximum number of neighbors to return for each atom in :obj:`data`.</span>
+</span><span data-line="491"><span class="sd">        If the number of actual neighbors is greater than</span>
+</span><span data-line="492"><span class="sd">        :obj:`max_num_neighbors`, returned neighbors are picked randomly.</span>
+</span><span data-line="493"><span class="sd">    aggr:</span>
+</span><span data-line="494"><span class="sd">        Aggregation scheme for continuous filter output. For all options,</span>
+</span><span data-line="495"><span class="sd">        see `here &lt;https://pytorch-geometric.readthedocs.io/en/latest/notes/create_gnn.html?highlight=MessagePassing#the-messagepassing-base-class&gt;`_</span>
+</span><span data-line="496"><span class="sd">        for more options.</span>
+</span><span data-line="497"><span class="sd">    epsilon:</span>
+</span><span data-line="498"><span class="sd">        Stability constant added in norm to prevent numerical instabilities.</span>
+</span><span data-line="499"><span class="sd">    nls_distance_method:</span>
+</span><span data-line="500"><span class="sd">        Method for computing a neighbor list. Supported values are</span>
+</span><span data-line="501"><span class="sd">        `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`</span>
+</span><span data-line="502"><span class="sd">        and `custom_kernel`.</span>
+</span><span data-line="503"><span class="sd">    excluded_order:</span>
+</span><span data-line="504"><span class="sd">        Order of excluded interaction in neighbor list computation:</span>
+</span><span data-line="505"><span class="sd">        1 no exclusion, 2 excludes up to first bonds, 3 excludes up to second bonds</span>
+</span><span data-line="506"><span class="sd">        and so on. Default is 1 meaning no exclusion.</span>
+</span><span data-line="507"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="508">
+</span><span data-line="509">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+</span><span data-line="510">        <span class="bp">self</span><span class="p">,</span>
+</span><span data-line="511">        <span class="n">rbf_layer</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+</span><span data-line="512">        <span class="n">cutoff</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+</span><span data-line="513">        <span class="n">output_hidden_layer_widths</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+</span><span data-line="514">        <span class="n">hidden_channels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">128</span><span class="p">,</span>
+</span><span data-line="515">        <span class="n">embedding_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+</span><span data-line="516">        <span class="n">num_interactions</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+</span><span data-line="517">        <span class="n">activation</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Tanh</span><span class="p">(),</span>
+</span><span data-line="518">        <span class="n">max_num_neighbors</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
+</span><span data-line="519">        <span class="n">aggr</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;add&quot;</span><span class="p">,</span>
+</span><span data-line="520">        <span class="n">epsilon</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-8</span><span class="p">,</span>
+</span><span data-line="521">        <span class="n">nls_distance_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;torch&quot;</span><span class="p">,</span>
+</span><span data-line="522">        <span class="n">excluded_order</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+</span><span data-line="523">    <span class="p">):</span>
+</span><span data-line="524">        <span class="k">if</span> <span class="n">num_interactions</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+</span><span data-line="525">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;At least one interaction block must be specified&quot;</span><span class="p">)</span>
+</span><span data-line="526">
+</span><span data-line="527">        <span class="k">if</span> <span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_lower</span> <span class="o">!=</span> <span class="n">rbf_layer</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_lower</span><span class="p">:</span>
+</span><span data-line="528">            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+</span><span data-line="529">                <span class="s2">&quot;Cutoff function lower cutoff, </span><span class="si">{}</span><span class="s2">, and radial basis function &quot;</span>
+</span><span data-line="530">                <span class="s2">&quot; lower cutoff, </span><span class="si">{}</span><span class="s2">, do not match.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+</span><span data-line="531">                    <span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_lower</span><span class="p">,</span> <span class="n">rbf_layer</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_lower</span>
+</span><span data-line="532">                <span class="p">)</span>
+</span><span data-line="533">            <span class="p">)</span>
+</span><span data-line="534">        <span class="k">if</span> <span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_upper</span> <span class="o">!=</span> <span class="n">rbf_layer</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_upper</span><span class="p">:</span>
+</span><span data-line="535">            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+</span><span data-line="536">                <span class="s2">&quot;Cutoff function upper cutoff, </span><span class="si">{}</span><span class="s2">, and radial basis function &quot;</span>
+</span><span data-line="537">                <span class="s2">&quot; upper cutoff, </span><span class="si">{}</span><span class="s2">, do not match.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+</span><span data-line="538">                    <span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_upper</span><span class="p">,</span> <span class="n">rbf_layer</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_upper</span>
+</span><span data-line="539">                <span class="p">)</span>
+</span><span data-line="540">            <span class="p">)</span>
+</span><span data-line="541">
+</span><span data-line="542">        <span class="n">embedding_layer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span><span class="n">embedding_size</span><span class="p">,</span> <span class="n">hidden_channels</span><span class="p">)</span>
+</span><span data-line="543">
+</span><span data-line="544">        <span class="n">interaction_blocks</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span data-line="545">        <span class="n">mixing_blocks</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span data-line="546">        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_interactions</span><span class="p">):</span>
+</span><span data-line="547">            <span class="n">interaction_blocks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+</span><span data-line="548">                <span class="n">PaiNNInteraction</span><span class="p">(</span>
+</span><span data-line="549">                    <span class="n">hidden_channels</span><span class="p">,</span> <span class="n">rbf_layer</span><span class="o">.</span><span class="n">num_rbf</span><span class="p">,</span> <span class="n">cutoff</span><span class="p">,</span> <span class="n">activation</span><span class="p">,</span> <span class="n">aggr</span>
+</span><span data-line="550">                <span class="p">)</span>
+</span><span data-line="551">            <span class="p">)</span>
+</span><span data-line="552">            <span class="n">mixing_blocks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+</span><span data-line="553">                <span class="n">PaiNNMixing</span><span class="p">(</span><span class="n">hidden_channels</span><span class="p">,</span> <span class="n">activation</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">)</span>
+</span><span data-line="554">            <span class="p">)</span>
+</span><span data-line="555">
+</span><span data-line="556">        <span class="n">output_layer_widths</span> <span class="o">=</span> <span class="p">(</span>
+</span><span data-line="557">            <span class="p">[</span><span class="n">hidden_channels</span><span class="p">]</span> <span class="o">+</span> <span class="n">output_hidden_layer_widths</span> <span class="o">+</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+</span><span data-line="558">        <span class="p">)</span>
+</span><span data-line="559">        <span class="n">output_network</span> <span class="o">=</span> <span class="n">MLP</span><span class="p">(</span>
+</span><span data-line="560">            <span class="n">output_layer_widths</span><span class="p">,</span> <span class="n">activation_func</span><span class="o">=</span><span class="n">activation</span><span class="p">,</span> <span class="n">last_bias</span><span class="o">=</span><span class="kc">False</span>
+</span><span data-line="561">        <span class="p">)</span>
+</span><span data-line="562">        <span class="nb">super</span><span class="p">(</span><span class="n">StandardPaiNN</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+</span><span data-line="563">            <span class="n">embedding_layer</span><span class="p">,</span>
+</span><span data-line="564">            <span class="n">interaction_blocks</span><span class="p">,</span>
+</span><span data-line="565">            <span class="n">mixing_blocks</span><span class="p">,</span>
+</span><span data-line="566">            <span class="n">rbf_layer</span><span class="p">,</span>
+</span><span data-line="567">            <span class="n">output_network</span><span class="p">,</span>
+</span><span data-line="568">            <span class="n">max_num_neighbors</span><span class="p">,</span>
+</span><span data-line="569">            <span class="n">nls_distance_method</span><span class="o">=</span><span class="n">nls_distance_method</span><span class="p">,</span>
+</span><span data-line="570">            <span class="n">excluded_order</span><span class="o">=</span><span class="n">excluded_order</span><span class="p">,</span>
+</span><span data-line="571">        <span class="p">)</span></div>
 
-</span><span data-line="549">
-</span><span data-line="550">
+</span><span data-line="572">
+</span><span data-line="573">
 <div class="viewcode-block" id="RBFRegularizedPaiNN">
 <a class="viewcode-back" href="../../../autodoc.html#mlcg.nn.painn.RBFRegularizedPaiNN">[docs]</a>
-</span><span data-line="551"><span class="k">class</span><span class="w"> </span><span class="nc">RBFRegularizedPaiNN</span><span class="p">(</span><span class="n">StandardPaiNN</span><span class="p">):</span>
-</span><span data-line="552"><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span data-line="553"><span class="sd">    This is a StandardSchNet model where the RBF components are weighted via Hadamard product with couple-specific</span>
-</span><span data-line="554"><span class="sd">    vectors. Each tuple of bead types has its own vector.</span>
-</span><span data-line="555"><span class="sd">    The models also adds the key radial_filters to the output dictionary, containing the regularization parameters.</span>
-</span><span data-line="556">
-</span><span data-line="557"><span class="sd">    Parameters</span>
-</span><span data-line="558"><span class="sd">    ----------</span>
-</span><span data-line="559"><span class="sd">    rbf_layer:</span>
-</span><span data-line="560"><span class="sd">        Radial basis function used to project the distances :math:`r_{ij}`.</span>
-</span><span data-line="561"><span class="sd">    cutoff:</span>
-</span><span data-line="562"><span class="sd">        Smooth cutoff function to supply to the PaiNNInteraction.</span>
-</span><span data-line="563"><span class="sd">    output_hidden_layer_widths:</span>
-</span><span data-line="564"><span class="sd">        List giving the number of hidden nodes of each hidden layer of the MLP</span>
-</span><span data-line="565"><span class="sd">        used to predict the target property from the learned scalar representation.</span>
-</span><span data-line="566"><span class="sd">    hidden_channels:</span>
-</span><span data-line="567"><span class="sd">        Dimension of the learned representation, i.e. dimension of the embedding projection, convolution layers, and interaction block.</span>
-</span><span data-line="568"><span class="sd">    embedding_size:</span>
-</span><span data-line="569"><span class="sd">        Dimension of the input embeddings (should be larger than :obj:`AtomicData.atom_types.max()+1`).</span>
-</span><span data-line="570"><span class="sd">    num_interactions:</span>
-</span><span data-line="571"><span class="sd">        Number of interaction blocks.</span>
-</span><span data-line="572"><span class="sd">    activation:</span>
-</span><span data-line="573"><span class="sd">        Activation function.</span>
-</span><span data-line="574"><span class="sd">    max_num_neighbors:</span>
-</span><span data-line="575"><span class="sd">        The maximum number of neighbors to return for each atom in :obj:`data`.</span>
-</span><span data-line="576"><span class="sd">        If the number of actual neighbors is greater than</span>
-</span><span data-line="577"><span class="sd">        :obj:`max_num_neighbors`, returned neighbors are picked randomly.</span>
-</span><span data-line="578"><span class="sd">    aggr:</span>
-</span><span data-line="579"><span class="sd">        Aggregation scheme for continuous filter output. For all options,</span>
-</span><span data-line="580"><span class="sd">        see `here &lt;https://pytorch-geometric.readthedocs.io/en/latest/notes/create_gnn.html?highlight=MessagePassing#the-messagepassing-base-class&gt;`_</span>
-</span><span data-line="581"><span class="sd">        for more options.</span>
-</span><span data-line="582"><span class="sd">    epsilon:</span>
-</span><span data-line="583"><span class="sd">        Stability constant added in norm to prevent numerical instabilities.</span>
-</span><span data-line="584"><span class="sd">    nls_distance_method:</span>
-</span><span data-line="585"><span class="sd">        Method for computing a neighbor list. Supported values are</span>
-</span><span data-line="586"><span class="sd">        `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`</span>
-</span><span data-line="587"><span class="sd">        and `custom_kernel`.</span>
-</span><span data-line="588">
-</span><span data-line="589"><span class="sd">    CLASS SPECIFIC PARAMETERS -------------------------------------------------------------</span>
-</span><span data-line="590">
-</span><span data-line="591"><span class="sd">    independent_regularizations: bool</span>
-</span><span data-line="592"><span class="sd">        If True each interaction block has its own set of regularization parameters,</span>
-</span><span data-line="593"><span class="sd">        otherwise the regularization parameters are shared across all interaction blocks.</span>
-</span><span data-line="594">
-</span><span data-line="595"><span class="sd">    &quot;&quot;&quot;</span>
-</span><span data-line="596">
-</span><span data-line="597">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-</span><span data-line="598">        <span class="bp">self</span><span class="p">,</span>
-</span><span data-line="599">        <span class="n">rbf_layer</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
-</span><span data-line="600">        <span class="n">cutoff</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
-</span><span data-line="601">        <span class="n">output_hidden_layer_widths</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
-</span><span data-line="602">        <span class="n">hidden_channels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">128</span><span class="p">,</span>
-</span><span data-line="603">        <span class="n">embedding_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
-</span><span data-line="604">        <span class="n">num_interactions</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
-</span><span data-line="605">        <span class="n">activation</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Tanh</span><span class="p">(),</span>
-</span><span data-line="606">        <span class="n">max_num_neighbors</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
-</span><span data-line="607">        <span class="n">aggr</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;add&quot;</span><span class="p">,</span>
-</span><span data-line="608">        <span class="n">epsilon</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-8</span><span class="p">,</span>
-</span><span data-line="609">        <span class="n">nls_distance_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;torch&quot;</span><span class="p">,</span>
-</span><span data-line="610">        <span class="n">independent_regularizations</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-</span><span data-line="611">    <span class="p">):</span>
-</span><span data-line="612">        <span class="n">rbf_layer</span> <span class="o">=</span> <span class="n">RegularizedBasis</span><span class="p">(</span>
-</span><span data-line="613">            <span class="n">basis_function</span><span class="o">=</span><span class="n">rbf_layer</span><span class="p">,</span>
-</span><span data-line="614">            <span class="n">types</span><span class="o">=</span><span class="n">embedding_size</span><span class="p">,</span>
-</span><span data-line="615">            <span class="n">n_basis_set</span><span class="o">=</span><span class="n">num_interactions</span><span class="p">,</span>
-</span><span data-line="616">            <span class="n">independent_regularizations</span><span class="o">=</span><span class="n">independent_regularizations</span><span class="p">,</span>
-</span><span data-line="617">        <span class="p">)</span>
-</span><span data-line="618">        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-</span><span data-line="619">            <span class="n">rbf_layer</span><span class="o">=</span><span class="n">rbf_layer</span><span class="p">,</span>
-</span><span data-line="620">            <span class="n">cutoff</span><span class="o">=</span><span class="n">cutoff</span><span class="p">,</span>
-</span><span data-line="621">            <span class="n">output_hidden_layer_widths</span><span class="o">=</span><span class="n">output_hidden_layer_widths</span><span class="p">,</span>
-</span><span data-line="622">            <span class="n">hidden_channels</span><span class="o">=</span><span class="n">hidden_channels</span><span class="p">,</span>
-</span><span data-line="623">            <span class="n">embedding_size</span><span class="o">=</span><span class="n">embedding_size</span><span class="p">,</span>
-</span><span data-line="624">            <span class="n">num_interactions</span><span class="o">=</span><span class="n">num_interactions</span><span class="p">,</span>
-</span><span data-line="625">            <span class="n">activation</span><span class="o">=</span><span class="n">activation</span><span class="p">,</span>
-</span><span data-line="626">            <span class="n">max_num_neighbors</span><span class="o">=</span><span class="n">max_num_neighbors</span><span class="p">,</span>
-</span><span data-line="627">            <span class="n">aggr</span><span class="o">=</span><span class="n">aggr</span><span class="p">,</span>
-</span><span data-line="628">            <span class="n">epsilon</span><span class="o">=</span><span class="n">epsilon</span><span class="p">,</span>
-</span><span data-line="629">            <span class="n">nls_distance_method</span><span class="o">=</span><span class="n">nls_distance_method</span><span class="p">,</span>
-</span><span data-line="630">        <span class="p">)</span>
-</span><span data-line="631">
+</span><span data-line="574"><span class="k">class</span><span class="w"> </span><span class="nc">RBFRegularizedPaiNN</span><span class="p">(</span><span class="n">StandardPaiNN</span><span class="p">):</span>
+</span><span data-line="575"><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="576"><span class="sd">    This is a StandardSchNet model where the RBF components are weighted via Hadamard product with couple-specific</span>
+</span><span data-line="577"><span class="sd">    vectors. Each tuple of bead types has its own vector.</span>
+</span><span data-line="578"><span class="sd">    The models also adds the key radial_filters to the output dictionary, containing the regularization parameters.</span>
+</span><span data-line="579">
+</span><span data-line="580"><span class="sd">    Parameters</span>
+</span><span data-line="581"><span class="sd">    ----------</span>
+</span><span data-line="582"><span class="sd">    rbf_layer:</span>
+</span><span data-line="583"><span class="sd">        Radial basis function used to project the distances :math:`r_{ij}`.</span>
+</span><span data-line="584"><span class="sd">    cutoff:</span>
+</span><span data-line="585"><span class="sd">        Smooth cutoff function to supply to the PaiNNInteraction.</span>
+</span><span data-line="586"><span class="sd">    output_hidden_layer_widths:</span>
+</span><span data-line="587"><span class="sd">        List giving the number of hidden nodes of each hidden layer of the MLP</span>
+</span><span data-line="588"><span class="sd">        used to predict the target property from the learned scalar representation.</span>
+</span><span data-line="589"><span class="sd">    hidden_channels:</span>
+</span><span data-line="590"><span class="sd">        Dimension of the learned representation, i.e. dimension of the embedding projection, convolution layers, and interaction block.</span>
+</span><span data-line="591"><span class="sd">    embedding_size:</span>
+</span><span data-line="592"><span class="sd">        Dimension of the input embeddings (should be larger than :obj:`AtomicData.atom_types.max()+1`).</span>
+</span><span data-line="593"><span class="sd">    num_interactions:</span>
+</span><span data-line="594"><span class="sd">        Number of interaction blocks.</span>
+</span><span data-line="595"><span class="sd">    activation:</span>
+</span><span data-line="596"><span class="sd">        Activation function.</span>
+</span><span data-line="597"><span class="sd">    max_num_neighbors:</span>
+</span><span data-line="598"><span class="sd">        The maximum number of neighbors to return for each atom in :obj:`data`.</span>
+</span><span data-line="599"><span class="sd">        If the number of actual neighbors is greater than</span>
+</span><span data-line="600"><span class="sd">        :obj:`max_num_neighbors`, returned neighbors are picked randomly.</span>
+</span><span data-line="601"><span class="sd">    aggr:</span>
+</span><span data-line="602"><span class="sd">        Aggregation scheme for continuous filter output. For all options,</span>
+</span><span data-line="603"><span class="sd">        see `here &lt;https://pytorch-geometric.readthedocs.io/en/latest/notes/create_gnn.html?highlight=MessagePassing#the-messagepassing-base-class&gt;`_</span>
+</span><span data-line="604"><span class="sd">        for more options.</span>
+</span><span data-line="605"><span class="sd">    epsilon:</span>
+</span><span data-line="606"><span class="sd">        Stability constant added in norm to prevent numerical instabilities.</span>
+</span><span data-line="607"><span class="sd">    nls_distance_method:</span>
+</span><span data-line="608"><span class="sd">        Method for computing a neighbor list. Supported values are</span>
+</span><span data-line="609"><span class="sd">        `torch`, `nvalchemi_naive`, `nvalchemi_cell`, `nvalchemi_raw`</span>
+</span><span data-line="610"><span class="sd">        and `custom_kernel`.</span>
+</span><span data-line="611"><span class="sd">    excluded_order:</span>
+</span><span data-line="612"><span class="sd">        Order of excluded interaction in neighbor list computation:</span>
+</span><span data-line="613"><span class="sd">        1 no exclusion, 2 excludes up to first bonds, 3 excludes up to second bonds</span>
+</span><span data-line="614"><span class="sd">        and so on. Default is 1 meaning no exclusion.</span>
+</span><span data-line="615">
+</span><span data-line="616"><span class="sd">    CLASS SPECIFIC PARAMETERS -------------------------------------------------------------</span>
+</span><span data-line="617">
+</span><span data-line="618"><span class="sd">    independent_regularizations: bool</span>
+</span><span data-line="619"><span class="sd">        If True each interaction block has its own set of regularization parameters,</span>
+</span><span data-line="620"><span class="sd">        otherwise the regularization parameters are shared across all interaction blocks.</span>
+</span><span data-line="621">
+</span><span data-line="622"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="623">
+</span><span data-line="624">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+</span><span data-line="625">        <span class="bp">self</span><span class="p">,</span>
+</span><span data-line="626">        <span class="n">rbf_layer</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+</span><span data-line="627">        <span class="n">cutoff</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+</span><span data-line="628">        <span class="n">output_hidden_layer_widths</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+</span><span data-line="629">        <span class="n">hidden_channels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">128</span><span class="p">,</span>
+</span><span data-line="630">        <span class="n">embedding_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+</span><span data-line="631">        <span class="n">num_interactions</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+</span><span data-line="632">        <span class="n">activation</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Tanh</span><span class="p">(),</span>
+</span><span data-line="633">        <span class="n">max_num_neighbors</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
+</span><span data-line="634">        <span class="n">aggr</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;add&quot;</span><span class="p">,</span>
+</span><span data-line="635">        <span class="n">epsilon</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-8</span><span class="p">,</span>
+</span><span data-line="636">        <span class="n">nls_distance_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;torch&quot;</span><span class="p">,</span>
+</span><span data-line="637">        <span class="n">excluded_order</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+</span><span data-line="638">        <span class="n">independent_regularizations</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span data-line="639">    <span class="p">):</span>
+</span><span data-line="640">        <span class="n">rbf_layer</span> <span class="o">=</span> <span class="n">RegularizedBasis</span><span class="p">(</span>
+</span><span data-line="641">            <span class="n">basis_function</span><span class="o">=</span><span class="n">rbf_layer</span><span class="p">,</span>
+</span><span data-line="642">            <span class="n">types</span><span class="o">=</span><span class="n">embedding_size</span><span class="p">,</span>
+</span><span data-line="643">            <span class="n">n_basis_set</span><span class="o">=</span><span class="n">num_interactions</span><span class="p">,</span>
+</span><span data-line="644">            <span class="n">independent_regularizations</span><span class="o">=</span><span class="n">independent_regularizations</span><span class="p">,</span>
+</span><span data-line="645">        <span class="p">)</span>
+</span><span data-line="646">        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+</span><span data-line="647">            <span class="n">rbf_layer</span><span class="o">=</span><span class="n">rbf_layer</span><span class="p">,</span>
+</span><span data-line="648">            <span class="n">cutoff</span><span class="o">=</span><span class="n">cutoff</span><span class="p">,</span>
+</span><span data-line="649">            <span class="n">output_hidden_layer_widths</span><span class="o">=</span><span class="n">output_hidden_layer_widths</span><span class="p">,</span>
+</span><span data-line="650">            <span class="n">hidden_channels</span><span class="o">=</span><span class="n">hidden_channels</span><span class="p">,</span>
+</span><span data-line="651">            <span class="n">embedding_size</span><span class="o">=</span><span class="n">embedding_size</span><span class="p">,</span>
+</span><span data-line="652">            <span class="n">num_interactions</span><span class="o">=</span><span class="n">num_interactions</span><span class="p">,</span>
+</span><span data-line="653">            <span class="n">activation</span><span class="o">=</span><span class="n">activation</span><span class="p">,</span>
+</span><span data-line="654">            <span class="n">max_num_neighbors</span><span class="o">=</span><span class="n">max_num_neighbors</span><span class="p">,</span>
+</span><span data-line="655">            <span class="n">aggr</span><span class="o">=</span><span class="n">aggr</span><span class="p">,</span>
+</span><span data-line="656">            <span class="n">epsilon</span><span class="o">=</span><span class="n">epsilon</span><span class="p">,</span>
+</span><span data-line="657">            <span class="n">nls_distance_method</span><span class="o">=</span><span class="n">nls_distance_method</span><span class="p">,</span>
+</span><span data-line="658">            <span class="n">excluded_order</span><span class="o">=</span><span class="n">excluded_order</span><span class="p">,</span>
+</span><span data-line="659">        <span class="p">)</span>
+</span><span data-line="660">
 <div class="viewcode-block" id="RBFRegularizedPaiNN.forward">
 <a class="viewcode-back" href="../../../autodoc.html#mlcg.nn.painn.RBFRegularizedPaiNN.forward">[docs]</a>
-</span><span data-line="632">    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">):</span>
-</span><span data-line="633"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Forward pass through the PaiNN architecture.</span>
-</span><span data-line="634">
-</span><span data-line="635"><span class="sd">        Parameters</span>
-</span><span data-line="636"><span class="sd">        ----------</span>
-</span><span data-line="637"><span class="sd">        data:</span>
-</span><span data-line="638"><span class="sd">            Input data object containing batch atom/bead positions</span>
-</span><span data-line="639"><span class="sd">            and atom/bead types.</span>
-</span><span data-line="640">
-</span><span data-line="641"><span class="sd">        Returns</span>
-</span><span data-line="642"><span class="sd">        -------</span>
-</span><span data-line="643"><span class="sd">        data:</span>
-</span><span data-line="644"><span class="sd">           Data dictionary, updated with predicted energy of shape</span>
-</span><span data-line="645"><span class="sd">           (num_examples * num_atoms, 1), as well as neighbor list</span>
-</span><span data-line="646"><span class="sd">           information.</span>
-</span><span data-line="647"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="648">        <span class="n">neighbor_list</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-</span><span data-line="649">
-</span><span data-line="650">        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_nl_compatible</span><span class="p">(</span><span class="n">neighbor_list</span><span class="p">):</span>
-</span><span data-line="651">            <span class="n">neighbor_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">(</span>
-</span><span data-line="652">                <span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rbf_layer</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_upper</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_num_neighbors</span>
-</span><span data-line="653">            <span class="p">)[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
-</span><span data-line="654">
-</span><span data-line="655">        <span class="n">edge_index</span> <span class="o">=</span> <span class="n">neighbor_list</span><span class="p">[</span><span class="s2">&quot;index_mapping&quot;</span><span class="p">]</span>
-</span><span data-line="656">
-</span><span data-line="657">        <span class="n">distances</span><span class="p">,</span> <span class="n">normdir</span> <span class="o">=</span> <span class="n">compute_distance_vectors</span><span class="p">(</span>
-</span><span data-line="658">            <span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span>
-</span><span data-line="659">            <span class="n">edge_index</span><span class="p">,</span>
-</span><span data-line="660">            <span class="n">neighbor_list</span><span class="p">[</span><span class="s2">&quot;cell_shifts&quot;</span><span class="p">],</span>
-</span><span data-line="661">        <span class="p">)</span>
-</span><span data-line="662">
-</span><span data-line="663">        <span class="n">rbf_expansion</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rbf_layer</span><span class="p">(</span>
-</span><span data-line="664">            <span class="n">distances</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span>
-</span><span data-line="665">            <span class="n">data</span><span class="o">.</span><span class="n">atom_types</span><span class="p">[</span><span class="n">edge_index</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span>
-</span><span data-line="666">            <span class="n">data</span><span class="o">.</span><span class="n">atom_types</span><span class="p">[</span><span class="n">edge_index</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span>
-</span><span data-line="667">        <span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span>
-</span><span data-line="668">
-</span><span data-line="669">        <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_layer</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">atom_types</span><span class="p">)</span>  <span class="c1"># (n_atoms, n_features)</span>
-</span><span data-line="670">        <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># (n_atoms, 1, n_features)</span>
-</span><span data-line="671">        <span class="n">mu</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
-</span><span data-line="672">            <span class="p">(</span><span class="n">q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">3</span><span class="p">,</span> <span class="n">q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="n">device</span><span class="o">=</span><span class="n">q</span><span class="o">.</span><span class="n">device</span>
-</span><span data-line="673">        <span class="p">)</span>  <span class="c1"># (n_atoms, 3, n_features)</span>
-</span><span data-line="674">
-</span><span data-line="675">        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">interaction</span><span class="p">,</span> <span class="n">mixing</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span>
-</span><span data-line="676">            <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interaction_blocks</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mixing_blocks</span><span class="p">)</span>
-</span><span data-line="677">        <span class="p">):</span>
-</span><span data-line="678">            <span class="n">q</span><span class="p">,</span> <span class="n">mu</span> <span class="o">=</span> <span class="n">interaction</span><span class="p">(</span>
-</span><span data-line="679">                <span class="n">q</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">normdir</span><span class="p">,</span> <span class="n">edge_index</span><span class="p">,</span> <span class="n">distances</span><span class="p">,</span> <span class="n">rbf_expansion</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-</span><span data-line="680">            <span class="p">)</span>
-</span><span data-line="681">            <span class="n">q</span><span class="p">,</span> <span class="n">mu</span> <span class="o">=</span> <span class="n">mixing</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">mu</span><span class="p">)</span>
-</span><span data-line="682">        <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-</span><span data-line="683">
-</span><span data-line="684">        <span class="n">energy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_network</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
-</span><span data-line="685">        <span class="n">energy</span> <span class="o">=</span> <span class="n">scatter</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">batch</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">reduce</span><span class="o">=</span><span class="s2">&quot;sum&quot;</span><span class="p">)</span>
-</span><span data-line="686">        <span class="n">energy</span> <span class="o">=</span> <span class="n">energy</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
-</span><span data-line="687">        <span class="n">data</span><span class="o">.</span><span class="n">out</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-</span><span data-line="688">            <span class="n">ENERGY_KEY</span><span class="p">:</span> <span class="n">energy</span><span class="p">,</span>
-</span><span data-line="689">            <span class="s2">&quot;radial_filters&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">rbf_layer</span><span class="o">.</span><span class="n">get_regularization_parameters</span><span class="p">(),</span>
-</span><span data-line="690">        <span class="p">}</span>
+</span><span data-line="661">    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">):</span>
+</span><span data-line="662"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Forward pass through the PaiNN architecture.</span>
+</span><span data-line="663">
+</span><span data-line="664"><span class="sd">        Parameters</span>
+</span><span data-line="665"><span class="sd">        ----------</span>
+</span><span data-line="666"><span class="sd">        data:</span>
+</span><span data-line="667"><span class="sd">            Input data object containing batch atom/bead positions</span>
+</span><span data-line="668"><span class="sd">            and atom/bead types.</span>
+</span><span data-line="669">
+</span><span data-line="670"><span class="sd">        Returns</span>
+</span><span data-line="671"><span class="sd">        -------</span>
+</span><span data-line="672"><span class="sd">        data:</span>
+</span><span data-line="673"><span class="sd">           Data dictionary, updated with predicted energy of shape</span>
+</span><span data-line="674"><span class="sd">           (num_examples * num_atoms, 1), as well as neighbor list</span>
+</span><span data-line="675"><span class="sd">           information.</span>
+</span><span data-line="676"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="677">        <span class="n">neighbor_list</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+</span><span data-line="678">
+</span><span data-line="679">        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_nl_compatible</span><span class="p">(</span><span class="n">neighbor_list</span><span class="p">):</span>
+</span><span data-line="680">            <span class="n">neighbor_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">(</span>
+</span><span data-line="681">                <span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rbf_layer</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_upper</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_num_neighbors</span>
+</span><span data-line="682">            <span class="p">)[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+</span><span data-line="683">        <span class="k">if</span> <span class="n">neighbor_list</span><span class="p">[</span><span class="s2">&quot;excluded_order&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="nb">getattr</span><span class="p">(</span>
+</span><span data-line="684">            <span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;excluded_order&quot;</span><span class="p">,</span> <span class="mi">1</span>
+</span><span data-line="685">        <span class="p">):</span>
+</span><span data-line="686">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+</span><span data-line="687">                <span class="sa">f</span><span class="s1">&#39;Input has </span><span class="si">{</span><span class="n">neighbor_list</span><span class="p">[</span><span class="s2">&quot;excluded_order&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1"> excluded_order while model has </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;excluded_order&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span>
+</span><span data-line="688">            <span class="p">)</span>
+</span><span data-line="689">
+</span><span data-line="690">        <span class="n">edge_index</span> <span class="o">=</span> <span class="n">neighbor_list</span><span class="p">[</span><span class="s2">&quot;index_mapping&quot;</span><span class="p">]</span>
 </span><span data-line="691">
-</span><span data-line="692">        <span class="k">return</span> <span class="n">data</span></div>
+</span><span data-line="692">        <span class="n">distances</span><span class="p">,</span> <span class="n">normdir</span> <span class="o">=</span> <span class="n">compute_distance_vectors</span><span class="p">(</span>
+</span><span data-line="693">            <span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span>
+</span><span data-line="694">            <span class="n">edge_index</span><span class="p">,</span>
+</span><span data-line="695">            <span class="n">neighbor_list</span><span class="p">[</span><span class="s2">&quot;cell_shifts&quot;</span><span class="p">],</span>
+</span><span data-line="696">        <span class="p">)</span>
+</span><span data-line="697">
+</span><span data-line="698">        <span class="n">rbf_expansion</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rbf_layer</span><span class="p">(</span>
+</span><span data-line="699">            <span class="n">distances</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+</span><span data-line="700">            <span class="n">data</span><span class="o">.</span><span class="n">atom_types</span><span class="p">[</span><span class="n">edge_index</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span>
+</span><span data-line="701">            <span class="n">data</span><span class="o">.</span><span class="n">atom_types</span><span class="p">[</span><span class="n">edge_index</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span>
+</span><span data-line="702">        <span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span>
+</span><span data-line="703">
+</span><span data-line="704">        <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_layer</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">atom_types</span><span class="p">)</span>  <span class="c1"># (n_atoms, n_features)</span>
+</span><span data-line="705">        <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># (n_atoms, 1, n_features)</span>
+</span><span data-line="706">        <span class="n">mu</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+</span><span data-line="707">            <span class="p">(</span><span class="n">q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">3</span><span class="p">,</span> <span class="n">q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="n">device</span><span class="o">=</span><span class="n">q</span><span class="o">.</span><span class="n">device</span>
+</span><span data-line="708">        <span class="p">)</span>  <span class="c1"># (n_atoms, 3, n_features)</span>
+</span><span data-line="709">
+</span><span data-line="710">        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">interaction</span><span class="p">,</span> <span class="n">mixing</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span>
+</span><span data-line="711">            <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interaction_blocks</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mixing_blocks</span><span class="p">)</span>
+</span><span data-line="712">        <span class="p">):</span>
+</span><span data-line="713">            <span class="n">q</span><span class="p">,</span> <span class="n">mu</span> <span class="o">=</span> <span class="n">interaction</span><span class="p">(</span>
+</span><span data-line="714">                <span class="n">q</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">normdir</span><span class="p">,</span> <span class="n">edge_index</span><span class="p">,</span> <span class="n">distances</span><span class="p">,</span> <span class="n">rbf_expansion</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+</span><span data-line="715">            <span class="p">)</span>
+</span><span data-line="716">            <span class="n">q</span><span class="p">,</span> <span class="n">mu</span> <span class="o">=</span> <span class="n">mixing</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">mu</span><span class="p">)</span>
+</span><span data-line="717">        <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span><span data-line="718">
+</span><span data-line="719">        <span class="n">energy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_network</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+</span><span data-line="720">        <span class="n">energy</span> <span class="o">=</span> <span class="n">scatter</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">batch</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">reduce</span><span class="o">=</span><span class="s2">&quot;sum&quot;</span><span class="p">)</span>
+</span><span data-line="721">        <span class="n">energy</span> <span class="o">=</span> <span class="n">energy</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+</span><span data-line="722">        <span class="n">data</span><span class="o">.</span><span class="n">out</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+</span><span data-line="723">            <span class="n">ENERGY_KEY</span><span class="p">:</span> <span class="n">energy</span><span class="p">,</span>
+</span><span data-line="724">            <span class="s2">&quot;radial_filters&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">rbf_layer</span><span class="o">.</span><span class="n">get_regularization_parameters</span><span class="p">(),</span>
+</span><span data-line="725">        <span class="p">}</span>
+</span><span data-line="726">
+</span><span data-line="727">        <span class="k">return</span> <span class="n">data</span></div>
 </div>
 
 </span></pre></div>
