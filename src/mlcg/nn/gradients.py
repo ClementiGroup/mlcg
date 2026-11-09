@@ -235,15 +235,14 @@ class NLSSharingSumOut(SumOut):
             new_nl[name] = entry
 
         data.neighbor_list = new_nl
-        try:
-            data = super().forward(data)
-        finally:
-            # keep the exclusion tables built during the forward pass cached
-            # in the original entries so they are not rebuilt every call
-            for name in shared_names:
-                if name in original_nl and "exc_table" in new_nl[name]:
-                    original_nl[name]["exc_table"] = new_nl[name]["exc_table"]
-            data.neighbor_list = original_nl
+        data = super().forward(data)
+
+        # keep the exclusion tables built during the forward pass cached
+        # in the original entries so they are not rebuilt every call
+        for name in shared_names:
+            if name in original_nl and "exc_table" in new_nl[name]:
+                original_nl[name]["exc_table"] = new_nl[name]["exc_table"]
+        data.neighbor_list = original_nl
         return data
 
 
