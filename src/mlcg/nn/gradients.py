@@ -149,7 +149,7 @@ class SumOut(torch.nn.Module):
         return nl
 
 
-class NLSSharingSumOut(SumOut):
+class NeighborSharingSumOut(SumOut):
     r"""`SumOut` that computes the geometric neighbor list of a network once
     and shares it with other models, e.g. `FastCutoffRepulsion` and
     `FastCutoffExpRepulsion`.
@@ -229,7 +229,7 @@ class NLSSharingSumOut(SumOut):
             entry = dict(shared_nl)
             old_entry = original_nl.get(name)
             if old_entry is not None:
-                for k in ("index_mapping_exclusions", "exc_table"):
+                for k in ("index_mapping_exclusions", "exclusion_table"):
                     if k in old_entry:
                         entry[k] = old_entry[k]
             new_nl[name] = entry
@@ -240,8 +240,8 @@ class NLSSharingSumOut(SumOut):
         # keep the exclusion tables built during the forward pass cached
         # in the original entries so they are not rebuilt every call
         for name in shared_names:
-            if name in original_nl and "exc_table" in new_nl[name]:
-                original_nl[name]["exc_table"] = new_nl[name]["exc_table"]
+            if name in original_nl and "exclusion_table" in new_nl[name]:
+                original_nl[name]["exclusion_table"] = new_nl[name]["exclusion_table"]
         data.neighbor_list = original_nl
         return data
 

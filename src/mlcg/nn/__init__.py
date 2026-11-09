@@ -1,4 +1,4 @@
-from .gradients import GradientsOut, SumOut, NLSSharingSumOut, EnergyOut
+from .gradients import GradientsOut, SumOut, NeighborSharingSumOut, EnergyOut
 from .schnet import SchNet, StandardSchNet, RBFRegularizedSchNet
 from .radial_basis import GaussianBasis, ExpNormalBasis
 from .cutoff import CosineCutoff, IdentityCutoff
@@ -31,7 +31,7 @@ from .allegro import StandardAllegro
 __all__ = [
     "GradientsOut",
     "SumOut",
-    "NLSSharingSumOut",
+    "NeighborSharingSumOut",
     "EnergyOut",
     "SchNet",
     "StandardSchNet",

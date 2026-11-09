@@ -596,17 +596,17 @@ class FastCutoffRepulsion(CutoffRepulsion, _BaseFastRepulsion):
             example/structure
         """
 
-        exc_table = data.neighbor_list[self.name].get("exc_table")
-        if exc_table is None:
-            exc_table = self.build_exclusion_table(
+        exclusion_table = data.neighbor_list[self.name].get("exclusion_table")
+        if exclusion_table is None:
+            exclusion_table = self.build_exclusion_table(
                 data.neighbor_list[self.name]["index_mapping_exclusions"],
                 data.pos.shape[0],
             )
-            data.neighbor_list[self.name]["exc_table"] = exc_table
+            data.neighbor_list[self.name]["exclusion_table"] = exclusion_table
         # the network neighbor list is shared under this prior's name
-        # (see `NLSSharingSumOut`)
+        # (see `NeighborSharingSumOutSumOut`)
         mask = self.pair_mask(
-            data.neighbor_list[self.name]["index_mapping"], exc_table
+            data.neighbor_list[self.name]["index_mapping"], exclusion_table
         )
         mapping = data.neighbor_list[self.name]["index_mapping"][:, mask]
         cell_shifts = data.neighbor_list[self.name]["cell_shifts"][mask, :]
@@ -669,17 +669,17 @@ class FastCutoffExpRepulsion(CutoffExpRepulsion, _BaseFastRepulsion):
             example/structure
         """
 
-        exc_table = data.neighbor_list[self.name].get("exc_table")
-        if exc_table is None:
-            exc_table = self.build_exclusion_table(
+        exclusion_table = data.neighbor_list[self.name].get("exclusion_table")
+        if exclusion_table is None:
+            exclusion_table = self.build_exclusion_table(
                 data.neighbor_list[self.name]["index_mapping_exclusions"],
                 data.pos.shape[0],
             )
-            data.neighbor_list[self.name]["exc_table"] = exc_table
+            data.neighbor_list[self.name]["exclusion_table"] = exclusion_table
         # the network neighbor list is shared under this prior's name
-        # (see `NLSSharingSumOut`)
+        # (see `NeighborSharingSumOutSumOut`)
         mask = self.pair_mask(
-            data.neighbor_list[self.name]["index_mapping"], exc_table
+            data.neighbor_list[self.name]["index_mapping"], exclusion_table
         )
         mapping = data.neighbor_list[self.name]["index_mapping"][:, mask]
         cell_shifts = data.neighbor_list[self.name]["cell_shifts"][mask, :]
