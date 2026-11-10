@@ -709,7 +709,20 @@ def rbf_regularized_schnet():
     return GradientsOut(model, targets=FORCE_KEY).cuda()
 
 
-def test_rbf_regularized_flash_matches_float64():
+@pytest.fixture
+def deterministic():
+    # Both models sum the bead energies per graph with the same torch
+    # scatter, whose atomic-add order moves the float32 energies by one ULP
+    # from run to run: enough to flip the 2x energy bound over 4 graphs in
+    # ~10% of runs (tests_benchmarks/42_flaky_rbf_test). A fixed order
+    # leaves only the kernels' own error in the comparison.
+    previous = torch.are_deterministic_algorithms_enabled()
+    torch.use_deterministic_algorithms(True)
+    yield
+    torch.use_deterministic_algorithms(previous)
+
+
+def test_rbf_regularized_flash_matches_float64(deterministic):
     """Exact kernels with a regularized expansion per block (no tables: the
     filters depend on the bead types), through ``prepare_for_inference``
     and in training: energies, forces and the parameter gradients of a force
