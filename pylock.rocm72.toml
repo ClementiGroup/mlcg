@@ -1267,6 +1267,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/1b/7d/92392ff7815c21062
 wheels = [{ url = "https://files.pythonhosted.org/packages/0c/c3/44f3fbbfa403ea2a7c779186dc20772604442dde72947e7d01069cbe98e3/pycparser-3.0-py3-none-any.whl", upload-time = 2026-01-21T14:26:50Z, size = 48172, hashes = { sha256 = "b727414169a36b7d524c1c3e31839a521725078d7b2ff038656844266160a992" } }]
 
 [[packages]]
+name = "pyg-lib-rocm"
+version = "0.8.0.post1"
+index = "https://pypi.org/simple"
+wheels = [{ url = "https://files.pythonhosted.org/packages/d0/87/1c1e444cb144e2023dad30cf3e2d2f9aba29d343763f697a6ad0303c9bb1/pyg_lib_rocm-0.8.0.post1-cp312-cp312-manylinux_2_32_x86_64.whl", upload-time = 2026-08-21T20:01:28Z, size = 6658151, hashes = { sha256 = "3aa0073800d445c6c17c07b1c468cd2f6a8903f39d22ca70ad78b84ae8ec3ed6" } }]
+
+[[packages]]
 name = "pygments"
 version = "2.20.0"
 index = "https://pypi.org/simple"
@@ -1602,15 +1608,9 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/33/f0/3fe8c6e69135a84
 
 [[packages]]
 name = "torch"
-version = "2.11.0+rocm7.2"
+version = "2.13.0+rocm7.2"
 index = "https://download.pytorch.org/whl/rocm7.2"
-wheels = [{ url = "https://download-r2.pytorch.org/whl/rocm7.2/torch-2.11.0%2Brocm7.2-cp312-cp312-manylinux_2_28_x86_64.whl", upload-time = 2026-04-28T19:44:39Z, hashes = { sha256 = "8f02a36213288ab5921e277e13f5954cc62afe7cfa899b79d739d4ef2be6510b" } }]
-
-[[packages]]
-name = "torch-cluster-rocm"
-version = "1.6.3.post4"
-index = "https://pypi.org/simple"
-wheels = [{ url = "https://files.pythonhosted.org/packages/3e/f5/98e9c8446f16628a7d7dae6575ed4201b0829d78982215f10643ed5766e0/torch_cluster_rocm-1.6.3.post4-cp312-cp312-manylinux_2_32_x86_64.whl", upload-time = 2026-04-20T13:29:13Z, size = 1913141, hashes = { sha256 = "019be8371aea5ff29727ac7b54a4cfc0e0683db2838358649eeda5a7a89ff312" } }]
+wheels = [{ url = "https://download-r2.pytorch.org/whl/rocm7.2/torch-2.13.0%2Brocm7.2-cp312-cp312-manylinux_2_28_x86_64.whl", upload-time = 2026-07-08T11:26:11Z, hashes = {} }]
 
 [[packages]]
 name = "torch-ema"
@@ -1679,9 +1679,9 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/96/8d/1080ee4c231f361
 
 [[packages]]
 name = "triton-rocm"
-version = "3.6.0"
+version = "3.7.1"
 index = "https://download.pytorch.org/whl/rocm7.2"
-wheels = [{ url = "https://download-r2.pytorch.org/whl/triton_rocm-3.6.0-cp312-cp312-linux_x86_64.whl", upload-time = 2026-01-20T18:39:32Z, hashes = { sha256 = "cff15082784c7056b0af9347770e034ab0a8ccbce0642723ddc8c8de1bd6af3f" } }]
+wheels = [{ url = "https://download-r2.pytorch.org/whl/triton_rocm-3.7.1-cp312-cp312-linux_x86_64.whl", upload-time = 2026-06-17T17:05:14Z, hashes = { sha256 = "b200ade2418b8450e4e3e69c33c804e2cc07d1e36dc9678ac8ac1dd65f9e10e1" } }]
 
 [[packages]]
 name = "typeshed-client"
