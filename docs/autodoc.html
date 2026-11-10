@@ -1032,7 +1032,7 @@ had a function due to a bug in the implementation (see static method
 deleted for compatibility.</p></li>
 <li><p><strong>max_num_neighbors</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Maximum number of neighbors to return for a
 given node/atom when constructing the molecular graph during forward
-passes. This attribute is passed to the torch_cluster radius_graph
+passes. This attribute is passed to the pyg_lib radius
 routine keyword max_num_neighbors, which normally defaults to 32.
 Users should set this to higher values if they are using higher upper
 distance cutoffs and expect more than 32 neighbors per node/atom.</p></li>
@@ -1145,7 +1145,7 @@ features. This network should transform (num_examples * num_atoms,
 hidden_channels) to (num_examples * num atoms, 1).</p></li>
 <li><p><strong>max_num_neighbors</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Maximum number of neighbors to return for a
 given node/atom when constructing the molecular graph during forward
-passes. This attribute is passed to the torch_cluster radius_graph
+passes. This attribute is passed to the pyg_lib radius
 routine keyword max_num_neighbors, which normally defaults to 32.
 Users should set this to higher values if they are using higher upper
 distance cutoffs and expect more than 32 neighbors per node/atom.</p></li>
@@ -2958,18 +2958,47 @@ the actual position of the neighboring atoms)</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="mlcg.neighbor_list.torch_impl.safe_radius">
-<span class="sig-prename descclassname"><span class="pre">mlcg.neighbor_list.torch_impl.</span></span><span class="sig-name descname"><span class="pre">safe_radius</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/neighbor_list/torch_impl.html#safe_radius"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.neighbor_list.torch_impl.safe_radius" title="Link to this definition">¶</a></dt>
-<dd><p>A wrapper around torch_cluster.radius that disables torch.compile
-when calling it, since currently torch.compile has issues with
-certain parts of torch_cluster.</p>
+<span class="sig-prename descclassname"><span class="pre">mlcg.neighbor_list.torch_impl.</span></span><span class="sig-name descname"><span class="pre">safe_radius</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_neighbors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_workers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_same_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/neighbor_list/torch_impl.html#safe_radius"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.neighbor_list.torch_impl.safe_radius" title="Link to this definition">¶</a></dt>
+<dd><p>A wrapper around pyg_lib.ops that keeps same API of
+torch_cluster now deprecated.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="mlcg.neighbor_list.torch_impl.safe_radius_graph">
-<span class="sig-prename descclassname"><span class="pre">mlcg.neighbor_list.torch_impl.</span></span><span class="sig-name descname"><span class="pre">safe_radius_graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/neighbor_list/torch_impl.html#safe_radius_graph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.neighbor_list.torch_impl.safe_radius_graph" title="Link to this definition">¶</a></dt>
-<dd><p>A wrapper around torch_cluster.radius that disables torch.compile
-when calling it, since currently torch.compile has issues with
-certain parts of torch_cluster.</p>
+<span class="sig-prename descclassname"><span class="pre">mlcg.neighbor_list.torch_impl.</span></span><span class="sig-name descname"><span class="pre">safe_radius_graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loop</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_neighbors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'source_to_target'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_workers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/neighbor_list/torch_impl.html#safe_radius_graph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.neighbor_list.torch_impl.safe_radius_graph" title="Link to this definition">¶</a></dt>
+<dd><p>Computes graph edges to all points within a given distance.
+adapted to maintain same API of torch_cluster <cite>radius_graph</cite> now deprecated.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span>) – Node feature matrix
+<span class="math notranslate nohighlight">\(\mathbf{X} \in \mathbb{R}^{N \times F}\)</span>.</p></li>
+<li><p><strong>r</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – The radius.</p></li>
+<li><p><strong>batch</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</span>) – Batch vector
+<span class="math notranslate nohighlight">\(\mathbf{b} \in {\{ 0, \ldots, B-1\}}^N\)</span>, which assigns each
+node to a specific example. <code class="xref py py-obj docutils literal notranslate"><span class="pre">batch</span></code> needs to be sorted.
+(default: <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+<li><p><strong>loop</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span>) – If <code class="xref py py-obj docutils literal notranslate"><span class="pre">True</span></code>, the graph will contain
+self-loops. (default: <code class="xref py py-obj docutils literal notranslate"><span class="pre">False</span></code>)</p></li>
+<li><p><strong>max_num_neighbors</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – The maximum number of neighbors to
+return for each element.
+If the number of actual neighbors is greater than
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">max_num_neighbors</span></code>, returned neighbors are picked randomly.
+(default: <code class="xref py py-obj docutils literal notranslate"><span class="pre">32</span></code>)</p></li>
+<li><p><strong>flow</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – The flow direction when used in combination
+with message passing (<code class="xref py py-obj docutils literal notranslate"><span class="pre">&quot;source_to_target&quot;</span></code> or
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">&quot;target_to_source&quot;</span></code>). (default: <code class="xref py py-obj docutils literal notranslate"><span class="pre">&quot;source_to_target&quot;</span></code>)</p></li>
+<li><p><strong>num_workers</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – Number of workers to use for computation. Has no
+effect in case <code class="xref py py-obj docutils literal notranslate"><span class="pre">batch</span></code> is not <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>, or the input lies
+on the GPU. (default: <code class="xref py py-obj docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
+<li><p><strong>batch_size</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]</span>) – The number of examples <span class="math notranslate nohighlight">\(B\)</span>.
+Automatically calculated if not given. (default: <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
