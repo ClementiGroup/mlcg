@@ -66,7 +66,7 @@ class SchNet(torch.nn.Module):
     max_num_neighbors:
         Maximum number of neighbors to return for a
         given node/atom when constructing the molecular graph during forward
-        passes. This attribute is passed to the torch_cluster radius_graph
+        passes. This attribute is passed to the pyg_lib radius
         routine keyword max_num_neighbors, which normally defaults to 32.
         Users should set this to higher values if they are using higher upper
         distance cutoffs and expect more than 32 neighbors per node/atom.
@@ -169,7 +169,6 @@ class SchNet(torch.nn.Module):
             edge_index,
             neighbor_list["cell_shifts"],
         )
-
         rbf_expansion = self.rbf_layer(distances)
         num_batch = data.batch[-1] + 1
         for block in self.interaction_blocks:
@@ -193,7 +192,7 @@ class SchNet(torch.nn.Module):
             if (
                 nl["order"] == 2
                 and nl["self_interaction"] == False
-                and nl["rcut"] == self.cutoff.cutoff_upper
+                and nl["rcut"] == self.rbf_layer.cutoff.cutoff_upper
                 and nl["excluded_order"] == getattr(self, "excluded_order", 1)
             ):
                 is_compatible = True

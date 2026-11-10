@@ -1,4 +1,4 @@
-from .gradients import GradientsOut, SumOut, EnergyOut
+from .gradients import GradientsOut, SumOut, NeighborSharingSumOut, EnergyOut
 from .schnet import SchNet, StandardSchNet, RBFRegularizedSchNet
 from .radial_basis import GaussianBasis, ExpNormalBasis
 from .cutoff import CosineCutoff, IdentityCutoff
@@ -37,6 +37,7 @@ from .kernels import RadiusCSR, csr_from_edge_index
 __all__ = [
     "GradientsOut",
     "SumOut",
+    "NeighborSharingSumOut",
     "EnergyOut",
     "SchNet",
     "StandardSchNet",
