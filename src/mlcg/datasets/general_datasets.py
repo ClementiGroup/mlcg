@@ -202,9 +202,17 @@ class GeneralCarbonAlphaDataset(InMemoryDataset):
         super(GeneralCarbonAlphaDataset, self).__init__(
             root, transform, pre_transform, pre_filter
         )
-        self.data, self.slices = torch.load(self.processed_paths[0])
-        self.prior_model = torch.load(self.processed_paths[3])
-        self.topologies = {self.mol_name: torch.load(self.processed_paths[2])}
+        self.data, self.slices = torch.load(
+            self.processed_paths[0], weights_only=False
+        )
+        self.prior_model = torch.load(
+            self.processed_paths[3], weights_only=False
+        )
+        self.topologies = {
+            self.mol_name: torch.load(
+                self.processed_paths[2], weights_only=False
+            )
+        }
 
     """
     def download(self):

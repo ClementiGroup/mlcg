@@ -44,12 +44,15 @@ hardware:
    * - Hardware
      - ``uv sync``
      - Self-managed environment
+   * - NVIDIA CUDA 13.2
+     - ``uv sync --extra cu132``
+     - ``uv pip install -r pylock.cu132.toml``
    * - NVIDIA CUDA 13.0
      - ``uv sync --extra cu130``
      - ``uv pip install -r pylock.cu130.toml``
-   * - NVIDIA CUDA 12.8
-     - ``uv sync --extra cu128``
-     - ``uv pip install -r pylock.cu128.toml``
+   * - NVIDIA CUDA 12.6
+     - ``uv sync --extra cu126``
+     - ``uv pip install -r pylock.cu126.toml``
    * - AMD ROCm 7.2
      - ``uv sync --extra rocm72``
      - ``uv pip install -r pylock.rocm72.toml``
@@ -165,7 +168,7 @@ For quick local development testing, it is also possible to exclude the large te
 Troubleshooting
 ---------------
 
-If your hardware is not listed above, we recommend installing ``torch``, ``torch-cluster``,
+If your hardware is not listed above, we recommend installing ``torch``, ``pyg_lib``,
 and any desired GPU acceleration libraries (``cuequivariance-torch``,
 ``cuequivariance-ops-torch``, ``nvalchemi-toolkit-ops``, ``openequivariance``)
 manually into a uv environment first, then install the package with:
@@ -188,9 +191,9 @@ their sub-dependencies.
 
 1. Install torch following the instructions on the
    `official PyTorch website <https://pytorch.org>`_. We recommend
-   **torch 2.11**.
+   **torch 2.13**.
 
-2. Install PyTorch Geometric and its ``torch-cluster`` extension following
+2. Install PyTorch Geometric and ``pyg_lib`` following
    the instructions in the
    `PyTorch Geometric documentation <https://pytorch-geometric.readthedocs.io/en/stable/install/installation.html>`_.
 
@@ -221,9 +224,9 @@ Full example for a machine with CUDA 13.0 (``cu130``)
 
 .. code-block:: bash
 
-   pip install torch==2.11.0 --index-url https://download.pytorch.org/whl/cu130
+   pip install torch==2.13.0 --index-url https://download.pytorch.org/whl/cu130
    pip install torch_geometric
-   pip install torch_cluster -f https://data.pyg.org/whl/torch-2.11.0+cu130.html
+   pip install "pyg_lib>=0.7.0" -f https://data.pyg.org/whl/torch-2.13.0+cu130.html
    pip install cuequivariance-torch
    pip install cuequivariance-ops-torch-cu13
    pip install -r requirements.txt
@@ -232,4 +235,7 @@ Full example for a machine with CUDA 13.0 (``cu130``)
    pip install --no-deps .
 
 Adapt the index URLs and ``cuequivariance-ops`` package name to your platform
-(CPU, ``cu128``, ``cu130``, or ROCm) as needed.
+(CPU, ``cu126``, ``cu130``, ``cu132``, or ROCm) as needed. On ROCm, install
+``pyg-lib-rocm==0.8.0.post1`` from PyPI instead of ``pyg_lib`` (this exact
+build matches torch 2.13; other ``pyg-lib-rocm`` releases target different
+torch versions and fail to load).

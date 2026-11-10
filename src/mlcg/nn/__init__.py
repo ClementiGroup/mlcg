@@ -1,4 +1,4 @@
-from .gradients import GradientsOut, SumOut, EnergyOut
+from .gradients import GradientsOut, SumOut, NeighborSharingSumOut, EnergyOut
 from .schnet import SchNet, StandardSchNet, RBFRegularizedSchNet
 from .interpretable_models import EdgeRBFRegularizedSchNet
 from .radial_basis import GaussianBasis, ExpNormalBasis, FilteredExpNormalBasis, FilteredGaussianBasis
@@ -23,7 +23,7 @@ from .pyg_forward_compatibility import (
     fixed_pyg_inspector,
 )
 from .painn import PaiNN, StandardPaiNN, RBFRegularizedPaiNN
-from .mace import MACE, StandardMACE, RBFRegularizedMACE
+from .mace import MACE, StandardMACE, RBFRegularizedMACE, refresh_oeq_conv_
 from .so3krates import So3krates, StandardSo3krates
 from .lr_scheduler import CustomStepLR
 from .utils import sparsify_prior_module, desparsify_prior_module
@@ -32,6 +32,7 @@ from .allegro import StandardAllegro
 __all__ = [
     "GradientsOut",
     "SumOut",
+    "NeighborSharingSumOut",
     "EnergyOut",
     "SchNet",
     "StandardSchNet",
@@ -69,6 +70,7 @@ __all__ = [
     "RBFRegularizedPaiNN",
     "MACE",
     "StandardMACE",
+    "refresh_oeq_conv_",
     "ScaleShiftMACE",
     "StandardScaleShiftMACE",
     "So3krates",

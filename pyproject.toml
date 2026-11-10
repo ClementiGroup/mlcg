@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mlcg"
-version = "0.1.4"
+version = "0.2.1"
 description = "A collection of tools for processing raw simulation data for use in training machine-learned, coarse-grained (CG) force fields using the MLCG library"
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = "==3.12.*"
@@ -36,7 +36,7 @@ dependencies = [
     "networkx>=3.3",
     "numpy>=1.26.4",
     "pandas>=2.3.3",
-    "pytorch_lightning==2.2.1",
+    "pytorch_lightning>=2.4.0",
     "pyyaml>=6.0.3",
     "ruamel.yaml",
     "scikit-learn>=1.7.2",
@@ -44,7 +44,7 @@ dependencies = [
     "sympy",
     "seaborn",
     "tensorboard",
-    "torch-geometric>=2.6.1",
+    "torch_geometric>=2.6.1",
     "torchist>=1.0.1",
     "torchtnt",
     "tqdm",
@@ -62,28 +62,45 @@ classifiers = [
 
 [project.optional-dependencies]
 cpu = [
-    "torch==2.11.0",
-    "torch-cluster",
+    "torch==2.13.0",
+    "pyg_lib>=0.7.0",
 ]
-cu128 = [
-    "torch==2.11.0",
-    "torch-cluster",
+cu126 = [
+    "torch==2.13.0",
+    "pyg_lib>=0.7.0",
     "cuequivariance",
     "cuequivariance-torch",
     "cuequivariance-ops-torch-cu12",
     "nvalchemi-toolkit-ops[torch]",
+    "openequivariance",
 ]
 cu130 = [
-    "torch==2.11.0",
-    "torch-cluster",
+    "torch==2.13.0",
+    "pyg_lib>=0.7.0",
     "cuequivariance",
     "cuequivariance-torch",
     "cuequivariance-ops-torch-cu13",
     "nvalchemi-toolkit-ops[torch]",
+    "openequivariance",
 ]
+cu132 = [
+    "torch==2.13.0",
+    "pyg_lib>=0.7.0",
+    "cuequivariance",
+    "cuequivariance-torch",
+    "cuequivariance-ops-torch-cu13",
+    "nvalchemi-toolkit-ops[torch]",
+    "openequivariance",
+]
+# pyg-lib-rocm is a third-party build (github.com/Looong01/pyg-rocm-build) that
+# re-publishes the same pyg_lib version for each torch release, so the
+# post-release must be pinned together with torch:
+#   0.8.0.post1 -> torch 2.13 | 0.8.0.post2 -> torch 2.14
+# Builds for torch <= 2.12 (0.6.0.post*, 0.8.0) were compiled with the wrong
+# C++ ABI and fail to load (undefined symbol) against the official ROCm torch.
 rocm72 = [
-    "torch==2.11.0",
-    "torch-cluster-rocm",
+    "torch==2.13.0",
+    "pyg-lib-rocm==0.8.0.post1",
     "openequivariance",
     "triton-rocm",
 ]
@@ -122,6 +139,7 @@ mlcg-train = "mlcg.scripts.mlcg_train:main"
 mlcg-train_multischeduler = "mlcg.scripts.mlcg_train_multischeduler:main"
 mlcg-nvt_langevin = "mlcg.scripts.mlcg_nvt_langevin:main"
 mlcg-nvt_pt_langevin = "mlcg.scripts.mlcg_nvt_pt_langevin:main"
+mlcg-minimize_energy = "mlcg.scripts.mlcg_minimize_energy:main"
 
 [tool.black]
 line-length = 80
@@ -149,19 +167,20 @@ filterwarnings = [
 [tool.uv]
 override-dependencies = ["e3nn==0.5.3"]
 # Keep no-build-isolation-package as a fallback: if no pre-built PyG wheel is
-# found for this platform, torch-cluster will be built from source and needs
+# found for this platform, pyg_lib will be built from source and needs
 # to see the already-installed torch without build isolation.
-no-build-isolation-package = ["torch-cluster"]
+no-build-isolation-package = ["pyg_lib"]
 index-strategy = "unsafe-best-match"
 # unsafe-best-match needed so torch's transitive deps (e.g. nvidia-cudnn-cu12)
 # can be resolved across multiple indexes.
-# cpu/cu128/cu130 are mutually exclusive: declare conflicts so uv doesn't try
+# cpu/cu126/cu130/cu132/rocm72 are mutually exclusive: declare conflicts so uv doesn't try
 # to resolve them simultaneously and hit conflicting torch indexes.
 conflicts = [
     [
         { extra="cpu" },
-        { extra="cu128" },
+        { extra="cu126" },
         { extra="cu130" },
+        { extra="cu132" },
         { extra="rocm72" },
     ],
 ]
@@ -169,14 +188,16 @@ conflicts = [
 [tool.uv.sources]
 torch = [
     { index="torch-cpu", extra="cpu" },
-    { index="torch-cu128", extra="cu128" },
+    { index="torch-cu126", extra="cu126" },
     { index="torch-cu130", extra="cu130" },
+    { index="torch-cu132", extra="cu132" },
     { index="torch-rocm72", extra="rocm72" },
 ]
-torch-cluster = [
+pyg_lib = [
     { index="pyg-cpu", extra="cpu" },
-    { index="pyg-cu128", extra="cu128" },
+    { index="pyg-cu126", extra="cu126" },
     { index="pyg-cu130", extra="cu130" },
+    { index="pyg-cu132", extra="cu132" },
 ]
 triton-rocm = { index = "torch-rocm72" }
 
@@ -186,8 +207,8 @@ url = "https://download.pytorch.org/whl/cpu"
 explicit = true
 
 [[tool.uv.index]]
-name = "torch-cu128"
-url = "https://download.pytorch.org/whl/cu128"
+name = "torch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
 explicit = true
 
 [[tool.uv.index]]
@@ -196,18 +217,28 @@ url = "https://download.pytorch.org/whl/cu130"
 explicit = true
 
 [[tool.uv.index]]
+name = "torch-cu132"
+url = "https://download.pytorch.org/whl/cu132"
+explicit = true
+
+[[tool.uv.index]]
 name = "pyg-cpu"
-url = "https://data.pyg.org/whl/torch-2.11.0+cpu.html"
+url = "https://data.pyg.org/whl/torch-2.13.0+cpu.html"
 format = "flat"
 
 [[tool.uv.index]]
-name = "pyg-cu128"
-url = "https://data.pyg.org/whl/torch-2.11.0+cu128.html"
+name = "pyg-cu126"
+url = "https://data.pyg.org/whl/torch-2.13.0+cu126.html"
 format = "flat"
 
 [[tool.uv.index]]
 name = "pyg-cu130"
-url = "https://data.pyg.org/whl/torch-2.11.0+cu130.html"
+url = "https://data.pyg.org/whl/torch-2.13.0+cu130.html"
+format = "flat"
+
+[[tool.uv.index]]
+name = "pyg-cu132"
+url = "https://data.pyg.org/whl/torch-2.13.0+cu132.html"
 format = "flat"
 
 [[tool.uv.index]]

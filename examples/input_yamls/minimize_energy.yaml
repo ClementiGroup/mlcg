@@ -1,0 +1,9 @@
+minimizer:
+  fmax: 0.05
+  steps: 500
+  device: cpu
+  dtype: torch.float32
+  optimizer_cls: torch.optim.LBFGS
+model_file: SOME_PATH
+structure_file: SOME_PATH
+output_file: minimized_structures.pt

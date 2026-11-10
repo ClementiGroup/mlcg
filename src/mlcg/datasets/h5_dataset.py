@@ -128,6 +128,11 @@ An example "loading_options" (as a Python Mappable (e.g., dict)):
                         "embeds": "attrs:cg_embeds",
                         "coords": "cg_coords",
                         "forces": "cg_delta_forces",
+                        # optional: (2, n_pairs) pairs removed from the model neighbor list,
+                        # unordered: (i, j) removes both directions, so storing each
+                        # pair once is enough. Requires the root attribute
+                        # `excluded_order` (>= 2) in the HDF5 file, matching the model's one.
+                        "excluded_pairs": "attrs:excluded_pairs",
                 },
                 "parallel": { # optional, default rank=0 and world_size=1 (single process).
                         # For split the dataset evenly and load only the necessary parts to each process in a parallelized train/val setup
@@ -191,7 +196,7 @@ class MolData:
         coords: np.ndarray,
         forces: np.ndarray,
         weights: np.ndarray = None,
-        exclusion_pairs: np.ndarray = None,
+        excluded_pairs: np.ndarray = None,
         cell: np.ndarray = None,
         pbc: np.ndarray = None,
         energy: np.ndarray = None,
@@ -215,12 +220,19 @@ class MolData:
         if self._weights is not None:
             assert len(self._coords) == len(self._weights)
 
-        self._exclusion_pairs = exclusion_pairs
-        if self._exclusion_pairs is not None and self._exclusion_pairs.size > 0:
-            assert (
-                self._exclusion_pairs.min() >= 0
-                and self._exclusion_pairs.max() < len(self._embeds)
+        self._excluded_pairs = None
+        if excluded_pairs is not None:
+            pairs = torch.as_tensor(
+                np.asarray(excluded_pairs), dtype=torch.long
             )
+            if pairs.dim() != 2 or pairs.shape[0] != 2:
+                raise ValueError(
+                    f"excluded_pairs of molecule {name} must have shape "
+                    f"(2, n_pairs), got {tuple(pairs.shape)}"
+                )
+            if pairs.numel() > 0:
+                assert pairs.min() >= 0 and pairs.max() < len(self._embeds)
+            self._excluded_pairs = pairs
 
     @property
     def name(self):
@@ -243,8 +255,8 @@ class MolData:
         return self._weights
 
     @property
-    def exclusion_pairs(self):
-        return self._exclusion_pairs
+    def excluded_pairs(self):
+        return self._excluded_pairs
 
     @property
     def n_frames(self):
@@ -295,7 +307,7 @@ class MetaSet:
         self._mol_map = {}
         self._n_mol_samples = []
         self._cumulate_indices = [0]
-        self._exclude_listed_pairs = False
+        self._excluded_order = 1
 
     @staticmethod
     def retrieve_hdf(hdf_grp, hdf_key):
@@ -339,10 +351,11 @@ class MetaSet:
             "world_size": 1,
         },
         subsample_using_weights=False,
-        exclude_listed_pairs=False,
     ):
         r"""initiate a Metaset by loading data from given HDF-group.
         mol_list, detailed_indices, hdf_key_mapping, stride and parallel can control which subset is loaded to the Metaset (details see the description of "H5Dataset")
+        Excluded pairs are loaded only if `excluded_pairs` is in hdf_key_mapping; their
+        `excluded_order` is read from the root attributes of the HDF5 file.
         """
 
         def select_for_rank(length_or_indices):
@@ -375,6 +388,16 @@ class MetaSet:
 
         output = MetaSet(hdf5_group.name.split("/")[-1])
         keys = hdf_key_mapping
+        load_excluded_pairs = "excluded_pairs" in keys
+        if load_excluded_pairs:
+            excluded_order = int(hdf5_group.file.attrs.get("excluded_order", 1))
+            if excluded_order < 2:
+                raise ValueError(
+                    "`excluded_pairs` is in the hdf5 key mapping but the HDF5 file "
+                    f"{hdf5_group.file.filename} has no root attribute "
+                    "`excluded_order` >= 2."
+                )
+            output._excluded_order = excluded_order
         for mol_name in tqdm(mol_list, leave=False, desc="loading molecules"):
             if mol_name not in hdf5_group:
                 raise KeyError(
@@ -383,16 +406,12 @@ class MetaSet:
                     % (mol_name, hdf5_group.name)
                 )
             embeds = MetaSet.retrieve_hdf(hdf5_group[mol_name], keys["embeds"])
-            if exclude_listed_pairs:
-                if "exclusion_pairs" not in keys:
-                    raise ValueError(
-                        f"Missing `exclusion_pairs` from hdf5 key mapping."
-                    )
-                exclusion_pairs = MetaSet.retrieve_hdf(
-                    hdf5_group[mol_name], keys["exclusion_pairs"]
+            if load_excluded_pairs:
+                excluded_pairs = MetaSet.retrieve_hdf(
+                    hdf5_group[mol_name], keys["excluded_pairs"]
                 )
             else:
-                exclusion_pairs = None
+                excluded_pairs = None
             if (
                 detailed_indices is not None
                 and detailed_indices.get(mol_name) is not None
@@ -488,13 +507,12 @@ class MetaSet:
                     coords,
                     forces,
                     weights=weights,
-                    exclusion_pairs=exclusion_pairs,
+                    excluded_pairs=excluded_pairs,
                     cell=cell,
                     pbc=pbc,
                     energy=energy,
                 )
             )
-        output._exclude_listed_pairs = exclude_listed_pairs
         return output
 
     def insert_mol(self, mol_data):
@@ -607,19 +625,21 @@ class MetaSet:
             else None
         )
 
-        atd = AtomicData.from_points(
+        kwargs = {}
+        if self._mol_dataset[dataset_id].excluded_pairs is not None:
+            kwargs["excluded_pairs"] = {
+                "excluded_order": self._excluded_order,
+                "index_mapping": self._mol_dataset[dataset_id].excluded_pairs,
+            }
+        return AtomicData.from_points(
             pos=self._mol_dataset[dataset_id].coords[data_id],
             forces=self._mol_dataset[dataset_id].forces[data_id],
             atom_types=self._mol_dataset[dataset_id].embeds,
             cell=cell_frame,
             pbc=pbc_frame,
             energy=energy_frame,
+            **kwargs,
         )
-        if self._exclude_listed_pairs:
-            atd.exc_pair_index = torch.tensor(
-                self._mol_dataset[dataset_id].exclusion_pairs
-            )
-        return atd
 
     def _locate_idx(self, idx):
         full_length = self._cumulate_indices[-1]
@@ -777,7 +797,6 @@ class H5Dataset:
         partition_options: Dict,
         loading_options: Dict,
         subsample_using_weights: bool = False,
-        exclude_listed_pairs: bool = False,
     ):
         self._h5_path = h5_file_path
         self._h5_root = h5py.File(h5_file_path, "r")
@@ -787,7 +806,6 @@ class H5Dataset:
         self._partition_sample_info = {}
         self._detailed_indices = {}
         self._subsample_using_weights = subsample_using_weights
-        self._exclude_listed_pairs = exclude_listed_pairs
 
         # processing the hdf5 file
         for metaset_name in self._h5_root:
@@ -858,7 +876,6 @@ class H5Dataset:
                         hdf_key_mapping=hdf_key_mapping,
                         parallel=parallel,
                         subsample_using_weights=self._subsample_using_weights,
-                        exclude_listed_pairs=self._exclude_listed_pairs,
                     ),
                 )
             ## trim the metasets to fit the need of sampling
@@ -1016,7 +1033,6 @@ class H5SimpleDataset(H5Dataset):
         },
         parallel={"rank": 0, "world_size": 1},
         subsample_using_weights: Optional[bool] = False,
-        exclude_listed_pairs: bool = False,
     ):
         # input checking
         if not isinstance(stride, int) and stride > 0:
@@ -1062,7 +1078,6 @@ class H5SimpleDataset(H5Dataset):
             hdf_key_mapping=hdf_key_mapping,
             parallel=parallel,
             subsample_using_weights=subsample_using_weights,
-            exclude_listed_pairs=exclude_listed_pairs,
         )
 
     def get_dataloader(

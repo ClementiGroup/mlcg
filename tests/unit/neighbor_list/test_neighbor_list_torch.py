@@ -10,16 +10,14 @@ from mlcg.neighbor_list.ase_impl import ase_neighbor_list
 from mlcg.neighbor_list.torch_impl import torch_neighbor_list
 from mlcg.geometry.internal_coordinates import compute_distances
 
-try:
-    from mlcg.neighbor_list.nvalchemi_impl import nvalchemi_neighbor_list
 
-    NVALCH_AVAILABLE = True
-except ImportError:
-    print(
-        "nalchemiis not installed. Please install with "
-        + "pip install nvalchemi-toolkit-ops"
-    )
-    NVALCH_AVAILABLE = False
+def sort_edges(edge_index, *tensors):
+    if edge_index.numel() == 0:
+        return (edge_index,) + tuple(t for t in tensors)
+    stride = edge_index.max().item() + 1
+    key = edge_index[0] * stride + edge_index[1]
+    order = torch.argsort(key)
+    return (edge_index[:, order],) + tuple(t[order] for t in tensors)
 
 
 def bulk_metal():
@@ -53,13 +51,12 @@ test_set = [
     for self_interaction in [False, True]
 ]
 
-if NVALCH_AVAILABLE:
-    test_set += [
-        (nvalchemi_neighbor_list, name, frame, rc, self_interaction)
-        for (name, frame) in atomic_structures()
-        for rc in range(2, 7, 2)
-        for self_interaction in [False]
-    ]
+nvalchemi_test_set = [
+    (name, frame, rc, self_interaction)
+    for (name, frame) in atomic_structures()
+    for rc in range(2, 7, 2)
+    for self_interaction in [False]
+]
 
 
 @pytest.mark.parametrize(
@@ -87,10 +84,10 @@ def test_neighborlist(nls_method, name, frame, cutoff, self_interaction):
             dd = (data.pos[idx_j] - data.pos[idx_i] + cell_shifts).norm(dim=1)
             dds.extend(dd.numpy())
         dds = np.sort(dds)
+        edge_index = torch.stack([idx_i, idx_j], dim=0)
+        edge_index = sort_edges(edge_index)
         distance_results[met_name] = dds
-        neighs_results[met_name] = torch.stack([idx_i, idx_j], dim=0).sort(
-            dim=1
-        )
+        neighs_results[met_name] = edge_index
     assert np.allclose(
         distance_results["current_nls_method"], distance_results["ase_ref"]
     )
