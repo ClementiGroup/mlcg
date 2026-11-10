@@ -204,7 +204,7 @@ class NeighborSharingSumOut(SumOut):
                 f"{nls_model_key=} can't be contained in {own_nl_models=}"
             )
         nls_model = models[nls_model_key]
-        # Guard for only using SchNet 
+        # Guard for only using SchNet
         # TOOO: create an interface for extracting cutoff of different MPNNs
         if not isinstance(getattr(nls_model, "model", nls_model), SchNet):
             raise TypeError(
@@ -229,6 +229,19 @@ class NeighborSharingSumOut(SumOut):
                 )
         self.nls_model_key = nls_model_key
         self.shared_nl_models = shared_nl_models
+
+    @classmethod
+    def from_base(
+        cls, model: SumOut, nls_model_key: str, shared_nl_models: Sequence[str]
+    ):
+
+        return cls(
+            nls_model_key=nls_model_key,
+            models=model.models,
+            shared_nl_models=shared_nl_models,
+            targets=model.targets,
+            own_nl_models=getattr(model, "own_nl_models", None),
+        )
 
     def _network_neighbor_list(self, data: AtomicData):
         model = self.models[self.nls_model_key]
