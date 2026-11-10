@@ -23,6 +23,25 @@ def make_batch(n_elements):
         i_element_offset += n_element
     return out_batch, out_ptr
 
+
+@cython.wraparound(False)   # Deactivate negative indexing.
+@cython.boundscheck(False)
+def collate_bool_array_2d(list_of_arrays):
+    cdef intp i, n_dim = list_of_arrays[0].shape[0]
+    m = len(list_of_arrays)
+    out_target = np.empty((m, n_dim), dtype=np.bool_)
+    cdef np.ndarray[np.npy_bool, ndim=2, mode="c"] target = out_target
+    cdef np.ndarray[np.npy_bool, ndim=2, mode="c"] source
+    # cdef float[:][:] sources = list_of_arrays
+    #for i, source_p in enumerate(list_of_arrays):
+    for i in range(m):
+        source = list_of_arrays[i].reshape(-1,3)
+        #target[i_element_offset:(i_element_offset + n_elements[i])] = source[:]
+        #source = source_p
+        #memcpy(<float*>&target[0, 0] + i_element_offset * n_dim, <float*>&source[0, 0], n_elements[i] * n_dim * sizeof(float))
+        memcpy(<void*>&target[i, 0], <const void*>&source[0, 0],  n_dim * sizeof(np.npy_bool))
+    return out_target
+
 @cython.wraparound(False)   # Deactivate negative indexing.
 @cython.boundscheck(False)
 def collate_float_array_2d(list_of_arrays):
@@ -40,6 +59,34 @@ def collate_float_array_2d(list_of_arrays):
         memcpy(<float*>&target[i_element_offset, 0], <float*>&source[0, 0], n_elements[i] * n_dim * sizeof(float))
         i_element_offset += n_elements[i]
     return out_target
+
+
+
+@cython.wraparound(False)   # Deactivate negative indexing.
+@cython.boundscheck(False)
+def collate_float_array_3d(list_of_arrays):
+    """
+    Collate m arrays of shape (1,3,3) into one array of shape (m,3,3),
+    dtype float32.
+    """
+    cdef intp i, m
+    cdef intp offset = 0  # counts how many (1,3,3) blocks written
+    cdef intp n_dim = list_of_arrays[0].shape[1]
+    cdef intp n_dim_sq = n_dim * n_dim
+    m = len(list_of_arrays)
+    out = np.empty((m, n_dim, n_dim), dtype=np.float32)
+    cdef np.ndarray[np.float32_t, ndim=3, mode="c"] target = out
+    cdef np.ndarray[np.float32_t, ndim=3, mode="c"] source
+    for i in range(m):
+        source = list_of_arrays[i].reshape(-1,3,3)
+
+        # Copy 1*3*3 floats = 9 floats into target[i,:,:]
+        memcpy(<float*>&target[i, 0, 0],
+               <float*>&source[0, 0, 0],
+               n_dim_sq * sizeof(np.float32_t))
+        offset += 1
+    return out
+
 
 def batch_collate(list_of_atomic_data):
     n_frames = len(list_of_atomic_data)
@@ -64,10 +111,6 @@ def batch_collate(list_of_atomic_data):
     }
     return collated
 
-# cdef collate_nl_index_mapping(intp[:] index_mapping_ptrs, intp[:] n_, intp n_frames, ):
-#     cdef intp offset = 0
-#     for i_frame in range(n_frames):
-#         # copy over the index mappings
 
 cdef collate_edge_indices(
     intp[::1] edge_array_ptrs,
@@ -175,6 +218,40 @@ def batch_collate_w_nls(list_of_atomic_data, transform=None):
         "n_atoms": n_atoms,
         "forces": collate_float_array_2d(all_forces),
         "neighbor_list": collate_nls(all_nls, n_atoms),
+        "batch": batch,
+        "ptr": ptr,
+    }
+    return collated
+
+def batch_collate_w_nls_w_pbc(list_of_atomic_data, transform=None):
+    n_frames = len(list_of_atomic_data)
+    n_atoms = np.empty(n_frames, dtype=int)
+    all_pos = []
+    all_atom_types = []
+    all_forces = []
+    all_nls = []
+    all_pbc = []
+    all_cell = []
+    for i_frame, frame in enumerate(list_of_atomic_data):
+        if transform is not None:
+            transform(frame)
+        all_pos.append(frame["pos"])
+        this_atom_types = frame["atom_types"]
+        n_atoms[i_frame] = len(this_atom_types)
+        all_atom_types.append(this_atom_types)
+        all_forces.append(frame["forces"])
+        all_nls.append(frame["neighbor_list"])
+        all_cell.append(frame["cell"])
+        all_pbc.append(frame["pbc"])
+    batch, ptr = make_batch(n_atoms)
+    collated = {
+        "pos": collate_float_array_2d(all_pos),
+        "atom_types": np.concatenate(all_atom_types),
+        "n_atoms": n_atoms,
+        "forces": collate_float_array_2d(all_forces),
+        "neighbor_list": collate_nls(all_nls, n_atoms),
+        "cell" : collate_float_array_3d(all_cell),
+        "pbc" : collate_bool_array_2d(all_pbc),
         "batch": batch,
         "ptr": ptr,
     }

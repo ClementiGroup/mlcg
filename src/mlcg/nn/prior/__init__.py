@@ -1,4 +1,4 @@
-from .base import _Prior
+from .base import _Prior, compute_cell_shifts
 from .harmonic import (
     Harmonic,
     HarmonicAngles,
@@ -6,6 +6,7 @@ from .harmonic import (
     HarmonicBonds,
     GeneralAngles,
     GeneralBonds,
+    ShiftedHarmonicAnglesRaw,
 )
 from .repulsion import (
     Repulsion,
@@ -13,7 +14,9 @@ from .repulsion import (
     ExpRepulsion,
     CutoffExpRepulsion,
     RepulsionBuckMod,
+    ScaledCutoffExpRepulsion,
+    LennardJonesShifted,
 )
-from .fourier_series import FourierSeries, Dihedral
+from .fourier_series import FourierSeries, Dihedral, PeriodicAngles
 from .polynomial import Polynomial, QuarticAngles, QuarticRawAngles
 from .restricted_bending import RestrictedQuartic

@@ -7,7 +7,14 @@ from .schnet import (
 )
 from .radial_basis import GaussianBasis, ExpNormalBasis, SkewedMuGaussianBasis
 from .cutoff import CosineCutoff, IdentityCutoff
-from .losses import ForceMSE, ForceRMSE, Loss, EnergyMSE
+from .losses import (
+    ForceMSE,
+    ForceRMSE,
+    Loss,
+    EnergyMSE,
+    VarianceRegularizedMSE,
+    DistributionMatchingMSE,
+)
 from .prior import (
     Harmonic,
     HarmonicAngles,
@@ -16,6 +23,8 @@ from .prior import (
     Dihedral,
     Polynomial,
     QuarticAngles,
+    QuarticRawAngles,
+    LennardJonesShifted,
 )
 from .mlp import MLP, TypesMLP
 from .attention import ExactAttention, FavorAttention, Nonlocalinteractionblock
@@ -53,10 +62,13 @@ __all__ = [
     "ForceRMSE",
     "Loss",
     "EnergyMSE",
+    "VarianceRegularizedMSE",
+    "DistributionMatchingMSE",
     "Harmonic",
     "HarmonicAngles",
     "HarmonicBonds",
     "Repulsion",
+    "LennardJonesShifted",
     "MLP",
     "TypesMLP",
     "Attention",

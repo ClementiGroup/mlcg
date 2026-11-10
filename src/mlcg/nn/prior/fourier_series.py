@@ -10,6 +10,7 @@ from ...data.atomic_data import AtomicData
 from ...geometry.topology import Topology
 from ...geometry.internal_coordinates import (
     compute_torsions,
+    compute_angles_raw,
 )
 
 
@@ -481,3 +482,43 @@ class Dihedral(FourierSeries):
         else:
             cell_shifts = None
         return compute_torsions(pos, mapping, cell_shifts)
+
+
+# Ported from feat/noise_up_main_merge (noise-beta) onto main's PBC convention
+# with Claude Opus 5.5 (claude-opus-5-5).
+class PeriodicAngles(FourierSeries):
+    r"""
+    Class to represent a angle potential using a fourier series
+    """
+
+    name: Final[str] = "angles"
+    _order: Final[int] = 3
+
+    def __init__(
+        self,
+        statistics: Dict,
+        n_degs: int = 1,
+        name: str = "angles",
+    ) -> None:
+        super(PeriodicAngles, self).__init__(
+            statistics, name=name, n_degs=n_degs, order=self._order
+        )
+
+    @staticmethod
+    def neighbor_list(topology) -> None:
+        nl = topology.neighbor_list(PeriodicAngles.name)
+        return {PeriodicAngles.name: nl}
+
+    @staticmethod
+    def compute_features(
+        pos: torch.Tensor,
+        mapping: torch.Tensor,
+        pbc: Optional[torch.Tensor] = None,
+        cell: Optional[torch.Tensor] = None,
+        batch: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+
+        cell_shifts = _Prior._get_cell_shifts(pos, mapping, pbc, cell, batch)
+        return compute_angles_raw(
+            pos=pos, mapping=mapping, cell_shifts=cell_shifts
+        )
