@@ -718,3 +718,9 @@ class FastCutoffExpRepulsion(CutoffExpRepulsion, _BaseFastRepulsion):
         return cls(
             statistics=prior_stats, cutoff=repulsion.cutoff, name=repulsion.name
         )
+
+
+# Backwards-compatible alias (added with Claude Opus 5.5, claude-opus-5-5):
+# `RepulsionBuckMod` from feat/noise_up has the same functional form and
+# buffers (`alpha`, `r_0`) as `ExpRepulsion`, which also supports PBCs.
+RepulsionBuckMod = ExpRepulsion

@@ -1,10 +1,13 @@
+# Merge of feat/noise_up into main resolved with Claude Opus 5.5 (claude-opus-5-5).
 import numpy as np
 import pytest
 import torch
 from torch_geometric.loader.dataloader import Collater
+from mlcg.data import AtomicData
 from mlcg.datasets.h5_dataset import MolData, MetaSet
 from mlcg.neighbor_list.neighbor_list import atomic_data2neighbor_list
 import tempfile
+import torch
 import h5py
 
 np.random.seed(54392)
@@ -31,6 +34,7 @@ def make_hdf5(tdir, detailed_idx=True, excluded_order=None):
         mol_frames.append(n_frames)
         coords = np.random.randn(n_frames, n_atoms, 3)
         forces = np.random.randn(n_frames, n_atoms, 3)
+        noise_levels = np.random.randn(n_frames, n_atoms, 3)
         types = np.random.randn(n_atoms)
         pbcs = np.full((n_frames, 3), False)
         cells = np.random.randn(n_frames, 3, 3)
@@ -38,6 +42,7 @@ def make_hdf5(tdir, detailed_idx=True, excluded_order=None):
         grp = f.create_group(name)
         grp.create_dataset("cg_coords", data=coords)
         grp.create_dataset("cg_delta_forces", data=forces)
+        grp.create_dataset("noise_levels", data=noise_levels)
         grp.attrs["cg_embeds"] = types
         grp.attrs["N_frames"] = n_frames
         grp.create_dataset("pbc", data=pbcs)
@@ -59,6 +64,12 @@ def make_hdf5(tdir, detailed_idx=True, excluded_order=None):
         detailed_idx = None
 
     return f, mol_list, detailed_idx
+
+
+def zero_force_transform(inp: AtomicData) -> AtomicData:
+    """Dummy transform that set the forces to zero."""
+    inp.forces = torch.zeros_like(inp.forces)
+    return inp
 
 
 def test_metaset_props():
@@ -153,3 +164,14 @@ def test_excluded_pairs_without_excluded_order():
             MetaSet.create_from_hdf5_group(
                 f, mol_list, hdf_key_mapping=excluded_key_mapping
             )
+
+
+def test_h5_dataset_transform():
+    with tempfile.TemporaryDirectory() as tdir:
+        f, mol_list, _ = make_hdf5(tdir)
+        meta_set = MetaSet.create_from_hdf5_group(
+            f, mol_list, transform=zero_force_transform
+        )
+        random_indices = np.random.choice(len(meta_set), 10)
+        for i in random_indices:
+            assert np.allclose(meta_set[i].forces.detach().numpy(), 0.0)

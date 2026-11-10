@@ -12,6 +12,7 @@ from .repulsion import (
     CutoffRepulsion,
     ExpRepulsion,
     CutoffExpRepulsion,
+    RepulsionBuckMod,
 )
 from .fourier_series import FourierSeries, Dihedral
 from .polynomial import Polynomial, QuarticAngles, QuarticRawAngles
