@@ -18,12 +18,3 @@ simulation:
   save_forces: false
   save_interval: 250
   specialize_priors: true
-  compile: true
-  save_force_components: true
-  force_components:
-    - "SchNet"
-    - "angles"
-  save_energy_components: true
-  energy_components:
-    - "SchNet"
-
