@@ -148,3 +148,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# llm stuff
+.claude
+
+# temporary
+tmp
