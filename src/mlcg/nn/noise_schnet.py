@@ -1,5 +1,3 @@
-# torch_scatter import replaced by torch_geometric's scatter with Claude Opus 5.5
-# (claude-opus-5-5) while merging feat/noise_up into main.
 import torch
 from .schnet import StandardSchNet
 from typing import Optional, List, Final

@@ -719,9 +719,6 @@ class FastCutoffExpRepulsion(CutoffExpRepulsion, _BaseFastRepulsion):
             statistics=prior_stats, cutoff=repulsion.cutoff, name=repulsion.name
         )
 
-
-# Ported from feat/noise_up_main_merge (noise-beta) onto main's PBC convention
-# with Claude Opus 5.5 (claude-opus-5-5).
 class ScaledCutoffExpRepulsion(CutoffExpRepulsion):
     """:class:`CutoffExpRepulsion` whose energy is multiplied by `scale_factor`."""
 
@@ -948,8 +945,4 @@ class LennardJonesShifted(_Prior):
             )
         }
 
-
-# Backwards-compatible alias (added with Claude Opus 5.5, claude-opus-5-5):
-# `RepulsionBuckMod` from feat/noise_up has the same functional form and
-# buffers (`alpha`, `r_0`) as `ExpRepulsion`, which also supports PBCs.
 RepulsionBuckMod = ExpRepulsion

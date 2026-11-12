@@ -1,6 +1,3 @@
-# Reduced to the Cython extension build by Claude Opus 5.5 (claude-opus-5-5)
-# while merging feat/noise_up into main; all package metadata lives in
-# pyproject.toml.
 from setuptools import setup, Extension
 
 from Cython.Build import cythonize

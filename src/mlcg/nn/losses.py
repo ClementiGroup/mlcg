@@ -302,9 +302,6 @@ class EnergyMSE(_Loss):
             / data.n_atoms
         ).mean()
 
-
-# Ported from feat/noise_up_main_merge (noise-beta) onto main's PBC convention
-# with Claude Opus 5.5 (claude-opus-5-5).
 class VarianceRegularizedMSE(_Loss):
     r"""MSE loss with a variance regularization term to avoid narrow distributions:
 

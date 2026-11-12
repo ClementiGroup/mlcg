@@ -1,4 +1,3 @@
-# Merge of feat/noise_up into main resolved with Claude Opus 5.5 (claude-opus-5-5).
 import warnings
 from typing import Optional, List, Final
 import torch

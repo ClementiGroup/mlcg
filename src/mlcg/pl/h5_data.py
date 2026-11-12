@@ -1,4 +1,3 @@
-# Merge of feat/noise_up into main resolved with Claude Opus 5.5 (claude-opus-5-5).
 import copy
 from typing import List, Union, Optional, Callable
 from collections.abc import Mapping

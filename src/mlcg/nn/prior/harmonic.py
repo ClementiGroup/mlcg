@@ -351,9 +351,6 @@ class HarmonicAnglesRaw(Harmonic):
             cell_shifts = None
         return compute_angles_raw(pos, mapping, cell_shifts)
 
-
-# Ported from feat/noise_up_main_merge (noise-beta) onto main's PBC convention
-# with Claude Opus 5.5 (claude-opus-5-5).
 class ShiftedHarmonicAnglesRaw(Harmonic):
     r"""Wrapper class for quickly computing angle priors
     (order 3 Harmonic priors)

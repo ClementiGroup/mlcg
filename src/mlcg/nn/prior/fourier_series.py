@@ -483,9 +483,6 @@ class Dihedral(FourierSeries):
             cell_shifts = None
         return compute_torsions(pos, mapping, cell_shifts)
 
-
-# Ported from feat/noise_up_main_merge (noise-beta) onto main's PBC convention
-# with Claude Opus 5.5 (claude-opus-5-5).
 class PeriodicAngles(FourierSeries):
     r"""
     Class to represent a angle potential using a fourier series
