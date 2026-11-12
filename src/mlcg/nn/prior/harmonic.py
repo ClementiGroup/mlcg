@@ -351,6 +351,7 @@ class HarmonicAnglesRaw(Harmonic):
             cell_shifts = None
         return compute_angles_raw(pos, mapping, cell_shifts)
 
+
 class ShiftedHarmonicAnglesRaw(Harmonic):
     r"""Wrapper class for quickly computing angle priors
     (order 3 Harmonic priors)

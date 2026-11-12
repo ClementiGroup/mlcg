@@ -719,6 +719,7 @@ class FastCutoffExpRepulsion(CutoffExpRepulsion, _BaseFastRepulsion):
             statistics=prior_stats, cutoff=repulsion.cutoff, name=repulsion.name
         )
 
+
 class ScaledCutoffExpRepulsion(CutoffExpRepulsion):
     """:class:`CutoffExpRepulsion` whose energy is multiplied by `scale_factor`."""
 
@@ -944,5 +945,6 @@ class LennardJonesShifted(_Prior):
                 LennardJonesShifted._neighbor_list_name
             )
         }
+
 
 RepulsionBuckMod = ExpRepulsion

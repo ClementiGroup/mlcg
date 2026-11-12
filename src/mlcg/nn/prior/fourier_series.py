@@ -483,6 +483,7 @@ class Dihedral(FourierSeries):
             cell_shifts = None
         return compute_torsions(pos, mapping, cell_shifts)
 
+
 class PeriodicAngles(FourierSeries):
     r"""
     Class to represent a angle potential using a fourier series

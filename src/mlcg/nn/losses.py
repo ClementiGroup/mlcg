@@ -302,6 +302,7 @@ class EnergyMSE(_Loss):
             / data.n_atoms
         ).mean()
 
+
 class VarianceRegularizedMSE(_Loss):
     r"""MSE loss with a variance regularization term to avoid narrow distributions:
 
