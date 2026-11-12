@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 from torch_geometric.utils import scatter
 from typing import Optional, Dict
@@ -5,7 +6,9 @@ from typing import Optional, Dict
 
 from .base import _Prior
 from ...data.atomic_data import AtomicData
+from ...geometry.topology import Topology
 from ...geometry.internal_coordinates import (
+    compute_distances,
     compute_angles_cos,
     compute_angles_raw,
 )
@@ -242,3 +245,91 @@ class QuarticRawAngles(Polynomial):
         return compute_angles_raw(
             pos=pos, mapping=mapping, cell_shifts=cell_shifts
         )
+
+
+class QuarticBonds(Polynomial):
+    r"""Wrapper class for bond priors
+    (order 2 Polynomial priors of degree 4)
+
+    .. math::
+
+        V(r) = V_0 + \sum_{n=1}^{n_{deg}} k_n (r - r_0)^n
+
+    In addition to "ks" and "v_0", each entry of `statistics` may contain
+    "x_0", the reference bond length :math:`r_0` for that bead pair. If it
+    is missing, :math:`r_0 = 0` is used, which recovers the plain
+    polynomial in :math:`r`.
+    """
+
+    def __init__(self, statistics, name="bonds", n_degs: int = 4) -> None:
+        super(QuarticBonds, self).__init__(
+            statistics, name, order=2, n_degs=n_degs
+        )
+        x_0 = torch.zeros_like(self.v_0)
+        for key in statistics.keys():
+            x_0[key] = statistics[key].get("x_0", 0.0)
+        self.register_buffer("x_0", x_0)
+
+    def data2parameters(self, data: AtomicData) -> Dict:
+        params = super(QuarticBonds, self).data2parameters(data)
+        mapping = data.neighbor_list[self.name]["index_mapping"]
+        interaction_types = tuple(
+            data.atom_types[mapping[ii]] for ii in range(self.order)
+        )
+        params["x_0s"] = self.x_0[interaction_types].flatten()
+        return params
+
+    def forward(self, data: AtomicData) -> AtomicData:
+        r"""Forward pass through the QuarticBonds interaction, evaluating
+        the polynomial in :math:`r - r_0`.
+        """
+        mapping_batch = data.neighbor_list[self.name]["mapping_batch"]
+        params = self.data2parameters(data)
+        features = self.data2features(data).flatten() - params["x_0s"]
+        y = Polynomial.compute(features, params["ks"].t(), params["v_0s"].t())
+        y = scatter(y, mapping_batch, dim=0, reduce="sum")
+        data.out[self.name] = {"energy": y}
+        return data
+
+    def data2features(self, data: AtomicData) -> torch.Tensor:
+        r"""Computes features for the QuarticBonds interaction from
+        an AtomicData instance)
+        Parameters
+        ----------
+        data:
+            Input `AtomicData` instance
+        Returns
+        -------
+        torch.Tensor:
+            Tensor of computed features
+        """
+        mapping = data.neighbor_list[self.name]["index_mapping"]
+        pbc = getattr(data, "pbc", None)
+        cell = getattr(data, "cell", None)
+        return self.compute_features(
+            pos=data.pos,
+            mapping=mapping,
+            pbc=pbc,
+            cell=cell,
+            batch=data.batch,
+        )
+
+    @staticmethod
+    def neighbor_list(topology: Topology) -> dict:
+        return {"bonds": topology.neighbor_list("bonds")}
+
+    @staticmethod
+    def compute_features(
+        pos: torch.Tensor,
+        mapping: torch.Tensor,
+        pbc: torch.Tensor = None,
+        cell: torch.Tensor = None,
+        batch: torch.Tensor = None,
+    ) -> torch.Tensor:
+        if all([feat != None for feat in [pbc, cell]]):
+            cell_shifts = _Prior._get_cell_shifts(
+                pos, mapping, pbc, cell, batch
+            )
+        else:
+            cell_shifts = None
+        return compute_distances(pos, mapping, cell_shifts)

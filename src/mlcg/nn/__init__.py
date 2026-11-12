@@ -11,6 +11,7 @@ from .prior import (
     Dihedral,
     Polynomial,
     QuarticAngles,
+    QuarticBonds,
 )
 from .mlp import MLP, TypesMLP
 from .attention import ExactAttention, FavorAttention, Nonlocalinteractionblock

@@ -14,5 +14,10 @@ from .repulsion import (
     CutoffExpRepulsion,
 )
 from .fourier_series import FourierSeries, Dihedral
-from .polynomial import Polynomial, QuarticAngles, QuarticRawAngles
+from .polynomial import (
+    Polynomial,
+    QuarticAngles,
+    QuarticRawAngles,
+    QuarticBonds,
+)
 from .restricted_bending import RestrictedQuartic
