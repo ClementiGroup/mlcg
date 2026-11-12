@@ -137,22 +137,29 @@ Advanced: a flash path for your own model
 
 The flash path of a module is runtime state of the module itself, given by
 the :class:`~mlcg.nn.SupportsFlash` mixin; there are no separate flash
-classes. A model class with a flash path:
+classes. mlcg keeps the flash implementation of a model in a companion
+mixin, ``<Model>FlashPath(SupportsFlash)`` in ``nn/flash_models/``, which
+the model lists first in its bases; the model's own file keeps only the
+standard code and the flash interface. A model with a flash path:
 
-1. inherits :class:`~mlcg.nn.SupportsFlash` before ``torch.nn.Module``, or
-   a class that does (e.g. ``StandardSchNet``);
+1. inherits :class:`~mlcg.nn.SupportsFlash` (through its companion, or
+   directly) before ``torch.nn.Module``, or a class that does (e.g.
+   ``StandardSchNet``); the wrong order raises ``TypeError``;
 2. implements ``enable_kernels``: switch on what it supports, refuse
    (with a warning) what it doesn't, then call
    ``super().enable_kernels(enabled)``;
-3. implements ``flash_forward``, and its ``forward`` calls it when the
-   kernels are on;
+3. implements ``flash_forward``, and ``forward`` calls it when the kernels
+   are on: in the companion if the model inherits its standard
+   ``forward``, otherwise as the first two lines of the model's own
+   ``forward``;
 4. implements ``prepare_inference`` if it has inference state (tables).
 
 A subclass that overrides ``forward`` must also override
 ``flash_forward``: otherwise the inherited flash path would compute the
 parent's model, and ``enable_kernels`` refuses it.
-``StandardSchNet`` and ``RBFRegularizedSchNet`` are complete examples; the
-full rules are in :mod:`mlcg.nn.flash_models.mixin`.
+``StandardSchNet`` and ``RBFRegularizedSchNet``, with their companions in
+:mod:`mlcg.nn.flash_models.schnet`, are complete examples; the full rules
+are in :mod:`mlcg.nn.flash_models.mixin`.
 
 **Using the SchNet blocks outside mlcg.** ``InteractionBlock`` and
 ``CFConv`` take the flash path when called with ``flash=``: a destination

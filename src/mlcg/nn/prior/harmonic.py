@@ -7,6 +7,7 @@ from typing import Final, Dict
 
 
 from .base import _Prior
+from ..flash_models.prior import HarmonicFlashPath
 from ..kernels.models.prior import flash_harmonic_angles, flash_harmonic_bonds
 from ...data.atomic_data import AtomicData
 from ...geometry.topology import Topology
@@ -20,7 +21,7 @@ from ...geometry.internal_coordinates import (
 torch_pi = torch.tensor(pi)
 
 
-class Harmonic(_Prior):
+class Harmonic(HarmonicFlashPath, _Prior):
     r"""1-D Harmonic prior interaction for feature :math:`x` of the form:
 
     .. math::
@@ -109,8 +110,7 @@ class Harmonic(_Prior):
             example/structure
         """
         if self._uses_kernels(data):
-            params = self.data2parameters(data)
-            return self._kernel_forward(data, k=params["k"], x_0=params["x0"])
+            return self.flash_forward(data)
         mapping_batch = data.neighbor_list[self.name]["mapping_batch"]
         params = self.data2parameters(data)
         features = self.data2features(data).flatten()

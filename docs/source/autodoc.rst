@@ -34,6 +34,9 @@ Neural network models for coarse grain property predictions
 .. automodule:: mlcg.nn.schnet
    :members:
 
+.. automodule:: mlcg.nn.flash_models.schnet
+   :members:
+
 .. automodule:: mlcg.nn.painn
    :members:
 

@@ -9,7 +9,11 @@ from mlcg.data.atomic_data import AtomicData
 from mlcg.data._keys import ENERGY_KEY, FORCE_KEY
 from mlcg.neighbor_list.neighbor_list import atomic_data2neighbor_list
 from mlcg.nn.cutoff import CosineCutoff, IdentityCutoff, ShiftedCosineCutoff
-from mlcg.nn.flash_models import enable_flash_kernels, prepare_for_inference
+from mlcg.nn.flash_models import (
+    SupportsFlash,
+    enable_flash_kernels,
+    prepare_for_inference,
+)
 from mlcg.nn.gradients import GradientsOut
 from mlcg.nn.kernels import RadiusCSR
 from mlcg.nn.kernels.pbc import periodic_cells
@@ -689,6 +693,40 @@ def test_forward_override_needs_flash_forward():
         assert not flash_of(standard)._kernels
     standard.__class__ = NewForwardAndFlash
     assert flash_of(standard)._kernels
+
+
+class Companion(SupportsFlash):
+    def flash_forward(self, x):
+        return x
+
+
+class WithCompanion(Companion, torch.nn.Module):
+    def forward(self, x):
+        return x
+
+
+class OverridesWithCompanion(WithCompanion):
+    def forward(self, x):
+        return 2 * x
+
+
+def test_companion_flash_forward_passes_the_guard():
+    """A flash_forward from a direct base of the class defining forward is
+    that class's own; a subclass changing forward is still refused."""
+    module = WithCompanion()
+    module.enable_kernels()
+    assert module._kernels
+    module = OverridesWithCompanion()
+    with pytest.warns(UserWarning, match="without a flash_forward"):
+        module.enable_kernels()
+    assert not module._kernels
+
+
+def test_supports_flash_must_precede_module():
+    with pytest.raises(TypeError, match="before torch.nn.Module"):
+
+        class Wrong(torch.nn.Module, SupportsFlash):
+            pass
 
 
 def rbf_regularized_schnet():

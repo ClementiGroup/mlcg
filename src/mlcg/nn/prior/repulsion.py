@@ -4,6 +4,7 @@ from typing import Final, Optional, Dict
 from torch_geometric.utils import scatter
 
 from .base import _Prior
+from ..flash_models.prior import RepulsionFlashPath
 from ..kernels.models.prior import flash_repulsion
 from ...data.atomic_data import AtomicData
 from ...geometry.topology import Topology
@@ -12,7 +13,7 @@ from ...geometry.internal_coordinates import (
 )
 
 
-class Repulsion(_Prior):
+class Repulsion(RepulsionFlashPath, _Prior):
     r"""1-D power law repulsion prior for feature :math:`x` of the form:
 
     .. math::
@@ -109,7 +110,7 @@ class Repulsion(_Prior):
         """
 
         if self._uses_kernels(data):
-            return self._kernel_forward(data, sigma=self.sigma)
+            return self.flash_forward(data)
         mapping = data.neighbor_list[self.name]["index_mapping"]
         mapping_batch = data.neighbor_list[self.name]["mapping_batch"]
         interaction_types = tuple(

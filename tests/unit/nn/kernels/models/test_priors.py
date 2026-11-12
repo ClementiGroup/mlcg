@@ -96,3 +96,18 @@ def test_base_vs_kernel(device, base_prior):
         torch.testing.assert_close(
             base_forces, compiled_flash_forces, rtol=1e-5, atol=1e-4
         )
+
+
+class NewForwardBonds(HarmonicBonds):
+    def forward(self, data):
+        return super().forward(data)
+
+
+def test_prior_forward_override_needs_flash_forward():
+    """A subclass that changes forward would otherwise run its parent's
+    fused op."""
+    prior = _ASE_prior_model(sum_out=False)["model"][HarmonicBonds.name].model
+    prior.__class__ = NewForwardBonds
+    with pytest.warns(UserWarning, match="without a flash_forward"):
+        prior.enable_kernels()
+    assert not prior._kernels

@@ -6,6 +6,7 @@ from typing import Optional, Dict, Final
 
 
 from .base import _Prior
+from ..flash_models.prior import FourierSeriesFlashPath
 from ..kernels.models.prior import flash_dihedral
 from ...data.atomic_data import AtomicData
 from ...geometry import (
@@ -13,7 +14,7 @@ from ...geometry import (
 )
 
 
-class FourierSeries(_Prior):
+class FourierSeries(FourierSeriesFlashPath, _Prior):
     r"""
     Prior class representing a fourier series of a periodic variable $\theta$.
     The energy computed is given by the follwoing function
@@ -137,14 +138,7 @@ class FourierSeries(_Prior):
         """
 
         if self._uses_kernels(data):
-            params = self.data2parameters(data)
-            return self._kernel_forward(
-                data,
-                k1=params["k1s"],
-                k2=params["k2s"],
-                v_0=params["v_0"],
-                deg=self.n_degs,
-            )
+            return self.flash_forward(data)
         mapping_batch = data.neighbor_list[self.name]["mapping_batch"]
 
         features = self.data2features(data).flatten()

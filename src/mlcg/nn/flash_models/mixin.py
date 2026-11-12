@@ -50,7 +50,8 @@ The state of a flash path is *runtime state*:
 To give a module a flash path:
 
 1. Inherit :class:`SupportsFlash` *before* the ``torch.nn.Module`` base,
-   so that its ``train`` and pickling hooks run first.
+   so that its ``train`` and pickling hooks run first (a class with the
+   wrong order raises ``TypeError`` when it is created).
 2. Create the flash state only in :meth:`~SupportsFlash.enable_kernels` and
    :meth:`~SupportsFlash.prepare_inference`, never in ``__init__``, and
    list every name it uses (instance attributes, buffers registered with
@@ -73,6 +74,17 @@ To give a module a flash path:
 5. :meth:`~SupportsFlash.prepare_inference` raises ``ValueError`` for an
    input it can't handle at all, and warns and keeps the exact path when
    only the inference state is unavailable.
+
+mlcg's own modules keep their flash implementation in a companion mixin,
+``<Class>FlashPath(SupportsFlash)`` in ``nn/flash_models/``
+(:mod:`mlcg.nn.flash_models.schnet`, :mod:`mlcg.nn.flash_models.prior`),
+listed first in the module's bases.
+The standard file keeps only the flash interface: the ``flash=`` keyword
+of blocks, ``has_flash_path``, and, in a class that defines ``forward``
+itself, the hand-off of rule 3 (otherwise the companion's ``forward``
+dispatches). The companion's ``flash_forward`` counts as the class's own
+in the check of rule 4. A single class, as in the example below, works the
+same.
 
 A container module needs nothing: the entry points visit all registered
 submodules. Blocks take their flash path when the parent passes it as
@@ -114,7 +126,8 @@ both a training-safe kernel and an inference-only table::
 ``tabulate``, ``lookup`` and ``fused_envelope`` stand for the module's own
 kernels; :class:`~mlcg.nn.schnet.StandardSchNet`,
 :class:`~mlcg.nn.schnet.RBFRegularizedSchNet` and
-:class:`~mlcg.nn.schnet.CFConv` are complete examples.
+:class:`~mlcg.nn.schnet.CFConv`, with their companions in
+:mod:`mlcg.nn.flash_models.schnet`, are complete examples.
 """
 
 import copy
@@ -166,16 +179,33 @@ class SupportsFlash:
             return
         self._kernels = enabled
 
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        mro = cls.__mro__
+        if torch.nn.Module in mro and mro.index(torch.nn.Module) < mro.index(
+            SupportsFlash
+        ):
+            raise TypeError(
+                f"{cls.__name__}: SupportsFlash must come before "
+                "torch.nn.Module in the bases, or its train and state-dict "
+                "hooks don't run"
+            )
+
     def _flash_forward_is_current(self) -> bool:
         """Whether ``flash_forward`` (if the class has one) is defined by the
-        class that defines ``forward`` or by a subclass of it."""
+        class that defines ``forward``, by its flash companion (a direct base
+        that is not a module) or by a subclass of it."""
 
         def owner(name):
             return next(c for c in type(self).__mro__ if name in vars(c))
 
         if not hasattr(type(self), "flash_forward"):
             return True
-        return issubclass(owner("flash_forward"), owner("forward"))
+        forward, flash_forward = owner("forward"), owner("flash_forward")
+        companion = flash_forward in forward.__bases__ and not issubclass(
+            flash_forward, torch.nn.Module
+        )
+        return companion or issubclass(flash_forward, forward)
 
     def prepare_inference(
         self,
