@@ -6,8 +6,6 @@ import torch.distributed as dist
 import pytorch_lightning as pl
 from ruamel.yaml import YAML
 
-# from torch_geometric.transforms.base_transform import BaseTransform
-# from torch_geometric.loader.dataloader import Collater as PyGCollater
 from mlcg.datasets.cython.collater import CythonCollater
 from mlcg.datasets.cython.transform import NoiseMapTransformer
 from ..datasets.h5_dataset_ng import H5DatasetNG as H5Dataset

@@ -198,10 +198,12 @@ class SkewedMuGaussianBasis(GaussianBasis):
         """
         if abs(self.zeta - 1.0) < 1e-3:
             # we switch to uniform dtrisbution of mu to avoid numerical instability near 1
-            offset = torch.linspace(self.cutoff.cutoff_lower,  self.cutoff.cutoff_upper, self.num_rbf)
+            offset = torch.linspace(
+                self.cutoff.cutoff_lower, self.cutoff.cutoff_upper, self.num_rbf
+            )
             coeff = -0.5 / (offset[1] - offset[0]) ** 2
         else:
-            total_spread = self.cutoff.cutoff_upper-self.cutoff.cutoff_lower
+            total_spread = self.cutoff.cutoff_upper - self.cutoff.cutoff_lower
             # calculating in 0,1
             coeff_xs = torch.linspace(
                 0 - 0.5 / (self.num_rbf - 1),
@@ -216,12 +218,12 @@ class SkewedMuGaussianBasis(GaussianBasis):
                 )
                 ** 2
             )
-            
-            xs = torch.linspace(0,  1, self.num_rbf)
+
+            xs = torch.linspace(0, 1, self.num_rbf)
             offset = (1 - self.zeta**xs) / (1 - self.zeta)
-            
+
             # shifting to the cutoff region
-            coeff *= 1/(total_spread**2)
+            coeff *= 1 / (total_spread**2)
             offset *= total_spread
             offset += self.cutoff.cutoff_lower
         return offset, coeff
