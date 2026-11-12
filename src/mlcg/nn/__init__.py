@@ -3,6 +3,8 @@ from .schnet import (
     SchNet,
     StandardSchNet,
     RBFRegularizedSchNet,
+)
+from .noise_schnet import (
     NoiseEmbedSchNet,
 )
 from .radial_basis import GaussianBasis, ExpNormalBasis, SkewedMuGaussianBasis
