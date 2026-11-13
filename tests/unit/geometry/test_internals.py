@@ -202,3 +202,43 @@ def test_prior_cell_shifts_ignore_tf32(cell, device, tf32_matmul):
     with tf32_matmul():
         result = compute_cell_shifts(*args)
     torch.testing.assert_close(result, reference, rtol=0, atol=0)
+
+
+@pytest.mark.parametrize(
+    "cell",
+    [
+        torch.diag(torch.tensor([20.0, 18.0, 16.0])),
+        torch.tensor([[20.0, 0.0, 0.0], [5.0, 18.0, 0.0], [3.0, 4.0, 16.0]]),
+    ],
+)
+def test_prior_cell_shifts_minimum_image(cell):
+    """Rows of ``cell`` are the lattice vectors (pos = f @ cell). Pairs
+    closer than half the smallest cell height get their minimum image, and
+    no shift is applied along a non-periodic lattice vector."""
+    from mlcg.nn.prior.base import compute_cell_shifts
+
+    cell = cell.double()
+    gen = torch.Generator().manual_seed(0)
+    pos = torch.rand(100, 3, generator=gen, dtype=torch.double) @ cell
+    i, j = torch.triu_indices(100, 100, 1)
+    batch = torch.zeros(100, dtype=torch.long)
+
+    def shifts(pbc):
+        return compute_cell_shifts(
+            pos, torch.stack([i, j]), torch.tensor([pbc]), cell[None], batch
+        ).squeeze(-1)
+
+    images = torch.cartesian_prod(*[torch.arange(-2, 3)] * 3).double() @ cell
+    nearest = (pos[j, None] + images - pos[i, None]).norm(dim=-1).min(dim=1)
+    volume = torch.linalg.det(cell).abs()
+    heights = [
+        volume / torch.linalg.cross(cell[(k + 1) % 3], cell[(k + 2) % 3]).norm()
+        for k in range(3)
+    ]
+    short = nearest.values < min(heights) / 2
+    distances = (pos[j] + shifts([True] * 3) - pos[i]).norm(dim=1)
+    torch.testing.assert_close(distances[short], nearest.values[short])
+
+    lattice_shifts = torch.linalg.solve(cell.T, shifts([True, True, False]).T)
+    torch.testing.assert_close(lattice_shifts, lattice_shifts.round())
+    assert (lattice_shifts[2] == 0).all()
