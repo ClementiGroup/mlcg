@@ -6,6 +6,9 @@ test_job:
     - uv sync --extra cu130 --group dev
   script:
     - source .venv/bin/activate
+    - nvidia-smi
+    - env | grep -iE "tf32|cublas|cuda" || true
+    - python -c "import torch; print(torch.cuda.get_device_name(), torch.backends.cuda.matmul.allow_tf32, torch.get_float32_matmul_precision())"
     - pytest -m "unit" --verbose --junitxml="tests${CI_NODE_INDEX}.xml" --durations-path tests/.test_durations --splits "$CI_NODE_TOTAL" --group "$CI_NODE_INDEX" --splitting-algorithm least_duration
     - pytest -m "continuity" --verbose --junitxml="tests${CI_NODE_INDEX}.xml" --durations-path tests/.test_durations --splits "$CI_NODE_TOTAL" --group "$CI_NODE_INDEX" --splitting-algorithm least_duration
     - pytest -m "integration" --verbose --junitxml="tests${CI_NODE_INDEX}.xml" --durations-path tests/.test_durations --splits "$CI_NODE_TOTAL" --group "$CI_NODE_INDEX" --splitting-algorithm least_duration
