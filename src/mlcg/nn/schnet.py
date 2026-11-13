@@ -123,26 +123,12 @@ class SchNet(torch.nn.Module):
             block.reset_parameters()
         self.output_network.reset_parameters()
 
-    def forward(self, data: AtomicData) -> AtomicData:
-        r"""Forward pass through the SchNet architecture.
+    def schnet_forward(self, data: AtomicData, embeddings: torch.Tensor):
+        """Main SchNet forward pass, starting from precomputed node embeddings
+        (everything except the embedding layer)."""
 
-        Parameters
-        ----------
-        data:
-            Input data object containing batch atom/bead positions
-            and atom/bead types.
-
-        Returns
-        -------
-        data:
-           Data dictionary, updated with predicted energy of shape
-           (num_examples * num_atoms, 1), as well as neighbor list
-           information.
-        """
-        x = self.embedding_layer(data.atom_types)
-
+        x = embeddings
         neighbor_list = data.neighbor_list.get(self.name)
-
         if not self.is_nl_compatible(neighbor_list):
             neighbor_list = self.neighbor_list(
                 data,
@@ -175,6 +161,26 @@ class SchNet(torch.nn.Module):
         data.out[self.name] = {ENERGY_KEY: energy}
 
         return data
+
+    def forward(self, data: AtomicData) -> AtomicData:
+        r"""Forward pass through the SchNet architecture.
+
+        Parameters
+        ----------
+        data:
+            Input data object containing batch atom/bead positions
+            and atom/bead types.
+
+        Returns
+        -------
+        data:
+           Data dictionary, updated with predicted energy of shape
+           (num_examples * num_atoms, 1), as well as neighbor list
+           information.
+        """
+        embeddings = self.embedding_layer(data.atom_types)
+
+        return self.schnet_forward(data, embeddings)
 
     def is_nl_compatible(self, nl):
         is_compatible = False
@@ -357,7 +363,7 @@ class CFConv(MessagePassing):
         W = self.filter_network(edge_attr) * C.view(-1, 1)
 
         x = self.lin1(x)
-        # propagate_type: (x: Tensor, W: Tensor)
+        # propagate_type: (x: torch.Tensor, W: torch.Tensor)
         # Perform the continuous filter convolution
         x = self.propagate(edge_index, x=x, W=W, size=None)
         x = self.lin2(x)
@@ -484,7 +490,9 @@ class StandardSchNet(SchNet):
             [hidden_channels] + output_hidden_layer_widths + [1]
         )
         output_network = MLP(
-            output_layer_widths, activation_func=activation, last_bias=False
+            output_layer_widths,
+            activation_func=activation,
+            last_bias=False,
         )
         super(StandardSchNet, self).__init__(
             embedding_layer,
