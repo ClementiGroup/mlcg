@@ -184,7 +184,6 @@ def torch_neighbor_list(
     return idx_i, idx_j, cell_shifts, self_interaction_mask
 
 
-@torch.jit.script
 def compute_images(
     positions: torch.Tensor,
     cell: torch.Tensor,
@@ -224,7 +223,10 @@ def compute_images(
             dtype=torch.long,
         )
         shifts_idx = torch.cartesian_prod(r1, r2, r3)
-        shifts = torch.matmul(shifts_idx.to(cell.dtype), cell[i_structure])
+        # elementwise, not matmul: cuBLAS may round the cell to TF32
+        shifts = (
+            shifts_idx.to(cell.dtype).unsqueeze(-1) * cell[i_structure]
+        ).sum(dim=1)
         pos = positions[batch == i_structure]
         shift_expanded = shifts.repeat(1, n_atoms[i_structure]).view((-1, 3))
         pos_expanded = pos.repeat(shifts.shape[0], 1)
@@ -248,7 +250,6 @@ def compute_images(
     )
 
 
-@torch.jit.script
 def strides_of(v: torch.Tensor) -> torch.Tensor:
     """TODO: add docs"""
     strides = torch.zeros(v.shape[0] + 1, dtype=torch.int64, device=v.device)
@@ -311,7 +312,6 @@ def torch_neighbor_list_no_pbc(
     return edge_index[0], edge_index[1], self_interaction_mask
 
 
-@torch.jit.script
 def get_j_idx(
     edge_index: torch.Tensor, batch_images: torch.Tensor, n_atoms: torch.Tensor
 ) -> torch.Tensor:
@@ -438,7 +438,10 @@ def wrap_positions(data: AtomicData, device: str, eps: float = 1e-7) -> None:
     batch_ids = data.batch
 
     cell_batch = cell[batch_ids]  # [n_atoms, 3, 3]
-    fractional = torch.linalg.solve(cell_batch, pos.unsqueeze(-1)).squeeze(-1)
+    # lattice vectors are the rows of the cell: pos = f @ cell
+    fractional = torch.linalg.solve(
+        cell_batch.transpose(-1, -2), pos.unsqueeze(-1)
+    ).squeeze(-1)
 
     pbc_mask = pbc[batch_ids]  # [n_atoms, 3]
 
@@ -448,6 +451,6 @@ def wrap_positions(data: AtomicData, device: str, eps: float = 1e-7) -> None:
         pbc_mask, (fractional - shift) % 1.0 + shift, fractional
     )
     # Convert back to cartesian coordinates
-    data.pos = torch.einsum("ni,nij->nj", fractional, cell_batch)
+    data.pos = (fractional.unsqueeze(-1) * cell_batch).sum(dim=1)
 
     return data

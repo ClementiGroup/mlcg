@@ -336,9 +336,10 @@ def test_exchange_detection(tmp_path):
     empirical_rate_arr = []
     # run 50 independent iterations of 2x1000 exchanges times and
     # assert the average acceptance rate. the acceptances are
-    # tracked internally by the `attempts/approved` attributes
-    for _ in range(50):
-        simulation = PTSimulation(filename=fn)
+    # tracked internally by the `attempts/approved` attributes; seeded, as
+    # the unseeded average misses 3 decimals in ~2% of runs
+    for seed in range(50):
+        simulation = PTSimulation(filename=fn, random_seed=seed)
         simulation._attach_configurations(
             test_data, betas
         )  # necessary to populate some attributes
