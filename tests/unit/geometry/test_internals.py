@@ -242,3 +242,24 @@ def test_prior_cell_shifts_minimum_image(cell):
     lattice_shifts = torch.linalg.solve(cell.T, shifts([True, True, False]).T)
     torch.testing.assert_close(lattice_shifts, lattice_shifts.round())
     assert (lattice_shifts[2] == 0).all()
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="needs CUDA")
+def test_safe_normalization_has_no_host_sync():
+    """No data-dependent shapes: normalizing, forward and backward, needs no
+    device-to-host sync (torch 2.13's Inductor fails on two masked
+    normalizations in a row); zero vectors stay zero."""
+    from mlcg.geometry.internal_coordinates import safe_normalization
+
+    x = torch.tensor(
+        [[3.0, 4.0, 0.0], [0.0, 0.0, 0.0]], device="cuda", requires_grad=True
+    )
+    norms = x.detach().norm(dim=1, keepdim=True)
+    torch.cuda.set_sync_debug_mode("error")
+    try:
+        out = safe_normalization(x, norms)
+        out.sum().backward()
+    finally:
+        torch.cuda.set_sync_debug_mode("default")
+    expected = torch.tensor([[0.6, 0.8, 0.0], [0.0, 0.0, 0.0]], device="cuda")
+    torch.testing.assert_close(out.detach(), expected)

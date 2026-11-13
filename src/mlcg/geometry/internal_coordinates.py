@@ -26,11 +26,7 @@ def safe_normalization(
     input: torch.Tensor, norms: torch.Tensor
 ) -> torch.Tensor:
     """Normalizes input using norms avoiding divitions by zero"""
-    mask = (norms > 0.0).flatten()
-    out = input.clone()
-    # out = torch.zeros_like(input)
-    out[mask] = input[mask] / norms[mask]
-    return out
+    return input / torch.where(norms > 0.0, norms, 1.0)
 
 
 @torch.jit.script
