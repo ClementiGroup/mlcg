@@ -21,7 +21,6 @@ examples/notebooks/simulate
 benchmarks
 # C extensions
 *.so
-cython
 
 # VIM swapfiles
 *.swp

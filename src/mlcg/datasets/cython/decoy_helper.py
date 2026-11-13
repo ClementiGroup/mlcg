@@ -1,12 +1,5 @@
-cimport cython
-cimport numpy as np
-from libc.string cimport memcpy
 import numpy as np
 import torch
-
-# init numpy
-np.import_array()
-ctypedef np.npy_intp intp # this is the actual int type in Python
 
 
 def check_and_sum_decoy_prob(opts):
@@ -43,10 +36,11 @@ def check_and_sum_decoy_prob(opts):
     summary_decoy_probs.append(1 - sum(summary_decoy_probs))
     return summary_decoy_probs
 
+
 def pick_decoy_frames(collated_data_np, summary_decoy_probs):
     """Decide the number of frames picked for each case, the last one corresponds to the
     number of intact samples. Unlike the general version, this cython version works on
-    the collated np version (output of `batch_collate(_w_nls)`) to avoid back-and-forth 
+    the collated np version (output of `batch_collate(_w_nls)`) to avoid back-and-forth
     transforms.
     """
     n_frames = len(collated_data_np["n_atoms"])
@@ -74,4 +68,3 @@ def decoy_frame_(data, scale, frame_start, frame_stop):
     frame_coords = data.pos[frame_start:frame_stop]
     frame_coords += torch.randn_like(frame_coords) * scale
     data.forces[frame_start:frame_stop] = 0
-

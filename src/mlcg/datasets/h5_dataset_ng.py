@@ -618,9 +618,6 @@ class MetaSet:
 
     def __getitem__(self, idx):
         dataset_id, data_id = self._locate_idx(idx)
-        # print(type(self._mol_dataset[dataset_id].forces[data_id]))
-        # print(type(self._mol_dataset[dataset_id].noise_levels[data_id:(data_id + 1)]))
-        # exit()
         mol_data = self._mol_dataset[dataset_id]
         point_tensors = {
             "pos": mol_data.coords[data_id],
