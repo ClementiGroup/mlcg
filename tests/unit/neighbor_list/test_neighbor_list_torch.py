@@ -267,3 +267,61 @@ def test_wrap_positions_keeps_inside_and_wraps_images(cell):
         data.batch = torch.zeros(8, dtype=torch.long)
         wrapped = wrap_positions(data, "cpu").pos
         torch.testing.assert_close(wrapped, inside, atol=1e-4, rtol=0)
+
+
+# box lengths with more than 10 mantissa bits, so that TF32 would round them
+TF32_CELLS = [
+    torch.diag(torch.tensor([71.7, 70.3, 75.9])),
+    torch.tensor([[71.7, 0.0, 0.0], [5.3, 70.3, 0.0], [3.1, 4.7, 75.9]]),
+]
+DEVICES = ["cpu"] + (["cuda"] if torch.cuda.is_available() else [])
+
+
+@pytest.mark.parametrize("device", DEVICES)
+@pytest.mark.parametrize("cell", TF32_CELLS)
+def test_pbc_neighbor_list_ignores_tf32(cell, device, tf32_matmul):
+    """The periodic image shifts must not depend on the float32 matmul
+    precision: under TF32 the cell would be rounded and every edge across
+    the box boundary would get a wrong length."""
+    gen = torch.Generator().manual_seed(0)
+    frac = torch.rand(64, 3, generator=gen)
+    atoms = ase.Atoms(
+        "Ar64", positions=(frac @ cell).numpy(), cell=cell.numpy(), pbc=True
+    )
+    data = next(iter(DataLoader([ase2data(atoms)], batch_size=1))).to(device)
+    data.pos = data.pos.float()
+    data.cell = data.cell.float()
+
+    reference = torch_neighbor_list(data, 12.0, self_interaction=False)
+    with tf32_matmul():
+        result = torch_neighbor_list(data, 12.0, self_interaction=False)
+    for a, b in zip(result, reference):
+        torch.testing.assert_close(a, b, rtol=0, atol=0)
+
+
+@pytest.mark.parametrize("device", DEVICES)
+@pytest.mark.parametrize("cell", TF32_CELLS)
+def test_wrap_positions_ignores_tf32(cell, device, tf32_matmul):
+    """Wrapped positions must not depend on the float32 matmul precision."""
+    from mlcg.neighbor_list.torch_impl import wrap_positions
+
+    gen = torch.Generator().manual_seed(0)
+    frac = torch.rand(64, 3, generator=gen) + torch.randint(
+        -2, 3, (64, 3), generator=gen
+    )
+    pos = frac @ cell
+
+    def wrapped():
+        data = AtomicData.from_points(
+            pos=pos,
+            atom_types=torch.ones(64, dtype=torch.long),
+            cell=cell,
+            pbc=torch.tensor([True, True, True]),
+        ).to(device)
+        data.batch = torch.zeros(64, dtype=torch.long, device=device)
+        return wrap_positions(data, device).pos
+
+    reference = wrapped()
+    with tf32_matmul():
+        result = wrapped()
+    torch.testing.assert_close(result, reference, rtol=0, atol=0)

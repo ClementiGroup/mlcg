@@ -224,7 +224,10 @@ def compute_images(
             dtype=torch.long,
         )
         shifts_idx = torch.cartesian_prod(r1, r2, r3)
-        shifts = torch.matmul(shifts_idx.to(cell.dtype), cell[i_structure])
+        # elementwise, not matmul: cuBLAS may round the cell to TF32
+        shifts = (
+            shifts_idx.to(cell.dtype).unsqueeze(-1) * cell[i_structure]
+        ).sum(dim=1)
         pos = positions[batch == i_structure]
         shift_expanded = shifts.repeat(1, n_atoms[i_structure]).view((-1, 3))
         pos_expanded = pos.repeat(shifts.shape[0], 1)
@@ -451,6 +454,6 @@ def wrap_positions(data: AtomicData, device: str, eps: float = 1e-7) -> None:
         pbc_mask, (fractional - shift) % 1.0 + shift, fractional
     )
     # Convert back to cartesian coordinates
-    data.pos = torch.einsum("ni,nij->nj", fractional, cell_batch)
+    data.pos = (fractional.unsqueeze(-1) * cell_batch).sum(dim=1)
 
     return data
