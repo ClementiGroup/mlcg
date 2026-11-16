@@ -169,7 +169,7 @@ class SkewedMuGaussianBasis(GaussianBasis):
         It controls the skewness of the distribution of the center of gaussian bases.
         When 0 < zeta < 1: the distribution is denser closer to one. The smaller zeta
         is, the farther away the distribution deviates from the uniform case.
-        When zeta > 1: the distribution is denser closer to 1.
+        When zeta > 1: the distribution is denser closer to 0.
         When zeta is very close to 1, the distribution is close to uniform like in a
         normal Gaussian RBF.
 

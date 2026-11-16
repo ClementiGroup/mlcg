@@ -123,12 +123,26 @@ class SchNet(torch.nn.Module):
             block.reset_parameters()
         self.output_network.reset_parameters()
 
-    def schnet_forward(self, data: AtomicData, embeddings: torch.Tensor):
-        """Main SchNet forward pass, starting from precomputed node embeddings
-        (everything except the embedding layer)."""
+    def forward(self, data: AtomicData) -> AtomicData:
+        r"""Forward pass through the SchNet architecture.
 
-        x = embeddings
+        Parameters
+        ----------
+        data:
+            Input data object containing batch atom/bead positions
+            and atom/bead types.
+
+        Returns
+        -------
+        data:
+           Data dictionary, updated with predicted energy of shape
+           (num_examples * num_atoms, 1), as well as neighbor list
+           information.
+        """
+        x = self.embedding_layer(data.atom_types)
+
         neighbor_list = data.neighbor_list.get(self.name)
+
         if not self.is_nl_compatible(neighbor_list):
             neighbor_list = self.neighbor_list(
                 data,
@@ -161,26 +175,6 @@ class SchNet(torch.nn.Module):
         data.out[self.name] = {ENERGY_KEY: energy}
 
         return data
-
-    def forward(self, data: AtomicData) -> AtomicData:
-        r"""Forward pass through the SchNet architecture.
-
-        Parameters
-        ----------
-        data:
-            Input data object containing batch atom/bead positions
-            and atom/bead types.
-
-        Returns
-        -------
-        data:
-           Data dictionary, updated with predicted energy of shape
-           (num_examples * num_atoms, 1), as well as neighbor list
-           information.
-        """
-        embeddings = self.embedding_layer(data.atom_types)
-
-        return self.schnet_forward(data, embeddings)
 
     def is_nl_compatible(self, nl):
         is_compatible = False
@@ -504,7 +498,7 @@ class StandardSchNet(SchNet):
             excluded_order=excluded_order,
         )
 
-
+# TODO check if this classes are still needed. 
 class AttentiveSchNet(SchNet):
     """Small wrapper class for :ref:`mlcg.nn.SchNet` to simplify the definition of the
     SchNet model with an Interaction block that includes attention through an input file. The upper distance cutoff attribute

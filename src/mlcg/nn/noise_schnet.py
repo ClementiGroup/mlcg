@@ -6,7 +6,7 @@ from ..data.atomic_data import AtomicData, ENERGY_KEY
 from ..geometry.internal_coordinates import compute_distances
 from .mlp import MLP
 from .radial_basis import SkewedMuGaussianBasis
-
+# TODO: review if theseclasses should be kept
 __all__ = ["NoiseAwareEmbedding", "SimpleNoiseEmbedSchNet", "NoiseEmbedSchNet"]
 
 
@@ -32,6 +32,15 @@ class NoiseAwareEmbedding(torch.nn.Embedding):
             activation_func=noise_network_activation_func,
             last_bias=False,
         )
+
+    def reset_parameters(self):
+        """Reset the type-embedding table, the noise-level basis and the
+        noise MLP."""
+        super().reset_parameters()
+        # `nn.Embedding.__init__` calls this before the noise modules exist
+        if hasattr(self, "filter_network"):
+            self.noise_level_rbf.reset_parameters()
+            self.filter_network.reset_parameters()
 
     def forward(
         self,
@@ -164,6 +173,14 @@ class SimpleNoiseEmbedSchNet(StandardSchNet):
             self.noise_embedding2 = torch.nn.Embedding(
                 noise_num_embedding, hidden_channels
             )
+
+    def reset_parameters(self):
+        """Reset the SchNet components and the noise embeddings."""
+        super().reset_parameters()
+        # `SchNet.__init__` calls this before the noise embeddings exist
+        for name in ("noise_embedding", "noise_embedding2"):
+            if hasattr(self, name):
+                getattr(self, name).reset_parameters()
 
     def schnet_forward(self, data: AtomicData, embeddings: torch.Tensor):
         """Main SchNet forward pass starting from precomputed node embeddings.
@@ -352,5 +369,38 @@ class NoiseEmbedSchNet(StandardSchNet):
             The input :obj:`AtomicData` with the predicted energy stored in
             ``data.out[self.name][ENERGY_KEY]``.
         """
-        embeddings = self.embedding_layer(data.atom_types, data.noise_levels)
-        return self.schnet_forward(data, embeddings)
+        x = self.embedding_layer(data.atom_types, data.noise_levels)
+        neighbor_list = data.neighbor_list.get(self.name)
+
+        if not self.is_nl_compatible(neighbor_list):
+            neighbor_list = self.neighbor_list(
+                data,
+                self.rbf_layer.cutoff.cutoff_upper,
+                self.max_num_neighbors,
+            )[self.name]
+        if neighbor_list["excluded_order"] != getattr(
+            self, "excluded_order", 1
+        ):
+            raise ValueError(
+                f'Input has {neighbor_list["excluded_order"]} excluded_order while model has {getattr(self, "excluded_order", 1)}'
+            )
+
+        edge_index = neighbor_list["index_mapping"]
+        distances = compute_distances(
+            data.pos,
+            edge_index,
+            neighbor_list["cell_shifts"],
+        )
+        rbf_expansion = self.rbf_layer(distances)
+        num_batch = data.batch[-1] + 1
+        for block in self.interaction_blocks:
+            x = x + block(
+                x, edge_index, distances, rbf_expansion, num_batch, data.batch
+            )
+
+        energy = self.output_network(x, data)
+        energy = scatter(energy, data.batch, dim=0, reduce="sum")
+        energy = energy.flatten()
+        data.out[self.name] = {ENERGY_KEY: energy}
+
+        return data
