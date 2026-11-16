@@ -6,6 +6,7 @@ from ..data.atomic_data import AtomicData, ENERGY_KEY
 from ..geometry.internal_coordinates import compute_distances
 from .mlp import MLP
 from .radial_basis import SkewedMuGaussianBasis
+
 # TODO: review if theseclasses should be kept
 __all__ = ["NoiseAwareEmbedding", "SimpleNoiseEmbedSchNet", "NoiseEmbedSchNet"]
 

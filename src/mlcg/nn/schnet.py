@@ -498,7 +498,8 @@ class StandardSchNet(SchNet):
             excluded_order=excluded_order,
         )
 
-# TODO check if this classes are still needed. 
+
+# TODO check if this classes are still needed.
 class AttentiveSchNet(SchNet):
     """Small wrapper class for :ref:`mlcg.nn.SchNet` to simplify the definition of the
     SchNet model with an Interaction block that includes attention through an input file. The upper distance cutoff attribute
