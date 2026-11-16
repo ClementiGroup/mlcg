@@ -1,0 +1,21 @@
+train:
+  batch_sizes:
+    POPC: 1
+  max_epoch_samples: null
+  metasets:
+    POPC:
+      names:
+      - bilayer
+      stride: 1
+  subsample_random_seed: 42
+val:
+  batch_sizes:
+    POPC: 1
+  max_epoch_samples: null
+  metasets:
+    POPC:
+      names:
+      - bilayer
+      stride: 1
+  subsample_random_seed: 42
+
