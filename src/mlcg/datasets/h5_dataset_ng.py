@@ -151,6 +151,33 @@ from mlcg.utils import make_splits, calc_num_samples, tqdm
 from copy import copy as shallow_copy
 
 
+def load_neighbor_list_chkpt(path: str) -> dict:
+    """Load a neighbor-list checkpoint (e.g. with a numpy `fmap`) safely.
+
+    Since torch 2.6 `torch.load` defaults to `weights_only=True`, which rejects
+    numpy arrays. Only numpy's array reconstruction and dtypes are allowlisted
+    here, so arbitrary pickled code is still refused.
+    """
+    try:
+        np_core = np._core  # numpy >= 2
+    except AttributeError:  # pragma: no cover
+        np_core = np.core
+    numpy_globals = [np_core.multiarray._reconstruct, np.ndarray, np.dtype]
+    numpy_globals += [
+        type(np.dtype(t))
+        for t in (
+            np.float16,
+            np.float32,
+            np.float64,
+            np.int32,
+            np.int64,
+            np.bool_,
+        )
+    ]
+    with torch.serialization.safe_globals(numpy_globals):
+        return torch.load(path, weights_only=True)
+
+
 class MolData:
     """Data-holder for coordinates, forces and embedding vector of a molecule, e.g., opep_0000.
 
@@ -175,7 +202,7 @@ class MolData:
         weights: np.ndarray = None,
         noise_levels: np.ndarray = None,
         neighbor_list: dict = None,
-        exclusion_pairs: np.ndarray = None,
+        excluded_pairs: np.ndarray = None,
         cell: np.ndarray = None,
         pbc: np.ndarray = None,
     ):
@@ -216,12 +243,18 @@ class MolData:
                             term[k] = v
                     self._neighbor_list[name] = term
 
-        self._exclusion_pairs = exclusion_pairs
-        if self._exclusion_pairs is not None and self._exclusion_pairs.size > 0:
-            assert (
-                self._exclusion_pairs.min() >= 0
-                and self._exclusion_pairs.max() < len(self._embeds)
-            )
+        self._excluded_pairs = None
+        if excluded_pairs is not None:
+            # contiguous int64 (intp), as required by the cython collater
+            pairs = np.ascontiguousarray(excluded_pairs, dtype=np.int64)
+            if pairs.ndim != 2 or pairs.shape[0] != 2:
+                raise ValueError(
+                    f"excluded_pairs of molecule {name} must have shape "
+                    f"(2, n_pairs), got {tuple(pairs.shape)}"
+                )
+            if pairs.size > 0:
+                assert pairs.min() >= 0 and pairs.max() < len(self._embeds)
+            self._excluded_pairs = pairs
 
     @staticmethod
     def to_contiguous_np_array(arr):
@@ -261,8 +294,8 @@ class MolData:
         return self._neighbor_list
 
     @property
-    def exclusion_pairs(self):
-        return self._exclusion_pairs
+    def excluded_pairs(self):
+        return self._excluded_pairs
 
     @property
     def n_frames(self):
@@ -314,7 +347,7 @@ class MetaSet:
         self._n_mol_samples = []
         self._cumulate_indices = [0]
         self._transform = transform
-        self._exclude_listed_pairs = False
+        self._excluded_order = 1
 
     @staticmethod
     def retrieve_hdf(hdf_grp, hdf_key):
@@ -362,8 +395,12 @@ class MetaSet:
         transform: Optional[Callable] = None,
         mol_neighbor_lists: Optional[dict] = None,
         overriding_offset: Optional[int] = None,
-        exclude_listed_pairs=False,
     ):
+        r"""Initiate a Metaset by loading data from given HDF-group.
+        Excluded pairs are loaded only if `excluded_pairs` is in hdf_key_mapping;
+        their `excluded_order` is read from the root attributes of the HDF5 file.
+        """
+
         def select_for_rank(length_or_indices):
             """Return a slicing for loading the necessary data from the HDF dataset."""
             from numbers import Integral
@@ -404,6 +441,16 @@ class MetaSet:
 
         output = MetaSet(hdf5_group.name.split("/")[-1], transform=transform)
         keys = hdf_key_mapping
+        load_excluded_pairs = "excluded_pairs" in keys
+        if load_excluded_pairs:
+            excluded_order = int(hdf5_group.file.attrs.get("excluded_order", 1))
+            if excluded_order < 2:
+                raise ValueError(
+                    "`excluded_pairs` is in the hdf5 key mapping but the HDF5 file "
+                    f"{hdf5_group.file.filename} has no root attribute "
+                    "`excluded_order` >= 2."
+                )
+            output._excluded_order = excluded_order
         for mol_name in tqdm(mol_list, leave=False, desc="loading molecules"):
             if mol_name not in hdf5_group:
                 raise KeyError(
@@ -412,16 +459,15 @@ class MetaSet:
                     % (mol_name, hdf5_group.name)
                 )
             embeds = MetaSet.retrieve_hdf(hdf5_group[mol_name], keys["embeds"])
-            if exclude_listed_pairs:
-                if "exclusion_pairs" not in keys:
-                    raise ValueError(
-                        f"Missing `exclusion_pairs` from hdf5 key mapping."
+            if load_excluded_pairs:
+                # np.asarray also reads the data if stored as a HDF dataset
+                excluded_pairs = np.asarray(
+                    MetaSet.retrieve_hdf(
+                        hdf5_group[mol_name], keys["excluded_pairs"]
                     )
-                exclusion_pairs = MetaSet.retrieve_hdf(
-                    hdf5_group[mol_name], keys["exclusion_pairs"]
                 )
             else:
-                exclusion_pairs = None
+                excluded_pairs = None
             if (
                 detailed_indices is not None
                 and detailed_indices.get(mol_name) is not None
@@ -510,12 +556,11 @@ class MetaSet:
                     weights=weights,
                     noise_levels=noise_levels,
                     neighbor_list=neighbor_list,
-                    exclusion_pairs=exclusion_pairs,
+                    excluded_pairs=excluded_pairs,
                     cell=cell,
                     pbc=pbc,
                 )
             )
-        output._exclude_listed_pairs = exclude_listed_pairs
         return output
 
     def set_transform(
@@ -625,11 +670,11 @@ class MetaSet:
             "atom_types": mol_data.embeds,
         }
         if mol_data.noise_levels is not None:
-            point_tensors["noise_levels"] = torch.as_tensor(
-                np.tile(
-                    self._mol_dataset[dataset_id].noise_levels[data_id],
-                    [len(self._mol_dataset[dataset_id].coords[data_id])],
-                )
+            # one value per bead, numpy like the other fields (cython collater)
+            point_tensors["noise_levels"] = np.full(
+                mol_data.n_beads,
+                mol_data.noise_levels[data_id],
+                dtype=np.float32,
             )
 
         if mol_data.cell is not None:
@@ -646,8 +691,11 @@ class MetaSet:
 
         if mol_data.neighbor_list is not None:
             point_tensors["neighbor_list"] = mol_data.neighbor_list
-        if self._exclude_listed_pairs:
-            point_tensors["exc_pair_index"] = mol_data.exclusion_pairs
+        if mol_data.excluded_pairs is not None:
+            point_tensors["excluded_pairs"] = {
+                "excluded_order": self._excluded_order,
+                "index_mapping": mol_data.excluded_pairs,
+            }
         return point_tensors  # ad_point
 
     def _locate_idx(self, idx):
@@ -807,7 +855,6 @@ class H5DatasetNG:
         loading_options: Dict,
         subsample_using_weights: bool = False,
         transform: Optional[Callable] = None,
-        exclude_listed_pairs: bool = False,
     ):
         self._h5_path = h5_file_path
         self._h5_root = h5py.File(h5_file_path, "r")
@@ -820,7 +867,6 @@ class H5DatasetNG:
         self._transform = transform
         if self._transform is not None:
             print("Using transform:", self._transform)
-        self._exclude_listed_pairs = exclude_listed_pairs
         # processing the hdf5 file
         for metaset_name in self._h5_root:
             self._metaset_entries[metaset_name] = self._h5_root[metaset_name]
@@ -851,12 +897,13 @@ class H5DatasetNG:
                 if isinstance(part_nl_info, str):
                     # this is the case when the same neighborlist will be shared for the whole partition
                     metaset_mol_neighbor_lists[part_name] = {
-                        "_default": torch.load(part_nl_info)
+                        "_default": load_neighbor_list_chkpt(part_nl_info)
                     }
                 elif isinstance(part_nl_info, dict):
                     # this is the case when different nls are assigned to different molecules in a partition
                     metaset_mol_neighbor_lists[part_name] = {
-                        k: torch.load(v) for k, v in part_nl_info.items()
+                        k: load_neighbor_list_chkpt(v)
+                        for k, v in part_nl_info.items()
                     }
                 else:
                     raise ValueError(
@@ -864,7 +911,9 @@ class H5DatasetNG:
                     )
         elif isinstance(neighbor_list_chkpts, str):
             metaset_mol_neighbor_lists = {
-                "_default": {"_default": torch.load(neighbor_list_chkpts)}
+                "_default": {
+                    "_default": load_neighbor_list_chkpt(neighbor_list_chkpts)
+                }
             }
         else:
             metaset_mol_neighbor_lists = None
@@ -934,7 +983,6 @@ class H5DatasetNG:
                         transform=self._transform,
                         mol_neighbor_lists=mol_neighbor_lists,
                         overriding_offset=overriding_offset,
-                        exclude_listed_pairs=self._exclude_listed_pairs,
                     ),
                 )
             ## trim the metasets to fit the need of sampling

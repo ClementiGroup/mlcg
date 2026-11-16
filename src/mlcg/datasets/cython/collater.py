@@ -2,11 +2,7 @@ from typing import Any, Callable, Dict, Final, Iterable, List, Mapping, Union
 
 import torch
 
-from .batch_helper import (
-    batch_collate_w_nls,
-    batch_collate_w_nls_w_pbc,
-    batch_collate_w_nls_w_exc_pair,
-)
+from .batch_helper import batch_collate_w_nls
 from .decoy_helper import (
     check_and_sum_decoy_prob,
     pick_decoy_frames,
@@ -67,7 +63,6 @@ class CythonCollater:
         baseline_models: Union[str, Dict[str, torch.nn.Module], None] = None,
         remove_neighbor_list: bool = True,
         decoy_options: Union[List[Dict[str, float]], None] = None,
-        exclude_listed_pairs: bool = False,
         with_pbc: bool = False,
         device: str = "cuda",
     ):
@@ -91,7 +86,6 @@ class CythonCollater:
         else:
             self._decoy_opts = None
         self._moved_to_device = False
-        self._exclude_listed_pairs = exclude_listed_pairs
         self._with_pbc = with_pbc
 
     def __call__(self, np_data_batch: Iterable[Mapping[str, Any]]) -> MockBatch:
@@ -101,19 +95,11 @@ class CythonCollater:
             if self.baseline_models:
                 self.baseline_models.to(self.device)
             self._moved_to_device = True
-        # collation happens here
-        if self._exclude_listed_pairs:
-            collated_data_np = batch_collate_w_nls_w_exc_pair(
-                np_data_batch, transform=self.transform
-            )
-        elif self._with_pbc:
-            collated_data_np = batch_collate_w_nls_w_pbc(
-                np_data_batch, transform=self.transform
-            )
-        else:
-            collated_data_np = batch_collate_w_nls(
-                np_data_batch, transform=self.transform
-            )
+        # collation happens here; `excluded_pairs` and `noise_levels` are
+        # collated whenever the frames carry them
+        collated_data_np = batch_collate_w_nls(
+            np_data_batch, transform=self.transform, with_pbc=self._with_pbc
+        )
         # pick the decoy indices here over the numpy data
         if self._decoy_opts:
             _, frame_ranges = pick_decoy_frames(

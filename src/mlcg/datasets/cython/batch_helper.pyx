@@ -195,94 +195,92 @@ def collate_nls(list_of_nls, n_atoms, excludes=("fmap",)):
         collated_nls[term_name] = collate_nl_term(list_of_nls, n_atoms, term_name, order)
     return collated_nls
 
-def batch_collate_w_nls(list_of_atomic_data, transform=None):
-    n_frames = len(list_of_atomic_data)
-    n_atoms = np.empty(n_frames, dtype=int)
-    all_pos = []
-    all_atom_types = []
-    all_forces = []
-    all_nls = []
-    for i_frame, frame in enumerate(list_of_atomic_data):
-        if transform is not None:
-            transform(frame)
-        all_pos.append(frame["pos"])
-        this_atom_types = frame["atom_types"]
-        n_atoms[i_frame] = len(this_atom_types)
-        all_atom_types.append(this_atom_types)
-        all_forces.append(frame["forces"])
-        all_nls.append(frame["neighbor_list"])
-    batch, ptr = make_batch(n_atoms)
-    collated = {
-        "pos": collate_float_array_2d(all_pos),
-        "atom_types": np.concatenate(all_atom_types),
-        "n_atoms": n_atoms,
-        "forces": collate_float_array_2d(all_forces),
-        "neighbor_list": collate_nls(all_nls, n_atoms),
-        "batch": batch,
-        "ptr": ptr,
-    }
-    return collated
-
-def batch_collate_w_nls_w_pbc(list_of_atomic_data, transform=None):
-    n_frames = len(list_of_atomic_data)
-    n_atoms = np.empty(n_frames, dtype=int)
-    all_pos = []
-    all_atom_types = []
-    all_forces = []
-    all_nls = []
-    all_pbc = []
-    all_cell = []
-    for i_frame, frame in enumerate(list_of_atomic_data):
-        if transform is not None:
-            transform(frame)
-        all_pos.append(frame["pos"])
-        this_atom_types = frame["atom_types"]
-        n_atoms[i_frame] = len(this_atom_types)
-        all_atom_types.append(this_atom_types)
-        all_forces.append(frame["forces"])
-        all_nls.append(frame["neighbor_list"])
-        all_cell.append(frame["cell"])
-        all_pbc.append(frame["pbc"])
-    batch, ptr = make_batch(n_atoms)
-    collated = {
-        "pos": collate_float_array_2d(all_pos),
-        "atom_types": np.concatenate(all_atom_types),
-        "n_atoms": n_atoms,
-        "forces": collate_float_array_2d(all_forces),
-        "neighbor_list": collate_nls(all_nls, n_atoms),
-        "cell" : collate_float_array_3d(all_cell),
-        "pbc" : collate_bool_array_2d(all_pbc),
-        "batch": batch,
-        "ptr": ptr,
-    }
-    return collated
-
-def collate_exc_pairs(list_of_exc_pairs, n_atoms):
-    n_frames = len(list_of_exc_pairs)
+def collate_index_pairs(list_of_pairs, n_atoms):
+    """Collate per-frame `(2, n_pairs_i)` node index pairs (e.g., excluded
+    pairs) into one `(2, sum_i n_pairs_i)` array, offsetting the indices of
+    each frame by the number of atoms in the preceding frames."""
+    n_frames = len(list_of_pairs)
     cdef intp i_frame
-    cdef intp[::1] exc_pair_ptrs = np.empty(n_frames, dtype=int)
-    cdef intp[::1] n_exc_pairs = np.empty(n_frames, dtype=int)
+    cdef intp[::1] pair_ptrs = np.empty(n_frames, dtype=int)
+    cdef intp[::1] n_pairs = np.empty(n_frames, dtype=int)
     cdef np.ndarray[intp, ndim=2, mode="c"] source
-    # For each frame
-    # - get a pointer to the storage
-    # - accumulate the number of excluded pairs
-    for i_frame, exc_pair in enumerate(list_of_exc_pairs):
-        source = exc_pair # convert to c-type
-        if exc_pair.size > 0:
-            exc_pair_ptrs[i_frame] = <intp>&source[0, 0]
-        n_exc_pairs[i_frame] = exc_pair.shape[1]
-    sum_n_exc_pairs = sum(n_exc_pairs)
-    out_exc_pairs = np.empty((2, sum_n_exc_pairs), dtype=int)
-    # This is not used for the current impl, but we need it for compatibility
-    out_map_batch = np.empty(sum_n_exc_pairs, dtype=int)
-    cdef intp[:, ::1] out_exc_pairs_c = out_exc_pairs
+    # contiguous intp copies (only if needed); the list keeps them alive
+    # while their raw pointers are used below
+    sources = [np.ascontiguousarray(p, dtype=np.intp) for p in list_of_pairs]
+    for i_frame, pairs in enumerate(sources):
+        if pairs.ndim != 2 or pairs.shape[0] != 2:
+            raise ValueError(
+                f"index pairs of frame {i_frame} must have shape (2, n_pairs), "
+                f"got {pairs.shape}"
+            )
+        source = pairs
+        if pairs.size > 0:
+            pair_ptrs[i_frame] = <intp>&source[0, 0]
+        n_pairs[i_frame] = pairs.shape[1]
+    sum_n_pairs = sum(n_pairs)
+    out_pairs = np.empty((2, sum_n_pairs), dtype=int)
+    # the per-pair frame index is not returned, but is required by the helper
+    out_map_batch = np.empty(sum_n_pairs, dtype=int)
+    cdef intp[:, ::1] out_pairs_c = out_pairs
     cdef intp[::1] map_batch = out_map_batch
     cdef intp[::1] in_n_atoms_c = n_atoms
-    collate_edge_indices(exc_pair_ptrs, n_exc_pairs, in_n_atoms_c, 2, out_exc_pairs_c, map_batch, n_frames)
-    return out_exc_pairs
+    collate_edge_indices(pair_ptrs, n_pairs, in_n_atoms_c, 2, out_pairs_c, map_batch, n_frames)
+    return out_pairs
 
-def batch_collate_w_nls_w_exc_pair(list_of_atomic_data, transform=None):
-    """Collate a batch with neighbor list and `exc_pair_index`.
+
+def _has_key_in_all_or_none(list_of_atomic_data, key):
+    """Whether the optional `key` is present (and not None) in the frames,
+    raising if only some of the frames of the batch carry it."""
+    present = [frame.get(key) is not None for frame in list_of_atomic_data]
+    if any(present) and not all(present):
+        raise ValueError(
+            f"`{key}` is present in only some frames of the batch "
+            f"({sum(present)}/{len(present)})"
+        )
+    return all(present)
+
+
+def collate_excluded_pairs(list_of_excluded_pairs, n_atoms):
+    """Collate `excluded_pairs` dicts `{excluded_order, index_mapping}` the same
+    way PyG collates them for `AtomicData`: `index_mapping` is concatenated with
+    node offsets and `excluded_order` becomes one entry per frame."""
+    return {
+        "excluded_order": np.array(
+            [exc["excluded_order"] for exc in list_of_excluded_pairs],
+            dtype=np.int64,
+        ),
+        "index_mapping": collate_index_pairs(
+            [exc["index_mapping"] for exc in list_of_excluded_pairs], n_atoms
+        ),
+    }
+
+
+def collate_noise_levels(list_of_noise_levels, n_atoms):
+    """Concatenate the per-bead noise levels of each frame into float32."""
+    out = []
+    for i_frame, noise_levels in enumerate(list_of_noise_levels):
+        noise_levels = np.asarray(noise_levels, dtype=np.float32).reshape(-1)
+        if len(noise_levels) != n_atoms[i_frame]:
+            raise ValueError(
+                f"frame {i_frame} has {len(noise_levels)} noise levels for "
+                f"{n_atoms[i_frame]} atoms"
+            )
+        out.append(noise_levels)
+    return np.concatenate(out)
+
+
+def batch_collate_w_nls(list_of_atomic_data, transform=None, with_pbc=False):
+    """Collate a list of frames (dicts of numpy arrays) into a batch.
+
+    Always collated: `pos`, `forces`, `atom_types`, `n_atoms`,
+    `neighbor_list`, `batch` and `ptr`. Optional fields:
+
+    - `cell` and `pbc`: if `with_pbc` is True (required in every frame).
+    - `excluded_pairs`: if the frames carry it, collated with node offsets.
+    - `noise_levels`: if the frames carry it (after `transform`), as a
+      per-bead float32 array.
+
+    Optional fields must be present in all frames of the batch or in none.
     """
     n_frames = len(list_of_atomic_data)
     n_atoms = np.empty(n_frames, dtype=int)
@@ -290,7 +288,6 @@ def batch_collate_w_nls_w_exc_pair(list_of_atomic_data, transform=None):
     all_atom_types = []
     all_forces = []
     all_nls = []
-    all_exc_pairs = []
     for i_frame, frame in enumerate(list_of_atomic_data):
         if transform is not None:
             transform(frame)
@@ -300,7 +297,6 @@ def batch_collate_w_nls_w_exc_pair(list_of_atomic_data, transform=None):
         all_atom_types.append(this_atom_types)
         all_forces.append(frame["forces"])
         all_nls.append(frame["neighbor_list"])
-        all_exc_pairs.append(frame["exc_pair_index"])
     batch, ptr = make_batch(n_atoms)
     collated = {
         "pos": collate_float_array_2d(all_pos),
@@ -308,8 +304,32 @@ def batch_collate_w_nls_w_exc_pair(list_of_atomic_data, transform=None):
         "n_atoms": n_atoms,
         "forces": collate_float_array_2d(all_forces),
         "neighbor_list": collate_nls(all_nls, n_atoms),
-        "exc_pair_index": collate_exc_pairs(all_exc_pairs, n_atoms),
         "batch": batch,
         "ptr": ptr,
     }
+    if with_pbc:
+        for key in ("cell", "pbc"):
+            if not _has_key_in_all_or_none(list_of_atomic_data, key):
+                raise ValueError(f"`with_pbc` is set but the frames have no `{key}`")
+        collated["cell"] = collate_float_array_3d(
+            [frame["cell"] for frame in list_of_atomic_data]
+        )
+        collated["pbc"] = collate_bool_array_2d(
+            [frame["pbc"] for frame in list_of_atomic_data]
+        )
+    if _has_key_in_all_or_none(list_of_atomic_data, "excluded_pairs"):
+        collated["excluded_pairs"] = collate_excluded_pairs(
+            [frame["excluded_pairs"] for frame in list_of_atomic_data], n_atoms
+        )
+    if _has_key_in_all_or_none(list_of_atomic_data, "noise_levels"):
+        collated["noise_levels"] = collate_noise_levels(
+            [frame["noise_levels"] for frame in list_of_atomic_data], n_atoms
+        )
     return collated
+
+
+def batch_collate_w_nls_w_pbc(list_of_atomic_data, transform=None):
+    """Same as `batch_collate_w_nls` with `with_pbc=True`."""
+    return batch_collate_w_nls(
+        list_of_atomic_data, transform=transform, with_pbc=True
+    )

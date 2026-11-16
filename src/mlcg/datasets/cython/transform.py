@@ -13,7 +13,12 @@ def noise_and_map_frame(coords, forces, sigma, kbt, rng, fmap=None):
 
 
 class NoiseMapTransformer:
+    """Add Gaussian noise of variance `noise_level` to the coordinates of a
+    frame, correct the forces accordingly, and record `noise_level` as the
+    per-bead `noise_levels` of the frame (for noise-conditioned models)."""
+
     def __init__(self, noise_level, kbt, random_seed=42):
+        self.noise_level = np.float32(noise_level)
         self.sigma = np.sqrt(noise_level, dtype=np.float32)
         self.kbt = kbt
         self.rng = np.random.default_rng(random_seed)
@@ -27,4 +32,7 @@ class NoiseMapTransformer:
             self.kbt,
             self.rng,
             fmap,
+        )
+        atomic_data["noise_levels"] = np.full(
+            len(atomic_data["atom_types"]), self.noise_level, dtype=np.float32
         )
