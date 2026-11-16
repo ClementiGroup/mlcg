@@ -26,7 +26,6 @@ from .prior import (
     Polynomial,
     QuarticAngles,
     QuarticRawAngles,
-    LennardJonesShifted,
 )
 from .mlp import MLP, TypesMLP
 from .attention import ExactAttention, FavorAttention, Nonlocalinteractionblock
@@ -70,7 +69,6 @@ __all__ = [
     "HarmonicAngles",
     "HarmonicBonds",
     "Repulsion",
-    "LennardJonesShifted",
     "MLP",
     "TypesMLP",
     "Attention",
