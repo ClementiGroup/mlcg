@@ -13,9 +13,7 @@ from .repulsion import (
     CutoffRepulsion,
     ExpRepulsion,
     CutoffExpRepulsion,
-    RepulsionBuckMod,
     ScaledCutoffExpRepulsion,
-    LennardJonesShifted,
 )
 from .fourier_series import FourierSeries, Dihedral, PeriodicAngles
 from .polynomial import Polynomial, QuarticAngles, QuarticRawAngles
