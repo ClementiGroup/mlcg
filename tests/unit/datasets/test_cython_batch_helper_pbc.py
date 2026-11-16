@@ -134,7 +134,9 @@ def test_make_batch(n_elements):
     np.testing.assert_array_equal(
         batch, np.repeat(np.arange(len(n_elements)), n_elements)
     )
-    np.testing.assert_array_equal(ptr, np.concatenate([[0], np.cumsum(n_elements)]))
+    np.testing.assert_array_equal(
+        ptr, np.concatenate([[0], np.cumsum(n_elements)])
+    )
 
 
 def test_collate_float_array_3d_cells(dataset_pbc):
@@ -149,7 +151,9 @@ def test_collate_float_array_3d_cells(dataset_pbc):
 def test_collate_float_array_3d_distinct_cells():
     rng = np.random.default_rng(0)
     cells = [rng.random((3, 3), dtype=np.float32) for _ in range(5)]
-    np.testing.assert_array_equal(collate_float_array_3d(cells), np.stack(cells))
+    np.testing.assert_array_equal(
+        collate_float_array_3d(cells), np.stack(cells)
+    )
     # also accept a leading singleton axis, (1, 3, 3)
     np.testing.assert_array_equal(
         collate_float_array_3d([c[None] for c in cells]), np.stack(cells)
@@ -201,8 +205,12 @@ def test_batch_collate_w_nls_w_pbc(dataset_pbc):
     np.testing.assert_array_equal(
         out["atom_types"], np.concatenate([f["atom_types"] for f in frames])
     )
-    np.testing.assert_array_equal(out["cell"], np.stack([f["cell"] for f in frames]))
-    np.testing.assert_array_equal(out["pbc"], np.stack([f["pbc"] for f in frames]))
+    np.testing.assert_array_equal(
+        out["cell"], np.stack([f["cell"] for f in frames])
+    )
+    np.testing.assert_array_equal(
+        out["pbc"], np.stack([f["pbc"] for f in frames])
+    )
     np.testing.assert_array_equal(
         out["batch"], np.repeat(np.arange(len(frames)), n_atoms)
     )
@@ -222,8 +230,12 @@ def test_batch_collate_w_nls_w_pbc_varying_sizes(dataset_pbc):
     np.testing.assert_array_equal(
         out["pos"], np.concatenate([f["pos"] for f in frames])
     )
-    np.testing.assert_array_equal(out["cell"], np.stack([f["cell"] for f in frames]))
-    np.testing.assert_array_equal(out["pbc"], np.stack([f["pbc"] for f in frames]))
+    np.testing.assert_array_equal(
+        out["cell"], np.stack([f["cell"] for f in frames])
+    )
+    np.testing.assert_array_equal(
+        out["pbc"], np.stack([f["pbc"] for f in frames])
+    )
 
 
 def test_batch_collate_w_nls_without_pbc_has_no_cell(dataset_pbc):
@@ -291,5 +303,241 @@ def test_datamodule_pbc_batches(part):
         assert batch.pbc.shape == (n_frames, 3)
         assert batch.pbc.all()
         assert torch.all(batch.cell.diagonal(dim1=1, dim2=2) > 0)
+        n_seen += 1
+    assert n_seen == N_BATCHES
+
+
+# --------------------------------------------------------------------------- #
+# noise augmentation on periodic data
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.parametrize("noise_level", [0.01, 0.25])
+def test_noise_transform_pbc_matches_reference(dataset_pbc, noise_level):
+    """With PBC, adding noise through the collater must only change `pos` and
+    `forces` (as `noise_and_map_frame` defines them) and add `noise_levels`;
+    every other field must be identical to the noise-free batch."""
+    from mlcg.datasets.cython.transform import NoiseMapTransformer
+
+    kbt, seed = 2.49, 1234
+    frames = get_frames(dataset_pbc)
+    clean_pos = [f["pos"].copy() for f in frames]
+
+    plain = collate(get_frames(dataset_pbc), with_pbc=True)
+    noisy = collate(
+        frames,
+        with_pbc=True,
+        transform=NoiseMapTransformer(noise_level, kbt, random_seed=seed),
+    )
+
+    # reference: the same per-frame draws, in batch order
+    rng = np.random.default_rng(seed)
+    sigma = np.sqrt(noise_level, dtype=np.float32)
+    exp_pos, exp_forces = [], []
+    for pos in clean_pos:
+        noise = rng.standard_normal(size=pos.shape, dtype=np.float32)
+        exp_pos.append(pos + sigma * noise)
+        exp_forces.append(-kbt * (noise / sigma))
+    torch.testing.assert_close(
+        noisy.pos, torch.from_numpy(np.concatenate(exp_pos))
+    )
+    torch.testing.assert_close(
+        noisy.forces, torch.from_numpy(np.concatenate(exp_forces))
+    )
+    assert noisy.pos.dtype == noisy.forces.dtype == torch.float32
+
+    assert set(noisy) == set(plain) | {"noise_levels"}
+    for key in ("cell", "pbc", "atom_types", "n_atoms", "batch", "ptr"):
+        assert torch.equal(noisy[key], plain[key]), key
+    torch.testing.assert_close(
+        noisy.noise_levels, torch.full_like(noisy.noise_levels, noise_level)
+    )
+    assert noisy.noise_levels.shape == (int(noisy.n_atoms.sum()),)
+
+    # the dataset itself is left untouched by the transform
+    for i, f in enumerate(get_frames(dataset_pbc)):
+        np.testing.assert_array_equal(f["pos"], clean_pos[i])
+
+
+# --------------------------------------------------------------------------- #
+# noise augmentation with force mixing (force map from `bilayer_nls.pt`)
+# --------------------------------------------------------------------------- #
+
+NLS_PATH = EXAMPLE_DIR / "bilayer_nls.pt"
+# the force map in `bilayer_nls.pt` was fitted at this noise level
+FMAP_NOISE_LEVEL = 0.001
+FMAP_KBT = 0.596161081
+
+needs_nls = pytest.mark.skipif(
+    not NLS_PATH.exists(), reason=f"example neighbor list {NLS_PATH} not found"
+)
+
+
+def nls_loading_options():
+    # same layout as the training config: neighbor lists keyed by metaset
+    return {
+        "hdf_key_mapping": dict(HDF_KEY_MAPPING),
+        "nl_chkpts": {METASET: str(NLS_PATH)},
+    }
+
+
+@pytest.fixture(scope="module")
+def dataset_pbc_nls():
+    return H5DatasetNG(
+        str(H5_PATH), load_partition_options(), nls_loading_options()
+    )
+
+
+def mixed_reference(frames, noise_level, kbt, seed):
+    """Positions and forces `NoiseMapTransformer` must produce, frame by
+    frame in batch order: `x + σε` and `fmap @ (F - F_ε) + F_ε` with
+    `F_ε = -kbt ε / σ`."""
+    rng = np.random.default_rng(seed)
+    sigma = np.sqrt(noise_level, dtype=np.float32)
+    pos, forces, noise_forces = [], [], []
+    for f in frames:
+        fmap = f["neighbor_list"]["fmap"]
+        eps = rng.standard_normal(size=f["pos"].shape, dtype=np.float32)
+        f_eps = -kbt * (eps / sigma)
+        pos.append(f["pos"] + sigma * eps)
+        forces.append(f_eps + fmap @ (f["forces"] - f_eps))
+        noise_forces.append(f_eps)
+    return (
+        np.concatenate(pos),
+        np.concatenate(forces),
+        np.concatenate(noise_forces),
+    )
+
+
+@needs_nls
+def test_nls_chkpt_with_numpy_fmap_loads(dataset_pbc_nls):
+    """`bilayer_nls.pt` stores `fmap` as a numpy array, which a plain
+    `torch.load` (weights_only=True) rejects."""
+    frame = get_frames(dataset_pbc_nls, n=1)[0]
+    nl = frame["neighbor_list"]
+    assert set(nl) == {"bonds", "angles", "fmap"}
+    n_atoms = len(frame["atom_types"])
+    assert nl["fmap"].shape == (n_atoms, n_atoms)
+    assert nl["fmap"].dtype == np.float32
+    assert nl["bonds"]["index_mapping"].shape[0] == 2
+    assert nl["angles"]["index_mapping"].shape[0] == 3
+
+
+@needs_nls
+def test_noise_transform_pbc_mixes_forces(dataset_pbc_nls):
+    from mlcg.datasets.cython.transform import NoiseMapTransformer
+
+    seed = 1234
+    frames = get_frames(dataset_pbc_nls)
+    clean = [
+        {
+            "pos": f["pos"].copy(),
+            "forces": f["forces"].copy(),
+            "neighbor_list": f["neighbor_list"],
+        }
+        for f in frames
+    ]
+    fmap_before = frames[0]["neighbor_list"]["fmap"].copy()
+    plain = collate(get_frames(dataset_pbc_nls), with_pbc=True)
+    noisy = collate(
+        frames,
+        with_pbc=True,
+        transform=NoiseMapTransformer(
+            FMAP_NOISE_LEVEL, FMAP_KBT, random_seed=seed
+        ),
+    )
+
+    exp_pos, exp_forces, noise_only = mixed_reference(
+        clean, FMAP_NOISE_LEVEL, FMAP_KBT, seed
+    )
+    torch.testing.assert_close(noisy.pos, torch.from_numpy(exp_pos))
+    torch.testing.assert_close(noisy.forces, torch.from_numpy(exp_forces))
+    # the real forces really are mixed in (not just the noise term)
+    assert not np.allclose(noisy.forces.numpy(), noise_only, atol=1e-3)
+    assert torch.isfinite(noisy.forces).all()
+
+    # everything but pos/forces matches the noise-free batch
+    assert set(noisy) == set(plain) | {"noise_levels"}
+    for key in ("cell", "pbc", "atom_types", "n_atoms", "batch", "ptr"):
+        assert torch.equal(noisy[key], plain[key]), key
+    torch.testing.assert_close(
+        noisy.noise_levels,
+        torch.full_like(noisy.noise_levels, FMAP_NOISE_LEVEL),
+    )
+
+    # the force map is used, not collated; bonded terms are offset per frame
+    assert set(noisy.neighbor_list) == {"bonds", "angles"}
+    for term, order in (("bonds", 2), ("angles", 3)):
+        per_frame = [
+            f["neighbor_list"][term]["index_mapping"] + plain.ptr[i].item()
+            for i, f in enumerate(clean)
+        ]
+        np.testing.assert_array_equal(
+            noisy.neighbor_list[term]["index_mapping"].numpy(),
+            np.concatenate(per_frame, axis=1),
+        )
+        assert noisy.neighbor_list[term]["index_mapping"].shape[0] == order
+
+    # neither the dataset frames nor the shared force map are modified
+    np.testing.assert_array_equal(
+        get_frames(dataset_pbc_nls, n=1)[0]["neighbor_list"]["fmap"],
+        fmap_before,
+    )
+    for i, f in enumerate(get_frames(dataset_pbc_nls)):
+        np.testing.assert_array_equal(f["pos"], clean[i]["pos"])
+        np.testing.assert_array_equal(f["forces"], clean[i]["forces"])
+
+
+@needs_nls
+def test_noise_transform_mixing_is_reproducible(dataset_pbc_nls):
+    from mlcg.datasets.cython.transform import NoiseMapTransformer
+
+    def run(seed):
+        return collate(
+            get_frames(dataset_pbc_nls),
+            with_pbc=True,
+            transform=NoiseMapTransformer(
+                FMAP_NOISE_LEVEL, FMAP_KBT, random_seed=seed
+            ),
+        )
+
+    a, b, c = run(7), run(7), run(8)
+    assert torch.equal(a.pos, b.pos) and torch.equal(a.forces, b.forces)
+    assert not torch.equal(a.forces, c.forces)
+
+
+@needs_nls
+@pytest.mark.parametrize("part", ["train", "val"])
+def test_datamodule_pbc_mixed_noise_batches(part):
+    """End to end as in the training config: nl checkpoint + noise transform
+    + PBC through the lightning data module."""
+    dm = H5DataModule(
+        h5_file_path=str(H5_PATH),
+        partition_options=load_partition_options(),
+        loading_options=nls_loading_options(),
+        transform_noise_level=FMAP_NOISE_LEVEL,
+        transform_kbt=FMAP_KBT,
+        with_pbc=True,
+    )
+    # H5DataModule does not expose the collater device (defaults to cuda)
+    dm._collater_fn.device = "cpu"
+    dm.setup("fit")
+    loader = dm.train_dataloader() if part == "train" else dm.val_dataloader()
+    n_seen = 0
+    for batch in loader:
+        n_frames = len(batch.n_atoms)
+        n_atoms = int(batch.n_atoms.sum())
+        assert batch.pos.shape == batch.forces.shape == (n_atoms, 3)
+        assert (
+            torch.isfinite(batch.pos).all()
+            and torch.isfinite(batch.forces).all()
+        )
+        assert batch.cell.shape == (n_frames, 3, 3) and batch.pbc.all()
+        torch.testing.assert_close(
+            batch.noise_levels, torch.full((n_atoms,), FMAP_NOISE_LEVEL)
+        )
+        assert set(batch.neighbor_list) == {"bonds", "angles"}
+        bonds = batch.neighbor_list["bonds"]["index_mapping"]
+        assert torch.all(batch.batch[bonds[0]] == batch.batch[bonds[1]])
         n_seen += 1
     assert n_seen == N_BATCHES
