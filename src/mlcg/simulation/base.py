@@ -524,9 +524,17 @@ class _Simulation(object):
                 if data.batch.max() == 0:
                     warnings.warn(force_torch_compile_warning())
                 torch._logging.set_logs(dynamo=logging.ERROR)
+                from torch._inductor import list_mode_options
+                from ..nn.flash_models.inference import COMPILE_OPTIONS
+
+                # torch.compile takes a mode or options, not both
+                options = {
+                    **list_mode_options(self.compile_mode or "default"),
+                    **COMPILE_OPTIONS,
+                }
                 try:
                     self.model = torch.compile(
-                        self.model, dynamic=True, mode=self.compile_mode
+                        self.model, dynamic=True, options=options
                     )
                     self._run_and_check(data)
                     return
@@ -548,7 +556,7 @@ class _Simulation(object):
                     # import torch._dynamo
                     torch._dynamo.config.suppress_errors = True
                     self.model = torch.compile(
-                        self.model, dynamic=True, mode=self.compile_mode
+                        self.model, dynamic=True, options=options
                     )
         self._run_and_check(data)
 

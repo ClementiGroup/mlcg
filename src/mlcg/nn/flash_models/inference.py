@@ -21,6 +21,14 @@ from .mixin import (
     enable_flash_kernels,
 )
 
+# inductor's on-disk autotune cache is keyed by kernel, not by problem size:
+# with dynamic shapes, the Triton tiles tuned on the first system ever
+# compiled would serve every later size. Without it, each process tunes them
+# on its own system, as in eager mode. The FX graph cache goes too: its key
+# ignores autotune_local_cache, so a cached graph would bring the stale
+# tiles back.
+COMPILE_OPTIONS = {"autotune_local_cache": False, "fx_graph_cache": False}
+
 
 def prepare_for_inference(
     model: torch.nn.Module,
@@ -74,7 +82,7 @@ def optimize_for_inference(
     """
     model = prepare_for_inference(model, data, num_knots, tolerance)
     if compile:
-        model = torch.compile(model, dynamic=True)
+        model = torch.compile(model, dynamic=True, options=COMPILE_OPTIONS)
         model(data)
     graphed = capture_cuda_graph(model, data) if cuda_graph else None
     return graphed or model
