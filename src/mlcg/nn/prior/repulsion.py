@@ -396,7 +396,7 @@ class ExpRepulsion(_Prior):
         y = ExpRepulsion.compute(
             features, self.alpha[interaction_types], self.r_0[interaction_types]
         )
-        y = scatter(y, mapping_batch, dim=0, reduce="sum")
+        y = scatter(y, mapping_batch, dim=0, reduce="sum", dim_size=data.n_atoms.shape[0])
         data.out[self.name] = {"energy": y}
         return data
 
@@ -491,7 +491,7 @@ class CutoffExpRepulsion(ExpRepulsion):
         # ensure that the cutoff is continupus
         y = y - yc - (features - self.cutoff) * dyc
         # we can override the
-        y = scatter(y, mapping_batch, dim=0, reduce="sum")
+        y = scatter(y, mapping_batch, dim=0, reduce="sum", dim_size=data.n_atoms.shape[0])
         data.out[self.name] = {"energy": y}
         return data
 
