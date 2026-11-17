@@ -1,3 +1,4 @@
+import pytest
 import torch
 import numpy as np
 import mdtraj
@@ -170,3 +171,95 @@ def theta_mapping(pos, mapping, x0=torch.tensor(-1), r=1):
         theta = torch.atan2(-y, x)
         theta_map[(x0, y0, z0)] = theta.numpy()
     return theta_map
+
+
+# box lengths with more than 10 mantissa bits, so that TF32 would round them
+TF32_CELLS = [
+    torch.diag(torch.tensor([71.7, 70.3, 75.9])),
+    torch.tensor([[71.7, 0.0, 0.0], [5.3, 70.3, 0.0], [3.1, 4.7, 75.9]]),
+]
+DEVICES = ["cpu"] + (["cuda"] if torch.cuda.is_available() else [])
+
+
+@pytest.mark.parametrize("device", DEVICES)
+@pytest.mark.parametrize("cell", TF32_CELLS)
+def test_prior_cell_shifts_ignore_tf32(cell, device, tf32_matmul):
+    """The priors' minimum-image shifts must not depend on the float32
+    matmul precision."""
+    from mlcg.nn.prior.base import compute_cell_shifts
+
+    gen = torch.Generator().manual_seed(0)
+    pos = (torch.rand(40, 3, generator=gen) @ cell).to(device)
+    mapping = torch.triu_indices(40, 40, 1).to(device)
+    args = (
+        pos,
+        mapping,
+        torch.ones(1, 3, dtype=torch.bool, device=device),
+        cell[None].to(device),
+        torch.zeros(40, dtype=torch.long, device=device),
+    )
+    reference = compute_cell_shifts(*args)
+    with tf32_matmul():
+        result = compute_cell_shifts(*args)
+    torch.testing.assert_close(result, reference, rtol=0, atol=0)
+
+
+@pytest.mark.parametrize(
+    "cell",
+    [
+        torch.diag(torch.tensor([20.0, 18.0, 16.0])),
+        torch.tensor([[20.0, 0.0, 0.0], [5.0, 18.0, 0.0], [3.0, 4.0, 16.0]]),
+    ],
+)
+def test_prior_cell_shifts_minimum_image(cell):
+    """Rows of ``cell`` are the lattice vectors (pos = f @ cell). Pairs
+    closer than half the smallest cell height get their minimum image, and
+    no shift is applied along a non-periodic lattice vector."""
+    from mlcg.nn.prior.base import compute_cell_shifts
+
+    cell = cell.double()
+    gen = torch.Generator().manual_seed(0)
+    pos = torch.rand(100, 3, generator=gen, dtype=torch.double) @ cell
+    i, j = torch.triu_indices(100, 100, 1)
+    batch = torch.zeros(100, dtype=torch.long)
+
+    def shifts(pbc):
+        return compute_cell_shifts(
+            pos, torch.stack([i, j]), torch.tensor([pbc]), cell[None], batch
+        ).squeeze(-1)
+
+    images = torch.cartesian_prod(*[torch.arange(-2, 3)] * 3).double() @ cell
+    nearest = (pos[j, None] + images - pos[i, None]).norm(dim=-1).min(dim=1)
+    volume = torch.linalg.det(cell).abs()
+    heights = [
+        volume / torch.linalg.cross(cell[(k + 1) % 3], cell[(k + 2) % 3]).norm()
+        for k in range(3)
+    ]
+    short = nearest.values < min(heights) / 2
+    distances = (pos[j] + shifts([True] * 3) - pos[i]).norm(dim=1)
+    torch.testing.assert_close(distances[short], nearest.values[short])
+
+    lattice_shifts = torch.linalg.solve(cell.T, shifts([True, True, False]).T)
+    torch.testing.assert_close(lattice_shifts, lattice_shifts.round())
+    assert (lattice_shifts[2] == 0).all()
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="needs CUDA")
+def test_safe_normalization_has_no_host_sync():
+    """No data-dependent shapes: normalizing, forward and backward, needs no
+    device-to-host sync (torch 2.13's Inductor fails on two masked
+    normalizations in a row); zero vectors stay zero."""
+    from mlcg.geometry.internal_coordinates import safe_normalization
+
+    x = torch.tensor(
+        [[3.0, 4.0, 0.0], [0.0, 0.0, 0.0]], device="cuda", requires_grad=True
+    )
+    norms = x.detach().norm(dim=1, keepdim=True)
+    torch.cuda.set_sync_debug_mode("error")
+    try:
+        out = safe_normalization(x, norms)
+        out.sum().backward()
+    finally:
+        torch.cuda.set_sync_debug_mode("default")
+    expected = torch.tensor([[0.6, 0.8, 0.0], [0.0, 0.0, 0.0]], device="cuda")
+    torch.testing.assert_close(out.detach(), expected)

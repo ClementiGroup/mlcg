@@ -46,20 +46,16 @@ def compute_cell_shifts(
         cell_inv = torch.linalg.inv(cell[batch_ids])
         for ii in range(cell_shifts.shape[-1]):
             drs = pos[mapping[0]] - pos[mapping[ii + 1]]
-            # convert to fractional displacement
-            frac_dr = torch.einsum(
-                "bij,bj->bi",
-                cell_inv.to(drs.dtype),
-                drs,
-            )
-            # compute unit number of unit cell shifts
-            cell_shifts[:, :, ii] = torch.floor(frac_dr + 0.5)
-            # convert back to cartesian displacement
-            cell_shifts[:, :, ii] = pbc[batch_ids] * torch.einsum(
-                "bij,bj->bi",
-                cell[batch_ids].to(drs.dtype),
-                cell_shifts[:, :, ii],
-            )
+            # rows of the cell are the lattice vectors (pos = f @ cell), so
+            # f = dr @ cell^-1; elementwise products, not einsum: cuBLAS may
+            # round the cell to TF32
+            frac_dr = (cell_inv.to(drs.dtype) * drs.unsqueeze(-1)).sum(dim=-2)
+            # unit cell shifts, along periodic lattice vectors only
+            n_shifts = torch.floor(frac_dr + 0.5) * pbc[batch_ids]
+            # convert back to cartesian displacement: n @ cell
+            cell_shifts[:, :, ii] = (
+                cell[batch_ids].to(drs.dtype) * n_shifts.unsqueeze(-1)
+            ).sum(dim=-2)
     return cell_shifts
 
 
