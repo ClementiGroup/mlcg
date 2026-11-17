@@ -3,7 +3,7 @@ from scipy.integrate import trapezoid
 from scipy.optimize import curve_fit
 import torch
 from torch_geometric.utils import scatter
-from typing import Final, Dict
+from typing import Final, Dict, Optional
 
 
 from .base import _Prior
@@ -350,6 +350,69 @@ class HarmonicAnglesRaw(Harmonic):
         else:
             cell_shifts = None
         return compute_angles_raw(pos, mapping, cell_shifts)
+
+
+class ShiftedHarmonicAnglesRaw(Harmonic):
+    r"""Wrapper class for quickly computing angle priors
+    (order 3 Harmonic priors)
+
+    .. math::
+
+        \theta_{ijk} = &\text{atan2}(\Vert \hat{\mathbf{n}} \vert, \mathbf{r}_{ij} \cdot \mathbf{r}_{kj} ) \\
+        \mathbf{r}_{ij} &= \mathbf{r}_i - \mathbf{r}_j \\
+        \mathbf{r}_{kj} &= \mathbf{r}_k - \mathbf{r}_j \\
+        \mathbf{\hat{n}} &= \frac{\mathbf{r}_{ij} \times \mathbf{r}_{kj}}{\Vert \mathbf{r}_{ij} \times \mathbf{r}_{kj} \Vert} 
+
+    """
+
+    name: Final[str] = "angles"
+    _order = 3
+
+    def __init__(self, statistics, name) -> None:
+        super(ShiftedHarmonicAnglesRaw, self).__init__(
+            statistics,
+            name=ShiftedHarmonicAnglesRaw.name,
+            order=ShiftedHarmonicAnglesRaw._order,
+        )
+        self.name = name
+
+    def data2features(self, data: AtomicData) -> torch.Tensor:
+        mapping = data.neighbor_list[self.name]["index_mapping"]
+        pbc = getattr(data, "pbc", None)
+        cell = getattr(data, "cell", None)
+        return ShiftedHarmonicAnglesRaw.compute_features(
+            pos=data.pos,
+            mapping=mapping,
+            pbc=pbc,
+            cell=cell,
+            batch=data.batch,
+        )
+
+    @staticmethod
+    def neighbor_list(topology: Topology) -> dict:
+        return Harmonic.neighbor_list(topology, ShiftedHarmonicAnglesRaw.name)
+
+    @staticmethod
+    def compute_features(
+        pos: torch.Tensor,
+        mapping: torch.Tensor,
+        pbc: Optional[torch.Tensor] = None,
+        cell: Optional[torch.Tensor] = None,
+        batch: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+
+        cell_shifts = _Prior._get_cell_shifts(pos, mapping, pbc, cell, batch)
+        features = compute_angles_raw(
+            pos=pos, mapping=mapping, cell_shifts=cell_shifts
+        )
+        # features should be between -pi and pi after data2features()
+        # Here, we conditionally shift angles in (-pi, 0) to (pi, 2pi)
+        # Then subtract pi in order to center the distribution at 0
+        features = (
+            torch.where(features < 0, features + 2 * torch_pi, features)
+            - torch_pi
+        )
+        return features
 
 
 class HarmonicImpropers(Harmonic):
