@@ -357,7 +357,7 @@ class CFConv(MessagePassing):
         W = self.filter_network(edge_attr) * C.view(-1, 1)
 
         x = self.lin1(x)
-        # propagate_type: (x: Tensor, W: Tensor)
+        # propagate_type: (x: torch.Tensor, W: torch.Tensor)
         # Perform the continuous filter convolution
         x = self.propagate(edge_index, x=x, W=W, size=None)
         x = self.lin2(x)
@@ -484,7 +484,9 @@ class StandardSchNet(SchNet):
             [hidden_channels] + output_hidden_layer_widths + [1]
         )
         output_network = MLP(
-            output_layer_widths, activation_func=activation, last_bias=False
+            output_layer_widths,
+            activation_func=activation,
+            last_bias=False,
         )
         super(StandardSchNet, self).__init__(
             embedding_layer,
@@ -497,6 +499,7 @@ class StandardSchNet(SchNet):
         )
 
 
+# TODO check if this classes are still needed.
 class AttentiveSchNet(SchNet):
     """Small wrapper class for :ref:`mlcg.nn.SchNet` to simplify the definition of the
     SchNet model with an Interaction block that includes attention through an input file. The upper distance cutoff attribute
