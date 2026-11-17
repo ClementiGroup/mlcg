@@ -755,4 +755,3 @@ class ScaledCutoffExpRepulsion(CutoffExpRepulsion):
             cutoff=repulsion.cutoff,
             name=repulsion.name,
         )
-
