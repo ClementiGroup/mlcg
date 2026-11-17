@@ -261,7 +261,7 @@ class QuarticBonds(Polynomial):
     polynomial in :math:`r`.
     """
 
-    def __init__(self, statistics, name="bonds", n_degs: int = 4) -> None:
+    def __init__(self, statistics, name="bonds", n_degs: int = 8) -> None:
         super(QuarticBonds, self).__init__(
             statistics, name, order=2, n_degs=n_degs
         )
