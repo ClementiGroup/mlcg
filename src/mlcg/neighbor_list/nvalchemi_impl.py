@@ -70,9 +70,9 @@ def nvalchemi_naive_neighbor_list(
     """
     with_pbc = False
     if "pbc" in data:
-        pbc = data.pbc
+        pbc = data.pbc.view(-1, 3)
         # the type casting has to be done otherwise the library complains
-        cell = data.cell.reshape(-1, 3, 3)
+        cell = data.cell.to(data.pos.dtype).reshape(-1, 3, 3)
         with_pbc = True
     else:
         pbc = None
@@ -153,9 +153,9 @@ def nvalchemi_cell_neighbor_list(
     """
     with_pbc = False
     if "pbc" in data:
-        pbc = data.pbc
+        pbc = data.pbc.view(-1, 3)
         # the type casting has to be done otherwise the library complains
-        cell = data.cell.reshape(-1, 3, 3)
+        cell = data.cell.to(data.pos.dtype).reshape(-1, 3, 3)
         with_pbc = True
 
     else:
@@ -167,7 +167,7 @@ def nvalchemi_cell_neighbor_list(
                 data.batch[-1] + 1,
                 3,
                 3,
-                dtype=torch.float32,
+                dtype=data.pos.dtype,
                 device=data.pos.device,
             )
             + 50
@@ -248,9 +248,9 @@ def nvalchemi_cell_neighbor_list_raw(
     """
     with_pbc = False
     if "pbc" in data:
-        pbc = data.pbc
+        pbc = data.pbc.view(-1, 3)
         # the type casting has to be done otherwise the library complains
-        cell = data.cell.to(torch.float64).reshape(-1, 3, 3)
+        cell = data.cell.to(data.pos.dtype).reshape(-1, 3, 3)
         with_pbc = True
 
     else:
@@ -262,7 +262,7 @@ def nvalchemi_cell_neighbor_list_raw(
                 data.batch[-1] + 1,
                 3,
                 3,
-                dtype=torch.float32,
+                dtype=data.pos.dtype,
                 device=data.pos.device,
             )
             + 50
