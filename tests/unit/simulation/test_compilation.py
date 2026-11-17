@@ -335,3 +335,57 @@ def test_cuda_graph_rejects_host_sync():
     with pytest.raises(RuntimeError):
         GraphedModel(model, data)
     assert model.calls == 1
+
+
+@pytest.mark.parametrize(
+    "model, convert_to_flash",
+    [
+        (ASE_prior_model, False),
+        (ASE_SchNet_model, False),
+        (ASE_SchNet_model, True),
+        (ASE_PaiNN_model, False),
+        (ASE_SO3krates_model, False),
+    ],
+)
+def test_compile_single_structure(
+    model, convert_to_flash, get_initial_data, tmp_path
+):
+    """With one structure in the batch (``batch.max() == 0``) the compiled
+    model gives the eager energies and forces."""
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    data_dict = model(device=device)
+    torch._functorch.config.donated_buffer = False
+    initial_data_list = get_initial_data(
+        data_dict["molecule"],
+        data_dict["neighbor_lists"],
+        corruptor=None,
+        add_masses=True,
+    )[:1]
+
+    def potential_and_forces(compile_flag):
+        sim = LangevinSimulation(
+            1.0,
+            filename=tmp_path / f"single_{compile_flag}",
+            device=device,
+            compile=compile_flag,
+            force_compile=compile_flag,
+            convert_to_flash=convert_to_flash,
+            cuda_graph=False,
+        )
+        sim.attach_model_and_configurations(
+            data_dict["model"], initial_data_list, 1.0
+        )
+        sim._set_up_simulation(overwrite=False)
+        data = deepcopy(sim.initial_data).to(sim.device)
+        assert data.batch.max() == 0
+        sim.compile_model(data)
+        return sim.calculate_potential_and_forces(data)
+
+    energy_eager, forces_eager = potential_and_forces(False)
+    energy_compiled, forces_compiled = potential_and_forces(True)
+    torch.testing.assert_close(
+        energy_eager, energy_compiled, atol=1e-5, rtol=1e-5
+    )
+    torch.testing.assert_close(
+        forces_eager, forces_compiled, atol=1e-5, rtol=1e-5
+    )
