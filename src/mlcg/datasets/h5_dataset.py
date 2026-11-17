@@ -165,10 +165,9 @@ import itertools
 import warnings
 from torch_geometric.loader.dataloader import Collater as PyGCollater
 import torch_geometric.loader.dataloader  # for type hint
-from typing import Dict, List, Optional, Sequence, Callable
+from typing import Dict, List, Optional, Sequence
 from mlcg.data import AtomicData
 from mlcg.utils import make_splits, calc_num_samples, tqdm
-from copy import copy as shallow_copy
 
 
 class MolData:
@@ -198,8 +197,6 @@ class MolData:
         forces: np.ndarray,
         weights: np.ndarray = None,
         excluded_pairs: np.ndarray = None,
-        noise_levels: np.ndarray = None,
-        neighbor_list: dict = None,
         cell: np.ndarray = None,
         pbc: np.ndarray = None,
     ):
@@ -218,10 +215,6 @@ class MolData:
         self._weights = weights
         if self._weights is not None:
             assert len(self._coords) == len(self._weights)
-        self._noise_levels = noise_levels
-        if self._noise_levels is not None:
-            assert len(self._coords) == len(self._noise_levels)
-        self._neighbor_list = neighbor_list
 
         self._excluded_pairs = None
         if excluded_pairs is not None:
@@ -262,14 +255,6 @@ class MolData:
         return self._excluded_pairs
 
     @property
-    def noise_levels(self):
-        return self._noise_levels
-
-    @property
-    def neighbor_list(self):
-        return self._neighbor_list
-
-    @property
     def n_frames(self):
         return self.coords.shape[0]
 
@@ -294,8 +279,6 @@ class MolData:
 
         if self.weights is not None:
             self._weights = self._weights[indices]
-        if self._noise_levels is not None:
-            self._noise_levels = self._noise_levels[indices]
 
 
 class MetaSet:
@@ -308,18 +291,13 @@ class MetaSet:
 
     """
 
-    def __init__(
-        self,
-        name: str,
-        transform: Optional[Callable] = None,
-    ):
+    def __init__(self, name):
         self.name = name
         self._mol_dataset = []
         self._mol_map = {}
         self._n_mol_samples = []
         self._cumulate_indices = [0]
         self._excluded_order = 1
-        self._transform = transform
 
     @staticmethod
     def retrieve_hdf(hdf_grp, hdf_key):
@@ -355,7 +333,6 @@ class MetaSet:
             "coords": "cg_coords",
             "forces": "cg_delta_forces",
             "weights": "subsampling_weights",
-            "noise_levels": "noise_levels",
             "cell": "cell",
             "pbc": "pbc",
         },
@@ -364,9 +341,6 @@ class MetaSet:
             "world_size": 1,
         },
         subsample_using_weights=False,
-        transform: Optional[Callable] = None,
-        mol_neighbor_lists: Optional[dict] = None,
-        overriding_offset: Optional[int] = None,
     ):
         r"""initiate a Metaset by loading data from given HDF-group.
         mol_list, detailed_indices, hdf_key_mapping, stride and parallel can control which subset is loaded to the Metaset (details see the description of "H5Dataset")
@@ -386,12 +360,6 @@ class MetaSet:
                 length = len(indices)
             rank = parallel.get("rank", 0)
             world_size = parallel.get("world_size", 1)
-            if overriding_offset is not None and world_size > 1:
-                raise ValueError(
-                    f"overriding_offset ({overriding_offset}) "
-                    f"should be left None when world_size is "
-                    f"{world_size} > 1"
-                )
             if rank < 0 or rank >= world_size:
                 raise ValueError(
                     "Rank %d is invalid given the world_size %d."
@@ -403,16 +371,12 @@ class MetaSet:
                     % (length, world_size)
                 )
             residue = length % world_size
-            if overriding_offset is not None:
-                offset = overriding_offset
-            else:
-                offset = residue + rank
             if indices is not None:
-                return indices[offset :: (world_size * stride)]
+                return indices[(residue + rank) :: (world_size * stride)]
             else:
-                return np.s_[offset :: (world_size * stride)]
+                return np.s_[(residue + rank) :: (world_size * stride)]
 
-        output = MetaSet(hdf5_group.name.split("/")[-1], transform=transform)
+        output = MetaSet(hdf5_group.name.split("/")[-1])
         keys = hdf_key_mapping
         load_excluded_pairs = "excluded_pairs" in keys
         if load_excluded_pairs:
@@ -464,12 +428,6 @@ class MetaSet:
                 forces = MetaSet.retrieve_hdf(
                     hdf5_group[mol_name], keys["forces"]
                 )[selection]
-                if "noise_levels" in keys:
-                    noise_levels = MetaSet.retrieve_hdf(
-                        hdf5_group[mol_name], keys["noise_levels"]
-                    )[selection]
-                else:
-                    noise_levels = None
                 weights = None  # Weights are None by default
                 if subsample_using_weights is True:
                     weights = MetaSet.retrieve_hdf(
@@ -498,12 +456,6 @@ class MetaSet:
                 forces = MetaSet.retrieve_hdf(
                     hdf5_group[mol_name], keys["forces"]
                 )[:][selection]
-                if "noise_levels" in keys:
-                    noise_levels = MetaSet.retrieve_hdf(
-                        hdf5_group[mol_name], keys["noise_levels"]
-                    )[:][selection]
-                else:
-                    noise_levels = None
                 weights = None  # Weights are None by default
                 if subsample_using_weights is True:
                     weights = MetaSet.retrieve_hdf(
@@ -523,12 +475,6 @@ class MetaSet:
                         )[:][selection]
                     except Exception:
                         pass
-            neighbor_list = None
-            if mol_neighbor_lists is not None:
-                if mol_name in mol_neighbor_lists:
-                    neighbor_list = mol_neighbor_lists[mol_name]
-                elif "_default" in mol_neighbor_lists:
-                    neighbor_list = mol_neighbor_lists["_default"]
             output.insert_mol(
                 MolData(
                     mol_name,
@@ -537,19 +483,11 @@ class MetaSet:
                     forces,
                     weights=weights,
                     excluded_pairs=excluded_pairs,
-                    noise_levels=noise_levels,
-                    neighbor_list=neighbor_list,
                     cell=cell,
                     pbc=pbc,
                 )
             )
         return output
-
-    def set_transform(
-        self,
-        transform: Optional[Callable] = None,
-    ):
-        self._transform = transform
 
     def insert_mol(self, mol_data):
         self._mol_dataset.append(mol_data)
@@ -645,43 +583,31 @@ class MetaSet:
 
     def __getitem__(self, idx):
         dataset_id, data_id = self._locate_idx(idx)
-        mol_data = self._mol_dataset[dataset_id]
-        point_tensors = {
-            "pos": mol_data.coords[data_id],
-            "forces": mol_data.forces[data_id],
-            "atom_types": mol_data.embeds,
-        }
-        if mol_data.noise_levels is not None:
-            point_tensors["noise_levels"] = torch.as_tensor(
-                np.tile(
-                    self._mol_dataset[dataset_id].noise_levels[data_id],
-                    [len(self._mol_dataset[dataset_id].coords[data_id])],
-                )
-            )
-        if mol_data.neighbor_list is not None:
-            # AtomicData.from_points uses "neighborlist" in args
-            point_tensors["neighborlist"] = mol_data.neighbor_list
+        cell_frame = (
+            self._mol_dataset[dataset_id].cell[data_id]
+            if self._mol_dataset[dataset_id].cell is not None
+            else None
+        )
+        pbc_frame = (
+            self._mol_dataset[dataset_id].pbc[data_id]
+            if self._mol_dataset[dataset_id].pbc is not None
+            else None
+        )
 
-        if mol_data.cell is not None:
-            # AtomicData.from_points uses "neighborlist" in args
-            point_tensors["cell"] = mol_data.cell[data_id]
-        else:
-            point_tensors["cell"] = None
-
-        if mol_data.pbc is not None:
-            point_tensors["pbc"] = mol_data.pbc[data_id]
-        else:
-            point_tensors["pbc"] = None
-        if mol_data.excluded_pairs is not None:
-            point_tensors["excluded_pairs"] = {
+        kwargs = {}
+        if self._mol_dataset[dataset_id].excluded_pairs is not None:
+            kwargs["excluded_pairs"] = {
                 "excluded_order": self._excluded_order,
-                "index_mapping": mol_data.excluded_pairs,
+                "index_mapping": self._mol_dataset[dataset_id].excluded_pairs,
             }
-
-        atd = AtomicData.from_points(**point_tensors)
-        if self._transform is not None:
-            atd = self._transform(atd)
-        return atd
+        return AtomicData.from_points(
+            pos=self._mol_dataset[dataset_id].coords[data_id],
+            forces=self._mol_dataset[dataset_id].forces[data_id],
+            atom_types=self._mol_dataset[dataset_id].embeds,
+            cell=cell_frame,
+            pbc=pbc_frame,
+            **kwargs,
+        )
 
     def _locate_idx(self, idx):
         full_length = self._cumulate_indices[-1]
@@ -839,7 +765,6 @@ class H5Dataset:
         partition_options: Dict,
         loading_options: Dict,
         subsample_using_weights: bool = False,
-        transform: Optional[Callable] = None,
     ):
         self._h5_path = h5_file_path
         self._h5_root = h5py.File(h5_file_path, "r")
@@ -849,9 +774,6 @@ class H5Dataset:
         self._partition_sample_info = {}
         self._detailed_indices = {}
         self._subsample_using_weights = subsample_using_weights
-        self._transform = transform
-        if self._transform is not None:
-            print("Using transform:", self._transform)
 
         # processing the hdf5 file
         for metaset_name in self._h5_root:
@@ -870,37 +792,6 @@ class H5Dataset:
                 "world_size": 1,
             },
         )  # if no parallel entry, then target for single process
-        overriding_offset = loading_options.get(
-            "overriding_offset",
-            None,
-        )
-        neighbor_list_chkpts = loading_options.get(
-            "nl_chkpts",
-            None,
-        )
-        if isinstance(neighbor_list_chkpts, dict):
-            metaset_mol_neighbor_lists = {}
-            for part_name, part_nl_info in neighbor_list_chkpts.items():
-                if isinstance(part_nl_info, str):
-                    # this is the case when the same neighborlist will be shared for the whole partition
-                    metaset_mol_neighbor_lists[part_name] = {
-                        "_default": torch.load(part_nl_info)
-                    }
-                elif isinstance(part_nl_info, dict):
-                    # this is the case when different nls are assigned to different molecules in a partition
-                    metaset_mol_neighbor_lists[part_name] = {
-                        k: torch.load(v) for k, v in part_nl_info.items()
-                    }
-                else:
-                    raise ValueError(
-                        f"Expecting neighborlist for partition {part_name} to be either a path string or dictionary"
-                    )
-        elif isinstance(neighbor_list_chkpts, str):
-            metaset_mol_neighbor_lists = {
-                "_default": {"_default": torch.load(neighbor_list_chkpts)}
-            }
-        else:
-            metaset_mol_neighbor_lists = None
         for part_name in partition_options:
             ## create a partition, typical names are train/val
             part = Partition(part_name)
@@ -943,17 +834,6 @@ class H5Dataset:
                     detailed_indices = None
 
                 stride = part_info["metasets"][metaset_name].get("stride", 1)
-                if metaset_mol_neighbor_lists is not None:
-                    if metaset_name in metaset_mol_neighbor_lists:
-                        mol_neighbor_lists = metaset_mol_neighbor_lists[
-                            metaset_name
-                        ]
-                    else:
-                        mol_neighbor_lists = metaset_mol_neighbor_lists[
-                            "_default"
-                        ]
-                else:
-                    mol_neighbor_lists = None
                 part.add_metaset(
                     metaset_name,
                     MetaSet.create_from_hdf5_group(
@@ -964,9 +844,6 @@ class H5Dataset:
                         hdf_key_mapping=hdf_key_mapping,
                         parallel=parallel,
                         subsample_using_weights=self._subsample_using_weights,
-                        transform=self._transform,
-                        mol_neighbor_lists=mol_neighbor_lists,
-                        overriding_offset=overriding_offset,
                     ),
                 )
             ## trim the metasets to fit the need of sampling
@@ -1124,7 +1001,6 @@ class H5SimpleDataset(H5Dataset):
         },
         parallel={"rank": 0, "world_size": 1},
         subsample_using_weights: Optional[bool] = False,
-        transform: Optional[Callable] = None,
     ):
         # input checking
         if not isinstance(stride, int) and stride > 0:
@@ -1136,7 +1012,6 @@ class H5SimpleDataset(H5Dataset):
         # ^ dict containing all metasets in the HDF5 file
         self._partitions = None
         self._partition_sample_info = None
-        self._transform = transform
 
         # checking metaset
         all_metasets = list(self._h5_root.keys())
@@ -1171,7 +1046,6 @@ class H5SimpleDataset(H5Dataset):
             hdf_key_mapping=hdf_key_mapping,
             parallel=parallel,
             subsample_using_weights=subsample_using_weights,
-            transform=self._transform,
         )
 
     def get_dataloader(
@@ -1236,7 +1110,6 @@ class H5PartitionDataLoader:
         collater_fn=PyGCollater(None, None),
         pin_memory=False,
         subsample_using_weights=False,
-        transform=None,
     ):
         self._data_part = data_partition
         self._metasets = []
@@ -1260,7 +1133,6 @@ class H5PartitionDataLoader:
             batch_s = torch.utils.data.BatchSampler(s, batch_size, True)
             self._samplers.append(batch_s)
         self._collater_fn = collater_fn
-        self._transform = transform
 
     def __iter__(self):
         self._sampler_iters = []
@@ -1284,8 +1156,6 @@ class H5PartitionDataLoader:
         ) as e:  # catch RuntimeError raised by drained sampler iterater
             raise StopIteration()
         output = self._collater_fn(merged_samples)
-        if self._transform is not None:
-            self._transform(output)
         if self._pin_memory:
             output = output.pin_memory()
         return output
@@ -1314,7 +1184,6 @@ class H5MetasetDataLoader:
         collater_fn: PyGCollater = PyGCollater(None, None),
         shuffle: bool = True,
         pin_memory: bool = False,
-        transform=None,
     ):
         self._metaset = metaset
         if shuffle:
@@ -1324,7 +1193,6 @@ class H5MetasetDataLoader:
         self._sampler = torch.utils.data.BatchSampler(sampler, batch_size, True)
         self._collater_fn = collater_fn
         self._pin_memory = pin_memory
-        self._transform = transform
 
     def __iter__(self):
         self._sampler_iter = iter(self._sampler)
@@ -1335,8 +1203,6 @@ class H5MetasetDataLoader:
             (self._metaset[i] for i in next(self._sampler_iter))
         )
         output = self._collater_fn(batch_samples)
-        if self._transform is not None:
-            self._transform(output)
         if self._pin_memory:
             output = output.pin_memory()
         return output
