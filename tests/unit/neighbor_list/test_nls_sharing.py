@@ -1,3 +1,4 @@
+import contextlib
 import os
 
 import pytest
@@ -48,6 +49,14 @@ def _load_collated_data(asset_name: str, n_replicas: int) -> AtomicData:
 def col_data(request):
     n_replicas = 3
     return _load_collated_data(request.param, n_replicas)
+
+
+def _expected_warning(nls_distance_method, col_data):
+    """Expected: without pbc, `nvalchemi_cell` bins the atoms in a
+    non-periodic box of 70 Å of its own and warns about it."""
+    if nls_distance_method == "nvalchemi_cell" and "pbc" not in col_data:
+        return pytest.warns(UserWarning, match="box of length 70")
+    return contextlib.nullcontext()
 
 
 def _build_nls_sharing_model(model_file: str, fast_cls, nls_distance_method):
@@ -107,7 +116,8 @@ def test_fast_cutoff_exp_repulsion_and_network_nls_match(
         old_forces[i] = col_data.out["non_bonded"]["forces"].detach().cpu()
         col_data.out = {}
 
-        new_model(col_data)
+        with _expected_warning(nls_distance_method, col_data):
+            new_model(col_data)
         new_eners[i] = col_data.out["non_bonded"]["energy"].detach().cpu()
         new_forces[i] = col_data.out["non_bonded"]["forces"].detach().cpu()
 
@@ -171,7 +181,8 @@ def test_fast_cutoff_repulsion_and_network_nls_match(
         old_forces[i] = col_data.out["non_bonded"]["forces"].detach().cpu()
         col_data.out = {}
 
-        new_model(col_data)
+        with _expected_warning(nls_distance_method, col_data):
+            new_model(col_data)
         new_eners[i] = col_data.out["non_bonded"]["energy"].detach().cpu()
         new_forces[i] = col_data.out["non_bonded"]["forces"].detach().cpu()
 
