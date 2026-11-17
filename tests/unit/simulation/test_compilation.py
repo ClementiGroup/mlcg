@@ -248,7 +248,11 @@ def test_simulation_run(
             "filename": tmp_path
             / f"{sim_class.__name__}_{'compiled' if compile_flag else 'eager'}",
             "device": device,
-            "compile": compile_flag,
+            "optimize": {
+                "flash": False,
+                "compile": compile_flag,
+                "cuda_graph": False,
+            },
         }
 
         sim = sim_class(*sim_args, **sim_kwargs)
@@ -289,9 +293,7 @@ def test_cuda_graph_matches_plain_model(
         1.0,
         filename=tmp_path / "graph",
         device="cuda",
-        compile=compile_flag,
-        convert_to_flash=True,
-        cuda_graph=True,
+        optimize={"compile": compile_flag},
     )
     sim.attach_model_and_configurations(
         data_dict["model"], initial_data_list, 1.0
@@ -367,10 +369,11 @@ def test_compile_single_structure(
             1.0,
             filename=tmp_path / f"single_{compile_flag}",
             device=device,
-            compile=compile_flag,
-            force_compile=compile_flag,
-            convert_to_flash=convert_to_flash,
-            cuda_graph=False,
+            optimize={
+                "flash": convert_to_flash,
+                "compile": compile_flag,
+                "cuda_graph": False,
+            },
         )
         sim.attach_model_and_configurations(
             data_dict["model"], initial_data_list, 1.0
@@ -389,3 +392,27 @@ def test_compile_single_structure(
     torch.testing.assert_close(
         forces_eager, forces_compiled, atol=1e-5, rtol=1e-5
     )
+
+
+def test_optimize_is_off_by_default(tmp_path):
+    """A simulation runs the model as given unless ``optimize`` is set."""
+    assert LangevinSimulation(1.0, filename=tmp_path / "sim").optimize is None
+
+
+def test_deprecated_compile_options(tmp_path):
+    """The compile options of earlier versions work for one release, with a
+    deprecation warning: ``compile`` is ``torch.compile`` alone, the others
+    are ignored."""
+
+    def simulation(**kwargs):
+        return LangevinSimulation(1.0, filename=tmp_path / "sim", **kwargs)
+
+    with pytest.warns(DeprecationWarning, match="`compile` is deprecated"):
+        sim = simulation(compile=True)
+    assert sim.optimize == {"flash": False, "cuda_graph": False}
+    for name, value in (("compile_mode", "default"), ("force_compile", True)):
+        with pytest.warns(DeprecationWarning, match=f"`{name}` is deprecated"):
+            sim = simulation(**{name: value})
+        assert sim.optimize is None
+    with pytest.raises(ValueError, match="without the deprecated"):
+        simulation(optimize=True, compile=True)

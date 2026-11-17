@@ -17,9 +17,11 @@ Quick start
 
    simulation:
      specialize_priors: true   # priors with per-molecule parameters
-     convert_to_flash: true    # flash network, tables, CUDA graph
+     optimize: true            # flash network, tables, torch.compile, CUDA graph
 
-``compile: true`` can be added; with the CUDA graph it adds little.
+``optimize`` also takes the speed-ups one by one, a missing key meaning
+on, e.g. ``optimize: {compile: false}`` for the flash network and the CUDA
+graph without ``torch.compile``.
 
 **Anywhere else**, one call returns a fast copy of the model. ``data`` is a
 representative batch (the structures you will evaluate, already on the
@@ -29,7 +31,7 @@ GPU); the model passed in is not modified:
 
    from mlcg.nn import optimize_for_inference
 
-   fast = optimize_for_inference(model, data)
+   fast = optimize_for_inference(model, data)   # flash, compile, cuda_graph: all on
    data = fast(data)                  # energies and forces in data.out
 
 **With OpenMM** (``mlcg_to_openmm``), where OpenMM runs the priors and the
@@ -54,8 +56,9 @@ What it does
 :func:`~mlcg.nn.optimize_for_inference` deep-copies the model, switches on
 the flash path of every module that has one (at any depth: networks and
 priors inside ``SumOut``/``GradientsOut`` or your own container), builds
-the inference state, freezes the copy in eval mode and captures a CUDA
-graph.
+the inference state, freezes the copy in eval mode, compiles it and
+captures a CUDA graph. ``flash``, ``compile`` and ``cuda_graph`` switch
+each step off.
 
 .. list-table::
    :header-rows: 1

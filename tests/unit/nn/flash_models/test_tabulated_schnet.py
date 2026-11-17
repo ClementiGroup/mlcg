@@ -412,7 +412,7 @@ def test_optimize_for_inference_graphs_a_network_alone():
     ).cuda()
     data = random_batch().to("cuda")
     data.out = {}
-    fast = optimize_for_inference(network, data)
+    fast = optimize_for_inference(network, data, compile=False)
     assert isinstance(fast, GraphedModel)
     graphed = fast(data).out[network.name]
     plain = fast.model(copy.deepcopy(data)).out[network.name]
@@ -438,7 +438,7 @@ def test_graph_follows_a_new_cell(matrix):
     ).cuda()
     data = periodic_batch([CELLS["cubic"], CELLS["triclinic"]]).to("cuda")
     data.out = {}
-    fast = optimize_for_inference(network, data)
+    fast = optimize_for_inference(network, data, compile=False)
     assert isinstance(fast, GraphedModel)
     matrix = torch.tensor(matrix, device="cuda")
     deformed = data.clone()
@@ -473,7 +473,7 @@ def test_graph_follows_a_compressing_system():
     data = random_batch().to("cuda")
     assert_all_pairs_at_last_compression(data)
     data.out = {}
-    fast = optimize_for_inference(network, data)
+    fast = optimize_for_inference(network, data, compile=False)
     assert isinstance(fast, GraphedModel)
     for scale in COMPRESSIONS:
         step = data.clone()
@@ -499,7 +499,7 @@ def test_checked_mode_runs_without_graph_and_regrows():
     all_pairs = prepare_for_inference(network, data.clone())
     network.model.neighbors = RadiusCSR(CUTOFF, all_pairs_budget=0)
     with pytest.warns(UserWarning, match="CUDA graph capture failed"):
-        fast = optimize_for_inference(network, data.clone())
+        fast = optimize_for_inference(network, data.clone(), compile=False)
     assert not isinstance(fast, GraphedModel)
     capacity = fast.model.neighbors.capacity
     for scale in COMPRESSIONS:

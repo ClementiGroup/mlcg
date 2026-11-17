@@ -72,18 +72,31 @@ def optimize_for_inference(
     data: AtomicData,
     num_knots: Optional[int] = None,
     tolerance: float = TABLE_TOLERANCE,
-    compile: bool = False,
+    compile: bool = True,
     cuda_graph: bool = True,
+    flash: bool = True,
 ) -> Callable[[AtomicData], AtomicData]:
-    """Every inference speed-up in one call: :func:`prepare_for_inference`,
-    optionally ``torch.compile``, and a CUDA graph of the energy + force
-    evaluation (:func:`capture_cuda_graph`). ``data`` is a representative
-    input, already on the model's device; returns ``model(data) -> data``.
+    """Every inference speed-up in one call: :func:`prepare_for_inference`
+    (``flash``), ``torch.compile`` (``compile``) and a CUDA graph of the
+    energy + force evaluation (``cuda_graph``, :func:`capture_cuda_graph`).
+    ``data`` is a representative input, already on the model's device;
+    returns ``model(data) -> data``. Without ``flash`` the model itself is
+    used, not a copy. Raises ``RuntimeError`` if the model doesn't compile.
     """
-    model = prepare_for_inference(model, data, num_knots, tolerance)
+    if flash:
+        model = prepare_for_inference(model, data, num_knots, tolerance)
+    else:
+        # fills data.out, so that compiling traces fewer graphs
+        model(data)
     if compile:
         model = torch.compile(model, dynamic=True, options=COMPILE_OPTIONS)
-        model(data)
+        try:
+            model(data)
+        except Exception as e:
+            raise RuntimeError(
+                f"torch.compile failed on this model: {e}. "
+                "Optimize it without compile."
+            ) from e
     graphed = capture_cuda_graph(model, data) if cuda_graph else None
     return graphed or model
 

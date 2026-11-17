@@ -24,7 +24,7 @@ inside ``SumOut``/``GradientsOut``, or inside a user's own container):
       data = fast(data)                           # energies and forces in data.out
 
   In an mlcg simulation the same is selected with
-  ``convert_to_flash=True`` (together with ``specialize_priors=True``).
+  ``optimize=True`` (together with ``specialize_priors=True``).
 - training: :func:`enable_flash_kernels` switches on the exact fused
   kernels, which are trainable (double backward for force matching) and
   give the same results as the standard path::

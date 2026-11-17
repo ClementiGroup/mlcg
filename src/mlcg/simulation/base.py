@@ -4,7 +4,7 @@
 
 import inspect
 import warnings
-from typing import List, Optional, Tuple, Union, Callable
+from typing import Callable, Dict, List, Optional, Tuple, Union
 import torch
 import numpy as np
 from torch_geometric.data.collate import collate
@@ -12,7 +12,6 @@ import os
 import time
 from copy import deepcopy
 from jsonargparse.typing import Path_fr
-import logging
 
 from ..nn.gradients import SumOut
 from ..utils import tqdm
@@ -27,15 +26,42 @@ from ..data._keys import (
     POSITIONS_KEY,
 )
 from .specialize_prior import condense_all_priors_for_simulation
-from .torch_compile_warning import (
-    torch_compile_waring,
-    force_torch_compile_warning,
-)
 
 # Physical Constants
 KBOLTZMANN = 1.38064852e-23  # Boltzmann's constant in Joules/Kelvin
 AVOGADRO = 6.022140857e23  # Dimensionaless Avogadro's number
 JPERKCAL = 4184  # Ratio of Joules/kilocalorie
+
+
+def _optimize_options(
+    optimize, compile, compile_mode, force_compile
+) -> Optional[Dict[str, bool]]:
+    """The keyword arguments of
+    :func:`~mlcg.nn.flash_models.optimize_for_inference` set by
+    ``optimize``, or ``None`` for the model as given. Translates the
+    deprecated ``compile`` (``torch.compile`` alone)."""
+    for name, value in (
+        ("compile_mode", compile_mode),
+        ("force_compile", force_compile),
+    ):
+        if value is not None:
+            warnings.warn(
+                f"`{name}` is deprecated and ignored.",
+                DeprecationWarning,
+                stacklevel=3,
+            )
+    if compile is not None:
+        if optimize is not False:
+            raise ValueError("Set `optimize` without the deprecated `compile`.")
+        warnings.warn(
+            "`compile` is deprecated, use `optimize`.",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+        optimize = {"flash": False, "cuda_graph": False} if compile else False
+    if optimize is False:
+        return None
+    return {} if optimize is True else dict(optimize)
 
 
 class _Simulation(object):
@@ -141,31 +167,27 @@ class _Simulation(object):
         same interval as export_interval. The subroutine should take only the
         internal collated `AtomicData` and the current timestep // save_interval as
         arguments.
+    optimize:
+        Inference speed-ups of the model, applied with
+        :func:`~mlcg.nn.flash_models.optimize_for_inference`. ``False``
+        (default): the model runs as given. ``True``: all of them. A dict
+        selects them, a missing key meaning on (e.g. ``{"compile": False}``):
+
+        - ``flash``: the flash kernels of every supporting module (SchNet,
+          priors) and the SchNet filters tabulated, on a copy of the model;
+        - ``compile``: ``torch.compile``; a model that doesn't compile
+          raises;
+        - ``cuda_graph``: one force evaluation (energy and autograd forces)
+          is captured in a CUDA graph and replayed at every step, removing
+          the per-step CPU and launch overhead that dominates small systems.
+          Only positions may change between steps. Falls back to the plain
+          model, with a warning, if the model cannot be captured (e.g. it
+          synchronizes with the host).
     compile:
-        If set to True, model will be compiled using torch.compile.
-    compile_mode:
-        Specifies the compilation mode for torch.compile.
-        See https://docs.pytorch.org/docs/stable/generated/torch.compile.html
-        for more information.
-    force_compile:
-        If set to True, compilation will be forced even for single structure
-        simulations. This should be used with extreme caution since it may
-        expose known issues with scatter operations and may produce invalid
-        outputs or NaN gradients.
-    convert_to_flash:
-        If set to True, the model is prepared for inference with
-        :func:`~mlcg.nn.flash_models.prepare_for_inference`: a copy with the
-        flash kernels of every supporting module (SchNet, priors) and the
-        SchNet filters tabulated. This option is fully compatible with torch
-        compile.
-    cuda_graph:
-        If True, one force evaluation (energy and autograd forces) is
-        captured in a CUDA graph after conversion/compilation and replayed at
-        every step, removing the per-step CPU and launch overhead that
-        dominates small systems. Only positions may change between steps.
-        Falls back to the plain model, with a warning, if the model cannot be
-        captured (e.g. it synchronizes with the host). Defaults to
-        ``convert_to_flash``.
+        Deprecated, use ``optimize``. ``True`` is ``torch.compile`` alone,
+        ``optimize={"flash": False, "cuda_graph": False}``.
+    compile_mode, force_compile:
+        Deprecated, ignored.
     """
 
     def __init__(
@@ -189,16 +211,17 @@ class _Simulation(object):
         log_interval: Optional[int] = None,
         log_type: str = "write",
         filename: Optional[str] = None,
+        # TODO: a pure speed-up too, to fold into `optimize`; kept separate
+        # for now since users know it
         specialize_priors: bool = False,
         tqdm_refresh: float = 10,
         sim_subroutine: Optional[Callable] = None,
         sim_subroutine_interval: Optional[int] = None,
         save_subroutine: Optional[Callable] = None,
-        compile: bool = False,
-        compile_mode: str = "default",
-        force_compile: bool = False,
-        convert_to_flash: bool = False,
-        cuda_graph: Optional[bool] = None,
+        optimize: Union[bool, Dict[str, bool]] = False,
+        compile: Optional[bool] = None,
+        compile_mode: Optional[str] = None,
+        force_compile: Optional[bool] = None,
     ):
         self.model = None
         self.initial_data = None
@@ -265,11 +288,9 @@ class _Simulation(object):
             )
         self.random_seed = random_seed
         self._simulated = False
-        self.compile = compile
-        self.compile_mode = compile_mode
-        self.force_compile = force_compile
-        self.convert_to_flash = convert_to_flash
-        self.cuda_graph = convert_to_flash if cuda_graph is None else cuda_graph
+        self.optimize = _optimize_options(
+            optimize, compile, compile_mode, force_compile
+        )
         self._graphed_model = None
 
     def attach_model_and_configurations(
@@ -489,78 +510,17 @@ class _Simulation(object):
         return
 
     def compile_model(self, data):
-        """Compiles the model for faster execution"""
-        self._compile_model(data)
-        if self.cuda_graph:
-            self._capture_cuda_graph(data)
+        """Optimizes the model for inference as set by ``optimize`` (see
+        :func:`~mlcg.nn.flash_models.optimize_for_inference`), then checks
+        that its potential and forces on ``data`` are finite."""
+        if self.optimize is not None:
+            from ..nn.flash_models import GraphedModel, optimize_for_inference
 
-    def _capture_cuda_graph(self, data):
-        from ..nn.flash_models import capture_cuda_graph
-
-        self._graphed_model = capture_cuda_graph(self.model, data)
-
-    def _compile_model(self, data):
-        if self.convert_to_flash:
-            from ..nn.flash_models import prepare_for_inference
-
-            # converts, tabulates the filters and populates data.out on the
-            # flash model, so the standard model never sets the memory peak
-            self._attach_model(prepare_for_inference(self.model, data))
-        else:
-            # Populate data.out to avoid some graph breaks during compilation
-            data = self.model(data)
-
-        if self.compile:
-            if (data.batch.max() == 0) and not self.force_compile:
-                warnings.warn(
-                    "Compilation is allowed only when more than one structure is provided to avoid "
-                    "issues with scatter operations. The simulation will run in non-compiled mode. "
-                    "A `force_compile=True` flag exists, but it should be used with extreme "
-                    "caution. Forcing compilation can expose known issues with scatter operations "
-                    "and may produce invalid outputs or NaN gradients. "
-                )
-            else:
-                print("Attempting model compilation")
-                if data.batch.max() == 0:
-                    warnings.warn(force_torch_compile_warning())
-                torch._logging.set_logs(dynamo=logging.ERROR)
-                from torch._inductor import list_mode_options
-                from ..nn.flash_models.inference import COMPILE_OPTIONS
-
-                # torch.compile takes a mode or options, not both
-                options = {
-                    **list_mode_options(self.compile_mode or "default"),
-                    **COMPILE_OPTIONS,
-                }
-                try:
-                    self.model = torch.compile(
-                        self.model, dynamic=True, options=options
-                    )
-                    self._run_and_check(data)
-                    return
-                except Exception as e:
-                    # if compilation fails in some parts of the model,by enabling
-                    # torch._dynamo.config.suppress_errors = True
-                    # errors are suppressed and problematic parts are runned in eager mode
-                    # !! it is reccomended to do so only for debugging purposes,
-                    # best practice is to manually add @torch.compiler.disable decorator
-                    # to problematic parts of the code !!
-
-                    warnings.warn(torch_compile_waring(e))
-                    # Also emit a Python warning for testing/logging integration
-                    warnings.warn(
-                        "torch.compile fallback active! See printed message above.",
-                        stacklevel=2,
-                    )
-
-                    # import torch._dynamo
-                    torch._dynamo.config.suppress_errors = True
-                    self.model = torch.compile(
-                        self.model, dynamic=True, options=options
-                    )
+            model = optimize_for_inference(self.model, data, **self.optimize)
+            graphed = isinstance(model, GraphedModel)
+            self._graphed_model = model if graphed else None
+            self.model = model.model if graphed else model
         self._run_and_check(data)
-
-        return
 
     def log(self, iter_: int):
         """Utility to print log statement or write it to an text file"""
