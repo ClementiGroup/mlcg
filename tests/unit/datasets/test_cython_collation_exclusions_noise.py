@@ -321,9 +321,7 @@ def test_collater_applies_custom_transform(tmp_path):
     frames = frames_of(ds, MIXED)
     original = [f["forces"].copy() for f in frames]
     assert any(np.any(f != 0) for f in original)
-    batch = CythonCollater(device="cpu", transform=zero_force_transform)(
-        frames
-    )
+    batch = CythonCollater(device="cpu", transform=zero_force_transform)(frames)
     assert batch.forces.shape == (int(batch.n_atoms.sum()), 3)
     assert torch.all(batch.forces == 0)
     metaset = ds.partition("train").get_metaset("M")
