@@ -308,6 +308,29 @@ def test_noise_transform_records_noise_levels(tmp_path):
     )
 
 
+def zero_force_transform(frame):
+    """Dummy transform that sets the forces to zero. Replaces the array
+    instead of writing into it: frames hold views of the dataset."""
+    frame["forces"] = np.zeros_like(frame["forces"])
+
+
+def test_collater_applies_custom_transform(tmp_path):
+    # NG counterpart of the old `test_h5_dataset_transform`: the transform is
+    # applied per frame by the collater, and the dataset is left untouched
+    ds = load(make_h5(tmp_path / "d.h5"))
+    frames = frames_of(ds, MIXED)
+    original = [f["forces"].copy() for f in frames]
+    assert any(np.any(f != 0) for f in original)
+    batch = CythonCollater(device="cpu", transform=zero_force_transform)(
+        frames
+    )
+    assert batch.forces.shape == (int(batch.n_atoms.sum()), 3)
+    assert torch.all(batch.forces == 0)
+    metaset = ds.partition("train").get_metaset("M")
+    for i, forces in zip(MIXED, original):
+        np.testing.assert_array_equal(metaset[i]["forces"], forces)
+
+
 @pytest.mark.parametrize("with_pbc", [False, True])
 def test_noise_embed_schnet_runs_on_collated_batch(tmp_path, with_pbc):
     ds = load(
