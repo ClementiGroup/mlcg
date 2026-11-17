@@ -249,7 +249,7 @@ class QuarticRawAngles(Polynomial):
 
 class QuarticBonds(Polynomial):
     r"""Wrapper class for bond priors
-    (order 2 Polynomial priors of degree 4)
+    (order 2 Polynomial priors of degree 8)
 
     .. math::
 
