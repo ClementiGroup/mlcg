@@ -6,9 +6,12 @@ module, eval mode) and :func:`capture_cuda_graph`.
 """
 
 import copy
+import math
+import statistics
+import time
 import warnings
 from contextlib import contextmanager
-from typing import Callable, Optional
+from typing import Callable, Dict, Optional, Tuple, Union
 
 import torch
 
@@ -21,13 +24,14 @@ from .mixin import (
     enable_flash_kernels,
 )
 
-# inductor's on-disk autotune cache is keyed by kernel, not by problem size:
-# with dynamic shapes, the Triton tiles tuned on the first system ever
-# compiled would serve every later size. Without it, each process tunes them
-# on its own system, as in eager mode. The FX graph cache goes too: its key
-# ignores autotune_local_cache, so a cached graph would bring the stale
-# tiles back.
+# With inductor's on-disk caches, a process reuses a graph compiled for an
+# earlier system size, and the step runs up to ~13% slower than a cold
+# compile (the exact cause is not known; it is not the autotuned tiles). Both
+# caches go: the FX graph cache is the one that matters.
 COMPILE_OPTIONS = {"autotune_local_cache": False, "fx_graph_cache": False}
+# "auto" keeps torch.compile only if it is at least this much faster
+AUTO_MARGIN = 0.03
+FEATURES = ("flash", "compile", "cuda_graph")
 
 
 def prepare_for_inference(
@@ -70,35 +74,118 @@ def capture_cuda_graph(
 def optimize_for_inference(
     model: torch.nn.Module,
     data: AtomicData,
+    optimize: Union[None, str, Dict[str, bool]] = "auto",
     num_knots: Optional[int] = None,
     tolerance: float = TABLE_TOLERANCE,
-    compile: bool = True,
-    cuda_graph: bool = True,
-    flash: bool = True,
-) -> Callable[[AtomicData], AtomicData]:
-    """Every inference speed-up in one call: :func:`prepare_for_inference`
-    (``flash``), ``torch.compile`` (``compile``) and a CUDA graph of the
-    energy + force evaluation (``cuda_graph``, :func:`capture_cuda_graph`).
-    ``data`` is a representative input, already on the model's device;
-    returns ``model(data) -> data``. Without ``flash`` the model itself is
-    used, not a copy. Raises ``RuntimeError`` if the model doesn't compile.
+    margin: float = AUTO_MARGIN,
+) -> Tuple[Callable[[AtomicData], AtomicData], Optional[Dict[str, float]]]:
+    """Every inference speed-up in one call, as set by ``optimize``:
+
+    - ``"auto"`` (default): the flash kernels (:func:`prepare_for_inference`)
+      and a CUDA graph of the energy + force evaluation
+      (:func:`capture_cuda_graph`), and ``torch.compile`` only if it is
+      measured faster on ``data`` on this GPU: the eager and the compiled
+      model are each timed for about a second, and the compiled one is kept
+      if it is at least ``margin`` faster. A model that doesn't compile runs
+      eager, with a warning;
+    - a dict of ``flash``, ``compile`` and ``cuda_graph``, a missing key
+      meaning on (e.g. ``{"compile": False}``). Without ``flash`` the model
+      itself is used, not a copy. Raises ``RuntimeError`` if the model
+      doesn't compile;
+    - ``None``: the model as given.
+
+    ``data`` is a representative input, already on the model's device.
+    Returns ``model(data) -> data`` and, for ``"auto"``, a report:
+    ``compiled`` (the choice), ``eager_ms`` and ``compiled_ms`` (one call;
+    NaN if the compile failed), ``timing_s`` (spent timing) and ``seconds``
+    (the whole call, flash preparation and compile included); ``None``
+    otherwise.
     """
-    if flash:
+    if optimize is None:
+        return model, None
+    if optimize == "auto":
+        return _auto(model, data, num_knots, tolerance, margin)
+    unknown = set(optimize) - set(FEATURES)
+    if unknown:
+        raise ValueError(
+            f"Unknown `optimize` keys {sorted(unknown)}, use {FEATURES}"
+        )
+    on = {key: optimize.get(key, True) for key in FEATURES}
+    if on["flash"]:
         model = prepare_for_inference(model, data, num_knots, tolerance)
     else:
         # fills data.out, so that compiling traces fewer graphs
         model(data)
-    if compile:
-        model = torch.compile(model, dynamic=True, options=COMPILE_OPTIONS)
-        try:
-            model(data)
-        except Exception as e:
-            raise RuntimeError(
-                f"torch.compile failed on this model: {e}. "
-                "Optimize it without compile."
-            ) from e
-    graphed = capture_cuda_graph(model, data) if cuda_graph else None
-    return graphed or model
+    if on["compile"]:
+        model = _compile(model, data)
+    graphed = capture_cuda_graph(model, data) if on["cuda_graph"] else None
+    return graphed or model, None
+
+
+def _auto(model, data, num_knots, tolerance, margin):
+    start = time.perf_counter()
+    model = prepare_for_inference(model, data, num_knots, tolerance)
+    eager = capture_cuda_graph(model, data) or model
+    eager_ms, timing_s = _ms_per_call(eager, data)
+    # one graph at a time: two private memory pools may not fit
+    del eager
+    torch.cuda.empty_cache()
+    try:
+        compiled = _compile(model, data)
+        compiled = capture_cuda_graph(compiled, data) or compiled
+        compiled_ms, compiled_timing_s = _ms_per_call(compiled, data)
+        timing_s += compiled_timing_s
+    except Exception as e:
+        warnings.warn(f"Running without torch.compile: {e}")
+        compiled, compiled_ms = None, math.nan
+    use_compiled = compiled_ms < (1 - margin) * eager_ms
+    if use_compiled:
+        chosen = compiled
+    else:
+        compiled = None
+        torch.cuda.empty_cache()
+        chosen = capture_cuda_graph(model, data) or model
+    report = {
+        "compiled": use_compiled,
+        "eager_ms": eager_ms,
+        "compiled_ms": compiled_ms,
+        "timing_s": timing_s,
+        "seconds": time.perf_counter() - start,
+    }
+    return chosen, report
+
+
+def _compile(model, data):
+    model = torch.compile(model, dynamic=True, options=COMPILE_OPTIONS)
+    try:
+        model(data)
+    except Exception as e:
+        raise RuntimeError(
+            f"torch.compile failed on this model: {e}. "
+            "Optimize it without compile."
+        ) from e
+    return model
+
+
+def _ms_per_call(model, data, chunk_s=0.2, chunks=3):
+    """Median time (ms) of one ``model(data)`` over ``chunks`` timed runs
+    of at least ``chunk_s`` each (the calls per run double until one is),
+    and the seconds spent."""
+    start = time.perf_counter()
+    calls = 1
+    while (elapsed := _seconds(model, data, calls)) < chunk_s:
+        calls *= 2
+    runs = [elapsed] + [_seconds(model, data, calls) for _ in range(chunks - 1)]
+    return 1e3 * statistics.median(runs) / calls, time.perf_counter() - start
+
+
+def _seconds(model, data, calls):
+    torch.cuda.synchronize()
+    start = time.perf_counter()
+    for _ in range(calls):
+        model(data)
+    torch.cuda.synchronize()
+    return time.perf_counter() - start
 
 
 def _copy_outputs(out):

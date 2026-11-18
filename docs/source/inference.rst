@@ -17,11 +17,16 @@ Quick start
 
    simulation:
      specialize_priors: true   # priors with per-molecule parameters
-     optimize: true            # flash network, tables, torch.compile, CUDA graph
+     optimize: auto            # flash network, tables, CUDA graph; torch.compile if faster
 
-``optimize`` also takes the speed-ups one by one, a missing key meaning
-on, e.g. ``optimize: {compile: false}`` for the flash network and the CUDA
-graph without ``torch.compile``.
+``optimize: auto`` times the model with and without ``torch.compile`` on
+the simulated batch and keeps the faster (compile only if at least 3%
+faster), since which one wins depends on the system, the batch size and
+the GPU. It costs the compile time plus a few seconds; the timings are in
+the simulation's ``optimize_report``. ``optimize`` also takes the
+speed-ups one by one, a missing key meaning on, e.g.
+``optimize: {compile: false}`` for the flash network and the CUDA graph
+without ``torch.compile``. Without ``optimize`` the model runs as given.
 
 **Anywhere else**, one call returns a fast copy of the model. ``data`` is a
 representative batch (the structures you will evaluate, already on the
@@ -31,12 +36,16 @@ GPU); the model passed in is not modified:
 
    from mlcg.nn import optimize_for_inference
 
-   fast = optimize_for_inference(model, data)   # flash, compile, cuda_graph: all on
+   fast, report = optimize_for_inference(model, data)   # optimize="auto"
    data = fast(data)                  # energies and forces in data.out
 
+``optimize_for_inference`` takes the same ``optimize`` as a simulation
+(``"auto"``, the default here, a dict, or ``None``); ``report`` holds the
+choice and the timings of ``"auto"``.
+
 **With OpenMM** (``mlcg_to_openmm``), where OpenMM runs the priors and the
-network is a ``PythonForce``, pass ``flash=True`` (e.g.
-``add_network_force(system, network, data, device="cuda", flash=True)``).
+network is a ``PythonForce``, pass the same ``optimize`` (e.g.
+``build_system(..., network=network, device="cuda", optimize="auto")``).
 It calls :func:`~mlcg.nn.optimize_for_inference`.
 
 **In training**, :func:`~mlcg.nn.enable_flash_kernels` switches on the
@@ -56,9 +65,9 @@ What it does
 :func:`~mlcg.nn.optimize_for_inference` deep-copies the model, switches on
 the flash path of every module that has one (at any depth: networks and
 priors inside ``SumOut``/``GradientsOut`` or your own container), builds
-the inference state, freezes the copy in eval mode, compiles it and
-captures a CUDA graph. ``flash``, ``compile`` and ``cuda_graph`` switch
-each step off.
+the inference state, freezes the copy in eval mode, compiles it (with
+``"auto"``, only if that is faster) and captures a CUDA graph. The keys
+``flash``, ``compile`` and ``cuda_graph`` of a dict switch each step off.
 
 .. list-table::
    :header-rows: 1

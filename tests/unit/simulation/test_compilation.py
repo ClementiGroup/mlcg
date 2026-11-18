@@ -416,3 +416,62 @@ def test_deprecated_compile_options(tmp_path):
         assert sim.optimize is None
     with pytest.raises(ValueError, match="without the deprecated"):
         simulation(optimize=True, compile=True)
+
+
+def test_optimize_rejects_other_values(tmp_path):
+    """``optimize`` is ``None``, ``"auto"`` or a dict."""
+    with pytest.raises(ValueError, match="`optimize` is None"):
+        LangevinSimulation(1.0, filename=tmp_path / "sim", optimize=True)
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="needs CUDA")
+@pytest.mark.parametrize("compiled_ms", [0.5, 0.99, None])
+def test_optimize_auto_keeps_the_faster(
+    get_initial_data, compiled_ms, tmp_path, monkeypatch
+):
+    """``optimize="auto"`` keeps the compiled model only if it is at least
+    3% faster than eager (1 ms here), and runs eager if the model doesn't
+    compile (``None``); either way it gives the eager outputs. Compiling and
+    timing are stubbed."""
+    from mlcg.nn.flash_models import inference
+
+    def compile_stub(model, data):
+        if compiled_ms is None:
+            raise RuntimeError("torch.compile failed")
+        return model
+
+    times = iter([1.0, compiled_ms])
+    monkeypatch.setattr(inference, "_compile", compile_stub)
+    monkeypatch.setattr(
+        inference, "_ms_per_call", lambda model, data: (next(times), 0.0)
+    )
+    data_dict = ASE_SchNet_model(device="cuda")
+    initial_data_list = get_initial_data(
+        data_dict["molecule"],
+        data_dict["neighbor_lists"],
+        corruptor=None,
+        add_masses=True,
+    )
+
+    def potential_and_forces(name, optimize):
+        sim = LangevinSimulation(
+            1.0, filename=tmp_path / name, device="cuda", optimize=optimize
+        )
+        sim.attach_model_and_configurations(
+            data_dict["model"], initial_data_list, 1.0
+        )
+        sim._set_up_simulation(overwrite=False)
+        data = deepcopy(sim.initial_data).to(sim.device)
+        sim.compile_model(data)
+        return sim, sim.calculate_potential_and_forces(data)
+
+    if compiled_ms is None:
+        with pytest.warns(UserWarning, match="without torch.compile"):
+            sim, auto = potential_and_forces("auto", "auto")
+    else:
+        sim, auto = potential_and_forces("auto", "auto")
+    assert sim.optimize_report["compiled"] == (compiled_ms == 0.5)
+    assert sim._graphed_model is not None
+    _, eager = potential_and_forces("eager", {"compile": False})
+    for a, e in zip(auto, eager):
+        torch.testing.assert_close(a, e, atol=1e-5, rtol=1e-5)

@@ -20,11 +20,12 @@ inside ``SumOut``/``GradientsOut``, or inside a user's own container):
 
       from mlcg.nn.flash_models import optimize_for_inference
 
-      fast = optimize_for_inference(model, data)  # data: a representative batch
+      fast, report = optimize_for_inference(model, data)  # data: one batch
       data = fast(data)                           # energies and forces in data.out
 
-  In an mlcg simulation the same is selected with
-  ``optimize=True`` (together with ``specialize_priors=True``).
+  In an mlcg simulation the same is selected with ``optimize`` (a dict, or
+  ``"auto"`` to compile only if that is faster), together with
+  ``specialize_priors=True``.
 - training: :func:`enable_flash_kernels` switches on the exact fused
   kernels, which are trainable (double backward for force matching) and
   give the same results as the standard path::

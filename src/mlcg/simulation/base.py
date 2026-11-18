@@ -35,10 +35,10 @@ JPERKCAL = 4184  # Ratio of Joules/kilocalorie
 
 def _optimize_options(
     optimize, compile, compile_mode, force_compile
-) -> Optional[Dict[str, bool]]:
-    """The keyword arguments of
-    :func:`~mlcg.nn.flash_models.optimize_for_inference` set by
-    ``optimize``, or ``None`` for the model as given. Translates the
+) -> Union[None, str, Dict[str, bool]]:
+    """``optimize`` checked: ``None`` for the model as given, ``"auto"``, or
+    the keyword arguments of
+    :func:`~mlcg.nn.flash_models.optimize_for_inference`. Translates the
     deprecated ``compile`` (``torch.compile`` alone)."""
     for name, value in (
         ("compile_mode", compile_mode),
@@ -51,17 +51,19 @@ def _optimize_options(
                 stacklevel=3,
             )
     if compile is not None:
-        if optimize is not False:
+        if optimize is not None:
             raise ValueError("Set `optimize` without the deprecated `compile`.")
         warnings.warn(
             "`compile` is deprecated, use `optimize`.",
             DeprecationWarning,
             stacklevel=3,
         )
-        optimize = {"flash": False, "cuda_graph": False} if compile else False
-    if optimize is False:
-        return None
-    return {} if optimize is True else dict(optimize)
+        optimize = {"flash": False, "cuda_graph": False} if compile else None
+    if optimize not in (None, "auto") and not isinstance(optimize, dict):
+        raise ValueError(
+            f'`optimize` is None, "auto" or a dict, not {optimize!r}'
+        )
+    return dict(optimize) if isinstance(optimize, dict) else optimize
 
 
 class _Simulation(object):
@@ -168,10 +170,14 @@ class _Simulation(object):
         internal collated `AtomicData` and the current timestep // save_interval as
         arguments.
     optimize:
-        Inference speed-ups of the model, applied with
-        :func:`~mlcg.nn.flash_models.optimize_for_inference`. ``False``
-        (default): the model runs as given. ``True``: all of them. A dict
-        selects them, a missing key meaning on (e.g. ``{"compile": False}``):
+        Inference speed-ups of the model. ``None`` (default): the model runs
+        as given. Otherwise it is passed to
+        :func:`~mlcg.nn.flash_models.optimize_for_inference`. ``"auto"``:
+        the flash kernels and the CUDA graph, and ``torch.compile`` only if
+        it is measured faster on this batch and GPU (costs the compile time
+        plus a few seconds of timing, reported in ``optimize_report``). A
+        dict selects them, a missing key meaning on (e.g.
+        ``{"compile": False}``):
 
         - ``flash``: the flash kernels of every supporting module (SchNet,
           priors) and the SchNet filters tabulated, on a copy of the model;
@@ -218,7 +224,7 @@ class _Simulation(object):
         sim_subroutine: Optional[Callable] = None,
         sim_subroutine_interval: Optional[int] = None,
         save_subroutine: Optional[Callable] = None,
-        optimize: Union[bool, Dict[str, bool]] = False,
+        optimize: Union[None, str, Dict[str, bool]] = None,
         compile: Optional[bool] = None,
         compile_mode: Optional[str] = None,
         force_compile: Optional[bool] = None,
@@ -291,6 +297,7 @@ class _Simulation(object):
         self.optimize = _optimize_options(
             optimize, compile, compile_mode, force_compile
         )
+        self.optimize_report = None
         self._graphed_model = None
 
     def attach_model_and_configurations(
@@ -510,13 +517,14 @@ class _Simulation(object):
         return
 
     def compile_model(self, data):
-        """Optimizes the model for inference as set by ``optimize`` (see
-        :func:`~mlcg.nn.flash_models.optimize_for_inference`), then checks
-        that its potential and forces on ``data`` are finite."""
+        """Optimizes the model for inference as set by ``optimize``, then
+        checks that its potential and forces on ``data`` are finite."""
         if self.optimize is not None:
             from ..nn.flash_models import GraphedModel, optimize_for_inference
 
-            model = optimize_for_inference(self.model, data, **self.optimize)
+            model, self.optimize_report = optimize_for_inference(
+                self.model, data, self.optimize
+            )
             graphed = isinstance(model, GraphedModel)
             self._graphed_model = model if graphed else None
             self.model = model.model if graphed else model
