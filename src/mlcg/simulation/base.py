@@ -297,6 +297,8 @@ class _Simulation(object):
         self.optimize = _optimize_options(
             optimize, compile, compile_mode, force_compile
         )
+        # the deprecated `compile` ran eager parts on a failed compile
+        self._compile_fallback = bool(compile)
         self.optimize_report = None
         self._graphed_model = None
 
@@ -521,10 +523,24 @@ class _Simulation(object):
         checks that its potential and forces on ``data`` are finite."""
         if self.optimize is not None:
             from ..nn.flash_models import GraphedModel, optimize_for_inference
+            from ..nn.flash_models.inference import COMPILE_OPTIONS
 
-            model, self.optimize_report = optimize_for_inference(
-                self.model, data, self.optimize
-            )
+            try:
+                model, self.optimize_report = optimize_for_inference(
+                    self.model, data, self.optimize
+                )
+            except RuntimeError as e:
+                if not self._compile_fallback:
+                    raise
+                warnings.warn(
+                    f"{e} The deprecated `compile` falls back: the parts that "
+                    "don't compile run eager (torch._dynamo suppress_errors).",
+                    stacklevel=2,
+                )
+                torch._dynamo.config.suppress_errors = True
+                model = torch.compile(
+                    self.model, dynamic=True, options=COMPILE_OPTIONS
+                )
             graphed = isinstance(model, GraphedModel)
             self._graphed_model = model if graphed else None
             self.model = model.model if graphed else model

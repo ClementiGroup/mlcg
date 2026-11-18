@@ -475,3 +475,38 @@ def test_optimize_auto_keeps_the_faster(
     _, eager = potential_and_forces("eager", {"compile": False})
     for a, e in zip(auto, eager):
         torch.testing.assert_close(a, e, atol=1e-5, rtol=1e-5)
+
+
+def test_deprecated_compile_falls_back(get_initial_data, tmp_path, monkeypatch):
+    """With the deprecated ``compile``, a model that doesn't compile runs
+    with a warning (its failing parts eager, as before ``optimize``); with
+    ``optimize`` the failure raises."""
+    from mlcg.nn.flash_models import inference
+
+    def compile_fails(model, data):
+        raise RuntimeError("torch.compile failed on this model.")
+
+    monkeypatch.setattr(inference, "_compile", compile_fails)
+    data_dict = ASE_prior_model()
+    initial_data_list = get_initial_data(
+        data_dict["molecule"],
+        data_dict["neighbor_lists"],
+        corruptor=None,
+        add_masses=True,
+    )
+
+    def compile_model(name, **kwargs):
+        sim = LangevinSimulation(1.0, filename=tmp_path / name, **kwargs)
+        sim.attach_model_and_configurations(
+            data_dict["model"], initial_data_list, 1.0
+        )
+        sim._set_up_simulation(overwrite=False)
+        sim.compile_model(deepcopy(sim.initial_data))
+
+    with pytest.warns(UserWarning, match="falls back"):
+        with pytest.warns(DeprecationWarning):
+            compile_model("deprecated", compile=True)
+    with pytest.raises(RuntimeError, match="failed"):
+        compile_model(
+            "optimize", optimize={"flash": False, "cuda_graph": False}
+        )
