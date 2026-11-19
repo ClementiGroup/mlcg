@@ -249,7 +249,7 @@ class QuarticRawAngles(Polynomial):
 
 class QuarticBonds(Polynomial):
     r"""Wrapper class for bond priors
-    (order 2 Polynomial priors of degree 8)
+    (order 2 Polynomial priors of degree 4)
 
     .. math::
 
@@ -261,7 +261,7 @@ class QuarticBonds(Polynomial):
     polynomial in :math:`r`.
     """
 
-    def __init__(self, statistics, name="bonds", n_degs: int = 8) -> None:
+    def __init__(self, statistics, name="bonds", n_degs: int = 4) -> None:
         super(QuarticBonds, self).__init__(
             statistics, name, order=2, n_degs=n_degs
         )
