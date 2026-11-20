@@ -15,6 +15,8 @@ from mlcg.nn import (
     StandardSchNet,
     StandardPaiNN,
     StandardSo3krates,
+    StandardMACE,
+    StandardAllegro,
     GradientsOut,
     SumOut,
     CosineCutoff,
@@ -510,3 +512,89 @@ def test_deprecated_compile_falls_back(get_initial_data, tmp_path, monkeypatch):
         compile_model(
             "optimize", optimize={"flash": False, "cuda_graph": False}
         )
+
+
+def ASE_network_model(network, device):
+    """The ASE molecule's priors plus ``network``, as the models above."""
+    builder = ASE_prior_model(sum_out=False, device=device)
+    nn_model = GradientsOut(network, targets=[FORCE_KEY]).to(device)
+    builder["model"][nn_model.name] = nn_model
+    builder["model"] = SumOut(builder["model"])
+    return builder
+
+
+MACE_CONFIG = {
+    "r_max": 5,
+    "num_bessel": 8,
+    "num_polynomial_cutoff": 5,
+    "max_ell": 1,
+    "interaction_cls": "mace.modules.blocks.RealAgnosticResidualInteractionBlock",
+    "interaction_cls_first": "mace.modules.blocks.RealAgnosticResidualInteractionBlock",
+    "num_interactions": 1,
+    "hidden_irreps": "8x0e",
+    "MLP_irreps": "8x0e",
+    "avg_num_neighbors": 9,
+    "correlation": 2,
+    "gate": torch.nn.Tanh(),
+    "max_num_neighbors": 1000,
+    "pair_repulsion": False,
+    "distance_transform": None,
+    "radial_MLP": [8, 8],
+    "radial_type": "bessel",
+    "atomic_numbers": [1, 6, 7],
+}
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="needs CUDA")
+@pytest.mark.parametrize(
+    "model",
+    [
+        ASE_PaiNN_model,
+        ASE_SO3krates_model,
+        lambda device: ASE_network_model(StandardMACE(**MACE_CONFIG), device),
+        lambda device: ASE_network_model(
+            StandardAllegro(r_max=5.0, num_layers=1), device
+        ),
+    ],
+    ids=["PaiNN", "So3krates", "MACE", "Allegro"],
+)
+def test_optimize_auto_runs_other_models(
+    get_initial_data, model, tmp_path, monkeypatch
+):
+    """``optimize="auto"`` runs a model without flash kernels: its neighbour
+    search synchronizes with the host, so it gets no CUDA graph (with one
+    warning), and it gives the outputs of ``optimize=None``. Compiling and
+    timing are stubbed."""
+    from mlcg.nn.flash_models import inference
+
+    monkeypatch.setattr(inference, "_compile", lambda model, data: model)
+    monkeypatch.setattr(
+        inference, "_ms_per_call", lambda model, data: (1.0, 0.0)
+    )
+    data_dict = model(device="cuda")
+    initial_data_list = get_initial_data(
+        data_dict["molecule"],
+        data_dict["neighbor_lists"],
+        corruptor=None,
+        add_masses=True,
+    )
+
+    def potential_and_forces(name, optimize):
+        sim = LangevinSimulation(
+            1.0, filename=tmp_path / name, device="cuda", optimize=optimize
+        )
+        sim.attach_model_and_configurations(
+            data_dict["model"], initial_data_list, 1.0
+        )
+        sim._set_up_simulation(overwrite=False)
+        data = deepcopy(sim.initial_data).to(sim.device)
+        sim.compile_model(data)
+        return sim, sim.calculate_potential_and_forces(data)
+
+    with pytest.warns(UserWarning, match="CUDA graph capture") as record:
+        sim, auto = potential_and_forces("auto", "auto")
+    assert sum("CUDA graph capture" in str(w.message) for w in record) == 1
+    assert sim._graphed_model is None
+    _, plain = potential_and_forces("plain", None)
+    for a, p in zip(auto, plain):
+        torch.testing.assert_close(a, p, atol=1e-5, rtol=1e-5)

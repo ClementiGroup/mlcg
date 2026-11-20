@@ -57,14 +57,17 @@ def prepare_for_inference(
 
 
 def capture_cuda_graph(
-    model: Callable, data: AtomicData
+    model: Callable, data: AtomicData, warn: bool = True
 ) -> Optional["GraphedModel"]:
     """A :class:`GraphedModel` of ``model`` on ``data``, or ``None`` (with a
-    warning) if it can't be captured."""
+    warning, if ``warn``) if it can't be captured."""
     try:
         graphed = GraphedModel(model, data)
     except Exception as e:
-        warnings.warn(f"CUDA graph capture failed ({e}); running without it.")
+        if warn:
+            warnings.warn(
+                f"CUDA graph capture failed ({e}); running without it."
+            )
         graphed = None
     # frees the warm-up's cached blocks and a failed capture's pool
     torch.cuda.empty_cache()
@@ -125,14 +128,17 @@ def optimize_for_inference(
 def _auto(model, data, num_knots, tolerance, margin):
     start = time.perf_counter()
     model = prepare_for_inference(model, data, num_knots, tolerance)
-    eager = capture_cuda_graph(model, data) or model
+    eager = capture_cuda_graph(model, data)
+    # warn once: what fails to capture eager fails compiled for the same reason
+    warn = eager is not None
+    eager = eager or model
     eager_ms, timing_s = _ms_per_call(eager, data)
     # one graph at a time: two private memory pools may not fit
     del eager
     torch.cuda.empty_cache()
     try:
         compiled = _compile(model, data)
-        compiled = capture_cuda_graph(compiled, data) or compiled
+        compiled = capture_cuda_graph(compiled, data, warn) or compiled
         compiled_ms, compiled_timing_s = _ms_per_call(compiled, data)
         timing_s += compiled_timing_s
     except Exception as e:
@@ -144,7 +150,7 @@ def _auto(model, data, num_knots, tolerance, margin):
     else:
         compiled = None
         torch.cuda.empty_cache()
-        chosen = capture_cuda_graph(model, data) or model
+        chosen = capture_cuda_graph(model, data, warn) or model
     report = {
         "compiled": use_compiled,
         "eager_ms": eager_ms,

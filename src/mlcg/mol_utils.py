@@ -55,6 +55,7 @@ def _get_initial_data():
             data_point = AtomicData(
                 pos=torch.tensor(mol.get_positions()),
                 atom_types=torch.tensor(mol.get_atomic_numbers()),
+                n_atoms=torch.tensor([len(mol)], dtype=torch.long),
                 masses=input_masses(add_masses),
                 cell=None,
                 velocities=None,
