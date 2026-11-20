@@ -727,3 +727,40 @@ class FastCutoffExpRepulsion(CutoffExpRepulsion, _BaseFastRepulsion):
         return cls(
             statistics=prior_stats, cutoff=repulsion.cutoff, name=repulsion.name
         )
+
+
+class ScaledCutoffExpRepulsion(CutoffExpRepulsion):
+    """:class:`CutoffExpRepulsion` whose energy is multiplied by `scale_factor`."""
+
+    def __init__(
+        self,
+        statistics: Dict,
+        cutoff: float,
+        scale_factor: float,
+        name: str = "repulsion",
+    ) -> None:
+        super().__init__(statistics=statistics, cutoff=cutoff, name=name)
+        self.cutoff = cutoff
+        self.scale_factor = scale_factor
+        self.name = name
+
+    def forward(self, data: AtomicData) -> AtomicData:
+        """Method defining the repulsion interaction"""
+        data = super().forward(data)
+        data.out[self.name]["energy"] *= self.scale_factor
+        return data
+
+    @classmethod
+    def from_base(cls, repulsion: CutoffExpRepulsion, scale_factor: float):
+        """initialize a CutoffExpRepulsion from a normal ExpRepulsion"""
+        prior_stats = {}
+        for key in repulsion.allowed_interaction_keys:
+            single_alpha = repulsion.alpha[key]
+            single_r_0 = repulsion.r_0[key]
+            prior_stats[key] = {"alpha": single_alpha, "r_0": single_r_0}
+        return cls(
+            statistics=prior_stats,
+            scale_factor=scale_factor,
+            cutoff=repulsion.cutoff,
+            name=repulsion.name,
+        )
