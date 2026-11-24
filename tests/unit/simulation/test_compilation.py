@@ -1,6 +1,8 @@
 from typing import Union
 import torch
 import pytest
+
+import mlcg
 from copy import deepcopy
 
 from mlcg.simulation.langevin import (
@@ -496,7 +498,11 @@ def test_optimize_auto_on_cpu(get_initial_data, tmp_path, monkeypatch):
 
     def potential_and_forces(name, optimize):
         sim = LangevinSimulation(
-            1.0, filename=tmp_path / name, device="cpu", optimize=optimize
+            1.0,
+            filename=str(tmp_path / name),
+            device="cpu",
+            optimize=optimize,
+            log_interval=10,
         )
         sim.attach_model_and_configurations(
             data_dict["model"], initial_data_list, 1.0
@@ -511,6 +517,9 @@ def test_optimize_auto_on_cpu(get_initial_data, tmp_path, monkeypatch):
     schnets = [m for m in sim.model.modules() if isinstance(m, StandardSchNet)]
     assert schnets[0]._kernels
     assert schnets[0].interaction_blocks[0].conv.table is None
+    log = open(sim._log_file).read()
+    assert f"mlcg {mlcg.__version__}, torch {torch.__version__}, cpu" in log
+    assert "optimize='auto': torch.compile" in log
     _, plain = potential_and_forces("plain", None)
     for a, p in zip(auto, plain):
         torch.testing.assert_close(a, p, atol=1e-5, rtol=1e-5)

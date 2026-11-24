@@ -522,7 +522,11 @@ class _Simulation(object):
         """Optimizes the model for inference as set by ``optimize``, then
         checks that its potential and forces on ``data`` are finite."""
         if self.optimize is not None:
-            from ..nn.flash_models import GraphedModel, optimize_for_inference
+            from ..nn.flash_models import (
+                GraphedModel,
+                describe_optimization,
+                optimize_for_inference,
+            )
             from ..nn.flash_models.inference import COMPILE_OPTIONS
 
             try:
@@ -544,7 +548,20 @@ class _Simulation(object):
             graphed = isinstance(model, GraphedModel)
             self._graphed_model = model if graphed else None
             self.model = model.model if graphed else model
+            if self.log_interval is not None:
+                self._write_log(
+                    describe_optimization(
+                        self.optimize, self.optimize_report, graphed
+                    )
+                )
         self._run_and_check(data)
+
+    def _write_log(self, printstring: str):
+        if self.log_type == "print":
+            print(printstring)
+        elif self.log_type == "write":
+            with open(self._log_file, "a") as lfile:
+                lfile.write(printstring + "\n")
 
     def log(self, iter_: int):
         """Utility to print log statement or write it to an text file"""
@@ -925,6 +942,17 @@ class _Simulation(object):
                 file = open(self._log_file, "a")
                 file.write(printstring)
                 file.close()
+            # what a run depends on besides its inputs
+            from .. import __version__
+
+            device = (
+                torch.cuda.get_device_name(self.device)
+                if self.device.type == "cuda"
+                else str(self.device)
+            )
+            self._write_log(
+                f"mlcg {__version__}, torch {torch.__version__}, {device}"
+            )
 
     def save(
         self,

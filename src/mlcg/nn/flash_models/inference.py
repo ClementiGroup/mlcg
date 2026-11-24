@@ -128,6 +128,24 @@ def optimize_for_inference(
     return graphed or model, None
 
 
+def describe_optimization(
+    optimize: Union[None, str, Dict[str, bool]],
+    report: Optional[Dict[str, float]],
+    cuda_graph: bool,
+) -> str:
+    """One line for a log on what :func:`optimize_for_inference` selected:
+    the ``optimize`` option, what ``"auto"`` chose with both timings (its
+    ``report``), and whether a CUDA graph is used."""
+    text = f"Model optimized with optimize={optimize!r}"
+    if report is not None:
+        kept = "kept" if report["compiled"] else "not kept"
+        text += (
+            f": torch.compile {kept} (eager {report['eager_ms']:.3f} ms, "
+            f"compiled {report['compiled_ms']:.3f} ms per call)"
+        )
+    return f"{text}; CUDA graph {'on' if cuda_graph else 'off'}"
+
+
 def _auto(model, data, num_knots, tolerance, margin):
     start = time.perf_counter()
     model = prepare_for_inference(model, data, num_knots, tolerance)

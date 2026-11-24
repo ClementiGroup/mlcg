@@ -2,6 +2,7 @@ from .mixin import SupportsFlash, enable_flash_kernels
 from .inference import (
     GraphedModel,
     capture_cuda_graph,
+    describe_optimization,
     optimize_for_inference,
     prepare_for_inference,
 )
@@ -11,6 +12,7 @@ __all__ = [
     "enable_flash_kernels",
     "GraphedModel",
     "capture_cuda_graph",
+    "describe_optimization",
     "optimize_for_inference",
     "prepare_for_inference",
 ]
