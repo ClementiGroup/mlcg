@@ -1,6 +1,7 @@
 from typing import Optional, Tuple
 import torch
 from os import path
+from typing_extensions import deprecated
 
 # This means we are compiling every time when loading this module
 # if there is no cache. Ideal for debugging but not release
@@ -49,6 +50,10 @@ if not loaded_from_installation:
         mc = DelayedError(e)
 
 
+@deprecated(
+    "radius_distance_fn() is deprecated and will be removed in a future release. "
+    "Use methods supported in mlcg.neighbor_list instead."
+)
 def radius_distance_fn(
     x: torch.Tensor,
     r: float,
@@ -87,7 +92,10 @@ def radius_distance_fn(
         x, ptr_x, r, max_num_neighbors, not loop, exc_pair_xs, y_level_ptr
     )
 
-
+@deprecated(
+    "RadiusDistanceAGF is deprecated and will be removed in a future release. "
+    "Use methods supported in mlcg.neighbor_list instead."
+)
 class RadiusDistanceAGF(torch.autograd.Function):
     @staticmethod
     def forward(
@@ -120,6 +128,10 @@ class RadiusDistanceAGF(torch.autograd.Function):
         return RadiusDistanceAGB.apply(x, distance, grad_d, edge_index)
 
 
+@deprecated(
+    "RadiusDistanceAGB is deprecated and will be removed in a future release. "
+    "Use methods supported in mlcg.neighbor_list instead."
+)
 class RadiusDistanceAGB(torch.autograd.Function):
     @staticmethod
     def forward(ctx, x, distance, grad_d, edge_index):
@@ -185,6 +197,10 @@ class RadiusDistanceAGB(torch.autograd.Function):
 
 
 @torch.compiler.disable
+@deprecated(
+    "radius_distance() is deprecated and will be removed in a future release. "
+    "Use methods supported in mlcg.neighbor_list instead."
+)
 def radius_distance(
     x: torch.Tensor,
     r: float,

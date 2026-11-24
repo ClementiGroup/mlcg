@@ -14,14 +14,6 @@ except ImportError:
         + "pip install nvalchemi-toolkit-ops"
     )
 
-try:
-    from mlcg_opt_radius.radius import radius_distance
-except ImportError:
-    print(
-        "`mlcg_opt_radius` not installed. Please check the"
-        + "`opt_radius` folder and follow the instructions."
-    )
-    radius_distance = None
 
 
 def _pair_key(index_mapping: torch.Tensor, num_nodes) -> torch.Tensor:

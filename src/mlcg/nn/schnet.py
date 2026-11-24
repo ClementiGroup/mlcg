@@ -19,14 +19,6 @@ from .attention import (
 
 from .radial_basis import RegularizedBasis
 
-try:
-    from mlcg_opt_radius.radius import radius_distance
-except ImportError:
-    print(
-        "`mlcg_opt_radius` not installed. Please check the"
-        + "`opt_radius` folder and follow the instructions."
-    )
-    radius_distance = None
 
 
 class SchNet(torch.nn.Module):
