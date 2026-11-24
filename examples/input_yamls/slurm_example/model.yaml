@@ -1,3 +1,4 @@
+#TODO: remove deprecated: entire example
 model:
   loss:
     class_path: mlcg.nn.Loss

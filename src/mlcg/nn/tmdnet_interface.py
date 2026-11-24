@@ -1,6 +1,6 @@
 import torch
 from typing import Final, Optional
-import numpy as np
+from typing_extensions import deprecated
 
 try:
     from torchmdnet.models.model import create_model, load_model
@@ -15,6 +15,9 @@ except ImportError as e:
     )
 
 
+@deprecated(
+    "TorchMDNetInterface is deprecated and will be removed in a future release."
+)
 class TorchMDNetInterface(torch.nn.Module):
     name: Final[str] = "torchmd-net"
 
