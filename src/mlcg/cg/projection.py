@@ -1,3 +1,4 @@
+#TODO: this has to be removed and only leave in ``mlcg-tk``
 from typing import Optional, List, Tuple, Dict, Callable, OrderedDict
 from copy import deepcopy
 from collections import OrderedDict
@@ -21,8 +22,13 @@ from ..geometry.topology import (
 from ..geometry._symmetrize import (
     _symmetrise_distance_interaction,
 )
+from typing_extensions import deprecated
 
 
+@deprecated(
+    "build_cg_matrix is deprecated and will be removed in a future release. "
+    "CG mappings should be built using the `mlcg-tk` package"
+)
 def build_cg_matrix(
     topology: Topology,
     cg_mapping: Dict[Tuple[str, str], Tuple[str, int, int]] = None,
@@ -109,6 +115,10 @@ def build_cg_matrix(
     return cg_types, cg_masses, cg_matrix, general_mapping
 
 
+@deprecated(
+    "build_cg_topology is deprecated and will be removed in a future release. "
+    "CG mappings should be built using the `mlcg-tk` package"
+)
 def build_cg_topology(
     topology: Topology,
     cg_mapping: Dict[Tuple[str, str], Tuple[str, int, int]] = None,
@@ -167,6 +177,10 @@ def build_cg_topology(
     return cg_topo
 
 
+@deprecated(
+    "swap_mapping_rows is deprecated and will be removed in a future release. "
+    "CG mappings should be built using the `mlcg-tk` package"
+)
 def swap_mapping_rows(
     topology: Topology,
     residue: str,
@@ -257,6 +271,10 @@ def swap_mapping_rows(
     return swapped_types, swapped_masses, swapped_matrix, generalized_mapping
 
 
+@deprecated(
+    "make_opep_residue_indices is deprecated and will be removed in a future release. "
+    "CG mappings should be built using the `mlcg-tk` package"
+)
 def make_opep_residue_indices(resnames: List[str]) -> List[int]:
     """Helper method to make residue index lists, which specify
     the residue index that a given atom belongs to in an
@@ -294,6 +312,10 @@ def make_opep_residue_indices(resnames: List[str]) -> List[int]:
     return residue_indices
 
 
+@deprecated(
+    "build_opeps_connectivity_matrix is deprecated and will be removed in a future release. "
+    "CG mappings should be built using the `mlcg-tk` package"
+)
 def build_opeps_connectivity_matrix(resnames: List[str]) -> torch.Tensor:
     """Builds bonded connectivity matrix for (N,CA,CB,C,O)
     octapeptide CG mapping scheme, based on amino acid sequence.
@@ -347,6 +369,10 @@ def build_opeps_connectivity_matrix(resnames: List[str]) -> torch.Tensor:
     return torch.tensor(connectivity_matrix)
 
 
+@deprecated(
+    "isolate_features is deprecated and will be removed in a future release. "
+    "CG mappings should be built using the `mlcg-tk` package"
+)
 def isolate_features(
     target_atoms_list: List[List[int]], full_feature_set: torch.Tensor
 ) -> List[torch.Tensor]:
@@ -398,6 +424,10 @@ def isolate_features(
     return feature_sets
 
 
+@deprecated(
+    "get_pseudobond_edges is deprecated and will be removed in a future release. "
+    "CG mappings should be built using the `mlcg-tk` package"
+)
 def get_pseudobond_edges(
     bond_types, atom_types, connectivity_matrix, separation
 ) -> np.ndarray:
@@ -421,6 +451,10 @@ def get_pseudobond_edges(
     return np.array(pbonds).T
 
 
+@deprecated(
+    "make_non_bonded_set is deprecated and will be removed in a future release. "
+    "CG mappings should be built using the `mlcg-tk` package"
+)
 def make_non_bonded_set(
     topology: Topology,
     minimum_separation: int,

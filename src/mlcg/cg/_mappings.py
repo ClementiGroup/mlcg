@@ -1,3 +1,4 @@
+#TODO: this has to be removed and only leave in ``mlcg-tk``
 # (RESIDUE, "ATOM NAME"): ("COMBINED_NAME", ATOM_TYPE, MASS (AMU))
 
 CA_MAP = {

@@ -1,3 +1,4 @@
+#TODO: this has to be removed and only leave in ``mlcg-tk`
 from typing import Dict, List, Optional, Tuple
 from copy import deepcopy
 import torch
@@ -7,6 +8,7 @@ from ..data import AtomicData
 from ..nn.prior import Dihedral, Harmonic, _Prior
 from ..utils import tensor2tuple
 from ._symmetrize import _symmetrise_map, _flip_map
+from typing_extensions import deprecated
 
 
 def _get_all_unique_keys(
@@ -72,6 +74,10 @@ def _get_bin_centers(
     return bin_centers
 
 
+@deprecated(
+    "compute_statistics is deprecated and will be removed in a future release. "
+    "CG mappings should be built using the `mlcg-tk` package"
+)
 def compute_statistics(
     data: AtomicData,
     target: str,
@@ -270,6 +276,10 @@ def compute_statistics(
     return statistics
 
 
+@deprecated(
+    "fit_baseline_models is deprecated and will be removed in a future release. "
+    "CG mappings should be built using the `mlcg-tk` package"
+)
 def fit_baseline_models(
     data: AtomicData,
     beta: float,
