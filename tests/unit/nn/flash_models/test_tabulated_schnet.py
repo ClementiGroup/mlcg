@@ -31,7 +31,9 @@ pytestmark = pytest.mark.skipif(
 )
 
 CUTOFF = 6.0
-NO_CELL = periodic_cells(None, None, 0, "cuda")
+# built at import, also where the tests are skipped (no GPU)
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+NO_CELL = periodic_cells(None, None, 0, DEVICE)
 CUTOFFS = {
     "cosine": lambda: CosineCutoff(0.0, CUTOFF),
     "cosine_lower": lambda: CosineCutoff(1.0, CUTOFF),

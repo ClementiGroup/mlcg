@@ -1,5 +1,4 @@
-import triton
-import triton.language as tl
+from ..._triton import tl, triton
 
 
 @triton.jit

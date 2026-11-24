@@ -1,8 +1,6 @@
 import torch
 import torch.nn.functional as F
-import triton
-import triton.language as tl
-from triton.language.extra import libdevice
+from ..._triton import libdevice, tl, triton
 from torch.library import triton_op, wrap_triton
 
 from ...utils import ensure_contiguous

@@ -219,3 +219,27 @@ def test_stored_exclusions():
     _, flash = _excluded_models(1)
     flash.model.prepare_inference(AtomicData())
     assert flash.model.neighbors.exclusions is None
+
+
+def test_flash_without_triton():
+    """On an install without triton (a CPU-only torch) mlcg imports and the
+    flash path runs the CPU versions of its ops: ``test_flash_vs_normal``
+    passes in a process where triton can't be imported."""
+    import os
+    import subprocess
+    import sys
+
+    code = (
+        "import sys, pytest;"
+        "sys.modules['triton'] = sys.modules['triton.language'] = None;"
+        f"sys.exit(pytest.main([{__file__!r}, '-q', '-p', 'no:cacheprovider',"
+        "'-k', 'test_flash_vs_normal and not excluded']))"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        env={**os.environ, "CUDA_VISIBLE_DEVICES": ""},
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "1 passed" in result.stdout

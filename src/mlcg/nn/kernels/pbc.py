@@ -12,8 +12,7 @@ periodic width (``ax``, ``by``, ``cz``) is at least twice the cutoff.
 from typing import Optional, Tuple
 
 import torch
-import triton
-import triton.language as tl
+from ._triton import tl, triton
 
 _TOL = 1e-6
 

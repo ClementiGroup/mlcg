@@ -13,8 +13,7 @@ an error that grows as ``1 / spacing``.
 from typing import Callable, Sequence
 
 import torch
-import triton
-import triton.language as tl
+from ._triton import tl, triton
 
 
 def aligned_num_knots(

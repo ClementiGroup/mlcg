@@ -2,8 +2,7 @@ import math
 from typing import List, Optional, Tuple
 
 import torch
-import triton
-import triton.language as tl
+from .._triton import tl, triton
 from torch.library import triton_op, wrap_triton
 
 from ..models.schnet.cfconv import csr_from_edge_index

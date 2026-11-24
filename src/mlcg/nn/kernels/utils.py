@@ -1,7 +1,7 @@
 import functools
 
 import torch
-import triton
+from ._triton import triton
 
 
 def ensure_contiguous(fn):
