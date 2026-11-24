@@ -33,7 +33,12 @@ from allegro.nn import (
 )
 
 from typing import Sequence, Union, Optional, Dict, Final, List
-from mlcg.data.atomic_data import AtomicData, ENERGY_KEY, FORCE_KEY
+from mlcg.data.atomic_data import (
+    AtomicData,
+    ENERGY_KEY,
+    FORCE_KEY,
+    get_num_graphs,
+)
 from torch_geometric.utils import scatter
 from mlcg.neighbor_list.neighbor_list import (
     atomic_data2neighbor_list,
@@ -293,7 +298,7 @@ class Allegro(torch.nn.Module):
                 data["atomic_energy"],
                 data.batch,
                 dim=0,
-                dim_size=data.n_atoms.size(0),
+                dim_size=get_num_graphs(data),
                 reduce="sum",
             )
             .to(dtype)

@@ -18,6 +18,18 @@ from ._keys import (
 )
 
 
+def get_num_graphs(data) -> int:
+    """Number of structures of ``data``, an :class:`AtomicData` or any batch
+    with the same fields. Read from ``ptr`` if it is collated (no host sync),
+    else from ``batch`` (one host sync), else 1."""
+    if hasattr(data, "ptr"):
+        return data.ptr.numel() - 1
+    batch = getattr(data, "batch", None)
+    if batch is not None:
+        return int(batch.max()) + 1
+    return 1
+
+
 class AtomicData(Data):
     """A data object holding atomic structures.
     The attribute names are defined in :py:data:`mlcg.data._keys`

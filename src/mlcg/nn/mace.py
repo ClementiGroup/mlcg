@@ -70,7 +70,7 @@ if OEQ_AVAILABLE:
         with_oeq_scatter_sum,
     )
 
-from ..data.atomic_data import AtomicData, ENERGY_KEY
+from ..data.atomic_data import AtomicData, ENERGY_KEY, get_num_graphs
 from ..neighbor_list.neighbor_list import (
     atomic_data2neighbor_list,
     validate_neighborlist,
@@ -355,7 +355,7 @@ class MACE(torch.nn.Module):
         """
         # Setup
         num_atoms_arange = torch.arange(data.pos.shape[0])
-        num_graphs = data.ptr.numel() - 1  # data.batch.max()
+        num_graphs = get_num_graphs(data)
         node_heads = torch.zeros_like(data.batch)
 
         types_ids = self.types_mapping[data.atom_types].view(-1, 1)
@@ -401,7 +401,7 @@ class MACE(torch.nn.Module):
             )  # [n_graphs,]
         else:
             pair_energy = torch.zeros(
-                data.batch.max() + 1,
+                num_graphs,
                 device=data.pos.device,
                 dtype=data.pos.dtype,
             )
@@ -935,7 +935,7 @@ class RBFRegularizedMACE(StandardMACE):
         """
         # Setup
         num_atoms_arange = torch.arange(data.pos.shape[0])
-        num_graphs = data.ptr.numel() - 1  # data.batch.max()
+        num_graphs = get_num_graphs(data)
         node_heads = torch.zeros_like(data.batch)
 
         types_ids = self.types_mapping[data.atom_types].view(-1, 1)
@@ -986,7 +986,7 @@ class RBFRegularizedMACE(StandardMACE):
             )
         else:
             pair_energy = torch.zeros(
-                data.batch.max() + 1,
+                num_graphs,
                 device=data.pos.device,
                 dtype=data.pos.dtype,
             )

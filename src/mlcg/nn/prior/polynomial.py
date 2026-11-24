@@ -4,7 +4,7 @@ from typing import Optional, Dict
 
 
 from .base import _Prior
-from ...data.atomic_data import AtomicData
+from ...data import AtomicData, get_num_graphs
 from ...geometry.internal_coordinates import (
     compute_angles_cos,
     compute_angles_raw,
@@ -127,8 +127,9 @@ class Polynomial(_Prior):
             ks,
             V0s,
         )
-        num_graphs = data.ptr.numel() - 1 if hasattr(data, "ptr") else None
-        y = scatter(y, mapping_batch, dim=0, reduce="sum", dim_size=num_graphs)
+        y = scatter(
+            y, mapping_batch, dim=0, reduce="sum", dim_size=get_num_graphs(data)
+        )
         data.out.setdefault(self.name, {}).update({"energy": y})
         return data
 

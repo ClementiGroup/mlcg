@@ -7,7 +7,7 @@ from ..neighbor_list.neighbor_list import (
     atomic_data2neighbor_list,
     validate_neighborlist,
 )
-from ..data.atomic_data import AtomicData, ENERGY_KEY
+from ..data.atomic_data import AtomicData, ENERGY_KEY, get_num_graphs
 from ..geometry.internal_coordinates import compute_distances
 from .mlp import MLP
 from ._module_init import init_xavier_uniform
@@ -166,9 +166,12 @@ class SchNet(torch.nn.Module):
             )
 
         energy = self.output_network(x, data)
-        num_graphs = data.ptr.numel() - 1 if hasattr(data, "ptr") else None
         energy = scatter(
-            energy, data.batch, dim=0, reduce="sum", dim_size=num_graphs
+            energy,
+            data.batch,
+            dim=0,
+            reduce="sum",
+            dim_size=get_num_graphs(data),
         )
         energy = energy.flatten()
         data.out.setdefault(self.name, {}).update({ENERGY_KEY: energy})
@@ -851,7 +854,13 @@ class RBFRegularizedSchNet(RBFRegularizedSchNetFlashPath, StandardSchNet):
             )
 
         energy = self.output_network(x, data)
-        energy = scatter(energy, data.batch, dim=0, reduce="sum")
+        energy = scatter(
+            energy,
+            data.batch,
+            dim=0,
+            reduce="sum",
+            dim_size=get_num_graphs(data),
+        )
         energy = energy.flatten()
         data.out[self.name] = {
             ENERGY_KEY: energy,

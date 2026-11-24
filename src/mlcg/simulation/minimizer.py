@@ -7,22 +7,8 @@ import torch
 from torch_geometric.data.collate import collate
 from torch_geometric.utils import scatter
 
-from ..data.atomic_data import AtomicData
+from ..data import AtomicData, get_num_graphs
 from ..data._keys import FORCE_KEY
-
-
-def _num_structures(data: AtomicData) -> int:
-    r"""Number of individual structures represented by an AtomicData
-    instance. ``n_atoms`` is only populated by
-    :py:meth:`AtomicData.from_points`, not by the raw ``AtomicData(...)``
-    constructor used throughout the codebase (e.g. in
-    :py:func:`mlcg.mol_utils._ASE_prior_model`), so batching is instead
-    detected the same way :py:class:`~mlcg.simulation.base._Simulation` does:
-    via the ``batch`` index added by collation.
-    """
-    if "batch" in data and data.batch is not None:
-        return int(data.batch.max().item()) + 1
-    return 1
 
 
 def _broadcast_free_atoms(
@@ -49,7 +35,7 @@ def _validate_configurations_and_free_atoms(
         )
 
     for i, data in enumerate(configurations):
-        n_structures_i = _num_structures(data)
+        n_structures_i = get_num_graphs(data)
         if n_structures_i != 1:
             raise ValueError(
                 f"configurations[{i}] is batched (spans {n_structures_i} "

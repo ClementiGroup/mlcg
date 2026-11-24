@@ -2,7 +2,7 @@ import torch
 from .schnet import StandardSchNet
 from typing import List
 from torch_geometric.utils import scatter
-from ..data.atomic_data import AtomicData, ENERGY_KEY
+from ..data.atomic_data import AtomicData, ENERGY_KEY, get_num_graphs
 from ..geometry.internal_coordinates import compute_distances
 from .mlp import MLP
 from .radial_basis import SkewedMuGaussianBasis
@@ -229,7 +229,13 @@ class SimpleNoiseEmbedSchNet(StandardSchNet):
             # we include the noise level information as a multiplicative factor
             x *= self.noise_embedding2(data.noise_levels)
         energy = self.output_network(x, data)
-        energy = scatter(energy, data.batch, dim=0, reduce="sum")
+        energy = scatter(
+            energy,
+            data.batch,
+            dim=0,
+            reduce="sum",
+            dim_size=get_num_graphs(data),
+        )
         energy = energy.flatten()
         data.out[self.name] = {ENERGY_KEY: energy}
 
@@ -400,7 +406,13 @@ class NoiseEmbedSchNet(StandardSchNet):
             )
 
         energy = self.output_network(x, data)
-        energy = scatter(energy, data.batch, dim=0, reduce="sum")
+        energy = scatter(
+            energy,
+            data.batch,
+            dim=0,
+            reduce="sum",
+            dim_size=get_num_graphs(data),
+        )
         energy = energy.flatten()
         data.out[self.name] = {ENERGY_KEY: energy}
 

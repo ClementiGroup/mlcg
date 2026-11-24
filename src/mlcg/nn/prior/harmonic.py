@@ -9,7 +9,7 @@ from typing import Final, Dict, Optional
 from .base import _Prior
 from ..flash_models.prior import HarmonicFlashPath
 from ..kernels.models.prior import flash_harmonic_angles, flash_harmonic_bonds
-from ...data.atomic_data import AtomicData
+from ...data import AtomicData, get_num_graphs
 from ...geometry.topology import Topology
 from ...geometry.internal_coordinates import (
     compute_distances,
@@ -115,8 +115,9 @@ class Harmonic(HarmonicFlashPath, _Prior):
         params = self.data2parameters(data)
         features = self.data2features(data).flatten()
         y = Harmonic.compute(features, **params)
-        num_graphs = data.ptr.numel() - 1 if hasattr(data, "ptr") else None
-        y = scatter(y, mapping_batch, dim=0, reduce="sum", dim_size=num_graphs)
+        y = scatter(
+            y, mapping_batch, dim=0, reduce="sum", dim_size=get_num_graphs(data)
+        )
         data.out.setdefault(self.name, {}).update({"energy": y})
         return data
 
@@ -549,9 +550,9 @@ class ShiftedPeriodicHarmonicImpropers(Harmonic):
         features = self.data2features(data).flatten()
 
         y = Harmonic.compute(features, **params)
-        # Use data.ptr to avoid GPU-CPU sync in scatter
-        num_graphs = data.ptr.numel() - 1 if hasattr(data, "ptr") else None
-        y = scatter(y, mapping_batch, dim=0, reduce="sum", dim_size=num_graphs)
+        y = scatter(
+            y, mapping_batch, dim=0, reduce="sum", dim_size=get_num_graphs(data)
+        )
         data.out.setdefault(self.name, {}).update({"energy": y})
         return data
 

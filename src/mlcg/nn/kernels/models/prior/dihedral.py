@@ -303,7 +303,7 @@ def cpu_flash_dihedral(
         triton.Config({"BLOCK": 512}, num_warps=8),
         triton.Config({"BLOCK": 1024}, num_warps=8),
     ],
-    key=[],  # FIXME: check if we need to zeors grad pos during autotune because of atomics
+    key=[],
     reset_to_zero=["grad_pos_ptr"],
 )
 @triton.jit

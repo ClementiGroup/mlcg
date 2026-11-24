@@ -13,7 +13,7 @@ from typing import Optional
 import torch
 from torch_geometric.utils import scatter
 
-from ...data.atomic_data import ENERGY_KEY, AtomicData
+from ...data.atomic_data import ENERGY_KEY, AtomicData, get_num_graphs
 from ...neighbor_list.neighbor_list import data_excluded_order
 from ..kernels import (
     RadiusCSR,
@@ -218,9 +218,12 @@ class StandardSchNetFlashPath(SupportsFlash):
         for block in self.interaction_blocks:
             x = x + block(x, flash=graph)
         energy = self.output_network(x, data) * valid
-        num_graphs = data.ptr.numel() - 1 if hasattr(data, "ptr") else None
         energy = scatter(
-            energy, data.batch, dim=0, reduce="sum", dim_size=num_graphs
+            energy,
+            data.batch,
+            dim=0,
+            reduce="sum",
+            dim_size=get_num_graphs(data),
         )
         data.out.setdefault(self.name, {}).update(
             {ENERGY_KEY: energy.flatten()}
@@ -356,7 +359,13 @@ class RBFRegularizedSchNetFlashPath(SupportsFlash):
             )
             x = x + block(x, flash=graph)
         energy = self.output_network(x, data) * valid
-        energy = scatter(energy, data.batch, dim=0, reduce="sum")
+        energy = scatter(
+            energy,
+            data.batch,
+            dim=0,
+            reduce="sum",
+            dim_size=get_num_graphs(data),
+        )
         data.out[self.name] = {
             ENERGY_KEY: energy.flatten(),
             "radial_filters": self.rbf_layer.get_regularization_parameters(),

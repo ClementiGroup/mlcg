@@ -4,7 +4,7 @@ from torch_geometric.utils import scatter
 
 
 from .base import _Prior
-from ...data.atomic_data import AtomicData
+from ...data import AtomicData, get_num_graphs
 from ...geometry.internal_coordinates import (
     compute_angles_raw,
 )
@@ -169,8 +169,9 @@ class RestrictedQuartic(_Prior):
         params = self.data2parameters(data)
 
         y = self.compute(features, **params)
-        num_graphs = data.ptr.numel() - 1 if hasattr(data, "ptr") else None
-        y = scatter(y, mapping_batch, dim=0, reduce="sum", dim_size=num_graphs)
+        y = scatter(
+            y, mapping_batch, dim=0, reduce="sum", dim_size=get_num_graphs(data)
+        )
 
         data.out[self.name] = {"energy": y}
         return data

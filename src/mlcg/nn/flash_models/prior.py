@@ -4,7 +4,7 @@ Flash paths of the priors of :mod:`mlcg.nn.prior`, as companion mixins
 the standard classes, as in :mod:`mlcg.nn.flash_models.schnet`.
 """
 
-from ...data import AtomicData
+from ...data import AtomicData, get_num_graphs
 from .mixin import SupportsFlash
 
 
@@ -29,13 +29,12 @@ class PriorFlashPath(SupportsFlash):
 
     def _kernel_forward(self, data: AtomicData, **params) -> AtomicData:
         neighbor_list = data.neighbor_list[self.name]
-        num_graphs = data.ptr.numel() - 1 if hasattr(data, "ptr") else None
         energy = self._kernel_op(
             data.pos,
             data.atom_types,
             neighbor_list["index_mapping"],
             neighbor_list["mapping_batch"],
-            num_graphs=num_graphs,
+            num_graphs=get_num_graphs(data),
             **params,
         )
         data.out.setdefault(self.name, {})["energy"] = energy

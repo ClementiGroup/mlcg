@@ -8,7 +8,7 @@ from torch_geometric.nn import MessagePassing
 from torch_geometric.utils import scatter
 import warnings
 
-from mlcg.data import AtomicData
+from mlcg.data import AtomicData, get_num_graphs
 from mlcg.data._keys import ENERGY_KEY
 from mlcg.nn import MLP
 from mlcg.nn._module_init import init_xavier_uniform
@@ -426,7 +426,13 @@ class PaiNN(nn.Module):
         q = q.squeeze(1)
 
         energy = self.output_network(q, data)
-        energy = scatter(energy, data.batch, dim=0, reduce="sum")
+        energy = scatter(
+            energy,
+            data.batch,
+            dim=0,
+            reduce="sum",
+            dim_size=get_num_graphs(data),
+        )
         energy = energy.flatten()
         data.out.setdefault(self.name, {}).update({ENERGY_KEY: energy})
 
@@ -717,7 +723,13 @@ class RBFRegularizedPaiNN(StandardPaiNN):
         q = q.squeeze(1)
 
         energy = self.output_network(q, data)
-        energy = scatter(energy, data.batch, dim=0, reduce="sum")
+        energy = scatter(
+            energy,
+            data.batch,
+            dim=0,
+            reduce="sum",
+            dim_size=get_num_graphs(data),
+        )
         energy = energy.flatten()
         data.out[self.name] = {
             ENERGY_KEY: energy,

@@ -6,7 +6,7 @@ from torch_geometric.utils import scatter
 from .base import _Prior
 from ..flash_models.prior import RepulsionFlashPath
 from ..kernels.models.prior import flash_repulsion
-from ...data.atomic_data import AtomicData
+from ...data import AtomicData, get_num_graphs
 from ...geometry.topology import Topology
 from ...geometry.internal_coordinates import (
     compute_distances,
@@ -118,9 +118,9 @@ class Repulsion(RepulsionFlashPath, _Prior):
         )
         features = self.data2features(data)
         y = Repulsion.compute(features, self.sigma[interaction_types])
-        num_graphs = data.ptr.numel() - 1 if hasattr(data, "ptr") else None
-        y = scatter(y, mapping_batch, dim=0, reduce="sum", dim_size=num_graphs)
-        # data.out[self.name] = {"energy": y}
+        y = scatter(
+            y, mapping_batch, dim=0, reduce="sum", dim_size=get_num_graphs(data)
+        )
         data.out.setdefault(self.name, {})["energy"] = y
         return data
 
@@ -299,7 +299,9 @@ class CutoffRepulsion(Repulsion):
         )
         # ensure that the cutoff is continupus
         y = y - yc - (features - self.cutoff) * (dyc)
-        y = scatter(y, mapping_batch, dim=0, reduce="sum")
+        y = scatter(
+            y, mapping_batch, dim=0, reduce="sum", dim_size=get_num_graphs(data)
+        )
         data.out[self.name] = {"energy": y}
         return data
 
@@ -405,7 +407,9 @@ class ExpRepulsion(_Prior):
         y = ExpRepulsion.compute(
             features, self.alpha[interaction_types], self.r_0[interaction_types]
         )
-        y = scatter(y, mapping_batch, dim=0, reduce="sum")
+        y = scatter(
+            y, mapping_batch, dim=0, reduce="sum", dim_size=get_num_graphs(data)
+        )
         data.out[self.name] = {"energy": y}
         return data
 
@@ -500,7 +504,9 @@ class CutoffExpRepulsion(ExpRepulsion):
         # ensure that the cutoff is continupus
         y = y - yc - (features - self.cutoff) * dyc
         # we can override the
-        y = scatter(y, mapping_batch, dim=0, reduce="sum")
+        y = scatter(
+            y, mapping_batch, dim=0, reduce="sum", dim_size=get_num_graphs(data)
+        )
         data.out[self.name] = {"energy": y}
         return data
 
@@ -635,7 +641,9 @@ class FastCutoffRepulsion(CutoffRepulsion, _BaseFastRepulsion):
         )
         # ensure that the cutoff is continupus
         y = y - yc - (features - cutoff) * (dyc)
-        y = scatter(y, mapping_batch, dim=0, reduce="sum")
+        y = scatter(
+            y, mapping_batch, dim=0, reduce="sum", dim_size=get_num_graphs(data)
+        )
         data.out[self.name] = {"energy": y}
         return data
 
@@ -712,7 +720,9 @@ class FastCutoffExpRepulsion(CutoffExpRepulsion, _BaseFastRepulsion):
         # ensure that the cutoff is continupus
         y = y - yc - (features - cutoff) * dyc
         # we can override the
-        y = scatter(y, mapping_batch, dim=0, reduce="sum")
+        y = scatter(
+            y, mapping_batch, dim=0, reduce="sum", dim_size=get_num_graphs(data)
+        )
         data.out[self.name] = {"energy": y}
         return data
 

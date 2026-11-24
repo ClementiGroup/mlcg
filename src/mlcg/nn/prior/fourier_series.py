@@ -8,7 +8,7 @@ from typing import Optional, Dict, Final
 from .base import _Prior
 from ..flash_models.prior import FourierSeriesFlashPath
 from ..kernels.models.prior import flash_dihedral
-from ...data.atomic_data import AtomicData
+from ...data import AtomicData, get_num_graphs
 from ...geometry import (
     compute_torsions,
     compute_angles_raw,
@@ -145,10 +145,9 @@ class FourierSeries(FourierSeriesFlashPath, _Prior):
         features = self.data2features(data).flatten()
         params = self.data2parameters(data)
         y = FourierSeries.compute(features, **params)
-        # Use data.ptr to avoid GPU-CPU sync in scatter
-        num_graphs = data.ptr.numel() - 1 if hasattr(data, "ptr") else None
-        y = scatter(y, mapping_batch, dim=0, reduce="sum", dim_size=num_graphs)
-        # data.out[self.name] = {"energy": y}
+        y = scatter(
+            y, mapping_batch, dim=0, reduce="sum", dim_size=get_num_graphs(data)
+        )
         data.out.setdefault(self.name, {})["energy"] = y
         return data
 
