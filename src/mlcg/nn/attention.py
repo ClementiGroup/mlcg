@@ -3,6 +3,9 @@ from typing import List
 from ._module_init import init_xavier_uniform
 from typing import Optional
 import math
+from typing_extensions import deprecated
+
+#TODO: remove deprecated: entire file
 
 """MLCG for attention. Based on:
 
@@ -17,6 +20,9 @@ import math
 """
 
 
+@deprecated(
+    "Residual is deprecated and will be removed in a future release. "
+)
 class Residual(torch.nn.Module):
     """
     Pre-activation residual block
@@ -66,6 +72,9 @@ class Residual(torch.nn.Module):
         return x + self.layers(x)
 
 
+@deprecated(
+    "ResidualStack is deprecated and will be removed in a future release. "
+)
 class ResidualStack(torch.nn.Module):
     """
     Stack of num_residuals pre-activation residual blocks evaluated in sequence.
@@ -111,6 +120,9 @@ class ResidualStack(torch.nn.Module):
         return x
 
 
+@deprecated(
+    "Residual_MLP is deprecated and will be removed in a future release. "
+)
 class Residual_MLP(torch.nn.Module):
     """
     Residual Multilayer Perceptron
@@ -176,6 +188,9 @@ class Residual_MLP(torch.nn.Module):
             return self.activation_func(self.linear(self.residual(x)))
 
 
+@deprecated(
+    "ExactAttention is deprecated and will be removed in a future release. "
+)
 class ExactAttention(torch.nn.Module):
     """Softmax Attention"""
 
@@ -218,6 +233,9 @@ class ExactAttention(torch.nn.Module):
         return attention
 
 
+@deprecated(
+    "FavorAttention is deprecated and will be removed in a future release. "
+)
 class FavorAttention(torch.nn.Module):
     """Favor+ Attention"""
 
@@ -353,6 +371,9 @@ class FavorAttention(torch.nn.Module):
             return (Q @ (K.T @ V)) / norm
 
 
+@deprecated(
+    "Nonlocalinteractionblock is deprecated and will be removed in a future release. "
+)
 class Nonlocalinteractionblock(torch.nn.Module):
     """
     Block for updating features through nonlocal interactions via attention.
@@ -441,6 +462,9 @@ class Nonlocalinteractionblock(torch.nn.Module):
         return self.attention_block(q, k, v, num_batch, batch_seg, mask)
 
 
+@deprecated(
+    "AttentiveInteractionBlock is deprecated and will be removed in a future release. "
+)
 class AttentiveInteractionBlock(torch.nn.Module):
     r"""Interaction blocks for SchNet. Consists of atomwise
     transformations of embedded features that are continuously
@@ -524,6 +548,9 @@ class AttentiveInteractionBlock(torch.nn.Module):
         return x
 
 
+@deprecated(
+    "AttentiveInteractionBlock2 is deprecated and will be removed in a future release. "
+)
 class AttentiveInteractionBlock2(torch.nn.Module):
     r"""Interaction blocks for SchNet. Consists of atomwise
     transformations of embedded features that are continuously
