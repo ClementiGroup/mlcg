@@ -57,6 +57,15 @@ def tf32_matmul():
     return enabled
 
 
+@pytest.fixture(autouse=True)
+def restore_matmul_precision():
+    """A test that changes the float32 matmul precision (or
+    ``allow_tf32``, the same switch) changes it only for itself."""
+    precision = torch.get_float32_matmul_precision()
+    yield
+    torch.set_float32_matmul_precision(precision)
+
+
 def pytest_collection_modifyitems(config, items):
     """
     This utility add markers to distinguish between integration, unit, and continuity tests automatically.

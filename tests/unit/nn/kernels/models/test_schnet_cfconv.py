@@ -36,7 +36,10 @@ RECEIVERS = torch.tensor(
 
 database = MolDatabase()
 
-torch.set_float32_matmul_precision("high")
+
+@pytest.fixture(autouse=True)
+def high_matmul_precision():
+    torch.set_float32_matmul_precision("high")
 
 
 # Graph generation strategies
