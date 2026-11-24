@@ -30,8 +30,12 @@ from ..nn.prior import _Prior
 from .utils import remove_baseline_forces, chunker
 from itertools import combinations
 import h5py
+from typing_extensions import deprecated
 
-
+@deprecated(
+    "GeneralCarbonAlphaDataset is deprecated and will be removed in a future release. "
+    "Training dataset should be built using the `mlcg-tk` package"
+)
 class GeneralCarbonAlphaDataset(InMemoryDataset):
     """
     General single-protein carbon alpha dataset built from torch_geometric's

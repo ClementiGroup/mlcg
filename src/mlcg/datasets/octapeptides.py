@@ -26,8 +26,12 @@ from ..nn import (
     GradientsOut,
 )
 from .utils import remove_baseline_forces, chunker
+from typing_extensions import deprecated
 
-
+@deprecated(
+    "OctapeptidesDataset is deprecated and will be removed in a future release. "
+    "Training dataset should be built using the `mlcg-tk` package"
+)
 class OctapeptidesDataset(InMemoryDataset):
     """Octapeptides dataset"""
 
