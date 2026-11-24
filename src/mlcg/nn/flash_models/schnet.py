@@ -172,12 +172,16 @@ class StandardSchNetFlashPath(SupportsFlash):
         whose filter can't be tabulated keeps its filter network, with a
         warning, and the CSR of ``data``'s excluded pairs, used while the
         pairs keep their shape (other pairs of that shape give NaN
-        energies). Raises ``ValueError`` for a periodic cell the flash path
-        can't handle (see :func:`~mlcg.nn.kernels.pbc.check_cells`) or
-        excluded pairs of another order than the model's."""
+        energies). A model on the CPU gets no tables (the table kernel is
+        GPU only) and keeps the exact kernels. Raises ``ValueError`` for a
+        periodic cell the flash path can't handle (see
+        :func:`~mlcg.nn.kernels.pbc.check_cells`) or excluded pairs of
+        another order than the model's."""
         if not self._kernels:
             return
         self._prepare_search(data)
+        if next(self.parameters()).device.type != "cuda":
+            return
         for i, block in enumerate(self.interaction_blocks):
             try:
                 block.conv.build_table(self.rbf_layer, num_knots, tolerance)

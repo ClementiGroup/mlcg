@@ -59,8 +59,11 @@ def prepare_for_inference(
 def capture_cuda_graph(
     model: Callable, data: AtomicData, warn: bool = True
 ) -> Optional["GraphedModel"]:
-    """A :class:`GraphedModel` of ``model`` on ``data``, or ``None`` (with a
-    warning, if ``warn``) if it can't be captured."""
+    """A :class:`GraphedModel` of ``model`` on ``data``, or ``None`` if it
+    can't be captured (with a warning, if ``warn``) or ``data`` is not on a
+    GPU."""
+    if data[POSITIONS_KEY].device.type != "cuda":
+        return None
     try:
         graphed = GraphedModel(model, data)
     except Exception as e:
@@ -186,11 +189,14 @@ def _ms_per_call(model, data, chunk_s=0.2, chunks=3):
 
 
 def _seconds(model, data, calls):
-    torch.cuda.synchronize()
+    on_gpu = data[POSITIONS_KEY].device.type == "cuda"
+    if on_gpu:
+        torch.cuda.synchronize()
     start = time.perf_counter()
     for _ in range(calls):
         model(data)
-    torch.cuda.synchronize()
+    if on_gpu:
+        torch.cuda.synchronize()
     return time.perf_counter() - start
 
 

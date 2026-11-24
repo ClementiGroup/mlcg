@@ -479,6 +479,43 @@ def test_optimize_auto_keeps_the_faster(
         torch.testing.assert_close(a, e, atol=1e-5, rtol=1e-5)
 
 
+def test_optimize_auto_on_cpu(get_initial_data, tmp_path, monkeypatch):
+    """``optimize="auto"`` on the CPU: the exact flash kernels, without
+    filter tables or a CUDA graph, give the outputs of the model as given.
+    Compiling is stubbed."""
+    from mlcg.nn.flash_models import inference
+
+    monkeypatch.setattr(inference, "_compile", lambda model, data: model)
+    data_dict = ASE_SchNet_model(device="cpu")
+    initial_data_list = get_initial_data(
+        data_dict["molecule"],
+        data_dict["neighbor_lists"],
+        corruptor=None,
+        add_masses=True,
+    )
+
+    def potential_and_forces(name, optimize):
+        sim = LangevinSimulation(
+            1.0, filename=tmp_path / name, device="cpu", optimize=optimize
+        )
+        sim.attach_model_and_configurations(
+            data_dict["model"], initial_data_list, 1.0
+        )
+        sim._set_up_simulation(overwrite=False)
+        data = deepcopy(sim.initial_data)
+        sim.compile_model(data)
+        return sim, sim.calculate_potential_and_forces(data)
+
+    sim, auto = potential_and_forces("auto", "auto")
+    assert sim._graphed_model is None
+    schnets = [m for m in sim.model.modules() if isinstance(m, StandardSchNet)]
+    assert schnets[0]._kernels
+    assert schnets[0].interaction_blocks[0].conv.table is None
+    _, plain = potential_and_forces("plain", None)
+    for a, p in zip(auto, plain):
+        torch.testing.assert_close(a, p, atol=1e-5, rtol=1e-5)
+
+
 def test_deprecated_compile_falls_back(get_initial_data, tmp_path, monkeypatch):
     """With the deprecated ``compile``, a model that doesn't compile runs
     with a warning (its failing parts eager, as before ``optimize``); with
