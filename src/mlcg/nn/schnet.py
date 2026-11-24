@@ -20,6 +20,7 @@ from .attention import (
 from .radial_basis import RegularizedBasis
 from .flash_models.schnet import (
     CFConvFlashPath,
+    SchNetFlashGraph,
     RBFRegularizedSchNetFlashPath,
     StandardSchNetFlashPath,
 )
@@ -251,7 +252,7 @@ class InteractionBlock(torch.nn.Module):
         edge_weight: Optional[torch.Tensor] = None,
         edge_attr: Optional[torch.Tensor] = None,
         *args,
-        flash: Optional[tuple] = None,
+        flash: Optional[SchNetFlashGraph] = None,
     ) -> torch.Tensor:
         r"""Forward pass through the interaction block.
 
@@ -269,11 +270,7 @@ class InteractionBlock(torch.nn.Module):
             (total_num_edges, num_rbf)
         flash:
             Flash path only (keyword), in place of the edge arguments: the
-            graph ``(row_ptr, col, features, pos, batch, cell, pbc,
-            cutoff)``, where ``row_ptr``, ``col`` are the destination CSR of
-            a *symmetric* neighbour list (int32) and ``features`` is
-            ``(distances, rbf)`` in row order, or ``None`` when the filter
-            table is used (see :meth:`CFConv.flash_forward`).
+            graph, a :class:`~mlcg.nn.flash_models.SchNetFlashGraph`.
 
         Returns
         -------
@@ -356,7 +353,7 @@ class CFConv(CFConvFlashPath, MessagePassing):
         edge_index: Optional[torch.Tensor] = None,
         edge_weight: Optional[torch.Tensor] = None,
         edge_attr: Optional[torch.Tensor] = None,
-        flash: Optional[tuple] = None,
+        flash: Optional[SchNetFlashGraph] = None,
     ) -> torch.Tensor:
         r"""Forward pass through the continuous filter convolution.
 
@@ -374,11 +371,7 @@ class CFConv(CFConvFlashPath, MessagePassing):
             (total_num_edges, num_rbf)
         flash:
             Flash path only (keyword), in place of the edge arguments: the
-            graph ``(row_ptr, col, features, pos, batch, cell, pbc,
-            cutoff)``, where ``row_ptr``, ``col`` are the destination CSR of
-            a *symmetric* neighbour list (int32) and ``features`` is
-            ``(distances, rbf)`` in row order, or ``None`` when the filter
-            table is used (see :meth:`CFConv.flash_forward`).
+            graph, a :class:`~mlcg.nn.flash_models.SchNetFlashGraph`.
 
         Returns
         -------

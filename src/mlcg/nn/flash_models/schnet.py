@@ -8,7 +8,7 @@ this module, so this module imports it only inside functions.
 
 import math
 import warnings
-from typing import Optional
+from typing import NamedTuple, Optional, Tuple
 
 import torch
 from torch_geometric.utils import scatter
@@ -29,6 +29,24 @@ from .mixin import (
     SupportsFlash,
     check_tolerance,
 )
+
+
+class SchNetFlashGraph(NamedTuple):
+    """The graph a SchNet block takes as ``flash=``: the destination CSR
+    (``row_ptr``, ``col``, int32) of a *symmetric* neighbour list, and
+    either ``features = (distances, rbf)`` in row order (exact kernels), or
+    what a block with a filter table reads instead: positions, ``batch``,
+    the periodic ``cell`` and ``pbc`` of
+    :func:`~mlcg.nn.kernels.pbc.periodic_cells`, and the ``cutoff``."""
+
+    row_ptr: torch.Tensor
+    col: torch.Tensor
+    features: Optional[Tuple[torch.Tensor, torch.Tensor]] = None
+    pos: Optional[torch.Tensor] = None
+    batch: Optional[torch.Tensor] = None
+    cell: Optional[torch.Tensor] = None
+    pbc: Optional[torch.Tensor] = None
+    cutoff: Optional[float] = None
 
 
 class CFConvFlashPath(SupportsFlash):
@@ -191,10 +209,10 @@ class StandardSchNetFlashPath(SupportsFlash):
                 )
 
     def flash_forward(self, data: AtomicData) -> AtomicData:
-        """Flash path: the blocks get the radius graph as ``flash=(row_ptr,
-        col, features, pos, batch, cell, pbc, cutoff)`` and read their filter
-        tables in eval mode, or run the exact fused kernels on ``features =
-        (distances, rbf)`` in row order. The per-edge tensors (and their
+        """Flash path: the blocks get the radius graph as a
+        :class:`SchNetFlashGraph` and read their filter tables in eval mode, or
+        run the exact fused kernels on ``features = (distances, rbf)`` in
+        row order. The per-edge tensors (and their
         host sync) are computed only if a block has no table in use.
         Energies of graphs whose neighbour search overflowed are NaN."""
         row_ptr, col, valid, cell, pbc = self._radius_graph(data)
@@ -204,15 +222,15 @@ class StandardSchNetFlashPath(SupportsFlash):
                 data, row_ptr, col, cell, pbc
             )
             features = (distances, self.rbf_layer(distances))
-        graph = (
-            row_ptr,
-            col,
-            features,
-            data.pos,
-            data.batch,
-            cell,
-            pbc,
-            self.neighbors.cutoff,
+        graph = SchNetFlashGraph(
+            row_ptr=row_ptr,
+            col=col,
+            features=features,
+            pos=data.pos,
+            batch=data.batch,
+            cell=cell,
+            pbc=pbc,
+            cutoff=self.neighbors.cutoff,
         )
         x = self.embedding_layer(data.atom_types)
         for block in self.interaction_blocks:
@@ -347,15 +365,15 @@ class RBFRegularizedSchNetFlashPath(SupportsFlash):
         rbf_expansion = self.rbf_layer(distances, types[src], types[dst])
         x = self.embedding_layer(types)
         for block, rbf in zip(self.interaction_blocks, rbf_expansion):
-            graph = (
-                row_ptr,
-                col,
-                (distances, rbf),
-                data.pos,
-                data.batch,
-                cell,
-                pbc,
-                self.neighbors.cutoff,
+            graph = SchNetFlashGraph(
+                row_ptr=row_ptr,
+                col=col,
+                features=(distances, rbf),
+                pos=data.pos,
+                batch=data.batch,
+                cell=cell,
+                pbc=pbc,
+                cutoff=self.neighbors.cutoff,
             )
             x = x + block(x, flash=graph)
         energy = self.output_network(x, data) * valid

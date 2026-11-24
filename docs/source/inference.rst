@@ -181,17 +181,19 @@ and the edge features in its row order:
 .. code:: python
 
    from mlcg.nn import csr_from_edge_index
+   from mlcg.nn.flash_models import SchNetFlashGraph
 
    row_ptr, col, order = csr_from_edge_index(edge_index, num_nodes)
-   features = (distances[order], rbf[order])
-   graph = (row_ptr, col, features, pos, batch, cell, pbc, cutoff)
+   graph = SchNetFlashGraph(
+       row_ptr, col, features=(distances[order], rbf[order])
+   )
    x = x + block(x, flash=graph)
 
-``pos``, ``batch``, ``cell``, ``pbc`` and ``cutoff`` are read only by a
-block with a table in use (its ``features`` are ``None``); with the exact
-kernels they can be ``None``. :class:`~mlcg.nn.RadiusCSR` builds this
-graph from positions without host synchronization, as ``StandardSchNet``
-does.
+The other fields of :class:`~mlcg.nn.flash_models.SchNetFlashGraph` (``pos``,
+``batch``, ``cell``, ``pbc``, ``cutoff``) are read only by a block with a
+table in use (its ``features`` are ``None``). :class:`~mlcg.nn.RadiusCSR`
+builds this graph from positions without host synchronization, as
+``StandardSchNet`` does.
 
 API
 ---
