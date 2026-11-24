@@ -9,8 +9,12 @@ It is currently not compatible with PL scheduler system.
 
 import torch
 from typing import Callable
+from typing_extensions import deprecated
 
 
+@deprecated(
+    "SAM is deprecated and will be removed in a future release."
+)
 class SAM(torch.optim.Optimizer):
     def __init__(
         self, params, base_optimizer, rho=0.05, adaptive=False, **kwargs
