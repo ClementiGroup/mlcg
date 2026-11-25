@@ -487,12 +487,15 @@ class StandardSchNet(SchNet):
 
 
 @deprecated(
-    "AttentiveSchNet is deprecated and will be removed in a future release. "
+    "AttentiveSchNet is deprecated since mlcg 0.2.2 and will be removed in a future release. "
 )
 class AttentiveSchNet(SchNet):
     """Small wrapper class for :ref:`mlcg.nn.SchNet` to simplify the definition of the
     SchNet model with an Interaction block that includes attention through an input file. The upper distance cutoff attribute
     in is set by default to match the upper cutoff value in the cutoff function.
+
+    .. deprecated:: 0.2.2
+        Will be removed in a future release.
 
     Parameters
     ----------

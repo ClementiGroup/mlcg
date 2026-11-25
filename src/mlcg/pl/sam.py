@@ -13,9 +13,13 @@ from typing_extensions import deprecated
 
 
 @deprecated(
-    "SAM is deprecated and will be removed in a future release."
+    "SAM is deprecated since mlcg 0.2.2 and will be removed in a future release."
 )
 class SAM(torch.optim.Optimizer):
+    """
+    .. deprecated:: 0.2.2
+        Will be removed in a future release.
+    """
     def __init__(
         self, params, base_optimizer, rho=0.05, adaptive=False, **kwargs
     ):

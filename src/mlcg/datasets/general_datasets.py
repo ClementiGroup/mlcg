@@ -33,7 +33,7 @@ import h5py
 from typing_extensions import deprecated
 
 @deprecated(
-    "GeneralCarbonAlphaDataset is deprecated and will be removed in a future release. "
+    "GeneralCarbonAlphaDataset is deprecated since mlcg 0.2.2 and will be removed in a future release. "
     "Training dataset should be built using the `mlcg-tk` package"
 )
 class GeneralCarbonAlphaDataset(InMemoryDataset):
@@ -41,6 +41,9 @@ class GeneralCarbonAlphaDataset(InMemoryDataset):
     General single-protein carbon alpha dataset built from torch_geometric's
     `InMemoryDataset`. Produces a CG H5 dataset and a set of fitted priors for
     a single chain, single molecule carbon alpha CG model for force matching.
+
+    .. deprecated:: 0.2.2
+        Will be removed in a future release.
 
     Please note the following:
 

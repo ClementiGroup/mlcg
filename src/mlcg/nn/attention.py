@@ -21,11 +21,14 @@ from typing_extensions import deprecated
 
 
 @deprecated(
-    "Residual is deprecated and will be removed in a future release. "
+    "Residual is deprecated since mlcg 0.2.2 and will be removed in a future release. "
 )
 class Residual(torch.nn.Module):
     """
     Pre-activation residual block
+
+    .. deprecated:: 0.2.2
+        Will be removed in a future release.
 
     Parameters
     ----------
@@ -73,11 +76,14 @@ class Residual(torch.nn.Module):
 
 
 @deprecated(
-    "ResidualStack is deprecated and will be removed in a future release. "
+    "ResidualStack is deprecated since mlcg 0.2.2 and will be removed in a future release. "
 )
 class ResidualStack(torch.nn.Module):
     """
     Stack of num_residuals pre-activation residual blocks evaluated in sequence.
+
+    .. deprecated:: 0.2.2
+        Will be removed in a future release.
 
     Parameters
     ----------
@@ -121,11 +127,14 @@ class ResidualStack(torch.nn.Module):
 
 
 @deprecated(
-    "Residual_MLP is deprecated and will be removed in a future release. "
+    "Residual_MLP is deprecated since mlcg 0.2.2 and will be removed in a future release. "
 )
 class Residual_MLP(torch.nn.Module):
     """
     Residual Multilayer Perceptron
+
+    .. deprecated:: 0.2.2
+        Will be removed in a future release.
 
     Residual block, followed by a linear layer and an activation function
 
@@ -189,10 +198,15 @@ class Residual_MLP(torch.nn.Module):
 
 
 @deprecated(
-    "ExactAttention is deprecated and will be removed in a future release. "
+    "ExactAttention is deprecated since mlcg 0.2.2 and will be removed in a future release. "
 )
 class ExactAttention(torch.nn.Module):
-    """Softmax Attention"""
+    """Softmax Attention
+    
+    .. deprecated:: 0.2.2
+        Will be removed in a future release.
+
+    """
 
     def __init__(
         self,
@@ -234,10 +248,14 @@ class ExactAttention(torch.nn.Module):
 
 
 @deprecated(
-    "FavorAttention is deprecated and will be removed in a future release. "
+    "FavorAttention is deprecated since mlcg 0.2.2 and will be removed in a future release. "
 )
 class FavorAttention(torch.nn.Module):
-    """Favor+ Attention"""
+    """Favor+ Attention
+    .. deprecated:: 0.2.2
+        Will be removed in a future release.
+
+    """
 
     def __init__(self, dimv: int = 128, dimqk: int = 128) -> torch.Tensor:
         super(FavorAttention, self).__init__()
@@ -372,11 +390,14 @@ class FavorAttention(torch.nn.Module):
 
 
 @deprecated(
-    "Nonlocalinteractionblock is deprecated and will be removed in a future release. "
+    "Nonlocalinteractionblock is deprecated since mlcg 0.2.2 and will be removed in a future release. "
 )
 class Nonlocalinteractionblock(torch.nn.Module):
     """
     Block for updating features through nonlocal interactions via attention.
+
+    .. deprecated:: 0.2.2
+        Will be removed in a future release.
 
     Parameters
     ----------
@@ -463,13 +484,16 @@ class Nonlocalinteractionblock(torch.nn.Module):
 
 
 @deprecated(
-    "AttentiveInteractionBlock is deprecated and will be removed in a future release. "
+    "AttentiveInteractionBlock is deprecated since mlcg 0.2.2 and will be removed in a future release. "
 )
 class AttentiveInteractionBlock(torch.nn.Module):
     r"""Interaction blocks for SchNet. Consists of atomwise
     transformations of embedded features that are continuously
     convolved with filters generated from radial basis function-expanded
     pairwise distances.
+
+    .. deprecated:: 0.2.2
+        Will be removed in a future release.
 
     Parameters
     ----------
@@ -549,13 +573,16 @@ class AttentiveInteractionBlock(torch.nn.Module):
 
 
 @deprecated(
-    "AttentiveInteractionBlock2 is deprecated and will be removed in a future release. "
+    "AttentiveInteractionBlock2 is deprecated since mlcg 0.2.2 and will be removed in a future release. "
 )
 class AttentiveInteractionBlock2(torch.nn.Module):
     r"""Interaction blocks for SchNet. Consists of atomwise
     transformations of embedded features that are continuously
     convolved with filters generated from radial basis function-expanded
     pairwise distances.
+
+    .. deprecated:: 0.2.2
+        Will be removed in a future release.
 
     Parameters
     ----------

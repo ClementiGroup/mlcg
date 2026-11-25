@@ -75,8 +75,8 @@ def _get_bin_centers(
 
 
 @deprecated(
-    "compute_statistics is deprecated and will be removed in a future release. "
-    "CG mappings should be built using the `mlcg-tk` package"
+    "compute_statistics is deprecated since mlcg 0.2.2 and will be removed in a future release. "
+    "CG mappings should be built using the ``mlcg-tk`` package"
 )
 def compute_statistics(
     data: AtomicData,
@@ -92,6 +92,9 @@ def compute_statistics(
     r"""Function for computing atom type-specific statistics for
     every combination of atom types present in a collated AtomicData
     structure.
+
+    .. deprecated:: 0.2.2
+        Will be removed in a future release. Use the ``mlcg-tk`` package instead.
 
     Parameters
     ----------
@@ -277,8 +280,8 @@ def compute_statistics(
 
 
 @deprecated(
-    "fit_baseline_models is deprecated and will be removed in a future release. "
-    "CG mappings should be built using the `mlcg-tk` package"
+    "fit_baseline_models is deprecated since mlcg 0.2.2 and will be removed in a future release. "
+    "CG mappings should be built using the ``mlcg-tk`` package"
 )
 def fit_baseline_models(
     data: AtomicData,
@@ -290,6 +293,9 @@ def fit_baseline_models(
 ) -> Tuple[torch.nn.ModuleDict, Dict]:
     r"""Function for parametrizing a list of priors based on type-specific interactions contained in
     a collated AtomicData structure
+
+    .. deprecated:: 0.2.2
+        Will be removed in a future release. Use the ``mlcg-tk`` package instead.
 
     Parameters
     ----------

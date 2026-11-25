@@ -51,7 +51,7 @@ if not loaded_from_installation:
 
 
 @deprecated(
-    "radius_distance_fn() is deprecated and will be removed in a future release. "
+    "radius_distance_fn() is deprecated since mlcg 0.2.2 and will be removed in a future release. "
     "Use methods supported in mlcg.neighbor_list instead."
 )
 def radius_distance_fn(
@@ -93,7 +93,7 @@ def radius_distance_fn(
     )
 
 @deprecated(
-    "RadiusDistanceAGF is deprecated and will be removed in a future release. "
+    "RadiusDistanceAGF is deprecated since mlcg 0.2.2 and will be removed in a future release. "
     "Use methods supported in mlcg.neighbor_list instead."
 )
 class RadiusDistanceAGF(torch.autograd.Function):
@@ -129,7 +129,7 @@ class RadiusDistanceAGF(torch.autograd.Function):
 
 
 @deprecated(
-    "RadiusDistanceAGB is deprecated and will be removed in a future release. "
+    "RadiusDistanceAGB is deprecated since mlcg 0.2.2 and will be removed in a future release. "
     "Use methods supported in mlcg.neighbor_list instead."
 )
 class RadiusDistanceAGB(torch.autograd.Function):
@@ -198,7 +198,7 @@ class RadiusDistanceAGB(torch.autograd.Function):
 
 @torch.compiler.disable
 @deprecated(
-    "radius_distance() is deprecated and will be removed in a future release. "
+    "radius_distance() is deprecated since mlcg 0.2.2 and will be removed in a future release. "
     "Use methods supported in mlcg.neighbor_list instead."
 )
 def radius_distance(

@@ -29,11 +29,16 @@ from .utils import remove_baseline_forces, chunker
 from typing_extensions import deprecated
 
 @deprecated(
-    "OctapeptidesDataset is deprecated and will be removed in a future release. "
+    "OctapeptidesDataset is deprecated since mlcg 0.2.2 and will be removed in a future release. "
     "Training dataset should be built using the `mlcg-tk` package"
 )
 class OctapeptidesDataset(InMemoryDataset):
-    """Octapeptides dataset"""
+    """Octapeptides dataset
+
+    .. deprecated:: 0.2.2
+        Will be removed in a future release.
+
+    """
 
     #:Temperature used to generate the underlying all-atom data in [K]
     temperature = 300  # K

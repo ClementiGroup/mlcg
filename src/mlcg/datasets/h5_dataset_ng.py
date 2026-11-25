@@ -836,10 +836,13 @@ class Partition:
 
 
 @deprecated(
-    "H5DatasetNG is deprecated and will be removed in a future release."
+    "H5DatasetNG is deprecated since mlcg 0.2.2 and will be removed in a future release."
 )
 class H5DatasetNG:
     """The top-level class for handling multiple datasets contained in a HDF5 file.
+
+    .. deprecated:: 0.2.2
+        Will be removed in a future release.
 
     Parameters
     ----------
