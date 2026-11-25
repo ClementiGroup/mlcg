@@ -92,6 +92,7 @@ def radius_distance_fn(
         x, ptr_x, r, max_num_neighbors, not loop, exc_pair_xs, y_level_ptr
     )
 
+
 @deprecated(
     "RadiusDistanceAGF is deprecated since mlcg 0.2.2 and will be removed in a future release. "
     "Use methods supported in mlcg.neighbor_list instead."

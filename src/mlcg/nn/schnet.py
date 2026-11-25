@@ -577,6 +577,7 @@ class AttentiveSchNet(SchNet):
             AttentiveInteractionBlock2,
             Nonlocalinteractionblock,
         )
+
         if layer_widths is None:
             layer_widths = [128, 128]
         if num_interactions < 1:

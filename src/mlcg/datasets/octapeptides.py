@@ -28,6 +28,7 @@ from ..nn import (
 from .utils import remove_baseline_forces, chunker
 from typing_extensions import deprecated
 
+
 @deprecated(
     "OctapeptidesDataset is deprecated since mlcg 0.2.2 and will be removed in a future release. "
     "Training dataset should be built using the `mlcg-tk` package"

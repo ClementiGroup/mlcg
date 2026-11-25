@@ -5,7 +5,7 @@ from typing import Optional
 import math
 from typing_extensions import deprecated
 
-#TODO: remove deprecated: entire file
+# TODO: remove deprecated: entire file
 
 """MLCG for attention. Based on:
 
@@ -202,7 +202,7 @@ class Residual_MLP(torch.nn.Module):
 )
 class ExactAttention(torch.nn.Module):
     """Softmax Attention
-    
+
     .. deprecated:: 0.2.2
         Will be removed in a future release.
 

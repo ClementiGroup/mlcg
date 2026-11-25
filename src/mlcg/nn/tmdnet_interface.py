@@ -23,6 +23,7 @@ class TorchMDNetInterface(torch.nn.Module):
     .. deprecated:: 0.2.2
         Will be removed in a future release.
     """
+
     name: Final[str] = "torchmd-net"
 
     def __init__(self, hparams: dict) -> None:

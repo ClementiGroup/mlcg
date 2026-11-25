@@ -15,7 +15,6 @@ except ImportError:
     )
 
 
-
 def _pair_key(index_mapping: torch.Tensor, num_nodes) -> torch.Tensor:
     """Key of the unordered pair of each column: ``(i, j)`` and ``(j, i)``
     get the same key."""

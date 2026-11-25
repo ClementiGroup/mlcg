@@ -32,6 +32,7 @@ from itertools import combinations
 import h5py
 from typing_extensions import deprecated
 
+
 @deprecated(
     "GeneralCarbonAlphaDataset is deprecated since mlcg 0.2.2 and will be removed in a future release. "
     "Training dataset should be built using the `mlcg-tk` package"
