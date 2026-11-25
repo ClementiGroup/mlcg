@@ -1,4 +1,5 @@
 from copy import deepcopy
+import json
 import tempfile
 import torch
 import numpy as np
@@ -6,6 +7,7 @@ import pytest
 
 from mlcg.simulation.base import _Simulation
 from mlcg.simulation.langevin import (
+    LangevinBenchmark,
     LangevinSimulation,
     OverdampedSimulation,
 )
@@ -193,6 +195,61 @@ def test_simulation_run(
         full_model, initial_data_list, betas
     )
     simulation.simulate()
+
+
+def test_langevin_benchmark(ASE_prior_model, get_initial_data, tmp_path):
+    """The benchmark runs the same trajectory as ``LangevinSimulation`` and
+    reports the timing of the steps after the warm-up."""
+    data_dictionary = ASE_prior_model()
+    initial_data_list = get_initial_data(
+        data_dictionary["molecule"],
+        data_dictionary["neighbor_lists"],
+        corruptor=None,
+        add_masses=True,
+    )
+    kwargs = dict(friction=1.0, n_timesteps=50, save_interval=5, random_seed=0)
+    coords = []
+    for sim_class, extra in [
+        (LangevinSimulation, {}),
+        (
+            LangevinBenchmark,
+            dict(timesteps_burnout=10, chunk_steps=10, timestep_fs=4.0),
+        ),
+    ]:
+        sim = sim_class(
+            filename=tmp_path / sim_class.__name__,
+            export_interval=25,
+            **kwargs,
+            **extra,
+        )
+        sim.attach_model_and_configurations(
+            data_dictionary["model"], initial_data_list, 1.0
+        )
+        sim.simulate()
+        coords.append(sim.simulated_coords)
+    torch.testing.assert_close(*coords, rtol=0, atol=0)
+
+    results = sim.results
+    assert results["steps_timed"] == 40
+    assert len(results["chunk_ms_per_step"]) == 4
+    assert (
+        0
+        < results["ms_per_step_min"]
+        <= results["ms_per_step"]
+        <= results["ms_per_step_max"]
+    )
+    assert results["recompiles"] == 0
+    assert results["prepare_s"] > 0 and results["warmup_s"] > 0
+    assert results["n_structures"] == len(initial_data_list)
+    per_day = 4e-6 * 86400 * results["steps_per_s"]
+    assert results["ns_per_day_per_structure"] == pytest.approx(per_day)
+    with open(f"{sim.filename}_benchmark.json") as file:
+        assert json.load(file) == results
+
+    with pytest.raises(ValueError, match="must cover the warm-up"):
+        LangevinBenchmark(
+            filename=tmp_path / "short", timesteps_burnout=45, **kwargs
+        )
 
 
 def test_overdamped_save_velocities_raises(tmp_path):

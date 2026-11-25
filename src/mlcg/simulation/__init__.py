@@ -1,4 +1,8 @@
-from .langevin import LangevinSimulation, OverdampedSimulation
+from .langevin import (
+    LangevinBenchmark,
+    LangevinSimulation,
+    OverdampedSimulation,
+)
 from .parallel_tempering import PTSimulation
 from .base import _Simulation
 from .cli import parse_simulation_config, parse_minimizer_config

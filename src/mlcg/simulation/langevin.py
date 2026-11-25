@@ -1,10 +1,11 @@
+import json
+import os
+import time
 from typing import List, Tuple, Any, Dict, Optional, Sequence, Union
 import torch
 from torch.distributions.normal import Normal
 import numpy as np
 import warnings
-from copy import deepcopy
-from tqdm import tqdm
 
 from ..data.atomic_data import AtomicData
 from ..data._keys import (
@@ -276,133 +277,264 @@ LangevinSimulation.__doc__ += _Simulation.__doc__ + "\n"
 
 
 class LangevinBenchmark(LangevinSimulation):
+    r"""Langevin simulation that measures its own speed and memory,
+    to use for benchmarks.
 
-    def __init__(self, **kwargs: Any):
+    It runs exactly as :class:`LangevinSimulation` (same loop, same
+    outputs) and times the steps after a warm-up:
 
-        if "timesteps_burnout" in kwargs.keys():
-            self.burnout = kwargs["timesteps_burnout"]
-            kwargs.pop("timesteps_burnout")
-        else:
-            self.burnout = 5000
+    - the model preparation (set-up, ``optimize`` with its compilation,
+      first force evaluation) is reported as ``prepare_s``;
+    - the first ``timesteps_burnout`` steps are a warm-up, reported as
+      ``warmup_s`` and not part of the step time;
+    - the following steps are timed in chunks of ``chunk_steps``, with the
+      device synchronized at both ends of a chunk. The clock stops while a
+      frame is saved, exported or logged, so the result is the cost of the
+      steps alone. Each save still waits for the device, which costs the
+      steps around it some time on small systems: for the pure step time
+      keep ``save_interval`` at ``chunk_steps`` or above. A last, incomplete
+      chunk is dropped;
+    - peak memory is reset when the timing starts, so that the memory of
+      the steps is separate from that of the setup.
+
+    After :meth:`simulate`, ``results`` holds (and
+    ``{filename}_benchmark.json`` stores):
+
+    ``ms_per_step``, ``ms_per_step_min``, ``ms_per_step_max``
+        median, fastest and slowest chunk, in ms per step. The median and
+        not the mean, because what disturbs a chunk (another process on
+        the device, a garbage collection) only makes it slower: one such
+        chunk shifts the mean but not the median, and still shows in the
+        maximum. A difference between two runs below this spread is noise.
+    ``chunk_ms_per_step``, ``chunk_steps``, ``steps_timed``
+        the time of every chunk and how many steps were timed. The mean of
+        ``chunk_ms_per_step`` is the mean time per step of the timed part.
+    ``steps_per_s``, ``structure_steps_per_s``
+        steps per second, from the median ``ms_per_step``, and the same
+        times the number of structures simulated in parallel.
+    ``ns_per_day``, ``ns_per_day_per_structure``
+        simulated time per day, from the median ``ms_per_step``, summed
+        over the structures and for one of them. Only with
+        ``timestep_fs``, since ``dt`` has no fixed unit.
+    ``prepare_s``, ``warmup_s``
+        seconds from the start of :meth:`simulate` to the first step, and
+        seconds spent in the warm-up steps.
+    ``recompiles``
+        graphs ``torch.compile`` compiled while timing. Anything but 0
+        means the warm-up was too short: the timing includes compilation.
+    ``setup_peak_mem_mb``, ``step_peak_mem_mb``, ``step_peak_reserved_mb``
+        peak memory of the torch allocator before the timing starts
+        (preparation and warm-up) and while timing,
+        and the peak it reserved from the device while timing (GPU only).
+    ``process_mem_mb``
+        GPU memory of the whole process at the end of the run, as
+        ``nvidia-smi`` shows it: it adds the CUDA context and what other
+        libraries allocate. ``None`` without ``pynvml`` or on CPU.
+    ``n_structures``, ``n_beads``, ``dt``, ``optimize``, ``device``,
+    ``dtype``, ``mlcg``, ``torch``, ``cuda``, ``matmul_precision``
+        what was run, and on what.
+
+    Parameters
+    ----------
+    timesteps_burnout :
+        Number of warm-up steps before the timing starts.
+    chunk_steps :
+        Number of steps in a timed chunk. ``n_timesteps`` must cover the
+        warm-up and at least one chunk; three or more give a spread.
+    timestep_fs :
+        Length of ``dt`` in femtoseconds, to report ns/day.
+
+    Example
+    -------
+    .. code:: python
+
+        sim = LangevinBenchmark(
+            friction=1.0, dt=0.004, n_timesteps=1100, save_interval=100,
+            timesteps_burnout=100, chunk_steps=200, timestep_fs=4.0,
+            device="cuda", optimize="auto", filename="benchmark/run",
+        )
+        sim.attach_model_and_configurations(model, configurations, beta)
+        sim.simulate()
+        print(sim.results["ms_per_step"], sim.results["step_peak_mem_mb"])
+    """
+
+    def __init__(
+        self,
+        *,
+        timesteps_burnout: int = 100,
+        chunk_steps: int = 100,
+        timestep_fs: Optional[float] = None,
+        **kwargs: Any,
+    ):
         super().__init__(**kwargs)
-        self.started_benchmarking = False
-        self.times_ms = []
-        self.peak_mems_gb = []
-
-    def simulate(self, overwrite: bool = False, prof=None) -> np.ndarray:
-        """Generates independent simulations.
-
-        Parameters
-        ----------
-        overwrite :
-            Set to True if you wish to overwrite any saved simulation data
-
-        Returns
-        -------
-        simulated_coords :
-            Shape [n_simulations, n_frames, n_atoms, n_dimensions]
-            Also an attribute; stores the simulation coordinates at the
-            save_interval
-        """
-
-        self._set_up_simulation(overwrite)
-        data = deepcopy(self.initial_data)
-        data = data.to(self.device)
-        self.compile_model(data)
-        _, forces = self.calculate_potential_and_forces(data)
-        if self.export_interval is not None:
-            t_init = self.current_timestep * self.export_interval
-        else:
-            t_init = 0
-        if t_init >= self.n_timesteps:
+        if self.n_timesteps < timesteps_burnout + chunk_steps:
             raise ValueError(
-                f"Simulation has already been running for {t_init} steps, which is larger than the target number of steps {self.n_timesteps}"
+                f"n_timesteps ({self.n_timesteps}) must cover the warm-up "
+                f"({timesteps_burnout}) and one chunk ({chunk_steps})"
             )
-        torch.cuda.reset_peak_memory_stats()
-        torch.cuda.synchronize()
-        start_ev = torch.cuda.Event(enable_timing=True)
-        end_ev = torch.cuda.Event(enable_timing=True)
+        self.burnout = timesteps_burnout
+        self.chunk_steps = chunk_steps
+        self.timestep_fs = timestep_fs
+        self.results = None
+        self._reset()
 
-        for t in tqdm(
-            range(t_init, self.n_timesteps),
-            desc="Simulation timestep",
-            mininterval=self.tqdm_refresh,
-            initial=t_init,
-            total=self.n_timesteps,
-        ):
-            # step forward in time
-            if not self.started_benchmarking and t > self.burnout:
+    def _reset(self):
+        self._steps_done, self._chunk_steps_done = 0, 0
+        self._chunk_s, self._chunk_ms, self._clock_start = 0.0, [], None
+        self._peak_memory_mb()
+        self._simulate_start = self._now()
 
-                self.started_benchmarking = True
-                start_ev.record()
-            data, potential, forces = self.timestep(data, forces)
-            self.sim_t = t
+    def _now(self) -> float:
+        if self.device.type == "cuda":
+            torch.cuda.synchronize(self.device)
+        return time.perf_counter()
 
-            # save to arrays if relevant
-            if (t + 1) % self.save_interval == 0:
-                # save arrays
-                self.save(
-                    data=data,
-                    forces=forces,
-                    potential=potential,
-                    t=t,
-                )
+    def _stop_clock(self):
+        if self._clock_start is not None:
+            self._chunk_s += self._now() - self._clock_start
+            self._clock_start = None
 
-                # write numpys to file if relevant; this can be indented here because
-                # it only happens when time points are also recorded
-                if self.export_interval is not None:
-                    if (t + 1) % self.export_interval == 0:
-                        self.write()
-                        if self.save_subroutine is not None:
-                            self.save_subroutine(
-                                data, (t + 1) // self.save_interval
-                            )
-                        if self.started_benchmarking:
-                            end_ev.record()
-                            peak_mem = torch.cuda.max_memory_allocated()
-                            torch.cuda.reset_peak_memory_stats()
-                            torch.cuda.synchronize()
-                            ms = start_ev.elapsed_time(end_ev)  # milliseconds
-                            self.times_ms.append(ms)
-                            self.peak_mems_gb.append(peak_mem / 1e9)  # Gb
+    def _peak_memory_mb(self) -> Tuple[Optional[float], Optional[float]]:
+        """Peak allocated and reserved memory since the last reset; resets."""
+        if self.device.type != "cuda":
+            return None, None
+        peaks = (
+            torch.cuda.max_memory_allocated(self.device) / 1024**2,
+            torch.cuda.max_memory_reserved(self.device) / 1024**2,
+        )
+        torch.cuda.reset_peak_memory_stats(self.device)
+        return peaks
 
-                # log if relevant; this can be indented here because
-                # it only happens when time when time points are also recorded
-                if self.log_interval is not None:
-                    if int((t + 1) % self.log_interval) == 0:
-                        self.log((t + 1) // self.save_interval)
+    def _process_memory_mb(self) -> Optional[float]:
+        if self.device.type != "cuda":
+            return None
+        try:
+            import pynvml
+        except ImportError:
+            return None
+        pynvml.nvmlInit()
+        # NVML numbers the physical GPUs, torch the visible ones
+        uuid = torch.cuda.get_device_properties(self.device).uuid
+        handle = pynvml.nvmlDeviceGetHandleByUUID(f"GPU-{uuid}")
+        for process in pynvml.nvmlDeviceGetComputeRunningProcesses(handle):
+            if process.pid == os.getpid() and process.usedGpuMemory:
+                return process.usedGpuMemory / 1024**2
+        return None
 
-            if self.sim_subroutine != None:
-                if (t + 1) % self.sim_subroutine_interval == 0:
-                    data = self.sim_subroutine(data)
+    def timestep(
+        self, data: AtomicData, forces: torch.Tensor
+    ) -> Tuple[AtomicData, torch.Tensor, torch.Tensor]:
+        """A :meth:`LangevinSimulation.timestep`, timed after the warm-up."""
+        timed = self._steps_done >= self.burnout
+        if self._steps_done == 0:
+            self._warmup_start = self._now()
+            self._prepare_s = self._warmup_start - self._simulate_start
+        if self._steps_done == self.burnout:
+            self._setup_peak_mb = self._peak_memory_mb()[0]
+            self._graphs_before = _compiled_graphs()
+            self._warmup_s = self._now() - self._warmup_start
+        if timed and self._clock_start is None:
+            self._clock_start = self._now()
+        out = super().timestep(data, forces)
+        self._steps_done += 1
+        if timed:
+            self._chunk_steps_done += 1
+            if self._chunk_steps_done == self.chunk_steps:
+                self._stop_clock()
+                self._chunk_ms.append(1e3 * self._chunk_s / self.chunk_steps)
+                self._chunk_s, self._chunk_steps_done = 0.0, 0
+        return out
 
-            # reset data outputs to collect the new forces/energies
-            data.out = {}
-            if prof:
-                prof.step()
+    def save(self, *args, **kwargs):
+        """Stops the clock: saving, and the export and log that follow it
+        in the same iteration, are not part of the step."""
+        self._stop_clock()
+        super().save(*args, **kwargs)
 
-        # if relevant, save the remainder of the simulation
-        if self.export_interval is not None:
-            if int(t + 1) % self.export_interval > 0:
-                self.write()
-
-        # if relevant, log that simulation has been completed
+    def simulate(self, overwrite: bool = False, prof=None) -> None:
+        """Runs the simulation as :meth:`LangevinSimulation.simulate` and
+        fills ``results`` (see the class documentation)."""
+        self._reset()
+        super().simulate(overwrite=overwrite, prof=prof)
+        if not self._chunk_ms:
+            raise RuntimeError(
+                "No chunk was timed: the simulation restarted from a "
+                "checkpoint too close to n_timesteps"
+            )
+        self.results = self._collect_results()
+        with open(f"{self.filename}_benchmark.json", "w") as file:
+            json.dump(self.results, file, indent=2)
         if self.log_interval is not None:
-            self.summary()
+            self._write_log(self._summary_line())
 
-        self.reshape_output()
+    def _collect_results(self) -> Dict[str, Any]:
+        from .. import __version__
+        from ..nn.flash_models import describe_optimization
 
-        self._simulated = True
+        step_peak_mb, step_reserved_mb = self._peak_memory_mb()
+        s_per_step = float(np.median(self._chunk_ms)) / 1e3
+        results = {
+            "ms_per_step": 1e3 * s_per_step,
+            "ms_per_step_min": min(self._chunk_ms),
+            "ms_per_step_max": max(self._chunk_ms),
+            "chunk_ms_per_step": self._chunk_ms,
+            "chunk_steps": self.chunk_steps,
+            "steps_timed": len(self._chunk_ms) * self.chunk_steps,
+            "steps_per_s": 1.0 / s_per_step,
+            "structure_steps_per_s": self.n_sims / s_per_step,
+            "ns_per_day": None,
+            "ns_per_day_per_structure": None,
+            "prepare_s": self._prepare_s,
+            "warmup_s": self._warmup_s,
+            "recompiles": _compiled_graphs() - self._graphs_before,
+            "setup_peak_mem_mb": self._setup_peak_mb,
+            "step_peak_mem_mb": step_peak_mb,
+            "step_peak_reserved_mb": step_reserved_mb,
+            "process_mem_mb": self._process_memory_mb(),
+            "n_structures": self.n_sims,
+            "n_beads": self.initial_data[POSITIONS_KEY].shape[0],
+            "dt": self.dt,
+            "optimize": describe_optimization(
+                self.optimize, self.optimize_report, self._graphed_model
+            ),
+            "device": (
+                torch.cuda.get_device_name(self.device)
+                if self.device.type == "cuda"
+                else "cpu"
+            ),
+            "dtype": str(self.dtype),
+            "mlcg": __version__,
+            "torch": torch.__version__,
+            "cuda": torch.version.cuda,
+            "matmul_precision": torch.get_float32_matmul_precision(),
+        }
+        if self.timestep_fs is not None:
+            per_structure = self.timestep_fs * 1e-6 * 86400 / s_per_step
+            results["ns_per_day_per_structure"] = per_structure
+            results["ns_per_day"] = self.n_sims * per_structure
+        return results
 
-        return
+    def _summary_line(self) -> str:
+        r = self.results
+        line = (
+            f"Benchmark: {r['ms_per_step']:.3f} ms/step "
+            f"({r['ms_per_step_min']:.3f}-{r['ms_per_step_max']:.3f} over "
+            f"{len(r['chunk_ms_per_step'])} chunks of {r['chunk_steps']} "
+            f"steps), preparation {r['prepare_s']:.1f} s, "
+            f"warm-up {r['warmup_s']:.1f} s, "
+            f"{r['recompiles']} recompiles"
+        )
+        if r["ns_per_day"] is not None:
+            line += f", {r['ns_per_day']:.1f} ns/day"
+        if r["step_peak_mem_mb"] is not None:
+            line += f", peak memory {r['step_peak_mem_mb']:.0f} MB"
+        return line
 
-    def write(self):
-        super().write()
-        if self.started_benchmarking:
-            np.save(f"{self.filename}_times_ms.npy", np.array(self.times_ms))
-            np.save(
-                f"{self.filename}_peak_mems_gb.npy", np.array(self.peak_mems_gb)
-            )
+
+def _compiled_graphs() -> int:
+    import torch._dynamo.utils as dynamo_utils
+
+    return int(dynamo_utils.counters["stats"]["unique_graphs"])
 
 
 class OverdampedSimulation(_Simulation):
