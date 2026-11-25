@@ -149,6 +149,7 @@ from typing import Dict, List, Optional, Sequence, Callable
 from mlcg.data import AtomicData
 from mlcg.utils import make_splits, calc_num_samples, tqdm
 from copy import copy as shallow_copy
+from typing_extensions import deprecated
 
 
 def load_neighbor_list_chkpt(path: str) -> dict:
@@ -834,6 +835,9 @@ class Partition:
         )
 
 
+@deprecated(
+    "H5DatasetNG is deprecated and will be removed in a future release."
+)
 class H5DatasetNG:
     """The top-level class for handling multiple datasets contained in a HDF5 file.
 
