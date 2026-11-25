@@ -5,6 +5,7 @@ from torch_geometric.utils import scatter
 
 from ...utils import ensure_contiguous
 from .....geometry import compute_distances
+from .....utils import sum_per_graph
 
 
 @triton.autotune(
@@ -93,8 +94,6 @@ def flash_repulsion(
     eedge = torch.empty(
         (E,), device=pos.device, dtype=torch.float32
     ).contiguous()
-    y = torch.zeros((num_graphs,), device=pos.device, dtype=torch.float32)
-
     if not (sigma.ndim == 1):
         interaction_types = tuple(
             atom_types[index_mapping[ii]] for ii in range(2)
@@ -112,7 +111,7 @@ def flash_repulsion(
         eps=eps,
     )
 
-    return y.index_add_(0, mapping_batch, eedge)
+    return sum_per_graph(eedge, mapping_batch, num_graphs)
 
 
 def setup_context_flash_repulsion(ctx, inputs, output):
@@ -183,8 +182,7 @@ def cpu_flash_repulsion(
     distances = compute_distances(pos, index_mapping)
     special = sigma / distances
     y_edge = torch.pow(special, 6)
-    y = torch.zeros(num_graphs, device=y_edge.device, dtype=y_edge.dtype)
-    return y.index_add_(0, mapping_batch, y_edge)
+    return sum_per_graph(y_edge, mapping_batch, num_graphs)
 
 
 @triton.autotune(

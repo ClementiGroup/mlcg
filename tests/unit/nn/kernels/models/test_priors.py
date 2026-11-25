@@ -111,3 +111,24 @@ def test_prior_forward_override_needs_flash_forward():
     with pytest.warns(UserWarning, match="without a flash_forward"):
         prior.enable_kernels()
     assert not prior._kernels
+
+
+@pytest.mark.parametrize("device", DEVICES)
+def test_sum_per_graph_keeps_small_terms(device):
+    """Many small positive terms next to a few large ones, as the pair
+    energies of an all-pairs repulsion: ``sum_per_graph`` gives the float64
+    sum to float32 accuracy, where one float32 total loses the small terms."""
+    from mlcg.utils import sum_per_graph
+
+    generator = torch.Generator().manual_seed(0)
+    values = torch.rand(2_000_000, generator=generator) * 1e-4
+    values[::1000] = 50.0
+    batch = torch.arange(values.numel()) // 1_000_000
+    values, batch = values.to(device), batch.to(device)
+    exact = torch.zeros(2, dtype=torch.float64, device=device)
+    exact.index_add_(0, batch, values.double())
+    one_total = torch.zeros(2, device=device).index_add_(0, batch, values)
+    summed = sum_per_graph(values, batch, 2)
+    assert summed.dtype == values.dtype
+    torch.testing.assert_close(summed.double(), exact, rtol=1e-6, atol=0)
+    assert (one_total - exact).abs().max() > 100 * (summed - exact).abs().max()

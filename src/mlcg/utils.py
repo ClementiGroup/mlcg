@@ -68,6 +68,24 @@ def tensor2tuple(x: torch.Tensor) -> Tuple:
         return tuple(map(float, x))
 
 
+def sum_per_graph(
+    values: torch.Tensor,
+    batch: torch.Tensor,
+    num_graphs: int,
+    partial_sums: int = 1024,
+) -> torch.Tensor:
+    """Sum of ``values`` per graph (``batch``: the graph of each value), for
+    many values per graph, e.g. all pairs of a structure. The values are
+    added in float64 into ``partial_sums`` partial sums per graph. A single
+    float32 total rounds most terms away once it is large, and on a GPU
+    the adds to its one address queue up."""
+    index = torch.arange(values.numel(), device=values.device)
+    index = index.remainder_(partial_sums).add_(batch, alpha=partial_sums)
+    partial = values.new_zeros(num_graphs * partial_sums, dtype=torch.float64)
+    partial.index_add_(0, index, values.double())
+    return partial.view(num_graphs, partial_sums).sum(1).to(values.dtype)
+
+
 class DownloadProgressBar(tqdm):
     """Tqdm progress for downloads"""
 
