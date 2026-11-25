@@ -99,6 +99,7 @@ model:
               cutoff: 20
               num_rbf: 128
               trainable: false
+          excluded_order: 2
   monitor: validation_loss
   step_frequency: 1
 optimizer:
@@ -120,5 +121,4 @@ data:
       embeds: attrs:cg_embeds
       coords: cg_coords
       forces: cg_delta_forces
-      exclusion_pairs: attrs:cg_exc_pairs
-  exclude_listed_pairs: true
+      excluded_pairs: attrs:excluded_pairs

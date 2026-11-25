@@ -1,26 +1,111 @@
 from typing import Tuple, Optional
 import torch
 from torch_geometric.data import Data
-from torch_cluster import radius, radius_graph
+from pyg_lib.ops import radius
 from ..data.atomic_data import AtomicData
 
 
-@torch.compiler.disable
-def safe_radius(*args, **kwargs):
-    """A wrapper around torch_cluster.radius that disables torch.compile
-    when calling it, since currently torch.compile has issues with
-    certain parts of torch_cluster.
+def safe_radius(
+    x: torch.Tensor,
+    y: torch.Tensor,
+    r: float,
+    batch_x: Optional[torch.Tensor] = None,
+    batch_y: Optional[torch.Tensor] = None,
+    max_num_neighbors: int = 32,
+    num_workers: int = 1,
+    batch_size: Optional[int] = None,
+    ignore_same_index: bool = False,
+):
+    """A wrapper around pyg_lib.ops that keeps same API of
+    torch_cluster now deprecated.
     """
-    return radius(*args, **kwargs)
+    if x.numel() == 0 or y.numel() == 0:
+        return torch.empty(2, 0, dtype=torch.long, device=x.device)
+
+    x = x.view(-1, 1) if x.dim() == 1 else x
+    y = y.view(-1, 1) if y.dim() == 1 else y
+    x, y = x.contiguous(), y.contiguous()
+
+    if batch_size is None:
+        batch_size = 1
+        if batch_x is not None:
+            assert x.size(0) == batch_x.numel()
+            batch_size = int(batch_x.max()) + 1
+        if batch_y is not None:
+            assert y.size(0) == batch_y.numel()
+            batch_size = max(batch_size, int(batch_y.max()) + 1)
+    assert batch_size > 0
+
+    ptr_x: Optional[torch.Tensor] = None
+    ptr_y: Optional[torch.Tensor] = None
+
+    if batch_size > 1:
+        assert batch_x is not None
+        assert batch_y is not None
+        arange = torch.arange(batch_size + 1, device=x.device)
+        ptr_x = torch.bucketize(arange, batch_x)
+        ptr_y = torch.bucketize(arange, batch_y)
+    return radius(
+        x, y, r, ptr_x, ptr_y, max_num_neighbors, num_workers, ignore_same_index
+    )
 
 
-@torch.compiler.disable
-def safe_radius_graph(*args, **kwargs):
-    """A wrapper around torch_cluster.radius that disables torch.compile
-    when calling it, since currently torch.compile has issues with
-    certain parts of torch_cluster.
+def safe_radius_graph(
+    x: torch.Tensor,
+    r: float,
+    batch: Optional[torch.Tensor] = None,
+    loop: bool = False,
+    max_num_neighbors: int = 32,
+    flow: str = "source_to_target",
+    num_workers: int = 1,
+    batch_size: Optional[int] = None,
+) -> torch.Tensor:
+    r"""Computes graph edges to all points within a given distance.
+    adapted to maintain same API of torch_cluster `radius_graph` now deprecated.
+
+    Args:
+        x (Tensor): Node feature matrix
+            :math:`\mathbf{X} \in \mathbb{R}^{N \times F}`.
+        r (float): The radius.
+        batch (LongTensor, optional): Batch vector
+            :math:`\mathbf{b} \in {\{ 0, \ldots, B-1\}}^N`, which assigns each
+            node to a specific example. :obj:`batch` needs to be sorted.
+            (default: :obj:`None`)
+        loop (bool, optional): If :obj:`True`, the graph will contain
+            self-loops. (default: :obj:`False`)
+        max_num_neighbors (int, optional): The maximum number of neighbors to
+            return for each element.
+            If the number of actual neighbors is greater than
+            :obj:`max_num_neighbors`, returned neighbors are picked randomly.
+            (default: :obj:`32`)
+        flow (string, optional): The flow direction when used in combination
+            with message passing (:obj:`"source_to_target"` or
+            :obj:`"target_to_source"`). (default: :obj:`"source_to_target"`)
+        num_workers (int): Number of workers to use for computation. Has no
+            effect in case :obj:`batch` is not :obj:`None`, or the input lies
+            on the GPU. (default: :obj:`1`)
+        batch_size (int, optional): The number of examples :math:`B`.
+            Automatically calculated if not given. (default: :obj:`None`)
     """
-    return radius_graph(*args, **kwargs)
+
+    assert flow in ["source_to_target", "target_to_source"]
+    edge_index = safe_radius(
+        x,
+        x,
+        r,
+        batch,
+        batch,
+        max_num_neighbors,
+        num_workers,
+        batch_size,
+        not loop,
+    )
+    if flow == "source_to_target":
+        row, col = edge_index[1], edge_index[0]
+    else:
+        row, col = edge_index[0], edge_index[1]
+
+    return torch.stack([row, col], dim=0)
 
 
 def torch_neighbor_list(
@@ -31,7 +116,9 @@ def torch_neighbor_list(
     max_num_neighbors: int = 1000,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     """Function for computing neighbor lists from pytorch geometric data
-    instances that may or may not use periodic boundary conditions
+    instances that may or may not use periodic boundary conditions. A batch
+    can mix periodic and non-periodic structures, and the positions do not
+    need to be wrapped into the unit cell.
 
     Parameters
     ----------
@@ -46,8 +133,8 @@ def torch_neighbor_list(
     num_workers:
         Number of threads to spawn and use for computing the neighbor list
     max_number_neighbors
-        kwarg for radius_graph function from torch_cluster package,
-        specifying the maximum number of neighbors for each atom
+        kwarg for the radius search of pyg_lib, specifying the maximum
+        number of neighbors for each atom
 
     Returns
     -------
@@ -57,276 +144,105 @@ def torch_neighbor_list(
         The atom indices of the second atoms in each neighbor pair
     torch.Tensor:
         The cell shifts associated with minimum image distances
-        in the presence of periodic boundary conditions
+        in the presence of periodic boundary conditions: the distance
+        vector of a pair is ``pos[j] - pos[i] + cell_shift``
     torch.Tensor:
-        Mask for excluding self interactions
+        Boolean mask over the returned pairs, False for self interactions
     """
-
-    if "pbc" in data:
-        pbc = data.pbc
-    else:
-        pbc = torch.zeros(3, dtype=bool, device=data.pos.device)
-
-    if torch.any(pbc):
-        if "cell" not in data:
-            raise ValueError(
-                f"Periodic systems need to have a unit cell defined"
-            )
-        (
-            idx_i,
-            idx_j,
-            cell_shifts,
-            self_interaction_mask,
-        ) = torch_neighbor_list_pbc(
-            data,
-            rcut,
-            self_interaction=self_interaction,
-            num_workers=num_workers,
-            max_num_neighbors=max_num_neighbors,
-        )
-    else:
-        idx_i, idx_j, self_interaction_mask = torch_neighbor_list_no_pbc(
-            data,
-            rcut,
-            self_interaction=self_interaction,
-            num_workers=num_workers,
-            max_num_neighbors=max_num_neighbors,
-        )
-        cell_shifts = torch.zeros(
-            (idx_i.shape[0], 3), dtype=data.pos.dtype, device=data.pos.device
-        )
-
-    return idx_i, idx_j, cell_shifts, self_interaction_mask
-
-
-@torch.jit.script
-def compute_images(
-    positions: torch.Tensor,
-    cell: torch.Tensor,
-    pbc: torch.Tensor,
-    cutoff: float,
-    batch: torch.Tensor,
-    n_atoms: torch.Tensor,
-) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-    """TODO: add doc"""
-
-    cell = cell.view((-1, 3, 3))
-    pbc = pbc.view((-1, 3))
-
-    reciprocal_cell = torch.linalg.inv(cell).transpose(2, 1)
-    inv_distances = reciprocal_cell.norm(2, dim=-1)
-    num_repeats = torch.ceil(cutoff * inv_distances).to(torch.long)
-    num_repeats_ = torch.where(pbc, num_repeats, torch.zeros_like(num_repeats))
-    images, batch_images, shifts_expanded, shifts_idx_ = [], [], [], []
-    for i_structure in range(num_repeats_.shape[0]):
-        num_repeats = num_repeats_[i_structure]
-        r1 = torch.arange(
-            -num_repeats[0],
-            num_repeats[0] + 1,
-            device=cell.device,
-            dtype=torch.long,
-        )
-        r2 = torch.arange(
-            -num_repeats[1],
-            num_repeats[1] + 1,
-            device=cell.device,
-            dtype=torch.long,
-        )
-        r3 = torch.arange(
-            -num_repeats[2],
-            num_repeats[2] + 1,
-            device=cell.device,
-            dtype=torch.long,
-        )
-        shifts_idx = torch.cartesian_prod(r1, r2, r3)
-        shifts = torch.matmul(shifts_idx.to(cell.dtype), cell[i_structure])
-        pos = positions[batch == i_structure]
-        shift_expanded = shifts.repeat(1, n_atoms[i_structure]).view((-1, 3))
-        pos_expanded = pos.repeat(shifts.shape[0], 1)
-        images.append(pos_expanded + shift_expanded)
-
-        batch_images.append(
-            i_structure
-            * torch.ones(
-                images[-1].shape[0], dtype=torch.int64, device=cell.device
-            )
-        )
-        shifts_expanded.append(shift_expanded)
-        shifts_idx_.append(
-            shifts_idx.repeat(1, n_atoms[i_structure]).view((-1, 3))
-        )
-    return (
-        torch.cat(images, dim=0),
-        torch.cat(batch_images, dim=0),
-        torch.cat(shifts_expanded, dim=0),
-        torch.cat(shifts_idx_, dim=0),
-    )
-
-
-@torch.jit.script
-def strides_of(v: torch.Tensor) -> torch.Tensor:
-    """TODO: add docs"""
-    strides = torch.zeros(v.shape[0] + 1, dtype=torch.int64, device=v.device)
-    strides[1:] = v
-    strides = torch.cumsum(strides, dim=0)
-    return strides
-
-
-def torch_neighbor_list_no_pbc(
-    data: AtomicData,
-    rcut: float,
-    self_interaction: Optional[bool] = True,
-    num_workers: Optional[int] = 1,
-    max_num_neighbors: Optional[int] = 1000,
-) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-    """Function for producing torch neighborlists without periodic boundary
-    conditions
-
-    Parameters
-    ----------
-    data:
-        AtomicData instance
-    rcut:
-        Upper distance cutoff for determining neighbor edges
-    self_interaction:
-        If True, self edges will added for each atom
-    num_workers:
-        Number of threads to use for neighbor enumeration
-    max_num_neighbors:
-        The maximum number of neighbors to return for each atom. For larger
-        systems, it is important to make sure that this number is sufficiently
-        large.
-
-    Returns
-    -------
-    torch.Tensor:
-        The first atoms in each edge
-    torch.Tensor:
-        The second atoms in each edge
-    torch.Tensor:
-        Boolean tensor identifying self_interacting edges
-    """
-
-    if "batch" not in data:
-        batch = torch.zeros(
-            data.pos.shape[0], dtype=torch.long, device=data.pos.device
-        )
-    else:
+    pos = data.pos
+    if "batch" in data:
         batch = data.batch
-    edge_index = safe_radius_graph(
-        data.pos,
-        rcut,
-        batch=batch,
-        max_num_neighbors=max_num_neighbors,
-        num_workers=num_workers,
-        flow="target_to_source",
-        loop=self_interaction,
-    )
-    self_interaction_mask = edge_index[0] != edge_index[1]
-    return edge_index[0], edge_index[1], self_interaction_mask
-
-
-@torch.jit.script
-def get_j_idx(
-    edge_index: torch.Tensor, batch_images: torch.Tensor, n_atoms: torch.Tensor
-) -> torch.Tensor:
-    """TODO: add docs"""
-    # get neighbor index reffering to the list of original positions
-    n_neighbors = torch.bincount(edge_index[0])
-    strides = strides_of(n_atoms)
-    n_reapeats = torch.zeros_like(n_atoms)
-    for i_structure, (st, nd) in enumerate(zip(strides[:-1], strides[1:])):
-        n_reapeats[i_structure] = torch.sum(n_neighbors[st:nd])
-    n_atoms = torch.repeat_interleave(n_atoms, n_reapeats, dim=0)
-
-    batch_i = torch.repeat_interleave(strides[:-1], n_reapeats, dim=0)
-
-    n_images = torch.bincount(batch_images)
-    strides_images = strides_of(n_images[:-1])
-    images_shift = torch.repeat_interleave(strides_images, n_reapeats, dim=0)
-
-    j_idx = torch.remainder(edge_index[1] - images_shift, n_atoms) + batch_i
-    return j_idx
-
-
-def torch_neighbor_list_pbc(
-    data: AtomicData,
-    rcut: float,
-    self_interaction: Optional[bool] = True,
-    num_workers: Optional[int] = 1,
-    max_num_neighbors: Optional[int] = 1000,
-) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-    """Function for returning torch neighborlists from AtomicData instances
-    with periodic boundary conditions. The minimum image convention is used
-    for resolving periodic shifts.
-
-    Parameters
-    ----------
-    data:
-        AtomicData instance
-    rcut:
-        Upper distance cutoff for determining neighbor edges
-    self_interaction:
-        If True, self edges will added for each atom
-    num_workers:
-        Number of threads to use for neighbor enumeration
-    max_num_neighbors:
-        The maximum number of neighbors to return for each atom. For larger
-        systems, it is important to make sure that this number is sufficiently
-        large.
-
-    Returns
-    -------
-    torch.Tensor:
-        The first atoms in each edge
-    torch.Tensor:
-        The second atoms in each edge
-    torch.Tensor:
-        Boolean tensor identifying self_interacting edges
-    """
-
-    if "batch" not in data:
-        batch_y = torch.zeros(
-            data.pos.shape[0], dtype=torch.long, device=data.pos.device
-        )
     else:
-        batch_y = data.batch
+        batch = torch.zeros(pos.shape[0], dtype=torch.long, device=pos.device)
+    pbc = data.pbc.view(-1, 3) if "pbc" in data else None
+    if pbc is None or not torch.any(pbc):
+        edge_index = safe_radius_graph(
+            pos,
+            rcut,
+            batch=batch,
+            max_num_neighbors=max_num_neighbors,
+            num_workers=num_workers,
+            flow="target_to_source",
+            loop=self_interaction,
+        )
+        idx_i, idx_j = edge_index[0], edge_index[1]
+        cell_shifts = torch.zeros(
+            (idx_i.shape[0], 3), dtype=pos.dtype, device=pos.device
+        )
+        return idx_i, idx_j, cell_shifts, idx_i != idx_j
+    if "cell" not in data:
+        raise ValueError(f"Periodic systems need to have a unit cell defined")
 
-    images, batch_images, shifts_expanded, shifts_idx = compute_images(
-        data.pos, data.cell, data.pbc, rcut, batch_y, data.n_atoms
+    cell = data.cell.view(-1, 3, 3).to(pos.dtype)
+    cell = torch.where(
+        pbc.any(dim=1)[:, None, None],
+        cell,
+        torch.eye(3, dtype=pos.dtype, device=pos.device),
     )
+    offsets = _cell_offsets(pos, cell[batch], pbc[batch])
+    inside = pos - _lattice_vectors(offsets, cell[batch])
+    image_atom, image_shift = _images(cell, pbc, rcut, batch)
     edge_index = safe_radius(
-        x=images,
-        y=data.pos,
+        x=inside[image_atom]
+        + _lattice_vectors(image_shift, cell[batch[image_atom]]),
+        y=inside,
         r=rcut,
-        batch_x=batch_images,
-        batch_y=batch_y,
+        batch_x=batch[image_atom],
+        batch_y=batch,
         max_num_neighbors=max_num_neighbors,
         num_workers=num_workers,
     )
-
-    j_idx = get_j_idx(edge_index, batch_images, data.n_atoms)
-
-    # find self interactions
-    is_central_cell = (shifts_idx[edge_index[1]] == 0).all(dim=1)
-    mask = torch.cat(
-        [is_central_cell.view(-1, 1), (edge_index[0] == j_idx).view(-1, 1)],
-        dim=1,
-    )
-    self_interaction_mask = torch.logical_not(torch.all(mask, dim=1))
-
-    if self_interaction:
-        idx_i, idx_j = edge_index[0], j_idx
-        cell_shifts = shifts_expanded[edge_index[1]]
-    else:
-        # remove self interaction
-        idx_i, idx_j = (
-            edge_index[0][self_interaction_mask],
-            j_idx[self_interaction_mask],
+    idx_i = edge_index[0]
+    idx_j = image_atom[edge_index[1]]
+    shifts = image_shift[edge_index[1]] + offsets[idx_i] - offsets[idx_j]
+    not_self = (idx_i != idx_j) | torch.any(shifts != 0, dim=1)
+    if not self_interaction:
+        idx_i, idx_j, shifts = (
+            idx_i[not_self],
+            idx_j[not_self],
+            shifts[not_self],
         )
-        cell_shifts = shifts_expanded[edge_index[1][self_interaction_mask]]
+        not_self = not_self[not_self]
+    cell_shifts = _lattice_vectors(shifts, cell[batch[idx_i]])
+    return idx_i, idx_j, cell_shifts, not_self
 
-    return idx_i, idx_j, cell_shifts, self_interaction_mask
+
+def _lattice_vectors(shifts: torch.Tensor, cell: torch.Tensor) -> torch.Tensor:
+    """``shifts @ cell`` per row, elementwise: cuBLAS may round the cell to
+    TF32 in a matmul."""
+    return (shifts.to(cell.dtype).unsqueeze(-1) * cell).sum(dim=1)
+
+
+def _cell_offsets(
+    pos: torch.Tensor, cell: torch.Tensor, pbc: torch.Tensor
+) -> torch.Tensor:
+    """Integer lattice coordinates of the cell holding each atom, 0 along
+    non-periodic axes. The rows of ``cell`` are the lattice vectors."""
+    fractional = torch.linalg.solve(
+        cell.transpose(-1, -2), pos.unsqueeze(-1)
+    ).squeeze(-1)
+    offsets = torch.floor(fractional).to(torch.long)
+    return torch.where(pbc, offsets, torch.zeros_like(offsets))
+
+
+def _images(
+    cell: torch.Tensor, pbc: torch.Tensor, rcut: float, batch: torch.Tensor
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    """Atom index and integer lattice shift of every periodic image that
+    can hold a neighbor of an atom of the same structure inside its cell:
+    up to ``ceil(rcut / plane spacing)`` cells away along periodic axes."""
+    plane_spacing = 1.0 / torch.linalg.inv(cell).norm(dim=-2)
+    reach = torch.ceil(rcut / plane_spacing).to(torch.long)
+    reach = torch.where(pbc, reach, torch.zeros_like(reach))
+    shifts = torch.cartesian_prod(
+        *(
+            torch.arange(-r, r + 1, device=cell.device)
+            for r in reach.max(dim=0).values.tolist()
+        )
+    )
+    in_reach = torch.all(shifts.abs()[None] <= reach[:, None], dim=-1)
+    image_atom, shift_index = torch.nonzero(in_reach[batch], as_tuple=True)
+    return image_atom, shifts[shift_index]
 
 
 def wrap_positions(data: AtomicData, device: str, eps: float = 1e-7) -> None:
@@ -353,7 +269,10 @@ def wrap_positions(data: AtomicData, device: str, eps: float = 1e-7) -> None:
     batch_ids = data.batch
 
     cell_batch = cell[batch_ids]  # [n_atoms, 3, 3]
-    fractional = torch.linalg.solve(cell_batch, pos.unsqueeze(-1)).squeeze(-1)
+    # lattice vectors are the rows of the cell: pos = f @ cell
+    fractional = torch.linalg.solve(
+        cell_batch.transpose(-1, -2), pos.unsqueeze(-1)
+    ).squeeze(-1)
 
     pbc_mask = pbc[batch_ids]  # [n_atoms, 3]
 
@@ -363,6 +282,6 @@ def wrap_positions(data: AtomicData, device: str, eps: float = 1e-7) -> None:
         pbc_mask, (fractional - shift) % 1.0 + shift, fractional
     )
     # Convert back to cartesian coordinates
-    data.pos = torch.einsum("ni,nij->nj", fractional, cell_batch)
+    data.pos = (fractional.unsqueeze(-1) * cell_batch).sum(dim=1)
 
     return data

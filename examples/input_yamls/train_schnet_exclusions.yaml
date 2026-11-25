@@ -82,6 +82,7 @@ model:
               cutoff: 15
               num_rbf: 30
               trainable: false
+          excluded_order: 2
 optimizer:
   class_path: torch.optim.AdamW
   init_args:
@@ -103,5 +104,4 @@ data:
       embeds: attrs:cg_embeds
       coords: cg_coords
       forces: cg_delta_forces
-      exclusion_pairs: attrs:cg_exc_pairs
-  exclude_listed_pairs: true
+      excluded_pairs: attrs:excluded_pairs

@@ -53,7 +53,7 @@ def nvalchemi_naive_neighbor_list(
     num_workers:
         Not used, leaved for compatiblity issues.
     max_number_neighbors
-        kwarg for radius_graph function from torch_cluster package,
+        kwarg for radius_graph function from pyg_lib package,
         specifying the maximum number of neighbors for each atom
 
     Returns
@@ -70,9 +70,9 @@ def nvalchemi_naive_neighbor_list(
     """
     with_pbc = False
     if "pbc" in data:
-        pbc = data.pbc
+        pbc = data.pbc.view(-1, 3)
         # the type casting has to be done otherwise the library complains
-        cell = data.cell.reshape(-1, 3, 3)
+        cell = data.cell.to(data.pos.dtype).reshape(-1, 3, 3)
         with_pbc = True
     else:
         pbc = None
@@ -136,7 +136,7 @@ def nvalchemi_cell_neighbor_list(
     num_workers:
         Not used, leaved for compatiblity issues.
     max_number_neighbors
-        kwarg for radius_graph function from torch_cluster package,
+        kwarg for radius_graph function from pyg_lib package,
         specifying the maximum number of neighbors for each atom
 
     Returns
@@ -153,9 +153,9 @@ def nvalchemi_cell_neighbor_list(
     """
     with_pbc = False
     if "pbc" in data:
-        pbc = data.pbc
+        pbc = data.pbc.view(-1, 3)
         # the type casting has to be done otherwise the library complains
-        cell = data.cell.reshape(-1, 3, 3)
+        cell = data.cell.to(data.pos.dtype).reshape(-1, 3, 3)
         with_pbc = True
 
     else:
@@ -167,7 +167,7 @@ def nvalchemi_cell_neighbor_list(
                 data.batch[-1] + 1,
                 3,
                 3,
-                dtype=torch.float32,
+                dtype=data.pos.dtype,
                 device=data.pos.device,
             )
             + 50
@@ -248,9 +248,9 @@ def nvalchemi_cell_neighbor_list_raw(
     """
     with_pbc = False
     if "pbc" in data:
-        pbc = data.pbc
+        pbc = data.pbc.view(-1, 3)
         # the type casting has to be done otherwise the library complains
-        cell = data.cell.to(torch.float64).reshape(-1, 3, 3)
+        cell = data.cell.to(data.pos.dtype).reshape(-1, 3, 3)
         with_pbc = True
 
     else:
@@ -262,7 +262,7 @@ def nvalchemi_cell_neighbor_list_raw(
                 data.batch[-1] + 1,
                 3,
                 3,
-                dtype=torch.float32,
+                dtype=data.pos.dtype,
                 device=data.pos.device,
             )
             + 50

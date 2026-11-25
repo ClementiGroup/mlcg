@@ -1,12 +1,23 @@
 import numpy as np
+import pytest
+import torch
+from torch_geometric.loader.dataloader import Collater
 from mlcg.datasets.h5_dataset import MolData, MetaSet
+from mlcg.neighbor_list.neighbor_list import atomic_data2neighbor_list
 import tempfile
 import h5py
 
 np.random.seed(54392)
 
+excluded_key_mapping = {
+    "embeds": "attrs:cg_embeds",
+    "coords": "cg_coords",
+    "forces": "cg_delta_forces",
+    "excluded_pairs": "attrs:excluded_pairs",
+}
 
-def make_hdf5(tdir, detailed_idx=True):
+
+def make_hdf5(tdir, detailed_idx=True, excluded_order=None):
     # random 10 molecules of random length
 
     mol_list = []
@@ -31,6 +42,11 @@ def make_hdf5(tdir, detailed_idx=True):
         grp.attrs["N_frames"] = n_frames
         grp.create_dataset("pbc", data=pbcs)
         grp.create_dataset("cell", data=cells)
+        bonds = np.stack([np.arange(n_atoms - 1), np.arange(1, n_atoms)])
+        grp.attrs["excluded_pairs"] = np.concatenate([bonds, bonds[::-1]], 1)
+
+    if excluded_order is not None:
+        f.attrs["excluded_order"] = excluded_order
 
     if detailed_idx:
         detailed_idx = {
@@ -88,4 +104,52 @@ def test_metaset_props():
             )
             np.testing.assert_equal(
                 sub_forces[i], meta_set._mol_dataset[mol_id]._forces
+            )
+
+
+def test_excluded_pairs_loading():
+    with tempfile.TemporaryDirectory() as tdir:
+        f, mol_list, _ = make_hdf5(tdir, excluded_order=2)
+        meta_set = MetaSet.create_from_hdf5_group(
+            f, mol_list, hdf_key_mapping=excluded_key_mapping
+        )
+        samples = [meta_set[i] for i in range(0, len(meta_set), 7)]
+        for sample in samples:
+            assert sample.excluded_pairs["excluded_order"] == 2
+            assert sample.excluded_pairs["index_mapping"].dtype == torch.long
+        batch = Collater(None, None)(samples)
+
+        num_nodes = batch.pos.shape[0]
+        offsets = torch.cumsum(batch.n_atoms, 0) - batch.n_atoms
+        expected = torch.cat(
+            [
+                s.excluded_pairs["index_mapping"] + off
+                for s, off in zip(samples, offsets)
+            ],
+            dim=1,
+        )
+        torch.testing.assert_close(
+            batch.excluded_pairs["index_mapping"], expected
+        )
+
+        nl = atomic_data2neighbor_list(batch, rcut=100.0)
+        edge_key = nl["index_mapping"][0] * num_nodes + nl["index_mapping"][1]
+        excluded_key = expected[0] * num_nodes + expected[1]
+        assert nl["excluded_order"] == 2
+        assert not torch.isin(excluded_key, edge_key).any()
+
+
+def test_excluded_pairs_not_requested():
+    with tempfile.TemporaryDirectory() as tdir:
+        f, mol_list, _ = make_hdf5(tdir, excluded_order=2)
+        meta_set = MetaSet.create_from_hdf5_group(f, mol_list)
+        assert "excluded_pairs" not in meta_set[0]
+
+
+def test_excluded_pairs_without_excluded_order():
+    with tempfile.TemporaryDirectory() as tdir:
+        f, mol_list, _ = make_hdf5(tdir)
+        with pytest.raises(ValueError):
+            MetaSet.create_from_hdf5_group(
+                f, mol_list, hdf_key_mapping=excluded_key_mapping
             )

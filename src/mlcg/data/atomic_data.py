@@ -48,6 +48,10 @@ class AtomicData(Data):
         :ref:`mlcg.neighbor_list.neighbor_list.make_neighbor_list`.
     batch: [n_atoms]
         maps the atoms to their structure index (from 0 to n_structures-1)
+    excluded_pairs: Dict[str, Any] (Optional)
+        contains information about excluded pairs from the model neighborlist
+        in particular `excluded_order: int` and `index_mapping: [2, n_excluded]`,
+        unordered pairs: `(i, j)` excludes both directions
     """
 
     def __init__(

@@ -1,5 +1,5 @@
 import torch
-from typing import Sequence, Any, List
+from typing import Sequence, Any, List, Optional
 from ..data.atomic_data import AtomicData
 from ..data._keys import *
 
@@ -63,8 +63,8 @@ class SumOut(torch.nn.Module):
     def __init__(
         self,
         models: torch.nn.ModuleDict,
-        targets: List[str] = None,
-        own_nl_models: Sequence[str] = None,
+        targets: Optional[List[str]] = None,
+        own_nl_models: Optional[Sequence[str]] = None,
     ):
         super(SumOut, self).__init__()
         if targets is None:
@@ -149,6 +149,141 @@ class SumOut(torch.nn.Module):
         return nl
 
 
+class NeighborSharingSumOut(SumOut):
+    r"""`SumOut` that computes the geometric neighbor list of a network once
+    and shares it with other models, e.g. `FastCutoffRepulsion` and
+    `FastCutoffExpRepulsion`.
+
+    On every forward pass the neighbor list of ``nls_model_key`` is computed
+    and stored under that network's name so it is not recomputed by the
+    network itself. For every model in ``shared_nl_models`` the entry
+    ``data.neighbor_list[model.name]`` is replaced by a copy of that
+    neighbor list, keeping ``index_mapping_exclusions`` (and a cached
+    ``exc_table``) from the original entry. The original
+    ``data.neighbor_list`` is restored after the forward pass, so the input
+    data can be reused by other models.
+
+    Parameters
+    ----------
+    nls_model_key:
+        Key in ``models`` of the network whose neighbor list is shared. The
+        network (optionally wrapped in `GradientsOut`) must expose
+        ``rbf_layer.cutoff.cutoff_upper``, ``max_num_neighbors`` and
+        ``neighbor_list(data, rcut, max_num_neighbors)``, as `SchNet` does.
+    models:
+        Dictionary of predictors models keyed by their name attribute
+    shared_nl_models:
+        Keys in ``models`` that receive the shared neighbor list. Models not
+        listed here (e.g. bonds and angles priors) keep their own entry.
+    targets:
+        List of prediction targets that will be pooled
+    own_nl_models:
+        See `SumOut`.
+    """
+
+    def __init__(
+        self,
+        nls_model_key: str,
+        models: torch.nn.ModuleDict,
+        shared_nl_models: Sequence[str],
+        targets: Optional[List[str]] = None,
+        own_nl_models: Optional[Sequence[str]] = None,
+    ):
+        # Deferred imports: `schnet` and `prior` import `mlcg.geometry`, which
+        # in turn imports `mlcg.nn.prior`, so importing them at module level
+        # creates a circular import through `mlcg.nn.__init__`.
+        # TODO: remove the statistics module which is not being used anymore
+        from .prior.repulsion import _BaseFastRepulsion
+        from .schnet import SchNet
+
+        super().__init__(models, targets, own_nl_models)
+        if nls_model_key not in models:
+            raise ValueError(f"{nls_model_key=} is not a key of `models`")
+        if nls_model_key in self.own_nl_models:
+            raise ValueError(
+                f"{nls_model_key=} can't be contained in {own_nl_models=}"
+            )
+        nls_model = models[nls_model_key]
+        # Guard for only using SchNet
+        # TOOO: create an interface for extracting cutoff of different MPNNs
+        if not isinstance(getattr(nls_model, "model", nls_model), SchNet):
+            raise TypeError(
+                "Only subclasses of SchNet are supported as root for the nls"
+            )
+
+        shared_nl_models = list(shared_nl_models)
+        for key in shared_nl_models:
+            if key not in models:
+                raise ValueError(f"shared model {key!r} is not in `models`")
+            if key == nls_model_key or key in self.own_nl_models:
+                raise ValueError(
+                    f"shared model {key!r} can't be `nls_model_key` or be "
+                    "contained in `own_nl_models`"
+                )
+            shared = models[key]
+            if not isinstance(
+                getattr(shared, "model", shared), _BaseFastRepulsion
+            ):
+                raise TypeError(
+                    "Only subclasses of _BaseFastRepulsion are supported for sharing the nls"
+                )
+        self.nls_model_key = nls_model_key
+        self.shared_nl_models = shared_nl_models
+
+    @classmethod
+    def from_base(
+        cls, model: SumOut, nls_model_key: str, shared_nl_models: Sequence[str]
+    ):
+
+        return cls(
+            nls_model_key=nls_model_key,
+            models=model.models,
+            shared_nl_models=shared_nl_models,
+            targets=model.targets,
+            own_nl_models=getattr(model, "own_nl_models", None),
+        )
+
+    def _network_neighbor_list(self, data: AtomicData):
+        model = self.models[self.nls_model_key]
+        network = getattr(model, "model", model)  # unwrap GradientsOut
+        # extract cutoff:
+        nl = network.neighbor_list(
+            data,
+            network.rbf_layer.cutoff.cutoff_upper,
+            network.max_num_neighbors,
+        )[network.name]
+        return network.name, nl
+
+    def forward(self, data: AtomicData) -> AtomicData:
+        original_nl = data.neighbor_list
+        network_name, shared_nl = self._network_neighbor_list(data)
+
+        new_nl = dict(original_nl)
+        new_nl[network_name] = shared_nl
+        shared_names = [self.models[key].name for key in self.shared_nl_models]
+        for name in shared_names:
+            entry = dict(shared_nl)
+            old_entry = original_nl.get(name)
+            if old_entry is not None:
+                for k in ("index_mapping_exclusions", "exclusion_table"):
+                    if k in old_entry:
+                        entry[k] = old_entry[k]
+            new_nl[name] = entry
+
+        data.neighbor_list = new_nl
+        data = super().forward(data)
+
+        # keep the exclusion tables built during the forward pass cached
+        # in the original entries so they are not rebuilt every call
+        for name in shared_names:
+            if name in original_nl and "exclusion_table" in new_nl[name]:
+                original_nl[name]["exclusion_table"] = new_nl[name][
+                    "exclusion_table"
+                ]
+        data.neighbor_list = original_nl
+        return data
+
+
 class EnergyOut(torch.nn.Module):
     r"""Extractor for energy computed via an mlcg compatible model.
 
@@ -166,7 +301,7 @@ class EnergyOut(torch.nn.Module):
     def __init__(
         self,
         model: torch.nn.Module,
-        targets: List[str] = None,
+        targets: Optional[List[str]] = None,
     ):
         super().__init__()
         if targets is None:

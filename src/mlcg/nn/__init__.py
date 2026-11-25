@@ -1,8 +1,22 @@
-from .gradients import GradientsOut, SumOut, EnergyOut
-from .schnet import SchNet, StandardSchNet, RBFRegularizedSchNet
-from .radial_basis import GaussianBasis, ExpNormalBasis
+from .gradients import GradientsOut, SumOut, NeighborSharingSumOut, EnergyOut
+from .schnet import (
+    SchNet,
+    StandardSchNet,
+    RBFRegularizedSchNet,
+)
+from .noise_schnet import (
+    NoiseEmbedSchNet,
+)
+from .radial_basis import GaussianBasis, ExpNormalBasis, SkewedMuGaussianBasis
 from .cutoff import CosineCutoff, IdentityCutoff
-from .losses import ForceMSE, ForceRMSE, Loss, EnergyMSE
+from .losses import (
+    ForceMSE,
+    ForceRMSE,
+    Loss,
+    EnergyMSE,
+    VarianceRegularizedMSE,
+    DistributionMatchingMSE,
+)
 from .prior import (
     Harmonic,
     HarmonicAngles,
@@ -11,6 +25,7 @@ from .prior import (
     Dihedral,
     Polynomial,
     QuarticAngles,
+    QuarticRawAngles,
     QuarticBonds,
 )
 from .mlp import MLP, TypesMLP
@@ -32,12 +47,15 @@ from .allegro import StandardAllegro
 __all__ = [
     "GradientsOut",
     "SumOut",
+    "NeighborSharingSumOut",
     "EnergyOut",
     "SchNet",
     "StandardSchNet",
     "RBFRegularizedSchNet",
+    "NoiseEmbedSchNet",
     "GaussianBasis",
     "ExpNormalBasis",
+    "SkewedMuGaussianBasis",
     "FilteredExpNormalBasis",
     "FilteredGaussianBasis",
     "CosineCutoff",
@@ -46,6 +64,8 @@ __all__ = [
     "ForceRMSE",
     "Loss",
     "EnergyMSE",
+    "VarianceRegularizedMSE",
+    "DistributionMatchingMSE",
     "Harmonic",
     "HarmonicAngles",
     "HarmonicBonds",

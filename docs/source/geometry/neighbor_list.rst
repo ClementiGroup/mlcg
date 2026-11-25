@@ -17,8 +17,6 @@ Torch Implementation
 --------------------
 
 .. autofunction:: mlcg.neighbor_list.torch_impl.torch_neighbor_list
-.. autofunction:: mlcg.neighbor_list.torch_impl.torch_neighbor_list_no_pbc
-.. autofunction:: mlcg.neighbor_list.torch_impl.compute_images
 .. autofunction:: mlcg.neighbor_list.torch_impl.wrap_positions
 
 Nvalchemi Implementation
