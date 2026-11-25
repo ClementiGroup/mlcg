@@ -286,13 +286,10 @@ class RegularizedBasis(torch.nn.Module):
 class RegularizedMACEBasis(RegularizedBasis):
     __doc = RegularizedBasis.__doc__
     __params_onwards = __doc[__doc.index("Parameters") :]
-    __doc__ = (
-        """
+    __doc__ = """
         Utility class for applying regularization to provided radial basis function compatible with MACE RadialEmbeddingBlock.
 
-    """
-        + __params_onwards
-    )
+    """ + __params_onwards
 
     def __init__(
         self,
