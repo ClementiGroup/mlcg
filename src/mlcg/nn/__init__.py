@@ -26,6 +26,7 @@ from .prior import (
     Polynomial,
     QuarticAngles,
     QuarticRawAngles,
+    QuarticBonds,
 )
 from .mlp import MLP, TypesMLP
 from .attention import ExactAttention, FavorAttention, Nonlocalinteractionblock
