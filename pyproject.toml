@@ -173,6 +173,10 @@ filterwarnings = [
 ]
 
 [tool.uv]
+# The Cython extension needs the CPython headers (Python.h). System Pythons on
+# clusters often lack them (no python3-devel package), so always use a
+# uv-managed (python-build-standalone) interpreter, which ships the headers.
+python-preference = "only-managed"
 override-dependencies = ["e3nn==0.5.3"]
 # Keep no-build-isolation-package as a fallback: if no pre-built PyG wheel is
 # found for this platform, pyg_lib will be built from source and needs
