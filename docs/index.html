@@ -215,6 +215,18 @@ the package directly with the extra matching your hardware:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;.[cu130]&quot;</span>
 </span></pre></div>
 </div>
+<p><strong>Python headers / clusters</strong></p>
+<p><code class="docutils literal notranslate"><span class="pre">mlcg</span></code> compiles a small Cython extension, so the Python interpreter must
+ship its C headers (<code class="docutils literal notranslate"><span class="pre">Python.h</span></code>). The system Python on many clusters does
+not (the <code class="docutils literal notranslate"><span class="pre">python3-devel</span></code> package is missing), which makes the build fail
+with <code class="docutils literal notranslate"><span class="pre">fatal</span> <span class="pre">error:</span> <span class="pre">Python.h:</span> <span class="pre">No</span> <span class="pre">such</span> <span class="pre">file</span> <span class="pre">or</span> <span class="pre">directory</span></code>. <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">sync</span></code> is
+configured to use a uv-managed Python, which includes the headers. For a
+self-managed environment, create it with a uv-managed Python as well:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">uv<span class="w"> </span>venv<span class="w"> </span>--managed-python<span class="w"> </span>--python<span class="w"> </span><span class="m">3</span>.12<span class="w"> </span>/path/to/venv
+</span></pre></div>
+</div>
+<p>An environment that was already created from the system Python has to be
+recreated.</p>
 <p><strong>For developers</strong></p>
 <p>Add <code class="docutils literal notranslate"><span class="pre">--group</span> <span class="pre">dev</span></code> to install additional development dependencies
 (<code class="docutils literal notranslate"><span class="pre">black</span></code>, <code class="docutils literal notranslate"><span class="pre">pytest</span></code>, <code class="docutils literal notranslate"><span class="pre">coverage</span></code>):</p>
