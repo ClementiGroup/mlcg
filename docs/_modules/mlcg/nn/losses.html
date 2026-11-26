@@ -460,6 +460,147 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="301">            <span class="p">)</span>
 </span><span data-line="302">            <span class="o">/</span> <span class="n">data</span><span class="o">.</span><span class="n">n_atoms</span>
 </span><span data-line="303">        <span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+</span><span data-line="304">
+</span><span data-line="305">
+</span><span data-line="306"><span class="k">class</span><span class="w"> </span><span class="nc">VarianceRegularizedMSE</span><span class="p">(</span><span class="n">_Loss</span><span class="p">):</span>
+</span><span data-line="307"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;MSE loss with a variance regularization term to avoid narrow distributions:</span>
+</span><span data-line="308">
+</span><span data-line="309"><span class="sd">    .. math::</span>
+</span><span data-line="310">
+</span><span data-line="311"><span class="sd">        L(f,\hat{f}) = \text{MSE}(f,\hat{f}) + \lambda \max(0, \sigma_{min}^2 - \text{Var}(f))</span>
+</span><span data-line="312">
+</span><span data-line="313"><span class="sd">    where :math:`f` are predicted values, :math:`\hat{f}` are reference values,</span>
+</span><span data-line="314"><span class="sd">    :math:`\lambda` is the regularization strength, and :math:`\sigma_{min}^2` is</span>
+</span><span data-line="315"><span class="sd">    the minimum desired variance.</span>
+</span><span data-line="316">
+</span><span data-line="317"><span class="sd">    Parameters</span>
+</span><span data-line="318"><span class="sd">    ----------</span>
+</span><span data-line="319"><span class="sd">    target_key:</span>
+</span><span data-line="320"><span class="sd">        string to specify the target key in an AtomicData instance</span>
+</span><span data-line="321"><span class="sd">    min_variance:</span>
+</span><span data-line="322"><span class="sd">        minimum desired variance of the predictions</span>
+</span><span data-line="323"><span class="sd">    lambda_reg:</span>
+</span><span data-line="324"><span class="sd">        strength of the variance regularization term</span>
+</span><span data-line="325"><span class="sd">    size_average:</span>
+</span><span data-line="326"><span class="sd">        If True, the loss is normalized by the batch size</span>
+</span><span data-line="327"><span class="sd">    reduce:</span>
+</span><span data-line="328"><span class="sd">        If True, the loss is reduced to a scalar</span>
+</span><span data-line="329"><span class="sd">    reduction:</span>
+</span><span data-line="330"><span class="sd">        Specifies the method of reduction</span>
+</span><span data-line="331"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="332">
+</span><span data-line="333">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+</span><span data-line="334">        <span class="bp">self</span><span class="p">,</span>
+</span><span data-line="335">        <span class="n">target_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="336">        <span class="n">min_variance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-3</span><span class="p">,</span>
+</span><span data-line="337">        <span class="n">lambda_reg</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
+</span><span data-line="338">        <span class="n">size_average</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="339">        <span class="n">reduce</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="340">        <span class="n">reduction</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;mean&quot;</span><span class="p">,</span>
+</span><span data-line="341">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="342">        <span class="nb">super</span><span class="p">(</span><span class="n">VarianceRegularizedMSE</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+</span><span data-line="343">            <span class="n">size_average</span><span class="o">=</span><span class="n">size_average</span><span class="p">,</span> <span class="n">reduce</span><span class="o">=</span><span class="n">reduce</span><span class="p">,</span> <span class="n">reduction</span><span class="o">=</span><span class="n">reduction</span>
+</span><span data-line="344">        <span class="p">)</span>
+</span><span data-line="345">        <span class="bp">self</span><span class="o">.</span><span class="n">target_key</span> <span class="o">=</span> <span class="n">target_key</span>
+</span><span data-line="346">        <span class="bp">self</span><span class="o">.</span><span class="n">min_variance</span> <span class="o">=</span> <span class="n">min_variance</span>
+</span><span data-line="347">        <span class="bp">self</span><span class="o">.</span><span class="n">lambda_reg</span> <span class="o">=</span> <span class="n">lambda_reg</span>
+</span><span data-line="348">
+</span><span data-line="349">    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+</span><span data-line="350"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Forward pass through the regularized MSE loss</span>
+</span><span data-line="351">
+</span><span data-line="352"><span class="sd">        Parameters</span>
+</span><span data-line="353"><span class="sd">        ----------</span>
+</span><span data-line="354"><span class="sd">        data:</span>
+</span><span data-line="355"><span class="sd">            AtomicData instance containing the target keyword in the &#39;out&#39; field</span>
+</span><span data-line="356"><span class="sd">            and as a base attribute</span>
+</span><span data-line="357">
+</span><span data-line="358"><span class="sd">        Returns</span>
+</span><span data-line="359"><span class="sd">        -------</span>
+</span><span data-line="360"><span class="sd">        loss:</span>
+</span><span data-line="361"><span class="sd">            Regularized MSE loss that penalizes narrow distributions</span>
+</span><span data-line="362"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="363">        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">out</span><span class="p">:</span>
+</span><span data-line="364">            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+</span><span data-line="365">                <span class="sa">f</span><span class="s2">&quot;target property </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">target_key</span><span class="si">}</span><span class="s2"> has not been computed in data.out </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">out</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span data-line="366">            <span class="p">)</span>
+</span><span data-line="367">        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+</span><span data-line="368">            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+</span><span data-line="369">                <span class="sa">f</span><span class="s2">&quot;target property </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">target_key</span><span class="si">}</span><span class="s2"> has no reference in data </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span data-line="370">            <span class="p">)</span>
+</span><span data-line="371">
+</span><span data-line="372">        <span class="c1"># Calculate standard MSE loss</span>
+</span><span data-line="373">        <span class="n">mse_loss</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">mse_loss</span><span class="p">(</span>
+</span><span data-line="374">            <span class="n">data</span><span class="o">.</span><span class="n">out</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">target_key</span><span class="p">],</span>
+</span><span data-line="375">            <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">target_key</span><span class="p">],</span>
+</span><span data-line="376">            <span class="n">reduction</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">reduction</span><span class="p">,</span>
+</span><span data-line="377">        <span class="p">)</span>
+</span><span data-line="378">
+</span><span data-line="379">        <span class="c1"># Calculate variance of predictions</span>
+</span><span data-line="380">        <span class="n">pred_variance</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">out</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">target_key</span><span class="p">])</span>
+</span><span data-line="381">
+</span><span data-line="382">        <span class="c1"># Add penalty if variance is too small</span>
+</span><span data-line="383">        <span class="n">variance_penalty</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lambda_reg</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span>
+</span><span data-line="384">            <span class="bp">self</span><span class="o">.</span><span class="n">min_variance</span> <span class="o">-</span> <span class="n">pred_variance</span>
+</span><span data-line="385">        <span class="p">)</span>
+</span><span data-line="386">
+</span><span data-line="387">        <span class="k">return</span> <span class="n">mse_loss</span> <span class="o">+</span> <span class="n">variance_penalty</span>
+</span><span data-line="388">
+</span><span data-line="389">
+</span><span data-line="390"><span class="k">class</span><span class="w"> </span><span class="nc">DistributionMatchingMSE</span><span class="p">(</span><span class="n">_Loss</span><span class="p">):</span>
+</span><span data-line="391"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;MSE loss that automatically matches the target distribution&#39;s variance:</span>
+</span><span data-line="392">
+</span><span data-line="393"><span class="sd">    .. math::</span>
+</span><span data-line="394">
+</span><span data-line="395"><span class="sd">        L(f,\hat{f}) = \text{MSE}(f,\hat{f}) + \lambda(\sigma_f - \sigma_{\hat{f}})^2</span>
+</span><span data-line="396">
+</span><span data-line="397"><span class="sd">    where :math:`f` are predicted values, :math:`\hat{f}` are reference values,</span>
+</span><span data-line="398"><span class="sd">    and :math:`\sigma` represents the standard deviation.</span>
+</span><span data-line="399">
+</span><span data-line="400"><span class="sd">    Parameters</span>
+</span><span data-line="401"><span class="sd">    ----------</span>
+</span><span data-line="402"><span class="sd">    target_key:</span>
+</span><span data-line="403"><span class="sd">        string to specify the target key in an AtomicData instance</span>
+</span><span data-line="404"><span class="sd">    lambda_match:</span>
+</span><span data-line="405"><span class="sd">        weight for the variance matching term</span>
+</span><span data-line="406"><span class="sd">    reduction:</span>
+</span><span data-line="407"><span class="sd">        Specifies the method of reduction</span>
+</span><span data-line="408"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="409">
+</span><span data-line="410">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+</span><span data-line="411">        <span class="bp">self</span><span class="p">,</span>
+</span><span data-line="412">        <span class="n">target_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="413">        <span class="n">lambda_match</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+</span><span data-line="414">        <span class="n">reduction</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;mean&quot;</span><span class="p">,</span>
+</span><span data-line="415">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="416">        <span class="nb">super</span><span class="p">(</span><span class="n">DistributionMatchingMSE</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">reduction</span><span class="o">=</span><span class="n">reduction</span><span class="p">)</span>
+</span><span data-line="417">        <span class="bp">self</span><span class="o">.</span><span class="n">target_key</span> <span class="o">=</span> <span class="n">target_key</span>
+</span><span data-line="418">        <span class="bp">self</span><span class="o">.</span><span class="n">lambda_match</span> <span class="o">=</span> <span class="n">lambda_match</span>
+</span><span data-line="419">
+</span><span data-line="420">    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+</span><span data-line="421">        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">out</span><span class="p">:</span>
+</span><span data-line="422">            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+</span><span data-line="423">                <span class="sa">f</span><span class="s2">&quot;target property </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">target_key</span><span class="si">}</span><span class="s2"> has not been computed in data.out </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">out</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span data-line="424">            <span class="p">)</span>
+</span><span data-line="425">        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+</span><span data-line="426">            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+</span><span data-line="427">                <span class="sa">f</span><span class="s2">&quot;target property </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">target_key</span><span class="si">}</span><span class="s2"> has no reference in data </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span data-line="428">            <span class="p">)</span>
+</span><span data-line="429">
+</span><span data-line="430">        <span class="c1"># Calculate standard MSE loss</span>
+</span><span data-line="431">        <span class="n">mse_loss</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">mse_loss</span><span class="p">(</span>
+</span><span data-line="432">            <span class="n">data</span><span class="o">.</span><span class="n">out</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">target_key</span><span class="p">],</span>
+</span><span data-line="433">            <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">target_key</span><span class="p">],</span>
+</span><span data-line="434">            <span class="n">reduction</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">reduction</span><span class="p">,</span>
+</span><span data-line="435">        <span class="p">)</span>
+</span><span data-line="436">
+</span><span data-line="437">        <span class="c1"># Calculate standard deviations</span>
+</span><span data-line="438">        <span class="n">pred_std</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">out</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">target_key</span><span class="p">])</span>
+</span><span data-line="439">        <span class="n">target_std</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">target_key</span><span class="p">])</span>
+</span><span data-line="440">
+</span><span data-line="441">        <span class="c1"># Add penalty for std mismatch</span>
+</span><span data-line="442">        <span class="n">std_penalty</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lambda_match</span> <span class="o">*</span> <span class="p">(</span><span class="n">pred_std</span> <span class="o">-</span> <span class="n">target_std</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+</span><span data-line="443">
+</span><span data-line="444">        <span class="k">return</span> <span class="n">mse_loss</span> <span class="o">+</span> <span class="n">std_penalty</span>
 </span></pre></div>
         </article><button class="back-to-top" type="button">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">

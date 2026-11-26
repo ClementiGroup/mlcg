@@ -232,6 +232,10 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#mlcg.nn.radial_basis.gaussian.GaussianBasis.reset_parameters"><code class="docutils literal notranslate">reset_parameters()</span></code></a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#mlcg.nn.radial_basis.gaussian.SkewedMuGaussianBasis"><code class="docutils literal notranslate"><span class="pre">SkewedMuGaussianBasis</span></code></a><ul>
+<li><a class="reference internal" href="#mlcg.nn.radial_basis.gaussian.SkewedMuGaussianBasis.forward"><code class="docutils literal notranslate">forward()</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#mlcg.nn.radial_basis.exp_spaced.SpacedExpBasis"><code class="docutils literal notranslate"><span class="pre">SpacedExpBasis</span></code></a><ul>
 <li><a class="reference internal" href="#mlcg.nn.radial_basis.exp_spaced.SpacedExpBasis.forward"><code class="docutils literal notranslate">forward()</span></code></a></li>
 <li><a class="reference internal" href="#mlcg.nn.radial_basis.exp_spaced.SpacedExpBasis.reset_parameters"><code class="docutils literal notranslate">reset_parameters()</span></code></a></li>
@@ -1974,6 +1978,48 @@ num_rbf)</p>
 <dt class="sig sig-object py" id="mlcg.nn.radial_basis.gaussian.GaussianBasis.reset_parameters">
 <span class="sig-name descname"><span class="pre">reset_parameters</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/radial_basis/gaussian.html#GaussianBasis.reset_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.radial_basis.gaussian.GaussianBasis.reset_parameters" title="Link to this definition">¶</a></dt>
 <dd><p>Method for resetting the basis to its initial state</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcg.nn.radial_basis.gaussian.SkewedMuGaussianBasis">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.nn.radial_basis.gaussian.</span></span><span class="sig-name descname"><span class="pre">SkewedMuGaussianBasis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_rbf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zeta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/radial_basis/gaussian.html#SkewedMuGaussianBasis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.radial_basis.gaussian.SkewedMuGaussianBasis" title="Link to this definition">¶</a></dt>
+<dd><p>Class that generates a set of non-equidistant 1-D gaussian basis functions
+with their means scattered between 0 and 1:</p>
+<div class="math-wrapper docutils container">
+<div class="math notranslate nohighlight">
+\[f_n = \exp{ \left( -\gamma(r-c_n)^2 \right) }\]</div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>num_rbf</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>) – The number of gaussian functions in the basis set.</p></li>
+<li><p><strong>zeta</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span>) – It controls the skewness of the distribution of the center of gaussian bases.
+When 0 &lt; zeta &lt; 1: the distribution is denser closer to one. The smaller zeta
+is, the farther away the distribution deviates from the uniform case.
+When zeta &gt; 1: the distribution is denser closer to 0.
+When zeta is very close to 1, the distribution is close to uniform like in a
+normal Gaussian RBF.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcg.nn.radial_basis.gaussian.SkewedMuGaussianBasis.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dist</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mlcg/nn/radial_basis/gaussian.html#SkewedMuGaussianBasis.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.radial_basis.gaussian.SkewedMuGaussianBasis.forward" title="Link to this definition">¶</a></dt>
+<dd><p>Expansion of distances through the radial basis function set.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dist</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span>) – Input pairwise distances of shape (total_num_edges)</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Distances expanded in the radial basis with shape (total_num_edges,
+num_rbf)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span></p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>

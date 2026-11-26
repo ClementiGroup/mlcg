@@ -313,6 +313,109 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="153">        <span class="k">return</span> <span class="n">obj</span></div>
 </div>
 
+</span><span data-line="154">
+</span><span data-line="155">
+<div class="viewcode-block" id="SkewedMuGaussianBasis">
+<a class="viewcode-back" href="../../../../autodoc.html#mlcg.nn.radial_basis.gaussian.SkewedMuGaussianBasis">[docs]</a>
+</span><span data-line="156"><span class="k">class</span><span class="w"> </span><span class="nc">SkewedMuGaussianBasis</span><span class="p">(</span><span class="n">GaussianBasis</span><span class="p">):</span>
+</span><span data-line="157"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Class that generates a set of non-equidistant 1-D gaussian basis functions</span>
+</span><span data-line="158"><span class="sd">    with their means scattered between 0 and 1:</span>
+</span><span data-line="159">
+</span><span data-line="160"><span class="sd">    .. math::</span>
+</span><span data-line="161">
+</span><span data-line="162"><span class="sd">        f_n = \exp{ \left( -\gamma(r-c_n)^2 \right) }</span>
+</span><span data-line="163">
+</span><span data-line="164"><span class="sd">    Parameters</span>
+</span><span data-line="165"><span class="sd">    ----------</span>
+</span><span data-line="166"><span class="sd">    num_rbf:</span>
+</span><span data-line="167"><span class="sd">        The number of gaussian functions in the basis set.</span>
+</span><span data-line="168"><span class="sd">    zeta:</span>
+</span><span data-line="169"><span class="sd">        It controls the skewness of the distribution of the center of gaussian bases.</span>
+</span><span data-line="170"><span class="sd">        When 0 &lt; zeta &lt; 1: the distribution is denser closer to one. The smaller zeta</span>
+</span><span data-line="171"><span class="sd">        is, the farther away the distribution deviates from the uniform case.</span>
+</span><span data-line="172"><span class="sd">        When zeta &gt; 1: the distribution is denser closer to 0.</span>
+</span><span data-line="173"><span class="sd">        When zeta is very close to 1, the distribution is close to uniform like in a</span>
+</span><span data-line="174"><span class="sd">        normal Gaussian RBF.</span>
+</span><span data-line="175">
+</span><span data-line="176"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="177">
+</span><span data-line="178">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+</span><span data-line="179">        <span class="bp">self</span><span class="p">,</span>
+</span><span data-line="180">        <span class="n">cutoff</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">_Cutoff</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+</span><span data-line="181">        <span class="n">num_rbf</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span>
+</span><span data-line="182">        <span class="n">zeta</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+</span><span data-line="183">        <span class="n">trainable</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span data-line="184">    <span class="p">):</span>
+</span><span data-line="185">        <span class="bp">self</span><span class="o">.</span><span class="n">zeta</span> <span class="o">=</span> <span class="n">zeta</span>
+</span><span data-line="186">        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">cutoff</span><span class="o">=</span><span class="n">cutoff</span><span class="p">,</span> <span class="n">num_rbf</span><span class="o">=</span><span class="n">num_rbf</span><span class="p">,</span> <span class="n">trainable</span><span class="o">=</span><span class="n">trainable</span><span class="p">)</span>
+</span><span data-line="187">
+</span><span data-line="188">        <span class="n">offset</span><span class="p">,</span> <span class="n">coeff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initial_params</span><span class="p">()</span>
+</span><span data-line="189">        <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">&quot;coeff&quot;</span><span class="p">,</span> <span class="n">coeff</span><span class="p">)</span>
+</span><span data-line="190">        <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">&quot;offset&quot;</span><span class="p">,</span> <span class="n">offset</span><span class="p">)</span>
+</span><span data-line="191">
+</span><span data-line="192">    <span class="k">def</span><span class="w"> </span><span class="nf">_initial_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span data-line="193"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Method for generating the initial parameters of the basis.</span>
+</span><span data-line="194"><span class="sd">        The functions are set to have equidistant centers between the</span>
+</span><span data-line="195"><span class="sd">        lower and cupper cutoff, while the variance of each function</span>
+</span><span data-line="196"><span class="sd">        is set based on the difference between the lower and upper</span>
+</span><span data-line="197"><span class="sd">        cutoffs.</span>
+</span><span data-line="198"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="199">        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">zeta</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-3</span><span class="p">:</span>
+</span><span data-line="200">            <span class="c1"># we switch to uniform dtrisbution of mu to avoid numerical instability near 1</span>
+</span><span data-line="201">            <span class="n">offset</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span>
+</span><span data-line="202">                <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_lower</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_upper</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_rbf</span>
+</span><span data-line="203">            <span class="p">)</span>
+</span><span data-line="204">            <span class="n">coeff</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.5</span> <span class="o">/</span> <span class="p">(</span><span class="n">offset</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">offset</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span>
+</span><span data-line="205">        <span class="k">else</span><span class="p">:</span>
+</span><span data-line="206">            <span class="n">total_spread</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_upper</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_lower</span>
+</span><span data-line="207">            <span class="c1"># calculating in 0,1</span>
+</span><span data-line="208">            <span class="n">coeff_xs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span>
+</span><span data-line="209">                <span class="mi">0</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_rbf</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span>
+</span><span data-line="210">                <span class="mi">1</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_rbf</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span>
+</span><span data-line="211">                <span class="bp">self</span><span class="o">.</span><span class="n">num_rbf</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+</span><span data-line="212">            <span class="p">)</span>
+</span><span data-line="213">            <span class="n">coeff</span> <span class="o">=</span> <span class="p">(</span>
+</span><span data-line="214">                <span class="o">-</span><span class="mf">0.5</span>
+</span><span data-line="215">                <span class="o">/</span> <span class="p">(</span>
+</span><span data-line="216">                    <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">zeta</span> <span class="o">**</span> <span class="n">coeff_xs</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">zeta</span> <span class="o">**</span> <span class="n">coeff_xs</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+</span><span data-line="217">                    <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">zeta</span><span class="p">)</span>
+</span><span data-line="218">                <span class="p">)</span>
+</span><span data-line="219">                <span class="o">**</span> <span class="mi">2</span>
+</span><span data-line="220">            <span class="p">)</span>
+</span><span data-line="221">
+</span><span data-line="222">            <span class="n">xs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_rbf</span><span class="p">)</span>
+</span><span data-line="223">            <span class="n">offset</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">zeta</span><span class="o">**</span><span class="n">xs</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">zeta</span><span class="p">)</span>
+</span><span data-line="224">
+</span><span data-line="225">            <span class="c1"># shifting to the cutoff region</span>
+</span><span data-line="226">            <span class="n">coeff</span> <span class="o">*=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">total_spread</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+</span><span data-line="227">            <span class="n">offset</span> <span class="o">*=</span> <span class="n">total_spread</span>
+</span><span data-line="228">            <span class="n">offset</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_lower</span>
+</span><span data-line="229">        <span class="k">return</span> <span class="n">offset</span><span class="p">,</span> <span class="n">coeff</span>
+</span><span data-line="230">
+<div class="viewcode-block" id="SkewedMuGaussianBasis.forward">
+<a class="viewcode-back" href="../../../../autodoc.html#mlcg.nn.radial_basis.gaussian.SkewedMuGaussianBasis.forward">[docs]</a>
+</span><span data-line="231">    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dist</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+</span><span data-line="232"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Expansion of distances through the radial basis function set.</span>
+</span><span data-line="233">
+</span><span data-line="234"><span class="sd">        Parameters</span>
+</span><span data-line="235"><span class="sd">        ----------</span>
+</span><span data-line="236"><span class="sd">        dist:</span>
+</span><span data-line="237"><span class="sd">            Input pairwise distances of shape (total_num_edges)</span>
+</span><span data-line="238">
+</span><span data-line="239"><span class="sd">        Return</span>
+</span><span data-line="240"><span class="sd">        ------</span>
+</span><span data-line="241"><span class="sd">        expanded_distances:</span>
+</span><span data-line="242"><span class="sd">            Distances expanded in the radial basis with shape (total_num_edges,</span>
+</span><span data-line="243"><span class="sd">            num_rbf)</span>
+</span><span data-line="244"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="245">
+</span><span data-line="246">        <span class="n">dist</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</span><span data-line="247">        <span class="n">expanded_distances</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
+</span><span data-line="248">            <span class="bp">self</span><span class="o">.</span><span class="n">coeff</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="n">dist</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+</span><span data-line="249">        <span class="p">)</span>
+</span><span data-line="250">        <span class="k">return</span> <span class="n">expanded_distances</span></div>
+</div>
+
 </span></pre></div>
         </article><button class="back-to-top" type="button">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
