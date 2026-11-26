@@ -67,6 +67,22 @@ the package directly with the extra matching your hardware:
 
     uv pip install ".[cu130]"
 
+**Python headers / clusters**
+
+``mlcg`` compiles a small Cython extension, so the Python interpreter must
+ship its C headers (``Python.h``). The system Python on many clusters does
+not (the ``python3-devel`` package is missing), which makes the build fail
+with ``fatal error: Python.h: No such file or directory``. ``uv sync`` is
+configured to use a uv-managed Python, which includes the headers. For a
+self-managed environment, create it with a uv-managed Python as well:
+
+.. code:: bash
+
+    uv venv --managed-python --python 3.12 /path/to/venv
+
+An environment that was already created from the system Python has to be
+recreated.
+
 **For developers**
 
 Add ``--group dev`` to install additional development dependencies
