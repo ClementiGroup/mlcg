@@ -4,7 +4,7 @@ train:
   max_epoch_samples: null
   metasets:
     POPC:
-      names:
+      molecules:
       - bilayer
       stride: 1
   subsample_random_seed: 42
@@ -14,7 +14,7 @@ val:
   max_epoch_samples: null
   metasets:
     POPC:
-      names:
+      molecules:
       - bilayer
       stride: 1
   subsample_random_seed: 42
