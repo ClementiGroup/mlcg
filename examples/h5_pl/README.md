@@ -19,6 +19,10 @@ Check the folder `single_molecule` to learn how to make an mlcg model for an H5 
 
 Check the folder `multiple_molecules` to see how to train an mlcg on an H5 dataset that contains data from multiple molecules.
 
+## Noise augmentation and periodic boundary conditions example
+
+Check the folder `noise_and_pbc` to see how to train on a periodic system (a lipid bilayer) with noise augmentation and a prior that is evaluated on the fly.
+
 ## Additional files
 
 In the `additional_files` folder you can find some useful yaml input examples for mlcg scripts and some code that can be useful when working with H5 datasets.
