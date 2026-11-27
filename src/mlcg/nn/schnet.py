@@ -11,22 +11,9 @@ from ..data.atomic_data import AtomicData, ENERGY_KEY
 from ..geometry.internal_coordinates import compute_distances
 from .mlp import MLP
 from ._module_init import init_xavier_uniform
-from .attention import (
-    AttentiveInteractionBlock,
-    AttentiveInteractionBlock2,
-    Nonlocalinteractionblock,
-)
 
 from .radial_basis import RegularizedBasis
-
-try:
-    from mlcg_opt_radius.radius import radius_distance
-except ImportError:
-    print(
-        "`mlcg_opt_radius` not installed. Please check the"
-        + "`opt_radius` folder and follow the instructions."
-    )
-    radius_distance = None
+from typing_extensions import deprecated
 
 
 class SchNet(torch.nn.Module):
@@ -499,11 +486,16 @@ class StandardSchNet(SchNet):
         )
 
 
-# TODO check if this classes are still needed.
+@deprecated(
+    "AttentiveSchNet is deprecated since mlcg 0.2.2 and will be removed in a future release. "
+)
 class AttentiveSchNet(SchNet):
     """Small wrapper class for :ref:`mlcg.nn.SchNet` to simplify the definition of the
     SchNet model with an Interaction block that includes attention through an input file. The upper distance cutoff attribute
     in is set by default to match the upper cutoff value in the cutoff function.
+
+    .. deprecated:: 0.2.2
+        Will be removed in a future release.
 
     Parameters
     ----------
@@ -580,6 +572,12 @@ class AttentiveSchNet(SchNet):
         nls_distance_method: str = "torch",
         excluded_order: int = 1,
     ):
+        from .attention import (
+            AttentiveInteractionBlock,
+            AttentiveInteractionBlock2,
+            Nonlocalinteractionblock,
+        )
+
         if layer_widths is None:
             layer_widths = [128, 128]
         if num_interactions < 1:

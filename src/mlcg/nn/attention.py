@@ -3,6 +3,9 @@ from typing import List
 from ._module_init import init_xavier_uniform
 from typing import Optional
 import math
+from typing_extensions import deprecated
+
+# TODO: remove deprecated: entire file
 
 """MLCG for attention. Based on:
 
@@ -17,9 +20,15 @@ import math
 """
 
 
+@deprecated(
+    "Residual is deprecated since mlcg 0.2.2 and will be removed in a future release. "
+)
 class Residual(torch.nn.Module):
     """
     Pre-activation residual block
+
+    .. deprecated:: 0.2.2
+        Will be removed in a future release.
 
     Parameters
     ----------
@@ -66,9 +75,15 @@ class Residual(torch.nn.Module):
         return x + self.layers(x)
 
 
+@deprecated(
+    "ResidualStack is deprecated since mlcg 0.2.2 and will be removed in a future release. "
+)
 class ResidualStack(torch.nn.Module):
     """
     Stack of num_residuals pre-activation residual blocks evaluated in sequence.
+
+    .. deprecated:: 0.2.2
+        Will be removed in a future release.
 
     Parameters
     ----------
@@ -111,9 +126,15 @@ class ResidualStack(torch.nn.Module):
         return x
 
 
+@deprecated(
+    "Residual_MLP is deprecated since mlcg 0.2.2 and will be removed in a future release. "
+)
 class Residual_MLP(torch.nn.Module):
     """
     Residual Multilayer Perceptron
+
+    .. deprecated:: 0.2.2
+        Will be removed in a future release.
 
     Residual block, followed by a linear layer and an activation function
 
@@ -176,8 +197,16 @@ class Residual_MLP(torch.nn.Module):
             return self.activation_func(self.linear(self.residual(x)))
 
 
+@deprecated(
+    "ExactAttention is deprecated since mlcg 0.2.2 and will be removed in a future release. "
+)
 class ExactAttention(torch.nn.Module):
-    """Softmax Attention"""
+    """Softmax Attention
+
+    .. deprecated:: 0.2.2
+        Will be removed in a future release.
+
+    """
 
     def __init__(
         self,
@@ -218,8 +247,15 @@ class ExactAttention(torch.nn.Module):
         return attention
 
 
+@deprecated(
+    "FavorAttention is deprecated since mlcg 0.2.2 and will be removed in a future release. "
+)
 class FavorAttention(torch.nn.Module):
-    """Favor+ Attention"""
+    """Favor+ Attention
+    .. deprecated:: 0.2.2
+        Will be removed in a future release.
+
+    """
 
     def __init__(self, dimv: int = 128, dimqk: int = 128) -> torch.Tensor:
         super(FavorAttention, self).__init__()
@@ -353,9 +389,15 @@ class FavorAttention(torch.nn.Module):
             return (Q @ (K.T @ V)) / norm
 
 
+@deprecated(
+    "Nonlocalinteractionblock is deprecated since mlcg 0.2.2 and will be removed in a future release. "
+)
 class Nonlocalinteractionblock(torch.nn.Module):
     """
     Block for updating features through nonlocal interactions via attention.
+
+    .. deprecated:: 0.2.2
+        Will be removed in a future release.
 
     Parameters
     ----------
@@ -441,11 +483,17 @@ class Nonlocalinteractionblock(torch.nn.Module):
         return self.attention_block(q, k, v, num_batch, batch_seg, mask)
 
 
+@deprecated(
+    "AttentiveInteractionBlock is deprecated since mlcg 0.2.2 and will be removed in a future release. "
+)
 class AttentiveInteractionBlock(torch.nn.Module):
     r"""Interaction blocks for SchNet. Consists of atomwise
     transformations of embedded features that are continuously
     convolved with filters generated from radial basis function-expanded
     pairwise distances.
+
+    .. deprecated:: 0.2.2
+        Will be removed in a future release.
 
     Parameters
     ----------
@@ -524,11 +572,17 @@ class AttentiveInteractionBlock(torch.nn.Module):
         return x
 
 
+@deprecated(
+    "AttentiveInteractionBlock2 is deprecated since mlcg 0.2.2 and will be removed in a future release. "
+)
 class AttentiveInteractionBlock2(torch.nn.Module):
     r"""Interaction blocks for SchNet. Consists of atomwise
     transformations of embedded features that are continuously
     convolved with filters generated from radial basis function-expanded
     pairwise distances.
+
+    .. deprecated:: 0.2.2
+        Will be removed in a future release.
 
     Parameters
     ----------

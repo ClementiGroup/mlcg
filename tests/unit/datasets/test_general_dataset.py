@@ -139,6 +139,7 @@ class MockProteinReference(object):
         return pdb_str
 
 
+# TODO: remove deprecated GeneralCarbonAlphaDataset
 def test_general_dataset_run():
     """Tests to make sure that GeneralCarbonAlphaDataset processes a test
     tetrapeptide system properly (using default kwargs)
