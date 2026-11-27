@@ -6,7 +6,8 @@
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=31853864" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -172,7 +173,7 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="Harmonic">
 <a class="viewcode-back" href="../../../../models/priors.html#mlcg.nn.prior.Harmonic">[docs]</a>
 </span><span data-line="22"><span class="k">class</span><span class="w"> </span><span class="nc">Harmonic</span><span class="p">(</span><span class="n">_Prior</span><span class="p">):</span>
-</span><span data-line="23"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;1-D Harmonic prior interaction for feature :math:`x` of the form:</span>
+</span><span data-line="23"><span class="w">    </span><span class="sa">r</span><span class="sd">"""1-D Harmonic prior interaction for feature :math:`x` of the form:</span>
 </span><span data-line="24">
 </span><span data-line="25"><span class="sd">    .. math::</span>
 </span><span data-line="26">
@@ -196,16 +197,16 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="44"><span class="sd">        .. code-block:: python</span>
 </span><span data-line="45">
 </span><span data-line="46"><span class="sd">            tuple(*specific_types) : {</span>
-</span><span data-line="47"><span class="sd">                &quot;k&quot; : #torch.Tensor scalar that describes the strength of the</span>
+</span><span data-line="47"><span class="sd">                "k" : #torch.Tensor scalar that describes the strength of the</span>
 </span><span data-line="48"><span class="sd">                    #harmonic interaction.</span>
-</span><span data-line="49"><span class="sd">                &quot;x_0&quot; : #torch.Tensor scalar that describes the mean feature</span>
+</span><span data-line="49"><span class="sd">                "x_0" : #torch.Tensor scalar that describes the mean feature</span>
 </span><span data-line="50"><span class="sd">                    #value.</span>
 </span><span data-line="51"><span class="sd">                ...</span>
 </span><span data-line="52">
 </span><span data-line="53"><span class="sd">                }</span>
 </span><span data-line="54">
 </span><span data-line="55"><span class="sd">        The keys can be tuples of 2 or 3 atom type integers.</span>
-</span><span data-line="56"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="56"><span class="sd">    """</span>
 </span><span data-line="57">
 </span><span data-line="58">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">statistics</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">order</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 </span><span data-line="59">        <span class="nb">super</span><span class="p">(</span><span class="n">Harmonic</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -221,33 +222,33 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="69">        <span class="n">x_0</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">sizes</span><span class="p">)</span>
 </span><span data-line="70">        <span class="n">k</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">sizes</span><span class="p">)</span>
 </span><span data-line="71">        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">statistics</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-</span><span data-line="72">            <span class="n">x_0</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">statistics</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s2">&quot;x_0&quot;</span><span class="p">]</span>
-</span><span data-line="73">            <span class="n">k</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">statistics</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s2">&quot;k&quot;</span><span class="p">]</span>
+</span><span data-line="72">            <span class="n">x_0</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">statistics</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s2">"x_0"</span><span class="p">]</span>
+</span><span data-line="73">            <span class="n">k</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">statistics</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s2">"k"</span><span class="p">]</span>
 </span><span data-line="74">
-</span><span data-line="75">        <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">&quot;x_0&quot;</span><span class="p">,</span> <span class="n">x_0</span><span class="p">)</span>
-</span><span data-line="76">        <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+</span><span data-line="75">        <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">"x_0"</span><span class="p">,</span> <span class="n">x_0</span><span class="p">)</span>
+</span><span data-line="76">        <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">"k"</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
 </span><span data-line="77">
 </span><span data-line="78">    <span class="k">def</span><span class="w"> </span><span class="nf">data2parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">):</span>
-</span><span data-line="79">        <span class="n">mapping</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;index_mapping&quot;</span><span class="p">]</span>
+</span><span data-line="79">        <span class="n">mapping</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s2">"index_mapping"</span><span class="p">]</span>
 </span><span data-line="80">        <span class="n">interaction_types</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
 </span><span data-line="81">            <span class="n">data</span><span class="o">.</span><span class="n">atom_types</span><span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="n">ii</span><span class="p">]]</span> <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="p">)</span>
 </span><span data-line="82">        <span class="p">)</span>
 </span><span data-line="83">        <span class="n">params</span> <span class="o">=</span> <span class="p">{</span>
-</span><span data-line="84">            <span class="s2">&quot;x0&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_0</span><span class="p">[</span><span class="n">interaction_types</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span>
-</span><span data-line="85">            <span class="s2">&quot;k&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">[</span><span class="n">interaction_types</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span>
+</span><span data-line="84">            <span class="s2">"x0"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_0</span><span class="p">[</span><span class="n">interaction_types</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span>
+</span><span data-line="85">            <span class="s2">"k"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">[</span><span class="n">interaction_types</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span>
 </span><span data-line="86">        <span class="p">}</span>
-</span><span data-line="87">        <span class="n">params</span><span class="p">[</span><span class="s2">&quot;V0&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;x0&quot;</span><span class="p">])</span>
+</span><span data-line="87">        <span class="n">params</span><span class="p">[</span><span class="s2">"V0"</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">"x0"</span><span class="p">])</span>
 </span><span data-line="88">        <span class="k">return</span> <span class="n">params</span>
 </span><span data-line="89">
 </span><span data-line="90">    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AtomicData</span><span class="p">:</span>
-</span><span data-line="91"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Forward pass through the harmonic interaction.</span>
+</span><span data-line="91"><span class="w">        </span><span class="sd">"""Forward pass through the harmonic interaction.</span>
 </span><span data-line="92">
 </span><span data-line="93"><span class="sd">        Parameters</span>
 </span><span data-line="94"><span class="sd">        ----------</span>
 </span><span data-line="95"><span class="sd">        data:</span>
 </span><span data-line="96"><span class="sd">            Input AtomicData instance that possesses an appropriate</span>
-</span><span data-line="97"><span class="sd">            neighbor list containing both an &#39;index_mapping&#39;</span>
-</span><span data-line="98"><span class="sd">            field and a &#39;mapping_batch&#39; field for accessing</span>
+</span><span data-line="97"><span class="sd">            neighbor list containing both an 'index_mapping'</span>
+</span><span data-line="98"><span class="sd">            field and a 'mapping_batch' field for accessing</span>
 </span><span data-line="99"><span class="sd">            beads relevant to the interaction and scattering</span>
 </span><span data-line="100"><span class="sd">            the interaction energies onto the correct example/structure</span>
 </span><span data-line="101"><span class="sd">            respectively.</span>
@@ -255,16 +256,16 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="103"><span class="sd">        Returns</span>
 </span><span data-line="104"><span class="sd">        -------</span>
 </span><span data-line="105"><span class="sd">        AtomicData:</span>
-</span><span data-line="106"><span class="sd">            Updated AtomicData instance with the &#39;out&#39; field</span>
+</span><span data-line="106"><span class="sd">            Updated AtomicData instance with the 'out' field</span>
 </span><span data-line="107"><span class="sd">            populated with the predicted energies for each</span>
 </span><span data-line="108"><span class="sd">            example/structure</span>
-</span><span data-line="109"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="110">        <span class="n">mapping_batch</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;mapping_batch&quot;</span><span class="p">]</span>
+</span><span data-line="109"><span class="sd">        """</span>
+</span><span data-line="110">        <span class="n">mapping_batch</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s2">"mapping_batch"</span><span class="p">]</span>
 </span><span data-line="111">        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data2parameters</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 </span><span data-line="112">        <span class="n">features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data2features</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
 </span><span data-line="113">        <span class="n">y</span> <span class="o">=</span> <span class="n">Harmonic</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">)</span>
-</span><span data-line="114">        <span class="n">y</span> <span class="o">=</span> <span class="n">scatter</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">mapping_batch</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">reduce</span><span class="o">=</span><span class="s2">&quot;sum&quot;</span><span class="p">)</span>
-</span><span data-line="115">        <span class="n">data</span><span class="o">.</span><span class="n">out</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;energy&quot;</span><span class="p">:</span> <span class="n">y</span><span class="p">}</span>
+</span><span data-line="114">        <span class="n">y</span> <span class="o">=</span> <span class="n">scatter</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">mapping_batch</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">reduce</span><span class="o">=</span><span class="s2">"sum"</span><span class="p">)</span>
+</span><span data-line="115">        <span class="n">data</span><span class="o">.</span><span class="n">out</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"energy"</span><span class="p">:</span> <span class="n">y</span><span class="p">}</span>
 </span><span data-line="116">        <span class="k">return</span> <span class="n">data</span>
 </span><span data-line="117">
 </span><span data-line="118">    <span class="nd">@staticmethod</span>
@@ -275,7 +276,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="123">    <span class="k">def</span><span class="w"> </span><span class="nf">fit_from_potential_estimates</span><span class="p">(</span>
 </span><span data-line="124">        <span class="n">bin_centers_nz</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">dG_nz</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
 </span><span data-line="125">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
-</span><span data-line="126"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Method for fitting interaction parameters from data</span>
+</span><span data-line="126"><span class="w">        </span><span class="sa">r</span><span class="sd">"""Method for fitting interaction parameters from data</span>
 </span><span data-line="127">
 </span><span data-line="128"><span class="sd">        Parameters</span>
 </span><span data-line="129"><span class="sd">        ----------</span>
@@ -299,7 +300,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="147"><span class="sd">        Dict:</span>
 </span><span data-line="148"><span class="sd">            Dictionary of interaction parameters as retrived through</span>
 </span><span data-line="149"><span class="sd">            `scipy.optimize.curve_fit`</span>
-</span><span data-line="150"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="150"><span class="sd">        """</span>
 </span><span data-line="151">
 </span><span data-line="152">        <span class="c1"># remove noise by discarding signals</span>
 </span><span data-line="153">        <span class="n">integral</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
@@ -314,18 +315,18 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="162">                <span class="n">dG_nz</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span>
 </span><span data-line="163">                <span class="n">p0</span><span class="o">=</span><span class="p">[</span><span class="n">bin_centers_nz</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">dG_nz</span><span class="p">[</span><span class="n">mask</span><span class="p">])],</span> <span class="mi">60</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">],</span>
 </span><span data-line="164">            <span class="p">)</span>
-</span><span data-line="165">            <span class="n">stat</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;k&quot;</span><span class="p">:</span> <span class="n">popt</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;x_0&quot;</span><span class="p">:</span> <span class="n">popt</span><span class="p">[</span><span class="mi">0</span><span class="p">]}</span>
+</span><span data-line="165">            <span class="n">stat</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"k"</span><span class="p">:</span> <span class="n">popt</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">"x_0"</span><span class="p">:</span> <span class="n">popt</span><span class="p">[</span><span class="mi">0</span><span class="p">]}</span>
 </span><span data-line="166">        <span class="k">except</span><span class="p">:</span>
-</span><span data-line="167">            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;failed to fit potential estimate for Harmonic&quot;</span><span class="p">)</span>
+</span><span data-line="167">            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"failed to fit potential estimate for Harmonic"</span><span class="p">)</span>
 </span><span data-line="168">            <span class="n">stat</span> <span class="o">=</span> <span class="p">{</span>
-</span><span data-line="169">                <span class="s2">&quot;k&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">)),</span>
-</span><span data-line="170">                <span class="s2">&quot;x_0&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">)),</span>
+</span><span data-line="169">                <span class="s2">"k"</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="s2">"nan"</span><span class="p">)),</span>
+</span><span data-line="170">                <span class="s2">"x_0"</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="s2">"nan"</span><span class="p">)),</span>
 </span><span data-line="171">            <span class="p">}</span>
 </span><span data-line="172">        <span class="k">return</span> <span class="n">stat</span>
 </span><span data-line="173">
 </span><span data-line="174">    <span class="nd">@staticmethod</span>
 </span><span data-line="175">    <span class="k">def</span><span class="w"> </span><span class="nf">neighbor_list</span><span class="p">(</span><span class="n">topology</span><span class="p">:</span> <span class="n">Topology</span><span class="p">,</span> <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
-</span><span data-line="176"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Method for computing a neighbor list from a topology</span>
+</span><span data-line="176"><span class="w">        </span><span class="sd">"""Method for computing a neighbor list from a topology</span>
 </span><span data-line="177"><span class="sd">        and a chosen feature type.</span>
 </span><span data-line="178">
 </span><span data-line="179"><span class="sd">        Parameters</span>
@@ -335,14 +336,14 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="183"><span class="sd">            feature type chosen for the neighbor list.</span>
 </span><span data-line="184"><span class="sd">        type:</span>
 </span><span data-line="185"><span class="sd">            A string describing the type of features. Must be one of</span>
-</span><span data-line="186"><span class="sd">            :code:`[&quot;bonds&quot;, &quot;angles&quot;]`</span>
+</span><span data-line="186"><span class="sd">            :code:`["bonds", "angles"]`</span>
 </span><span data-line="187">
 </span><span data-line="188"><span class="sd">        Returns</span>
 </span><span data-line="189"><span class="sd">        -------</span>
 </span><span data-line="190"><span class="sd">        Dict:</span>
 </span><span data-line="191"><span class="sd">            Neighborlist of the chosen feature according to the</span>
 </span><span data-line="192"><span class="sd">            supplied topology</span>
-</span><span data-line="193"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="193"><span class="sd">        """</span>
 </span><span data-line="194">
 </span><span data-line="195">        <span class="n">nl</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">(</span><span class="nb">type</span><span class="p">)</span>
 </span><span data-line="196">        <span class="k">return</span> <span class="p">{</span><span class="nb">type</span><span class="p">:</span> <span class="n">nl</span><span class="p">}</span></div>
@@ -352,11 +353,11 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="HarmonicBonds">
 <a class="viewcode-back" href="../../../../models/priors.html#mlcg.nn.prior.HarmonicBonds">[docs]</a>
 </span><span data-line="199"><span class="k">class</span><span class="w"> </span><span class="nc">HarmonicBonds</span><span class="p">(</span><span class="n">Harmonic</span><span class="p">):</span>
-</span><span data-line="200"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrapper class for quickly computing bond priors</span>
+</span><span data-line="200"><span class="w">    </span><span class="sd">"""Wrapper class for quickly computing bond priors</span>
 </span><span data-line="201"><span class="sd">    (order 2 Harmonic priors)</span>
-</span><span data-line="202"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="202"><span class="sd">    """</span>
 </span><span data-line="203">
-</span><span data-line="204">    <span class="n">name</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;bonds&quot;</span>
+</span><span data-line="204">    <span class="n">name</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"bonds"</span>
 </span><span data-line="205">    <span class="n">_order</span> <span class="o">=</span> <span class="mi">2</span>
 </span><span data-line="206">
 </span><span data-line="207">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">statistics</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -365,9 +366,9 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="210">        <span class="p">)</span>
 </span><span data-line="211">
 </span><span data-line="212">    <span class="k">def</span><span class="w"> </span><span class="nf">data2features</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-</span><span data-line="213">        <span class="n">mapping</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;index_mapping&quot;</span><span class="p">]</span>
-</span><span data-line="214">        <span class="n">pbc</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;pbc&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-</span><span data-line="215">        <span class="n">cell</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;cell&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</span><span data-line="213">        <span class="n">mapping</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s2">"index_mapping"</span><span class="p">]</span>
+</span><span data-line="214">        <span class="n">pbc</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">"pbc"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</span><span data-line="215">        <span class="n">cell</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">"cell"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 </span><span data-line="216">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_features</span><span class="p">(</span>
 </span><span data-line="217">            <span class="n">pos</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span>
 </span><span data-line="218">            <span class="n">mapping</span><span class="o">=</span><span class="n">mapping</span><span class="p">,</span>
@@ -401,7 +402,7 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="HarmonicAngles">
 <a class="viewcode-back" href="../../../../models/priors.html#mlcg.nn.prior.HarmonicAngles">[docs]</a>
 </span><span data-line="245"><span class="k">class</span><span class="w"> </span><span class="nc">HarmonicAngles</span><span class="p">(</span><span class="n">Harmonic</span><span class="p">):</span>
-</span><span data-line="246"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Wrapper class for quickly computing angle priors</span>
+</span><span data-line="246"><span class="w">    </span><span class="sa">r</span><span class="sd">"""Wrapper class for quickly computing angle priors</span>
 </span><span data-line="247"><span class="sd">    (order 3 Harmonic priors)</span>
 </span><span data-line="248">
 </span><span data-line="249"><span class="sd">    To avoid numerical instabilities, we use a functional form of the following way:</span>
@@ -412,9 +413,9 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="254">
 </span><span data-line="255"><span class="sd">    where :math:`\theta_0` is the value of the angle at equilibrium.</span>
 </span><span data-line="256">
-</span><span data-line="257"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="257"><span class="sd">    """</span>
 </span><span data-line="258">
-</span><span data-line="259">    <span class="n">name</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;angles&quot;</span>
+</span><span data-line="259">    <span class="n">name</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"angles"</span>
 </span><span data-line="260">    <span class="n">_order</span> <span class="o">=</span> <span class="mi">3</span>
 </span><span data-line="261">
 </span><span data-line="262">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">statistics</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -423,9 +424,9 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="265">        <span class="p">)</span>
 </span><span data-line="266">
 </span><span data-line="267">    <span class="k">def</span><span class="w"> </span><span class="nf">data2features</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-</span><span data-line="268">        <span class="n">mapping</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;index_mapping&quot;</span><span class="p">]</span>
-</span><span data-line="269">        <span class="n">pbc</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;pbc&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-</span><span data-line="270">        <span class="n">cell</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;cell&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</span><span data-line="268">        <span class="n">mapping</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s2">"index_mapping"</span><span class="p">]</span>
+</span><span data-line="269">        <span class="n">pbc</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">"pbc"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</span><span data-line="270">        <span class="n">cell</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">"cell"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 </span><span data-line="271">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_features</span><span class="p">(</span>
 </span><span data-line="272">            <span class="n">pos</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span>
 </span><span data-line="273">            <span class="n">mapping</span><span class="o">=</span><span class="n">mapping</span><span class="p">,</span>
@@ -457,7 +458,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="298">
 </span><span data-line="299">
 </span><span data-line="300"><span class="k">class</span><span class="w"> </span><span class="nc">HarmonicAnglesRaw</span><span class="p">(</span><span class="n">Harmonic</span><span class="p">):</span>
-</span><span data-line="301"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Wrapper class for quickly computing angle priors</span>
+</span><span data-line="301"><span class="w">    </span><span class="sa">r</span><span class="sd">"""Wrapper class for quickly computing angle priors</span>
 </span><span data-line="302"><span class="sd">    (order 3 Harmonic priors)</span>
 </span><span data-line="303">
 </span><span data-line="304"><span class="sd">    .. math::</span>
@@ -467,9 +468,9 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="308"><span class="sd">        \mathbf{r}_{kj} &amp;= \mathbf{r}_k - \mathbf{r}_j \\</span>
 </span><span data-line="309"><span class="sd">        \mathbf{\hat{n}} &amp;= \frac{\mathbf{r}_{ij} \times \mathbf{r}_{kj}}{\Vert \mathbf{r}_{ij} \times \mathbf{r}_{kj} \Vert} </span>
 </span><span data-line="310">
-</span><span data-line="311"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="311"><span class="sd">    """</span>
 </span><span data-line="312">
-</span><span data-line="313">    <span class="n">name</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;angles&quot;</span>
+</span><span data-line="313">    <span class="n">name</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"angles"</span>
 </span><span data-line="314">    <span class="n">_order</span> <span class="o">=</span> <span class="mi">3</span>
 </span><span data-line="315">
 </span><span data-line="316">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">statistics</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -479,9 +480,9 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="320">        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
 </span><span data-line="321">
 </span><span data-line="322">    <span class="k">def</span><span class="w"> </span><span class="nf">data2features</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-</span><span data-line="323">        <span class="n">mapping</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;index_mapping&quot;</span><span class="p">]</span>
-</span><span data-line="324">        <span class="n">pbc</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;pbc&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-</span><span data-line="325">        <span class="n">cell</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;cell&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</span><span data-line="323">        <span class="n">mapping</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s2">"index_mapping"</span><span class="p">]</span>
+</span><span data-line="324">        <span class="n">pbc</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">"pbc"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</span><span data-line="325">        <span class="n">cell</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">"cell"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 </span><span data-line="326">        <span class="k">return</span> <span class="n">HarmonicAnglesRaw</span><span class="o">.</span><span class="n">compute_features</span><span class="p">(</span>
 </span><span data-line="327">            <span class="n">pos</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span>
 </span><span data-line="328">            <span class="n">mapping</span><span class="o">=</span><span class="n">mapping</span><span class="p">,</span>
@@ -512,7 +513,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="353">
 </span><span data-line="354">
 </span><span data-line="355"><span class="k">class</span><span class="w"> </span><span class="nc">ShiftedHarmonicAnglesRaw</span><span class="p">(</span><span class="n">Harmonic</span><span class="p">):</span>
-</span><span data-line="356"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Wrapper class for quickly computing angle priors</span>
+</span><span data-line="356"><span class="w">    </span><span class="sa">r</span><span class="sd">"""Wrapper class for quickly computing angle priors</span>
 </span><span data-line="357"><span class="sd">    (order 3 Harmonic priors)</span>
 </span><span data-line="358">
 </span><span data-line="359"><span class="sd">    .. math::</span>
@@ -522,9 +523,9 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="363"><span class="sd">        \mathbf{r}_{kj} &amp;= \mathbf{r}_k - \mathbf{r}_j \\</span>
 </span><span data-line="364"><span class="sd">        \mathbf{\hat{n}} &amp;= \frac{\mathbf{r}_{ij} \times \mathbf{r}_{kj}}{\Vert \mathbf{r}_{ij} \times \mathbf{r}_{kj} \Vert} </span>
 </span><span data-line="365">
-</span><span data-line="366"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="366"><span class="sd">    """</span>
 </span><span data-line="367">
-</span><span data-line="368">    <span class="n">name</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;angles&quot;</span>
+</span><span data-line="368">    <span class="n">name</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"angles"</span>
 </span><span data-line="369">    <span class="n">_order</span> <span class="o">=</span> <span class="mi">3</span>
 </span><span data-line="370">
 </span><span data-line="371">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">statistics</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -536,9 +537,9 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="377">        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
 </span><span data-line="378">
 </span><span data-line="379">    <span class="k">def</span><span class="w"> </span><span class="nf">data2features</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-</span><span data-line="380">        <span class="n">mapping</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;index_mapping&quot;</span><span class="p">]</span>
-</span><span data-line="381">        <span class="n">pbc</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;pbc&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-</span><span data-line="382">        <span class="n">cell</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;cell&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</span><span data-line="380">        <span class="n">mapping</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s2">"index_mapping"</span><span class="p">]</span>
+</span><span data-line="381">        <span class="n">pbc</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">"pbc"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</span><span data-line="382">        <span class="n">cell</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">"cell"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 </span><span data-line="383">        <span class="k">return</span> <span class="n">ShiftedHarmonicAnglesRaw</span><span class="o">.</span><span class="n">compute_features</span><span class="p">(</span>
 </span><span data-line="384">            <span class="n">pos</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span>
 </span><span data-line="385">            <span class="n">mapping</span><span class="o">=</span><span class="n">mapping</span><span class="p">,</span>
@@ -575,7 +576,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="416">
 </span><span data-line="417">
 </span><span data-line="418"><span class="k">class</span><span class="w"> </span><span class="nc">HarmonicImpropers</span><span class="p">(</span><span class="n">Harmonic</span><span class="p">):</span>
-</span><span data-line="419">    <span class="n">name</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;impropers&quot;</span>
+</span><span data-line="419">    <span class="n">name</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"impropers"</span>
 </span><span data-line="420">    <span class="n">_order</span> <span class="o">=</span> <span class="mi">4</span>
 </span><span data-line="421">
 </span><span data-line="422">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">statistics</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -584,9 +585,9 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="425">        <span class="p">)</span>
 </span><span data-line="426">
 </span><span data-line="427">    <span class="k">def</span><span class="w"> </span><span class="nf">data2features</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-</span><span data-line="428">        <span class="n">mapping</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;index_mapping&quot;</span><span class="p">]</span>
-</span><span data-line="429">        <span class="n">pbc</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;pbc&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-</span><span data-line="430">        <span class="n">cell</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;cell&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</span><span data-line="428">        <span class="n">mapping</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s2">"index_mapping"</span><span class="p">]</span>
+</span><span data-line="429">        <span class="n">pbc</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">"pbc"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</span><span data-line="430">        <span class="n">cell</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">"cell"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 </span><span data-line="431">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_features</span><span class="p">(</span>
 </span><span data-line="432">            <span class="n">pos</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span>
 </span><span data-line="433">            <span class="n">mapping</span><span class="o">=</span><span class="n">mapping</span><span class="p">,</span>
@@ -617,7 +618,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="458">
 </span><span data-line="459">
 </span><span data-line="460"><span class="k">class</span><span class="w"> </span><span class="nc">ShiftedPeriodicHarmonicImpropers</span><span class="p">(</span><span class="n">Harmonic</span><span class="p">):</span>
-</span><span data-line="461"><span class="w">    </span><span class="sd">&quot;&quot;&quot;HarmonicImproper that can handle discontinuities around the</span>
+</span><span data-line="461"><span class="w">    </span><span class="sd">"""HarmonicImproper that can handle discontinuities around the</span>
 </span><span data-line="462"><span class="sd">    pi modulus, eg, for Omega dihedral angles or distributions with this form:</span>
 </span><span data-line="463">
 </span><span data-line="464">
@@ -647,9 +648,9 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="488"><span class="sd">    where the harmonic parameters are fitted over the free energy associated</span>
 </span><span data-line="489"><span class="sd">    with the latter , tranformed distribution.</span>
 </span><span data-line="490">
-</span><span data-line="491"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="491"><span class="sd">    """</span>
 </span><span data-line="492">
-</span><span data-line="493">    <span class="n">name</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;impropers&quot;</span>
+</span><span data-line="493">    <span class="n">name</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"impropers"</span>
 </span><span data-line="494">    <span class="n">_order</span> <span class="o">=</span> <span class="mi">4</span>
 </span><span data-line="495">
 </span><span data-line="496">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">statistics</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -688,28 +689,28 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="529">        <span class="k">return</span> <span class="n">features</span>
 </span><span data-line="530">
 </span><span data-line="531">    <span class="k">def</span><span class="w"> </span><span class="nf">data2features</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-</span><span data-line="532">        <span class="n">mapping</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;index_mapping&quot;</span><span class="p">]</span>
-</span><span data-line="533">        <span class="n">pbc</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;pbc&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-</span><span data-line="534">        <span class="n">cell</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;cell&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</span><span data-line="532">        <span class="n">mapping</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s2">"index_mapping"</span><span class="p">]</span>
+</span><span data-line="533">        <span class="n">pbc</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">"pbc"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</span><span data-line="534">        <span class="n">cell</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">"cell"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 </span><span data-line="535">        <span class="k">return</span> <span class="n">ShiftedPeriodicHarmonicImpropers</span><span class="o">.</span><span class="n">compute_features</span><span class="p">(</span>
 </span><span data-line="536">            <span class="n">pos</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span> <span class="n">mapping</span><span class="o">=</span><span class="n">mapping</span><span class="p">,</span> <span class="n">pbc</span><span class="o">=</span><span class="n">pbc</span><span class="p">,</span> <span class="n">cell</span><span class="o">=</span><span class="n">cell</span><span class="p">,</span> <span class="n">batch</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">batch</span>
 </span><span data-line="537">        <span class="p">)</span>
 </span><span data-line="538">
 </span><span data-line="539">    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AtomicData</span><span class="p">:</span>
-</span><span data-line="540">        <span class="n">mapping_batch</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;mapping_batch&quot;</span><span class="p">]</span>
+</span><span data-line="540">        <span class="n">mapping_batch</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s2">"mapping_batch"</span><span class="p">]</span>
 </span><span data-line="541">        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data2parameters</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 </span><span data-line="542">        <span class="n">features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data2features</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
 </span><span data-line="543">
 </span><span data-line="544">        <span class="n">y</span> <span class="o">=</span> <span class="n">Harmonic</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">)</span>
-</span><span data-line="545">        <span class="n">y</span> <span class="o">=</span> <span class="n">scatter</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">mapping_batch</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">reduce</span><span class="o">=</span><span class="s2">&quot;sum&quot;</span><span class="p">)</span>
-</span><span data-line="546">        <span class="n">data</span><span class="o">.</span><span class="n">out</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;energy&quot;</span><span class="p">:</span> <span class="n">y</span><span class="p">}</span>
+</span><span data-line="545">        <span class="n">y</span> <span class="o">=</span> <span class="n">scatter</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">mapping_batch</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">reduce</span><span class="o">=</span><span class="s2">"sum"</span><span class="p">)</span>
+</span><span data-line="546">        <span class="n">data</span><span class="o">.</span><span class="n">out</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"energy"</span><span class="p">:</span> <span class="n">y</span><span class="p">}</span>
 </span><span data-line="547">        <span class="k">return</span> <span class="n">data</span>
 </span><span data-line="548">
 </span><span data-line="549">
 </span><span data-line="550"><span class="k">class</span><span class="w"> </span><span class="nc">GeneralBonds</span><span class="p">(</span><span class="n">Harmonic</span><span class="p">):</span>
-</span><span data-line="551"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Generalized Bonds&quot;&quot;&quot;</span>
+</span><span data-line="551"><span class="w">    </span><span class="sd">"""Generalized Bonds"""</span>
 </span><span data-line="552">
-</span><span data-line="553">    <span class="n">name</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;bonds&quot;</span>
+</span><span data-line="553">    <span class="n">name</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"bonds"</span>
 </span><span data-line="554">    <span class="n">_order</span> <span class="o">=</span> <span class="mi">2</span>
 </span><span data-line="555">
 </span><span data-line="556">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">statistics</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -719,9 +720,9 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="560">        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
 </span><span data-line="561">
 </span><span data-line="562">    <span class="k">def</span><span class="w"> </span><span class="nf">data2features</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-</span><span data-line="563">        <span class="n">mapping</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;index_mapping&quot;</span><span class="p">]</span>
-</span><span data-line="564">        <span class="n">pbc</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;pbc&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-</span><span data-line="565">        <span class="n">cell</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;cell&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</span><span data-line="563">        <span class="n">mapping</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s2">"index_mapping"</span><span class="p">]</span>
+</span><span data-line="564">        <span class="n">pbc</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">"pbc"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</span><span data-line="565">        <span class="n">cell</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">"cell"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 </span><span data-line="566">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_features</span><span class="p">(</span>
 </span><span data-line="567">            <span class="n">pos</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span>
 </span><span data-line="568">            <span class="n">mapping</span><span class="o">=</span><span class="n">mapping</span><span class="p">,</span>
@@ -748,9 +749,9 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="589">
 </span><span data-line="590">
 </span><span data-line="591"><span class="k">class</span><span class="w"> </span><span class="nc">GeneralAngles</span><span class="p">(</span><span class="n">Harmonic</span><span class="p">):</span>
-</span><span data-line="592"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Generalized Angles&quot;&quot;&quot;</span>
+</span><span data-line="592"><span class="w">    </span><span class="sd">"""Generalized Angles"""</span>
 </span><span data-line="593">
-</span><span data-line="594">    <span class="n">name</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;angles&quot;</span>
+</span><span data-line="594">    <span class="n">name</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"angles"</span>
 </span><span data-line="595">    <span class="n">_order</span> <span class="o">=</span> <span class="mi">3</span>
 </span><span data-line="596">
 </span><span data-line="597">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">statistics</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -760,9 +761,9 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="601">        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
 </span><span data-line="602">
 </span><span data-line="603">    <span class="k">def</span><span class="w"> </span><span class="nf">data2features</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-</span><span data-line="604">        <span class="n">mapping</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;index_mapping&quot;</span><span class="p">]</span>
-</span><span data-line="605">        <span class="n">pbc</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;pbc&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-</span><span data-line="606">        <span class="n">cell</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;cell&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</span><span data-line="604">        <span class="n">mapping</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s2">"index_mapping"</span><span class="p">]</span>
+</span><span data-line="605">        <span class="n">pbc</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">"pbc"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</span><span data-line="606">        <span class="n">cell</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">"cell"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 </span><span data-line="607">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_features</span><span class="p">(</span>
 </span><span data-line="608">            <span class="n">pos</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span>
 </span><span data-line="609">            <span class="n">mapping</span><span class="o">=</span><span class="n">mapping</span><span class="p">,</span>

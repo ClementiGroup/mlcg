@@ -6,7 +6,8 @@
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=31853864" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/shibuya.css?v=9454f7d5" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link media="print" rel="stylesheet" type="text/css" href="../../../_static/print.css?v=20ff2c19" />
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -160,7 +161,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="10">
 </span><span data-line="11">
 </span><span data-line="12"><span class="k">def</span><span class="w"> </span><span class="nf">get_class_from_str</span><span class="p">(</span><span class="n">class_path</span><span class="p">):</span>
-</span><span data-line="13">    <span class="n">class_module</span><span class="p">,</span> <span class="n">class_name</span> <span class="o">=</span> <span class="n">class_path</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</span><span data-line="13">    <span class="n">class_module</span><span class="p">,</span> <span class="n">class_name</span> <span class="o">=</span> <span class="n">class_path</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s2">"."</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 </span><span data-line="14">    <span class="n">module</span> <span class="o">=</span> <span class="nb">__import__</span><span class="p">(</span><span class="n">class_module</span><span class="p">,</span> <span class="n">fromlist</span><span class="o">=</span><span class="p">[</span><span class="n">class_name</span><span class="p">])</span>
 </span><span data-line="15">    <span class="n">args_class</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">class_name</span><span class="p">)</span>
 </span><span data-line="16">    <span class="k">return</span> <span class="n">args_class</span>
@@ -169,7 +170,7 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="PLModel">
 <a class="viewcode-back" href="../../../training.html#mlcg.pl.PLModel">[docs]</a>
 </span><span data-line="19"><span class="k">class</span><span class="w"> </span><span class="nc">PLModel</span><span class="p">(</span><span class="n">pl</span><span class="o">.</span><span class="n">LightningModule</span><span class="p">):</span>
-</span><span data-line="20"><span class="w">    </span><span class="sd">&quot;&quot;&quot;PL interface to train with models defined in :ref:`mlcg.nn`.</span>
+</span><span data-line="20"><span class="w">    </span><span class="sd">"""PL interface to train with models defined in :ref:`mlcg.nn`.</span>
 </span><span data-line="21">
 </span><span data-line="22"><span class="sd">    Parameters</span>
 </span><span data-line="23"><span class="sd">    ----------</span>
@@ -178,14 +179,14 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="26"><span class="sd">            instance of a model class from :ref:`mlcg.nn`.</span>
 </span><span data-line="27"><span class="sd">        loss:</span>
 </span><span data-line="28"><span class="sd">            instance of :ref:`mlcg.nn.Loss`.</span>
-</span><span data-line="29"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="29"><span class="sd">    """</span>
 </span><span data-line="30">
 </span><span data-line="31">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
 </span><span data-line="32">        <span class="bp">self</span><span class="p">,</span>
 </span><span data-line="33">        <span class="n">model</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
 </span><span data-line="34">        <span class="n">loss</span><span class="p">:</span> <span class="n">Loss</span><span class="p">,</span>
 </span><span data-line="35">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="36"><span class="w">        </span><span class="sd">&quot;&quot;&quot; &quot;&quot;&quot;</span>
+</span><span data-line="36"><span class="w">        </span><span class="sd">""" """</span>
 </span><span data-line="37">
 </span><span data-line="38">        <span class="nb">super</span><span class="p">(</span><span class="n">PLModel</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 </span><span data-line="39">
@@ -194,7 +195,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="42">        <span class="bp">self</span><span class="o">.</span><span class="n">loss</span> <span class="o">=</span> <span class="n">loss</span>
 </span><span data-line="43">        <span class="bp">self</span><span class="o">.</span><span class="n">validation_step_outputs</span> <span class="o">=</span> <span class="p">[]</span>
 </span><span data-line="44">
-</span><span data-line="45">        <span class="bp">self</span><span class="o">.</span><span class="n">derivative</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;derivative&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+</span><span data-line="45">        <span class="bp">self</span><span class="o">.</span><span class="n">derivative</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="s2">"derivative"</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
 </span><span data-line="46">        <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">():</span>
 </span><span data-line="47">            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">GradientsOut</span><span class="p">):</span>
 </span><span data-line="48">                <span class="bp">self</span><span class="o">.</span><span class="n">derivative</span> <span class="o">=</span> <span class="kc">True</span>
@@ -240,7 +241,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="80">        <span class="c1"># in ddp this will be run separately on different processes</span>
 </span><span data-line="81">        <span class="c1"># therefore we need to synchronize (sync_dist=True)</span>
 </span><span data-line="82">        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
-</span><span data-line="83">            <span class="s2">&quot;validation_loss&quot;</span><span class="p">,</span>
+</span><span data-line="83">            <span class="s2">"validation_loss"</span><span class="p">,</span>
 </span><span data-line="84">            <span class="n">out</span><span class="p">,</span>
 </span><span data-line="85">            <span class="n">on_step</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
 </span><span data-line="86">            <span class="n">on_epoch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -254,7 +255,7 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="PLModel.training_step">
 <a class="viewcode-back" href="../../../training.html#mlcg.pl.PLModel.training_step">[docs]</a>
 </span><span data-line="93">    <span class="k">def</span><span class="w"> </span><span class="nf">training_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">,</span> <span class="n">batch_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-</span><span data-line="94">        <span class="n">loss</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;train&quot;</span><span class="p">)</span>
+</span><span data-line="94">        <span class="n">loss</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">"train"</span><span class="p">)</span>
 </span><span data-line="95">        <span class="k">return</span> <span class="n">loss</span></div>
 
 </span><span data-line="96">
@@ -263,10 +264,10 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="97">    <span class="k">def</span><span class="w"> </span><span class="nf">validation_step</span><span class="p">(</span>
 </span><span data-line="98">        <span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">,</span> <span class="n">batch_idx</span><span class="p">,</span> <span class="n">dataloader_idx</span><span class="o">=</span><span class="mi">0</span>
 </span><span data-line="99">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
-</span><span data-line="100"><span class="w">        </span><span class="sd">&quot;&quot;&quot;The order of separate validation losses (bearing the name `dataloader_idx_?`) will</span>
+</span><span data-line="100"><span class="w">        </span><span class="sd">"""The order of separate validation losses (bearing the name `dataloader_idx_?`) will</span>
 </span><span data-line="101"><span class="sd">        be alphabetically ascending with respect to the Metaset names in the multi-metaset scenario.</span>
-</span><span data-line="102"><span class="sd">        &quot;&quot;&quot;</span>
-</span><span data-line="103">        <span class="n">loss</span><span class="p">,</span> <span class="n">batch_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;validation&quot;</span><span class="p">)</span>
+</span><span data-line="102"><span class="sd">        """</span>
+</span><span data-line="103">        <span class="n">loss</span><span class="p">,</span> <span class="n">batch_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">"validation"</span><span class="p">)</span>
 </span><span data-line="104">        <span class="bp">self</span><span class="o">.</span><span class="n">validation_step_outputs</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">loss</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">))</span>
 </span><span data-line="105">        <span class="k">return</span> <span class="n">loss</span><span class="p">,</span> <span class="n">batch_size</span></div>
 
@@ -276,21 +277,21 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="107">    <span class="k">def</span><span class="w"> </span><span class="nf">test_step</span><span class="p">(</span>
 </span><span data-line="108">        <span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">,</span> <span class="n">batch_idx</span><span class="p">,</span> <span class="n">dataloader_idx</span><span class="o">=</span><span class="mi">0</span>
 </span><span data-line="109">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
-</span><span data-line="110">        <span class="n">loss</span><span class="p">,</span> <span class="n">batch_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">)</span>
+</span><span data-line="110">        <span class="n">loss</span><span class="p">,</span> <span class="n">batch_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">"test"</span><span class="p">)</span>
 </span><span data-line="111">        <span class="k">return</span> <span class="n">loss</span><span class="p">,</span> <span class="n">batch_size</span></div>
 
 </span><span data-line="112">
 </span><span data-line="113">    <span class="k">def</span><span class="w"> </span><span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">,</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
-</span><span data-line="114">        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">set_grad_enabled</span><span class="p">(</span><span class="n">stage</span> <span class="o">==</span> <span class="s2">&quot;train&quot;</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">derivative</span><span class="p">):</span>
+</span><span data-line="114">        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">set_grad_enabled</span><span class="p">(</span><span class="n">stage</span> <span class="o">==</span> <span class="s2">"train"</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">derivative</span><span class="p">):</span>
 </span><span data-line="115">            <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 </span><span data-line="116">        <span class="n">data</span><span class="o">.</span><span class="n">out</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="o">**</span><span class="n">data</span><span class="o">.</span><span class="n">out</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="p">])</span>
 </span><span data-line="117">        <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 </span><span data-line="118">        <span class="n">batch_size</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">N_ATOMS_KEY</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 </span><span data-line="119">        <span class="c1"># Add sync_dist=True to sync logging across all GPU workers</span>
 </span><span data-line="120">        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
-</span><span data-line="121">            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">stage</span><span class="si">}</span><span class="s2">_loss&quot;</span><span class="p">,</span>
+</span><span data-line="121">            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">stage</span><span class="si">}</span><span class="s2">_loss"</span><span class="p">,</span>
 </span><span data-line="122">            <span class="n">loss</span><span class="p">,</span>
-</span><span data-line="123">            <span class="n">on_step</span><span class="o">=</span><span class="p">(</span><span class="n">stage</span> <span class="o">==</span> <span class="s2">&quot;train&quot;</span><span class="p">),</span>
+</span><span data-line="123">            <span class="n">on_step</span><span class="o">=</span><span class="p">(</span><span class="n">stage</span> <span class="o">==</span> <span class="s2">"train"</span><span class="p">),</span>
 </span><span data-line="124">            <span class="n">on_epoch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
 </span><span data-line="125">            <span class="n">sync_dist</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
 </span><span data-line="126">            <span class="n">prog_bar</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -309,8 +310,8 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="137">        <span class="c1"># inject missing keys from current model before PL loads it</span>
 </span><span data-line="138">        <span class="n">current_sd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_dict</span><span class="p">()</span>
 </span><span data-line="139">        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">current_sd</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-</span><span data-line="140">            <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;state_dict&quot;</span><span class="p">]:</span>
-</span><span data-line="141">                <span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;state_dict&quot;</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span></div>
+</span><span data-line="140">            <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s2">"state_dict"</span><span class="p">]:</span>
+</span><span data-line="141">                <span class="n">checkpoint</span><span class="p">[</span><span class="s2">"state_dict"</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span></div>
 </div>
 
 </span></pre></div>

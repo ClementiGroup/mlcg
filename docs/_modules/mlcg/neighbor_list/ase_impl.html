@@ -6,7 +6,8 @@
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=31853864" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/shibuya.css?v=9454f7d5" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link media="print" rel="stylesheet" type="text/css" href="../../../_static/print.css?v=20ff2c19" />
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -165,7 +166,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="13">    <span class="n">self_interaction</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 </span><span data-line="14">    <span class="n">max_num_neighbors</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
 </span><span data-line="15"><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
-</span><span data-line="16"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Function for converting a list of neighbor edges from</span>
+</span><span data-line="16"><span class="w">    </span><span class="sd">"""Function for converting a list of neighbor edges from</span>
 </span><span data-line="17"><span class="sd">    an input AtomicData instance, to an ASE neighborlist as</span>
 </span><span data-line="18"><span class="sd">    output by ase.neighborlist.neighbor_list. Return documenation</span>
 </span><span data-line="19"><span class="sd">    taken from https://wiki.fysik.dtu.dk/ase/_modules/ase/neighborlist.html#neighbor_list.</span>
@@ -187,9 +188,9 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="35"><span class="sd">        second atom index, of shape (n_atoms)</span>
 </span><span data-line="36"><span class="sd">    torch.Tensor:</span>
 </span><span data-line="37"><span class="sd">        Dot product of the periodic shift vectors with the system unit cell vectors</span>
-</span><span data-line="38"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="38"><span class="sd">    """</span>
 </span><span data-line="39">
-</span><span data-line="40">    <span class="k">assert</span> <span class="n">data</span><span class="o">.</span><span class="n">n_atoms</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;data should contain only one structure&quot;</span>
+</span><span data-line="40">    <span class="k">assert</span> <span class="n">data</span><span class="o">.</span><span class="n">n_atoms</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"data should contain only one structure"</span>
 </span><span data-line="41">
 </span><span data-line="42">    <span class="n">frame</span> <span class="o">=</span> <span class="n">Atoms</span><span class="p">(</span>
 </span><span data-line="43">        <span class="n">positions</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span>
@@ -199,7 +200,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="47">    <span class="p">)</span>
 </span><span data-line="48">
 </span><span data-line="49">    <span class="n">idx_i</span><span class="p">,</span> <span class="n">idx_j</span><span class="p">,</span> <span class="n">idx_S</span> <span class="o">=</span> <span class="n">neighbor_list</span><span class="p">(</span>
-</span><span data-line="50">        <span class="s2">&quot;ijS&quot;</span><span class="p">,</span> <span class="n">frame</span><span class="p">,</span> <span class="n">cutoff</span><span class="o">=</span><span class="n">rcut</span><span class="p">,</span> <span class="n">self_interaction</span><span class="o">=</span><span class="n">self_interaction</span>
+</span><span data-line="50">        <span class="s2">"ijS"</span><span class="p">,</span> <span class="n">frame</span><span class="p">,</span> <span class="n">cutoff</span><span class="o">=</span><span class="n">rcut</span><span class="p">,</span> <span class="n">self_interaction</span><span class="o">=</span><span class="n">self_interaction</span>
 </span><span data-line="51">    <span class="p">)</span>
 </span><span data-line="52">    <span class="k">return</span> <span class="p">(</span>
 </span><span data-line="53">        <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">idx_i</span><span class="p">),</span>

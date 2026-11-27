@@ -6,7 +6,8 @@
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=31853864" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -159,7 +160,7 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="ExpNormalBasis">
 <a class="viewcode-back" href="../../../../models/rbfs.html#mlcg.nn.radial_basis.exp_normal.ExpNormalBasis">[docs]</a>
 </span><span data-line="9"><span class="k">class</span><span class="w"> </span><span class="nc">ExpNormalBasis</span><span class="p">(</span><span class="n">_RadialBasis</span><span class="p">):</span>
-</span><span data-line="10"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Class for generating a set of exponential normal radial basis functions,</span>
+</span><span data-line="10"><span class="w">    </span><span class="sa">r</span><span class="sd">"""Class for generating a set of exponential normal radial basis functions,</span>
 </span><span data-line="11"><span class="sd">    as described in [Physnet]_ . The functions have the following form:</span>
 </span><span data-line="12">
 </span><span data-line="13"><span class="sd">    .. math::</span>
@@ -195,7 +196,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="43"><span class="sd">        function) are registered as optimizable parameters that will be updated</span>
 </span><span data-line="44"><span class="sd">        during backpropagation. If False, these parameters will be instead fixed</span>
 </span><span data-line="45"><span class="sd">        in an unoptimizable buffer.</span>
-</span><span data-line="46"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="46"><span class="sd">    """</span>
 </span><span data-line="47">
 </span><span data-line="48">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
 </span><span data-line="49">        <span class="bp">self</span><span class="p">,</span>
@@ -210,7 +211,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="58">            <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span> <span class="o">=</span> <span class="n">cutoff</span>
 </span><span data-line="59">        <span class="k">else</span><span class="p">:</span>
 </span><span data-line="60">            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-</span><span data-line="61">                <span class="s2">&quot;Supplied cutoff </span><span class="si">{}</span><span class="s2"> is neither a number nor a _Cutoff instance.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+</span><span data-line="61">                <span class="s2">"Supplied cutoff </span><span class="si">{}</span><span class="s2"> is neither a number nor a _Cutoff instance."</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
 </span><span data-line="62">                    <span class="n">cutoff</span>
 </span><span data-line="63">                <span class="p">)</span>
 </span><span data-line="64">            <span class="p">)</span>
@@ -223,16 +224,16 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="71">
 </span><span data-line="72">        <span class="n">means</span><span class="p">,</span> <span class="n">betas</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initial_params</span><span class="p">()</span>
 </span><span data-line="73">        <span class="k">if</span> <span class="n">trainable</span><span class="p">:</span>
-</span><span data-line="74">            <span class="bp">self</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="s2">&quot;means&quot;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">means</span><span class="p">))</span>
-</span><span data-line="75">            <span class="bp">self</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="s2">&quot;betas&quot;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">betas</span><span class="p">))</span>
+</span><span data-line="74">            <span class="bp">self</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="s2">"means"</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">means</span><span class="p">))</span>
+</span><span data-line="75">            <span class="bp">self</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="s2">"betas"</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">betas</span><span class="p">))</span>
 </span><span data-line="76">        <span class="k">else</span><span class="p">:</span>
-</span><span data-line="77">            <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">&quot;means&quot;</span><span class="p">,</span> <span class="n">means</span><span class="p">)</span>
-</span><span data-line="78">            <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">&quot;betas&quot;</span><span class="p">,</span> <span class="n">betas</span><span class="p">)</span>
+</span><span data-line="77">            <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">"means"</span><span class="p">,</span> <span class="n">means</span><span class="p">)</span>
+</span><span data-line="78">            <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">"betas"</span><span class="p">,</span> <span class="n">betas</span><span class="p">)</span>
 </span><span data-line="79">
 </span><span data-line="80">    <span class="k">def</span><span class="w"> </span><span class="nf">_initial_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="81"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Method for initializing the basis function parameters, as described in</span>
+</span><span data-line="81"><span class="w">        </span><span class="sa">r</span><span class="sd">"""Method for initializing the basis function parameters, as described in</span>
 </span><span data-line="82"><span class="sd">        https://pubs.acs.org/doi/10.1021/acs.jctc.9b00181 .</span>
-</span><span data-line="83"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="83"><span class="sd">        """</span>
 </span><span data-line="84">
 </span><span data-line="85">        <span class="n">start_value</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
 </span><span data-line="86">            <span class="n">torch</span><span class="o">.</span><span class="n">scalar_tensor</span><span class="p">(</span>
@@ -248,9 +249,9 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="ExpNormalBasis.reset_parameters">
 <a class="viewcode-back" href="../../../../autodoc.html#mlcg.nn.radial_basis.exp_normal.ExpNormalBasis.reset_parameters">[docs]</a>
 </span><span data-line="96">    <span class="k">def</span><span class="w"> </span><span class="nf">reset_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="97"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Method to reset the parameters of the basis functions to their</span>
+</span><span data-line="97"><span class="w">        </span><span class="sa">r</span><span class="sd">"""Method to reset the parameters of the basis functions to their</span>
 </span><span data-line="98"><span class="sd">        initial values.</span>
-</span><span data-line="99"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="99"><span class="sd">        """</span>
 </span><span data-line="100">        <span class="n">means</span><span class="p">,</span> <span class="n">betas</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initial_params</span><span class="p">()</span>
 </span><span data-line="101">        <span class="bp">self</span><span class="o">.</span><span class="n">means</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy_</span><span class="p">(</span><span class="n">means</span><span class="p">)</span>
 </span><span data-line="102">        <span class="bp">self</span><span class="o">.</span><span class="n">betas</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy_</span><span class="p">(</span><span class="n">betas</span><span class="p">)</span></div>
@@ -259,7 +260,7 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="ExpNormalBasis.forward">
 <a class="viewcode-back" href="../../../../autodoc.html#mlcg.nn.radial_basis.exp_normal.ExpNormalBasis.forward">[docs]</a>
 </span><span data-line="104">    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dist</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-</span><span data-line="105"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Expansion of distances through the radial basis function set.</span>
+</span><span data-line="105"><span class="w">        </span><span class="sa">r</span><span class="sd">"""Expansion of distances through the radial basis function set.</span>
 </span><span data-line="106"><span class="sd">        Parameters</span>
 </span><span data-line="107"><span class="sd">        ----------</span>
 </span><span data-line="108"><span class="sd">        dist: torch.Tensor</span>
@@ -268,7 +269,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="111"><span class="sd">        ------</span>
 </span><span data-line="112"><span class="sd">        expanded_distances: torch.Tensor</span>
 </span><span data-line="113"><span class="sd">            Distances expanded in the radial basis with shape (total_num_edges, num_rbf)</span>
-</span><span data-line="114"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="114"><span class="sd">        """</span>
 </span><span data-line="115">
 </span><span data-line="116">        <span class="n">dist</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
 </span><span data-line="117">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="p">(</span><span class="n">dist</span><span class="p">)</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
@@ -291,7 +292,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="131">        <span class="n">num_rbf</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
 </span><span data-line="132">        <span class="n">trainable</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 </span><span data-line="133">    <span class="p">):</span>
-</span><span data-line="134"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="134"><span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
 </span><span data-line="135"><span class="sd">        Constructor for ExpNormalBasis that only evaluates a subset of the basis functions</span>
 </span><span data-line="136"><span class="sd">        selected by a boolean ``lambda_filter`` tensor of shape ``(num_rbf,)``.</span>
 </span><span data-line="137">
@@ -310,10 +311,10 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="150"><span class="sd">            Total number of basis functions (before filtering).</span>
 </span><span data-line="151"><span class="sd">        trainable:</span>
 </span><span data-line="152"><span class="sd">            See :class:`ExpNormalBasis`. Only the kept means/betas are registered.</span>
-</span><span data-line="153"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="153"><span class="sd">        """</span>
 </span><span data-line="154">        <span class="k">if</span> <span class="n">lambda_mask</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">!=</span> <span class="n">num_rbf</span><span class="p">:</span>
 </span><span data-line="155">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-</span><span data-line="156">                <span class="sa">f</span><span class="s2">&quot;lambda_filter must have </span><span class="si">{</span><span class="n">num_rbf</span><span class="si">}</span><span class="s2"> elements, got </span><span class="si">{</span><span class="n">lambda_mask</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span data-line="156">                <span class="sa">f</span><span class="s2">"lambda_filter must have </span><span class="si">{</span><span class="n">num_rbf</span><span class="si">}</span><span class="s2"> elements, got </span><span class="si">{</span><span class="n">lambda_mask</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span>
 </span><span data-line="157">            <span class="p">)</span>
 </span><span data-line="158">        <span class="n">obj</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">cutoff</span><span class="p">,</span> <span class="n">num_rbf</span><span class="p">,</span> <span class="n">trainable</span><span class="p">)</span>
 </span><span data-line="159">
@@ -330,8 +331,8 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="170">            <span class="n">obj</span><span class="o">.</span><span class="n">means</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">means</span><span class="p">)</span>
 </span><span data-line="171">            <span class="n">obj</span><span class="o">.</span><span class="n">betas</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">betas</span><span class="p">)</span>
 </span><span data-line="172">        <span class="k">else</span><span class="p">:</span>
-</span><span data-line="173">            <span class="n">obj</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">&quot;means&quot;</span><span class="p">,</span> <span class="n">means</span><span class="p">)</span>
-</span><span data-line="174">            <span class="n">obj</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">&quot;betas&quot;</span><span class="p">,</span> <span class="n">betas</span><span class="p">)</span>
+</span><span data-line="173">            <span class="n">obj</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">"means"</span><span class="p">,</span> <span class="n">means</span><span class="p">)</span>
+</span><span data-line="174">            <span class="n">obj</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">"betas"</span><span class="p">,</span> <span class="n">betas</span><span class="p">)</span>
 </span><span data-line="175">
 </span><span data-line="176">        <span class="n">obj</span><span class="o">.</span><span class="n">num_rbf</span> <span class="o">=</span> <span class="n">lambda_mask</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span>
 </span><span data-line="177">
@@ -343,7 +344,7 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="ExtendedExpNormalBasis">
 <a class="viewcode-back" href="../../../../autodoc.html#mlcg.nn.radial_basis.exp_normal.ExtendedExpNormalBasis">[docs]</a>
 </span><span data-line="181"><span class="k">class</span><span class="w"> </span><span class="nc">ExtendedExpNormalBasis</span><span class="p">(</span><span class="n">ExpNormalBasis</span><span class="p">):</span>
-</span><span data-line="182"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;ExpNormalBasis that allows for arbitrary lower cutoffs not tied to</span>
+</span><span data-line="182"><span class="w">    </span><span class="sa">r</span><span class="sd">"""ExpNormalBasis that allows for arbitrary lower cutoffs not tied to</span>
 </span><span data-line="183"><span class="sd">    a supplied `_Cutoff`. This basis follows the definition in [Physnet]_.</span>
 </span><span data-line="184"><span class="sd">    Parameters</span>
 </span><span data-line="185"><span class="sd">    ----------</span>
@@ -355,7 +356,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="191"><span class="sd">        function) are registered as optimizable parameters that will be updated</span>
 </span><span data-line="192"><span class="sd">        during backpropagation. If False, these parameters will be instead fixed</span>
 </span><span data-line="193"><span class="sd">        in an unoptimizable buffer.</span>
-</span><span data-line="194"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="194"><span class="sd">    """</span>
 </span><span data-line="195">
 </span><span data-line="196">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
 </span><span data-line="197">        <span class="bp">self</span><span class="p">,</span>
@@ -379,22 +380,22 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="215">
 </span><span data-line="216">        <span class="c1"># reset attributes</span>
 </span><span data-line="217">        <span class="k">if</span> <span class="n">trainable</span><span class="p">:</span>
-</span><span data-line="218">            <span class="nb">delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;means&quot;</span><span class="p">)</span>
-</span><span data-line="219">            <span class="nb">delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;betas&quot;</span><span class="p">)</span>
-</span><span data-line="220">            <span class="bp">self</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="s2">&quot;means&quot;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">means</span><span class="p">))</span>
-</span><span data-line="221">            <span class="bp">self</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="s2">&quot;betas&quot;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">betas</span><span class="p">))</span>
+</span><span data-line="218">            <span class="nb">delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"means"</span><span class="p">)</span>
+</span><span data-line="219">            <span class="nb">delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"betas"</span><span class="p">)</span>
+</span><span data-line="220">            <span class="bp">self</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="s2">"means"</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">means</span><span class="p">))</span>
+</span><span data-line="221">            <span class="bp">self</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="s2">"betas"</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">betas</span><span class="p">))</span>
 </span><span data-line="222">        <span class="k">else</span><span class="p">:</span>
-</span><span data-line="223">            <span class="nb">delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;means&quot;</span><span class="p">)</span>
-</span><span data-line="224">            <span class="nb">delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;betas&quot;</span><span class="p">)</span>
-</span><span data-line="225">            <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">&quot;means&quot;</span><span class="p">,</span> <span class="n">means</span><span class="p">)</span>
-</span><span data-line="226">            <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">&quot;betas&quot;</span><span class="p">,</span> <span class="n">betas</span><span class="p">)</span>
+</span><span data-line="223">            <span class="nb">delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"means"</span><span class="p">)</span>
+</span><span data-line="224">            <span class="nb">delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"betas"</span><span class="p">)</span>
+</span><span data-line="225">            <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">"means"</span><span class="p">,</span> <span class="n">means</span><span class="p">)</span>
+</span><span data-line="226">            <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">"betas"</span><span class="p">,</span> <span class="n">betas</span><span class="p">)</span>
 </span><span data-line="227">
 <div class="viewcode-block" id="ExtendedExpNormalBasis.extended_initial_params">
 <a class="viewcode-back" href="../../../../autodoc.html#mlcg.nn.radial_basis.exp_normal.ExtendedExpNormalBasis.extended_initial_params">[docs]</a>
 </span><span data-line="228">    <span class="k">def</span><span class="w"> </span><span class="nf">extended_initial_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="229"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Method for initializing the basis function parameters, as described in</span>
+</span><span data-line="229"><span class="w">        </span><span class="sa">r</span><span class="sd">"""Method for initializing the basis function parameters, as described in</span>
 </span><span data-line="230"><span class="sd">        https://pubs.acs.org/doi/10.1021/acs.jctc.9b00181 .</span>
-</span><span data-line="231"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="231"><span class="sd">        """</span>
 </span><span data-line="232">
 </span><span data-line="233">        <span class="n">start_value</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
 </span><span data-line="234">            <span class="n">torch</span><span class="o">.</span><span class="n">scalar_tensor</span><span class="p">(</span>
@@ -411,7 +412,7 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="ExtendedExpNormalBasis.forward">
 <a class="viewcode-back" href="../../../../autodoc.html#mlcg.nn.radial_basis.exp_normal.ExtendedExpNormalBasis.forward">[docs]</a>
 </span><span data-line="244">    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dist</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-</span><span data-line="245"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Expansion of distances through the radial basis function set.</span>
+</span><span data-line="245"><span class="w">        </span><span class="sa">r</span><span class="sd">"""Expansion of distances through the radial basis function set.</span>
 </span><span data-line="246"><span class="sd">        Parameters</span>
 </span><span data-line="247"><span class="sd">        ----------</span>
 </span><span data-line="248"><span class="sd">        dist: torch.Tensor</span>
@@ -420,7 +421,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="251"><span class="sd">        ------</span>
 </span><span data-line="252"><span class="sd">        expanded_distances: torch.Tensor</span>
 </span><span data-line="253"><span class="sd">            Distances expanded in the radial basis with shape (total_num_edges, num_rbf)</span>
-</span><span data-line="254"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="254"><span class="sd">        """</span>
 </span><span data-line="255">
 </span><span data-line="256">        <span class="n">dist</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
 </span><span data-line="257">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="p">(</span><span class="n">dist</span><span class="p">)</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>

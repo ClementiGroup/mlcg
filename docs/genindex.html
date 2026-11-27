@@ -6,7 +6,8 @@
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="_static/pygments.css?v=31853864" />
-    <link rel="stylesheet" type="text/css" href="_static/shibuya.css?v=9454f7d5" />
+    <link rel="stylesheet" type="text/css" href="_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link media="print" rel="stylesheet" type="text/css" href="_static/print.css?v=20ff2c19" />
     <link rel="stylesheet" type="text/css" href="_static/custom.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -337,6 +338,8 @@ data-aria-dark="Switch to auto color mode">
 </li>
       <li><a href="geometry/internal_coordinates.html#mlcg.geometry.topology.get_n_paths">get_n_paths() (in module mlcg.geometry.topology)</a>, <a href="geometry/topology.html#mlcg.geometry.topology.get_n_paths">[1]</a>
 </li>
+      <li><a href="autodoc.html#mlcg.cg.projection.get_pseudobond_edges">get_pseudobond_edges() (in module mlcg.cg.projection)</a>
+</li>
       <li><a href="autodoc.html#mlcg.datasets.h5_dataset.MetaSet.grab_n_frames">grab_n_frames() (mlcg.datasets.h5_dataset.MetaSet static method)</a>, <a href="data/h5_datasets.html#mlcg.datasets.h5_dataset.MetaSet.grab_n_frames">[1]</a>
 </li>
       <li><a href="models/wrappers.html#mlcg.nn.gradients.GradientsOut">GradientsOut (class in mlcg.nn.gradients)</a>
@@ -522,8 +525,6 @@ data-aria-dark="Switch to auto color mode">
         <li><a href="autodoc.html#module-mlcg.nn.mace">module</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     mlcg.nn.painn
 
@@ -538,6 +539,8 @@ data-aria-dark="Switch to auto color mode">
         <li><a href="autodoc.html#module-mlcg.nn.radial_basis.exp_normal">module</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     mlcg.nn.radial_basis.exp_spaced
 
@@ -564,6 +567,27 @@ data-aria-dark="Switch to auto color mode">
 
       <ul>
         <li><a href="autodoc.html#module-mlcg.nn.schnet">module</a>
+</li>
+      </ul></li>
+      <li>
+    mlcg.simulation.LangevinSimulation
+
+      <ul>
+        <li><a href="autodoc.html#module-mlcg.simulation.LangevinSimulation">module</a>
+</li>
+      </ul></li>
+      <li>
+    mlcg.simulation.OverdampedSimulation
+
+      <ul>
+        <li><a href="autodoc.html#module-mlcg.simulation.OverdampedSimulation">module</a>
+</li>
+      </ul></li>
+      <li>
+    mlcg.simulation.PTSimulation
+
+      <ul>
+        <li><a href="autodoc.html#module-mlcg.simulation.PTSimulation">module</a>
 </li>
       </ul></li>
       <li>
@@ -610,6 +634,12 @@ data-aria-dark="Switch to auto color mode">
         <li><a href="autodoc.html#module-mlcg.nn.radial_basis.radial_integral_gto">mlcg.nn.radial_basis.radial_integral_gto</a>
 </li>
         <li><a href="autodoc.html#module-mlcg.nn.schnet">mlcg.nn.schnet</a>
+</li>
+        <li><a href="autodoc.html#module-mlcg.simulation.LangevinSimulation">mlcg.simulation.LangevinSimulation</a>
+</li>
+        <li><a href="autodoc.html#module-mlcg.simulation.OverdampedSimulation">mlcg.simulation.OverdampedSimulation</a>
+</li>
+        <li><a href="autodoc.html#module-mlcg.simulation.PTSimulation">mlcg.simulation.PTSimulation</a>
 </li>
         <li><a href="simulation/utils.html#module-mlcg.simulation.specialize_prior">mlcg.simulation.specialize_prior</a>
 </li>

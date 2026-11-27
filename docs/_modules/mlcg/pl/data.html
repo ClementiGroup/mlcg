@@ -6,7 +6,8 @@
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=31853864" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/shibuya.css?v=9454f7d5" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link media="print" rel="stylesheet" type="text/css" href="../../../_static/print.css?v=20ff2c19" />
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -160,7 +161,7 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="DataModule">
 <a class="viewcode-back" href="../../../training.html#mlcg.pl.DataModule">[docs]</a>
 </span><span data-line="10"><span class="k">class</span><span class="w"> </span><span class="nc">DataModule</span><span class="p">(</span><span class="n">pl</span><span class="o">.</span><span class="n">LightningDataModule</span><span class="p">):</span>
-</span><span data-line="11"><span class="w">    </span><span class="sd">&quot;&quot;&quot;PL interface to train with datasets defined in mlcg.datasets.</span>
+</span><span data-line="11"><span class="w">    </span><span class="sd">"""PL interface to train with datasets defined in mlcg.datasets.</span>
 </span><span data-line="12">
 </span><span data-line="13"><span class="sd">    Parameters</span>
 </span><span data-line="14"><span class="sd">    ----------</span>
@@ -174,7 +175,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="22"><span class="sd">    test_ratio:</span>
 </span><span data-line="23"><span class="sd">        fraction of the dataset used for testing</span>
 </span><span data-line="24"><span class="sd">    splits:</span>
-</span><span data-line="25"><span class="sd">        filename of a file containing the indices for training, validation, and testing. It should be compatible with `np.load` and contain the fields `&#39;idx_train&#39;`, `&#39;idx_val&#39;`, and `&#39;idx_test&#39;`.</span>
+</span><span data-line="25"><span class="sd">        filename of a file containing the indices for training, validation, and testing. It should be compatible with `np.load` and contain the fields `'idx_train'`, `'idx_val'`, and `'idx_test'`.</span>
 </span><span data-line="26"><span class="sd">        If None then the dataset is split randomly using the `val_ratio` and `test_ratio`.</span>
 </span><span data-line="27"><span class="sd">    batch_size:</span>
 </span><span data-line="28"><span class="sd">        number of structure to include in each training batches.</span>
@@ -187,7 +188,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="35"><span class="sd">    save_local_copy:</span>
 </span><span data-line="36"><span class="sd">        saves the input dataset in log_dir</span>
 </span><span data-line="37">
-</span><span data-line="38"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="38"><span class="sd">    """</span>
 </span><span data-line="39">
 </span><span data-line="40">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
 </span><span data-line="41">        <span class="bp">self</span><span class="p">,</span>
@@ -208,16 +209,16 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="56">
 </span><span data-line="57">        <span class="c1"># assume dataset is similart to torch_geometric.dataset.Dataset</span>
 </span><span data-line="58">        <span class="bp">self</span><span class="o">.</span><span class="n">dataset_init_kwargs</span> <span class="o">=</span> <span class="p">{</span>
-</span><span data-line="59">            <span class="s2">&quot;root&quot;</span><span class="p">:</span> <span class="n">dataset</span><span class="o">.</span><span class="n">root</span><span class="p">,</span>
-</span><span data-line="60">            <span class="s2">&quot;transform&quot;</span><span class="p">:</span> <span class="n">dataset</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span>
-</span><span data-line="61">            <span class="s2">&quot;pre_transform&quot;</span><span class="p">:</span> <span class="n">dataset</span><span class="o">.</span><span class="n">pre_transform</span><span class="p">,</span>
-</span><span data-line="62">            <span class="s2">&quot;pre_filter&quot;</span><span class="p">:</span> <span class="n">dataset</span><span class="o">.</span><span class="n">pre_filter</span><span class="p">,</span>
+</span><span data-line="59">            <span class="s2">"root"</span><span class="p">:</span> <span class="n">dataset</span><span class="o">.</span><span class="n">root</span><span class="p">,</span>
+</span><span data-line="60">            <span class="s2">"transform"</span><span class="p">:</span> <span class="n">dataset</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span>
+</span><span data-line="61">            <span class="s2">"pre_transform"</span><span class="p">:</span> <span class="n">dataset</span><span class="o">.</span><span class="n">pre_transform</span><span class="p">,</span>
+</span><span data-line="62">            <span class="s2">"pre_filter"</span><span class="p">:</span> <span class="n">dataset</span><span class="o">.</span><span class="n">pre_filter</span><span class="p">,</span>
 </span><span data-line="63">        <span class="p">}</span>
 </span><span data-line="64">        <span class="bp">self</span><span class="o">.</span><span class="n">dataset_cls</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
 </span><span data-line="65">        <span class="bp">self</span><span class="o">.</span><span class="n">save_local_copy</span> <span class="o">=</span> <span class="n">save_local_copy</span>
 </span><span data-line="66">
 </span><span data-line="67">        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_local_copy</span><span class="p">:</span>
-</span><span data-line="68">            <span class="bp">self</span><span class="o">.</span><span class="n">dataset_root</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">log_dir</span><span class="p">,</span> <span class="s2">&quot;dataset.pt&quot;</span><span class="p">)</span>
+</span><span data-line="68">            <span class="bp">self</span><span class="o">.</span><span class="n">dataset_root</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">log_dir</span><span class="p">,</span> <span class="s2">"dataset.pt"</span><span class="p">)</span>
 </span><span data-line="69">            <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset_root</span><span class="p">)</span>
 </span><span data-line="70">
 </span><span data-line="71">        <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch_size</span>
@@ -228,7 +229,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="76">        <span class="bp">self</span><span class="o">.</span><span class="n">log_dir</span> <span class="o">=</span> <span class="n">log_dir</span>
 </span><span data-line="77">        <span class="bp">self</span><span class="o">.</span><span class="n">splits</span> <span class="o">=</span> <span class="n">splits</span>
 </span><span data-line="78">        <span class="bp">self</span><span class="o">.</span><span class="n">loading_stride</span> <span class="o">=</span> <span class="n">loading_stride</span>
-</span><span data-line="79">        <span class="bp">self</span><span class="o">.</span><span class="n">splits_fn</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">log_dir</span><span class="p">,</span> <span class="s2">&quot;splits.npz&quot;</span><span class="p">)</span>
+</span><span data-line="79">        <span class="bp">self</span><span class="o">.</span><span class="n">splits_fn</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">log_dir</span><span class="p">,</span> <span class="s2">"splits.npz"</span><span class="p">)</span>
 </span><span data-line="80">        <span class="bp">self</span><span class="o">.</span><span class="n">pin_memory</span> <span class="o">=</span> <span class="n">pin_memory</span>
 </span><span data-line="81">
 </span><span data-line="82">    <span class="k">def</span><span class="w"> </span><span class="nf">load_dataset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -242,7 +243,7 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="DataModule.prepare_data">
 <a class="viewcode-back" href="../../../training.html#mlcg.pl.DataModule.prepare_data">[docs]</a>
 </span><span data-line="90">    <span class="k">def</span><span class="w"> </span><span class="nf">prepare_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="91"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Download, preprocess dataset, etc.&quot;&quot;&quot;</span>
+</span><span data-line="91"><span class="w">        </span><span class="sd">"""Download, preprocess dataset, etc."""</span>
 </span><span data-line="92">        <span class="k">pass</span></div>
 
 </span><span data-line="93">
@@ -267,26 +268,26 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="DataModule.train_dataloader">
 <a class="viewcode-back" href="../../../training.html#mlcg.pl.DataModule.train_dataloader">[docs]</a>
 </span><span data-line="109">    <span class="k">def</span><span class="w"> </span><span class="nf">train_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="110">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_dataset</span><span class="p">,</span> <span class="s2">&quot;train&quot;</span><span class="p">)</span></div>
+</span><span data-line="110">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_dataset</span><span class="p">,</span> <span class="s2">"train"</span><span class="p">)</span></div>
 
 </span><span data-line="111">
 <div class="viewcode-block" id="DataModule.val_dataloader">
 <a class="viewcode-back" href="../../../training.html#mlcg.pl.DataModule.val_dataloader">[docs]</a>
 </span><span data-line="112">    <span class="k">def</span><span class="w"> </span><span class="nf">val_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="113">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">val_dataset</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">)</span></div>
+</span><span data-line="113">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">val_dataset</span><span class="p">,</span> <span class="s2">"val"</span><span class="p">)</span></div>
 
 </span><span data-line="114">
 <div class="viewcode-block" id="DataModule.test_dataloader">
 <a class="viewcode-back" href="../../../training.html#mlcg.pl.DataModule.test_dataloader">[docs]</a>
 </span><span data-line="115">    <span class="k">def</span><span class="w"> </span><span class="nf">test_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="116">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">test_dataset</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">)</span></div>
+</span><span data-line="116">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">test_dataset</span><span class="p">,</span> <span class="s2">"test"</span><span class="p">)</span></div>
 
 </span><span data-line="117">
 </span><span data-line="118">    <span class="k">def</span><span class="w"> </span><span class="nf">_get_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">,</span> <span class="n">stage</span><span class="p">):</span>
-</span><span data-line="119">        <span class="k">if</span> <span class="n">stage</span> <span class="o">==</span> <span class="s2">&quot;train&quot;</span><span class="p">:</span>
+</span><span data-line="119">        <span class="k">if</span> <span class="n">stage</span> <span class="o">==</span> <span class="s2">"train"</span><span class="p">:</span>
 </span><span data-line="120">            <span class="n">batch_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span>
 </span><span data-line="121">            <span class="n">shuffle</span> <span class="o">=</span> <span class="kc">True</span>
-</span><span data-line="122">        <span class="k">elif</span> <span class="n">stage</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;val&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">]:</span>
+</span><span data-line="122">        <span class="k">elif</span> <span class="n">stage</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"val"</span><span class="p">,</span> <span class="s2">"test"</span><span class="p">]:</span>
 </span><span data-line="123">            <span class="n">batch_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inference_batch_size</span>
 </span><span data-line="124">            <span class="n">shuffle</span> <span class="o">=</span> <span class="kc">False</span>
 </span><span data-line="125">

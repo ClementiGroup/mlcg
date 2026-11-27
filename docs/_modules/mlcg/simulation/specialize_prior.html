@@ -6,7 +6,8 @@
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=31853864" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/shibuya.css?v=9454f7d5" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link media="print" rel="stylesheet" type="text/css" href="../../../_static/print.css?v=20ff2c19" />
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -148,7 +149,7 @@ data-aria-dark="Switch to auto color mode">
       <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
   <article class="yue" role="main">
           <h1>Source code for mlcg.simulation.specialize_prior</h1><div class="highlight"><pre>
-<span></span><span data-line="1"><span class="sd">&quot;&quot;&quot;It is convinient to define various prior models for many types of</span>
+<span></span><span data-line="1"><span class="sd">"""It is convinient to define various prior models for many types of</span>
 </span><span data-line="2"><span class="sd">interactions which leads to a large number of priors. While this is convinient</span>
 </span><span data-line="3"><span class="sd">when difining these priors, it results in a clear slowdown of the simulation.</span>
 </span><span data-line="4"><span class="sd">Below are defined Prior models that are specialized to a specific simulation.</span>
@@ -163,7 +164,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="13">
 </span><span data-line="14"><span class="sd">The names of the specialized prior classes have the name of their original class</span>
 </span><span data-line="15"><span class="sd">with `Static` prepended and they are inherit from :obj:`StaticPrior`.</span>
-</span><span data-line="16"><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="16"><span class="sd">"""</span>
 </span><span data-line="17">
 </span><span data-line="18"><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 </span><span data-line="19"><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">Tuple</span>
@@ -187,12 +188,12 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="37">
 </span><span data-line="38"><span class="c1">#: register the types of prior that can be reduced</span>
 </span><span data-line="39"><span class="n">to_reduce</span> <span class="o">=</span> <span class="p">{</span>
-</span><span data-line="40">    <span class="s2">&quot;Dihedral&quot;</span><span class="p">:</span> <span class="n">Dihedral</span><span class="p">,</span>
-</span><span data-line="41">    <span class="s2">&quot;GeneralAngles&quot;</span><span class="p">:</span> <span class="n">GeneralAngles</span><span class="p">,</span>
-</span><span data-line="42">    <span class="s2">&quot;GeneralBonds&quot;</span><span class="p">:</span> <span class="n">GeneralBonds</span><span class="p">,</span>
-</span><span data-line="43">    <span class="s2">&quot;HarmonicBonds&quot;</span><span class="p">:</span> <span class="n">HarmonicBonds</span><span class="p">,</span>
-</span><span data-line="44">    <span class="s2">&quot;HarmonicAngles&quot;</span><span class="p">:</span> <span class="n">HarmonicAngles</span><span class="p">,</span>
-</span><span data-line="45">    <span class="s2">&quot;HarmonicImpropers&quot;</span><span class="p">:</span> <span class="n">HarmonicImpropers</span><span class="p">,</span>
+</span><span data-line="40">    <span class="s2">"Dihedral"</span><span class="p">:</span> <span class="n">Dihedral</span><span class="p">,</span>
+</span><span data-line="41">    <span class="s2">"GeneralAngles"</span><span class="p">:</span> <span class="n">GeneralAngles</span><span class="p">,</span>
+</span><span data-line="42">    <span class="s2">"GeneralBonds"</span><span class="p">:</span> <span class="n">GeneralBonds</span><span class="p">,</span>
+</span><span data-line="43">    <span class="s2">"HarmonicBonds"</span><span class="p">:</span> <span class="n">HarmonicBonds</span><span class="p">,</span>
+</span><span data-line="44">    <span class="s2">"HarmonicAngles"</span><span class="p">:</span> <span class="n">HarmonicAngles</span><span class="p">,</span>
+</span><span data-line="45">    <span class="s2">"HarmonicImpropers"</span><span class="p">:</span> <span class="n">HarmonicImpropers</span><span class="p">,</span>
 </span><span data-line="46"><span class="p">}</span>
 </span><span data-line="47">
 </span><span data-line="48">
@@ -215,10 +216,10 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="65">
 </span><span data-line="66"><span class="n">glbls</span> <span class="o">=</span> <span class="nb">globals</span><span class="p">()</span>
 </span><span data-line="67"><span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">CLS</span> <span class="ow">in</span> <span class="n">to_reduce</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-</span><span data-line="68">    <span class="n">glbls</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;Static</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span>
-</span><span data-line="69">        <span class="sa">f</span><span class="s2">&quot;Static</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+</span><span data-line="68">    <span class="n">glbls</span><span class="p">[</span><span class="sa">f</span><span class="s2">"Static</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span>
+</span><span data-line="69">        <span class="sa">f</span><span class="s2">"Static</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
 </span><span data-line="70">        <span class="p">(</span><span class="n">StaticPrior</span><span class="p">,</span> <span class="n">CLS</span><span class="p">),</span>
-</span><span data-line="71">        <span class="p">{</span><span class="s2">&quot;__init__&quot;</span><span class="p">:</span> <span class="n">constructor</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">CLS</span><span class="o">.</span><span class="n">name</span><span class="p">},</span>
+</span><span data-line="71">        <span class="p">{</span><span class="s2">"__init__"</span><span class="p">:</span> <span class="n">constructor</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">:</span> <span class="n">CLS</span><span class="o">.</span><span class="n">name</span><span class="p">},</span>
 </span><span data-line="72">    <span class="p">)</span>
 </span><span data-line="73">
 </span><span data-line="74">
@@ -228,7 +229,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="76">    <span class="n">priors</span><span class="p">:</span> <span class="n">SumOut</span><span class="p">,</span>
 </span><span data-line="77">    <span class="n">data_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">AtomicData</span><span class="p">],</span>
 </span><span data-line="78"><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">SumOut</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">AtomicData</span><span class="p">]]:</span>
-</span><span data-line="79"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Specilize the priors for all the prior types registered in</span>
+</span><span data-line="79"><span class="w">    </span><span class="sd">"""Specilize the priors for all the prior types registered in</span>
 </span><span data-line="80">
 </span><span data-line="81"><span class="sd">    .. autodata:: to_reduce</span>
 </span><span data-line="82">
@@ -252,7 +253,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="100"><span class="sd">    -------</span>
 </span><span data-line="101">
 </span><span data-line="102"><span class="sd">    Condensed priors and the list of configuration with adapted neighborlists.</span>
-</span><span data-line="103"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="103"><span class="sd">    """</span>
 </span><span data-line="104">    <span class="k">for</span> <span class="n">TargetPrior</span> <span class="ow">in</span> <span class="n">to_reduce</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
 </span><span data-line="105">        <span class="n">priors</span><span class="p">,</span> <span class="n">data_list</span> <span class="o">=</span> <span class="n">condense_prior_for_simulation</span><span class="p">(</span>
 </span><span data-line="106">            <span class="n">TargetPrior</span><span class="p">,</span> <span class="n">priors</span><span class="p">,</span> <span class="n">data_list</span>
@@ -266,7 +267,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="113">    <span class="n">priors</span><span class="p">:</span> <span class="n">SumOut</span><span class="p">,</span>
 </span><span data-line="114">    <span class="n">data_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">AtomicData</span><span class="p">],</span>
 </span><span data-line="115"><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">SumOut</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">AtomicData</span><span class="p">]]:</span>
-</span><span data-line="116"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Condense the priors of type TargetPrior into a :obj:`StaticPrior` for</span>
+</span><span data-line="116"><span class="w">    </span><span class="sd">"""Condense the priors of type TargetPrior into a :obj:`StaticPrior` for</span>
 </span><span data-line="117"><span class="sd">    the particular list of atomic structures contained in</span>
 </span><span data-line="118"><span class="sd">    :obj:`data_list` and adapt the neighbor lists in</span>
 </span><span data-line="119"><span class="sd">    :obj:`data_list` accordingly.</span>
@@ -288,17 +289,17 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="135">
 </span><span data-line="136"><span class="sd">    Condensed priors and the list of configuration with adapted neighborlists.</span>
 </span><span data-line="137">
-</span><span data-line="138"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="138"><span class="sd">    """</span>
 </span><span data-line="139">    <span class="n">name</span> <span class="o">=</span> <span class="kc">None</span>
 </span><span data-line="140">    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">CLS</span> <span class="ow">in</span> <span class="n">to_reduce</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
 </span><span data-line="141">        <span class="k">if</span> <span class="n">CLS</span> <span class="o">==</span> <span class="n">TargetPrior</span><span class="p">:</span>
-</span><span data-line="142">            <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Static</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span data-line="142">            <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Static</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">"</span>
 </span><span data-line="143">            <span class="n">StaticCLS</span> <span class="o">=</span> <span class="n">glbls</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
 </span><span data-line="144">            <span class="k">break</span>
 </span><span data-line="145">
 </span><span data-line="146">    <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
 </span><span data-line="147">        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-</span><span data-line="148">            <span class="sa">f</span><span class="s2">&quot;The condense target </span><span class="si">{</span><span class="n">TargetPrior</span><span class="si">}</span><span class="s2"> has not been registered in </span><span class="si">{</span><span class="n">to_reduce</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span data-line="148">            <span class="sa">f</span><span class="s2">"The condense target </span><span class="si">{</span><span class="n">TargetPrior</span><span class="si">}</span><span class="s2"> has not been registered in </span><span class="si">{</span><span class="n">to_reduce</span><span class="si">}</span><span class="s2">"</span>
 </span><span data-line="149">        <span class="p">)</span>
 </span><span data-line="150">
 </span><span data-line="151">    <span class="n">params</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
@@ -335,7 +336,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="182">                    <span class="n">ee</span><span class="p">[:,</span> <span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="n">v</span>
 </span><span data-line="183">                    <span class="n">params</span><span class="p">[</span><span class="n">kv</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ee</span><span class="p">)</span>
 </span><span data-line="184">
-</span><span data-line="185">                <span class="n">index_mapping</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s2">&quot;index_mapping&quot;</span><span class="p">])</span>
+</span><span data-line="185">                <span class="n">index_mapping</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s2">"index_mapping"</span><span class="p">])</span>
 </span><span data-line="186">                <span class="c1"># remove NL entry that is being condensed</span>
 </span><span data-line="187">                <span class="n">condensed_data_list</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span><span class="o">.</span><span class="n">neighbor_list</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
 </span><span data-line="188">

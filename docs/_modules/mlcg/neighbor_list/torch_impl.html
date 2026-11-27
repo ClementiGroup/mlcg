@@ -6,7 +6,8 @@
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=31853864" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/shibuya.css?v=9454f7d5" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link media="print" rel="stylesheet" type="text/css" href="../../../_static/print.css?v=20ff2c19" />
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -168,9 +169,9 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="16">    <span class="n">batch_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span data-line="17">    <span class="n">ignore_same_index</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 </span><span data-line="18"><span class="p">):</span>
-</span><span data-line="19"><span class="w">    </span><span class="sd">&quot;&quot;&quot;A wrapper around pyg_lib.ops that keeps same API of</span>
+</span><span data-line="19"><span class="w">    </span><span class="sd">"""A wrapper around pyg_lib.ops that keeps same API of</span>
 </span><span data-line="20"><span class="sd">    torch_cluster now deprecated.</span>
-</span><span data-line="21"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="21"><span class="sd">    """</span>
 </span><span data-line="22">    <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">y</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
 </span><span data-line="23">        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
 </span><span data-line="24">
@@ -211,11 +212,11 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="56">    <span class="n">batch</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span data-line="57">    <span class="n">loop</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 </span><span data-line="58">    <span class="n">max_num_neighbors</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span>
-</span><span data-line="59">    <span class="n">flow</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;source_to_target&quot;</span><span class="p">,</span>
+</span><span data-line="59">    <span class="n">flow</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"source_to_target"</span><span class="p">,</span>
 </span><span data-line="60">    <span class="n">num_workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
 </span><span data-line="61">    <span class="n">batch_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span data-line="62"><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-</span><span data-line="63"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Computes graph edges to all points within a given distance.</span>
+</span><span data-line="63"><span class="w">    </span><span class="sa">r</span><span class="sd">"""Computes graph edges to all points within a given distance.</span>
 </span><span data-line="64"><span class="sd">    adapted to maintain same API of torch_cluster `radius_graph` now deprecated.</span>
 </span><span data-line="65">
 </span><span data-line="66"><span class="sd">    Args:</span>
@@ -234,16 +235,16 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="79"><span class="sd">            :obj:`max_num_neighbors`, returned neighbors are picked randomly.</span>
 </span><span data-line="80"><span class="sd">            (default: :obj:`32`)</span>
 </span><span data-line="81"><span class="sd">        flow (string, optional): The flow direction when used in combination</span>
-</span><span data-line="82"><span class="sd">            with message passing (:obj:`&quot;source_to_target&quot;` or</span>
-</span><span data-line="83"><span class="sd">            :obj:`&quot;target_to_source&quot;`). (default: :obj:`&quot;source_to_target&quot;`)</span>
+</span><span data-line="82"><span class="sd">            with message passing (:obj:`"source_to_target"` or</span>
+</span><span data-line="83"><span class="sd">            :obj:`"target_to_source"`). (default: :obj:`"source_to_target"`)</span>
 </span><span data-line="84"><span class="sd">        num_workers (int): Number of workers to use for computation. Has no</span>
 </span><span data-line="85"><span class="sd">            effect in case :obj:`batch` is not :obj:`None`, or the input lies</span>
 </span><span data-line="86"><span class="sd">            on the GPU. (default: :obj:`1`)</span>
 </span><span data-line="87"><span class="sd">        batch_size (int, optional): The number of examples :math:`B`.</span>
 </span><span data-line="88"><span class="sd">            Automatically calculated if not given. (default: :obj:`None`)</span>
-</span><span data-line="89"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="89"><span class="sd">    """</span>
 </span><span data-line="90">
-</span><span data-line="91">    <span class="k">assert</span> <span class="n">flow</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;source_to_target&quot;</span><span class="p">,</span> <span class="s2">&quot;target_to_source&quot;</span><span class="p">]</span>
+</span><span data-line="91">    <span class="k">assert</span> <span class="n">flow</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"source_to_target"</span><span class="p">,</span> <span class="s2">"target_to_source"</span><span class="p">]</span>
 </span><span data-line="92">    <span class="n">edge_index</span> <span class="o">=</span> <span class="n">safe_radius</span><span class="p">(</span>
 </span><span data-line="93">        <span class="n">x</span><span class="p">,</span>
 </span><span data-line="94">        <span class="n">x</span><span class="p">,</span>
@@ -255,7 +256,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="100">        <span class="n">batch_size</span><span class="p">,</span>
 </span><span data-line="101">        <span class="ow">not</span> <span class="n">loop</span><span class="p">,</span>
 </span><span data-line="102">    <span class="p">)</span>
-</span><span data-line="103">    <span class="k">if</span> <span class="n">flow</span> <span class="o">==</span> <span class="s2">&quot;source_to_target&quot;</span><span class="p">:</span>
+</span><span data-line="103">    <span class="k">if</span> <span class="n">flow</span> <span class="o">==</span> <span class="s2">"source_to_target"</span><span class="p">:</span>
 </span><span data-line="104">        <span class="n">row</span><span class="p">,</span> <span class="n">col</span> <span class="o">=</span> <span class="n">edge_index</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">edge_index</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 </span><span data-line="105">    <span class="k">else</span><span class="p">:</span>
 </span><span data-line="106">        <span class="n">row</span><span class="p">,</span> <span class="n">col</span> <span class="o">=</span> <span class="n">edge_index</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">edge_index</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
@@ -273,7 +274,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="115">    <span class="n">num_workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
 </span><span data-line="116">    <span class="n">max_num_neighbors</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
 </span><span data-line="117"><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
-</span><span data-line="118"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Function for computing neighbor lists from pytorch geometric data</span>
+</span><span data-line="118"><span class="w">    </span><span class="sd">"""Function for computing neighbor lists from pytorch geometric data</span>
 </span><span data-line="119"><span class="sd">    instances that may or may not use periodic boundary conditions. A batch</span>
 </span><span data-line="120"><span class="sd">    can mix periodic and non-periodic structures, and the positions do not</span>
 </span><span data-line="121"><span class="sd">    need to be wrapped into the unit cell.</span>
@@ -286,7 +287,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="128"><span class="sd">        upper distance cutoff, in which neighbors with distances larger</span>
 </span><span data-line="129"><span class="sd">        than this cutoff will be excluded.</span>
 </span><span data-line="130"><span class="sd">    self_interaction:</span>
-</span><span data-line="131"><span class="sd">        If True, each atom will be considered it&#39;s own neighbor. This can</span>
+</span><span data-line="131"><span class="sd">        If True, each atom will be considered it's own neighbor. This can</span>
 </span><span data-line="132"><span class="sd">        be convenient for certain bases and representations</span>
 </span><span data-line="133"><span class="sd">    num_workers:</span>
 </span><span data-line="134"><span class="sd">        Number of threads to spawn and use for computing the neighbor list</span>
@@ -306,13 +307,13 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="148"><span class="sd">        vector of a pair is ``pos[j] - pos[i] + cell_shift``</span>
 </span><span data-line="149"><span class="sd">    torch.Tensor:</span>
 </span><span data-line="150"><span class="sd">        Boolean mask over the returned pairs, False for self interactions</span>
-</span><span data-line="151"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="151"><span class="sd">    """</span>
 </span><span data-line="152">    <span class="n">pos</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pos</span>
-</span><span data-line="153">    <span class="k">if</span> <span class="s2">&quot;batch&quot;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+</span><span data-line="153">    <span class="k">if</span> <span class="s2">"batch"</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
 </span><span data-line="154">        <span class="n">batch</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">batch</span>
 </span><span data-line="155">    <span class="k">else</span><span class="p">:</span>
 </span><span data-line="156">        <span class="n">batch</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">pos</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">pos</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
-</span><span data-line="157">    <span class="n">pbc</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pbc</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="k">if</span> <span class="s2">&quot;pbc&quot;</span> <span class="ow">in</span> <span class="n">data</span> <span class="k">else</span> <span class="kc">None</span>
+</span><span data-line="157">    <span class="n">pbc</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pbc</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="k">if</span> <span class="s2">"pbc"</span> <span class="ow">in</span> <span class="n">data</span> <span class="k">else</span> <span class="kc">None</span>
 </span><span data-line="158">    <span class="k">if</span> <span class="n">pbc</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">pbc</span><span class="p">):</span>
 </span><span data-line="159">        <span class="n">edge_index</span> <span class="o">=</span> <span class="n">safe_radius_graph</span><span class="p">(</span>
 </span><span data-line="160">            <span class="n">pos</span><span class="p">,</span>
@@ -320,7 +321,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="162">            <span class="n">batch</span><span class="o">=</span><span class="n">batch</span><span class="p">,</span>
 </span><span data-line="163">            <span class="n">max_num_neighbors</span><span class="o">=</span><span class="n">max_num_neighbors</span><span class="p">,</span>
 </span><span data-line="164">            <span class="n">num_workers</span><span class="o">=</span><span class="n">num_workers</span><span class="p">,</span>
-</span><span data-line="165">            <span class="n">flow</span><span class="o">=</span><span class="s2">&quot;target_to_source&quot;</span><span class="p">,</span>
+</span><span data-line="165">            <span class="n">flow</span><span class="o">=</span><span class="s2">"target_to_source"</span><span class="p">,</span>
 </span><span data-line="166">            <span class="n">loop</span><span class="o">=</span><span class="n">self_interaction</span><span class="p">,</span>
 </span><span data-line="167">        <span class="p">)</span>
 </span><span data-line="168">        <span class="n">idx_i</span><span class="p">,</span> <span class="n">idx_j</span> <span class="o">=</span> <span class="n">edge_index</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">edge_index</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
@@ -328,8 +329,8 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="170">            <span class="p">(</span><span class="n">idx_i</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">pos</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">pos</span><span class="o">.</span><span class="n">device</span>
 </span><span data-line="171">        <span class="p">)</span>
 </span><span data-line="172">        <span class="k">return</span> <span class="n">idx_i</span><span class="p">,</span> <span class="n">idx_j</span><span class="p">,</span> <span class="n">cell_shifts</span><span class="p">,</span> <span class="n">idx_i</span> <span class="o">!=</span> <span class="n">idx_j</span>
-</span><span data-line="173">    <span class="k">if</span> <span class="s2">&quot;cell&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
-</span><span data-line="174">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Periodic systems need to have a unit cell defined&quot;</span><span class="p">)</span>
+</span><span data-line="173">    <span class="k">if</span> <span class="s2">"cell"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+</span><span data-line="174">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Periodic systems need to have a unit cell defined"</span><span class="p">)</span>
 </span><span data-line="175">
 </span><span data-line="176">    <span class="n">cell</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">pos</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
 </span><span data-line="177">    <span class="n">cell</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
@@ -367,16 +368,16 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="208">
 </span><span data-line="209">
 </span><span data-line="210"><span class="k">def</span><span class="w"> </span><span class="nf">_lattice_vectors</span><span class="p">(</span><span class="n">shifts</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">cell</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-</span><span data-line="211"><span class="w">    </span><span class="sd">&quot;&quot;&quot;``shifts @ cell`` per row, elementwise: cuBLAS may round the cell to</span>
-</span><span data-line="212"><span class="sd">    TF32 in a matmul.&quot;&quot;&quot;</span>
+</span><span data-line="211"><span class="w">    </span><span class="sd">"""``shifts @ cell`` per row, elementwise: cuBLAS may round the cell to</span>
+</span><span data-line="212"><span class="sd">    TF32 in a matmul."""</span>
 </span><span data-line="213">    <span class="k">return</span> <span class="p">(</span><span class="n">shifts</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">cell</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 </span><span data-line="214">
 </span><span data-line="215">
 </span><span data-line="216"><span class="k">def</span><span class="w"> </span><span class="nf">_cell_offsets</span><span class="p">(</span>
 </span><span data-line="217">    <span class="n">pos</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">cell</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">pbc</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
 </span><span data-line="218"><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-</span><span data-line="219"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Integer lattice coordinates of the cell holding each atom, 0 along</span>
-</span><span data-line="220"><span class="sd">    non-periodic axes. The rows of ``cell`` are the lattice vectors.&quot;&quot;&quot;</span>
+</span><span data-line="219"><span class="w">    </span><span class="sd">"""Integer lattice coordinates of the cell holding each atom, 0 along</span>
+</span><span data-line="220"><span class="sd">    non-periodic axes. The rows of ``cell`` are the lattice vectors."""</span>
 </span><span data-line="221">    <span class="n">fractional</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span>
 </span><span data-line="222">        <span class="n">cell</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">),</span> <span class="n">pos</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
 </span><span data-line="223">    <span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
@@ -387,9 +388,9 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="228"><span class="k">def</span><span class="w"> </span><span class="nf">_images</span><span class="p">(</span>
 </span><span data-line="229">    <span class="n">cell</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">pbc</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">rcut</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">batch</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
 </span><span data-line="230"><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
-</span><span data-line="231"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Atom index and integer lattice shift of every periodic image that</span>
+</span><span data-line="231"><span class="w">    </span><span class="sd">"""Atom index and integer lattice shift of every periodic image that</span>
 </span><span data-line="232"><span class="sd">    can hold a neighbor of an atom of the same structure inside its cell:</span>
-</span><span data-line="233"><span class="sd">    up to ``ceil(rcut / plane spacing)`` cells away along periodic axes.&quot;&quot;&quot;</span>
+</span><span data-line="233"><span class="sd">    up to ``ceil(rcut / plane spacing)`` cells away along periodic axes."""</span>
 </span><span data-line="234">    <span class="n">plane_spacing</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">torch</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
 </span><span data-line="235">    <span class="n">reach</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">rcut</span> <span class="o">/</span> <span class="n">plane_spacing</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
 </span><span data-line="236">    <span class="n">reach</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">pbc</span><span class="p">,</span> <span class="n">reach</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">reach</span><span class="p">))</span>
@@ -407,7 +408,7 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="wrap_positions">
 <a class="viewcode-back" href="../../../geometry/neighbor_list.html#mlcg.neighbor_list.torch_impl.wrap_positions">[docs]</a>
 </span><span data-line="248"><span class="k">def</span><span class="w"> </span><span class="nf">wrap_positions</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">,</span> <span class="n">device</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-7</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="249"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Vectorized version of position wrapping to unit cell.</span>
+</span><span data-line="249"><span class="w">    </span><span class="sd">"""Vectorized version of position wrapping to unit cell.</span>
 </span><span data-line="250"><span class="sd">    Returns positions changed by a multiple of the unit cell vectors to</span>
 </span><span data-line="251"><span class="sd">    fit inside the space spanned by these vectors.</span>
 </span><span data-line="252"><span class="sd">    Parameters</span>
@@ -423,7 +424,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="262"><span class="sd">    -------</span>
 </span><span data-line="263"><span class="sd">    AtomicData:</span>
 </span><span data-line="264"><span class="sd">        torch_geometric.Data instance with positions wrapped in unit cell</span>
-</span><span data-line="265"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="265"><span class="sd">    """</span>
 </span><span data-line="266">    <span class="n">pos</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pos</span>
 </span><span data-line="267">    <span class="n">cell</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">pos</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
 </span><span data-line="268">    <span class="n">pbc</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pbc</span>

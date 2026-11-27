@@ -6,7 +6,8 @@
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=31853864" />
-    <link rel="stylesheet" type="text/css" href="../../_static/shibuya.css?v=9454f7d5" />
+    <link rel="stylesheet" type="text/css" href="../../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link media="print" rel="stylesheet" type="text/css" href="../../_static/print.css?v=20ff2c19" />
     <link rel="stylesheet" type="text/css" href="../../_static/custom.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -174,7 +175,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="22">        <span class="n">corruptor</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span data-line="23">        <span class="n">add_masses</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
 </span><span data-line="24">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">AtomicData</span><span class="p">]:</span>
-</span><span data-line="25"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Helper function to generate broken data lists</span>
+</span><span data-line="25"><span class="w">        </span><span class="sd">"""Helper function to generate broken data lists</span>
 </span><span data-line="26">
 </span><span data-line="27"><span class="sd">        Parameters</span>
 </span><span data-line="28"><span class="sd">        ----------</span>
@@ -198,7 +199,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="46"><span class="sd">            at the frame and with the damage specified by the</span>
 </span><span data-line="47"><span class="sd">            the corruptor. If there is no corruptor, then the data</span>
 </span><span data-line="48"><span class="sd">            list will be properly constructed.</span>
-</span><span data-line="49"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="49"><span class="sd">        """</span>
 </span><span data-line="50">
 </span><span data-line="51">        <span class="n">input_masses</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">mol</span><span class="o">.</span><span class="n">get_masses</span><span class="p">())</span> <span class="k">if</span> <span class="n">x</span> <span class="k">else</span> <span class="kc">None</span>
 </span><span data-line="52">
@@ -228,9 +229,9 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="_ASE_prior_model">
 <a class="viewcode-back" href="../../misc/mol_utils.html#mlcg.mol_utils._ASE_prior_model">[docs]</a>
 </span><span data-line="75"><span class="k">def</span><span class="w"> </span><span class="nf">_ASE_prior_model</span><span class="p">(</span>
-</span><span data-line="76">    <span class="n">mol</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;CH3CH2NH2&quot;</span><span class="p">,</span> <span class="n">sum_out</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span>
+</span><span data-line="76">    <span class="n">mol</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"CH3CH2NH2"</span><span class="p">,</span> <span class="n">sum_out</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s2">"cpu"</span>
 </span><span data-line="77"><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
-</span><span data-line="78"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrapper that returns a simple prior-only model of</span>
+</span><span data-line="78"><span class="w">    </span><span class="sd">"""Wrapper that returns a simple prior-only model of</span>
 </span><span data-line="79"><span class="sd">    an ASE molecule with HarmonicBonds and HarmonicAngles</span>
 </span><span data-line="80"><span class="sd">    priors whose parameters are estimated from coordinates</span>
 </span><span data-line="81"><span class="sd">    artifically perturbed by some small Gaussian noise.</span>
@@ -249,10 +250,10 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="94"><span class="sd">    -------</span>
 </span><span data-line="95"><span class="sd">    model_with_data:</span>
 </span><span data-line="96"><span class="sd">        Dictionary that contains the fitted prior-only model</span>
-</span><span data-line="97"><span class="sd">        under the key &quot;model&quot; and the noisey data, as a collated</span>
+</span><span data-line="97"><span class="sd">        under the key "model" and the noisey data, as a collated</span>
 </span><span data-line="98"><span class="sd">        AtomicData instance, used for fitting under the key</span>
-</span><span data-line="99"><span class="sd">        &quot;collated_prior_data&quot;</span>
-</span><span data-line="100"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="99"><span class="sd">        "collated_prior_data"</span>
+</span><span data-line="100"><span class="sd">    """</span>
 </span><span data-line="101">
 </span><span data-line="102">    <span class="c1"># Seeding</span>
 </span><span data-line="103">    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">94834</span><span class="p">)</span>
@@ -264,7 +265,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="109">    <span class="n">beta</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">temperature</span> <span class="o">*</span> <span class="n">kB</span><span class="p">)</span>
 </span><span data-line="110">
 </span><span data-line="111">    <span class="c1"># Here we make a simple prior-only model of aluminum-fluoride</span>
-</span><span data-line="112">    <span class="c1"># mol = molecule(&quot;AlF3&quot;)</span>
+</span><span data-line="112">    <span class="c1"># mol = molecule("AlF3")</span>
 </span><span data-line="113">    <span class="c1"># Implement molecule with dihedrals</span>
 </span><span data-line="114">    <span class="n">mol</span> <span class="o">=</span> <span class="n">molecule</span><span class="p">(</span><span class="n">mol</span><span class="p">)</span>
 </span><span data-line="115">    <span class="n">test_topo</span> <span class="o">=</span> <span class="n">Topology</span><span class="o">.</span><span class="n">from_ase</span><span class="p">(</span><span class="n">mol</span><span class="p">)</span>
@@ -291,7 +292,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="136">    <span class="n">dihedral_edges</span> <span class="o">=</span> <span class="n">test_topo</span><span class="o">.</span><span class="n">dihedrals2torch</span><span class="p">()</span>
 </span><span data-line="137">
 </span><span data-line="138">    <span class="c1"># Generete some noisy data for the priors</span>
-</span><span data-line="139">    <span class="n">nls_tags</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;bonds&quot;</span><span class="p">,</span> <span class="s2">&quot;angles&quot;</span><span class="p">,</span> <span class="s2">&quot;dihedrals&quot;</span><span class="p">]</span>
+</span><span data-line="139">    <span class="n">nls_tags</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"bonds"</span><span class="p">,</span> <span class="s2">"angles"</span><span class="p">,</span> <span class="s2">"dihedrals"</span><span class="p">]</span>
 </span><span data-line="140">    <span class="n">nls_orders</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span>
 </span><span data-line="141">    <span class="n">nls_edges</span> <span class="o">=</span> <span class="p">[</span><span class="n">bond_edges</span><span class="p">,</span> <span class="n">angle_edges</span><span class="p">,</span> <span class="n">dihedral_edges</span><span class="p">]</span>
 </span><span data-line="142">
@@ -331,11 +332,11 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="176">        <span class="n">full_model</span> <span class="o">=</span> <span class="n">SumOut</span><span class="p">(</span><span class="n">full_model</span><span class="p">)</span>
 </span><span data-line="177">
 </span><span data-line="178">    <span class="n">model_with_data</span> <span class="o">=</span> <span class="p">{</span>
-</span><span data-line="179">        <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="n">full_model</span><span class="p">,</span>
-</span><span data-line="180">        <span class="s2">&quot;collated_prior_data&quot;</span><span class="p">:</span> <span class="n">collated_prior_data</span><span class="p">,</span>
-</span><span data-line="181">        <span class="s2">&quot;molecule&quot;</span><span class="p">:</span> <span class="n">mol</span><span class="p">,</span>
-</span><span data-line="182">        <span class="s2">&quot;num_examples&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">prior_data_list</span><span class="p">),</span>
-</span><span data-line="183">        <span class="s2">&quot;neighbor_lists&quot;</span><span class="p">:</span> <span class="n">neighbor_lists</span><span class="p">,</span>
+</span><span data-line="179">        <span class="s2">"model"</span><span class="p">:</span> <span class="n">full_model</span><span class="p">,</span>
+</span><span data-line="180">        <span class="s2">"collated_prior_data"</span><span class="p">:</span> <span class="n">collated_prior_data</span><span class="p">,</span>
+</span><span data-line="181">        <span class="s2">"molecule"</span><span class="p">:</span> <span class="n">mol</span><span class="p">,</span>
+</span><span data-line="182">        <span class="s2">"num_examples"</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">prior_data_list</span><span class="p">),</span>
+</span><span data-line="183">        <span class="s2">"neighbor_lists"</span><span class="p">:</span> <span class="n">neighbor_lists</span><span class="p">,</span>
 </span><span data-line="184">    <span class="p">}</span>
 </span><span data-line="185">    <span class="k">return</span> <span class="n">model_with_data</span></div>
 

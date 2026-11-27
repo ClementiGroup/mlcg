@@ -6,7 +6,8 @@
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=31853864" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/shibuya.css?v=9454f7d5" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link media="print" rel="stylesheet" type="text/css" href="../../../_static/print.css?v=20ff2c19" />
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -156,7 +157,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="6">
 </span><span data-line="7">
 </span><span data-line="8"><span class="k">class</span><span class="w"> </span><span class="nc">_Cutoff</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-</span><span data-line="9"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Abstract cutoff class&quot;&quot;&quot;</span>
+</span><span data-line="9"><span class="w">    </span><span class="sa">r</span><span class="sd">"""Abstract cutoff class"""</span>
 </span><span data-line="10">
 </span><span data-line="11">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 </span><span data-line="12">        <span class="nb">super</span><span class="p">(</span><span class="n">_Cutoff</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -166,7 +167,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="16">    <span class="k">def</span><span class="w"> </span><span class="nf">check_cutoff</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 </span><span data-line="17">        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff_upper</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff_lower</span><span class="p">:</span>
 </span><span data-line="18">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-</span><span data-line="19">                <span class="s2">&quot;Upper cutoff </span><span class="si">{}</span><span class="s2"> is less than lower cutoff </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+</span><span data-line="19">                <span class="s2">"Upper cutoff </span><span class="si">{}</span><span class="s2"> is less than lower cutoff </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
 </span><span data-line="20">                    <span class="bp">self</span><span class="o">.</span><span class="n">cutoff_upper</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff_lower</span>
 </span><span data-line="21">                <span class="p">)</span>
 </span><span data-line="22">            <span class="p">)</span>
@@ -176,7 +177,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="26">
 </span><span data-line="27">
 </span><span data-line="28"><span class="k">class</span><span class="w"> </span><span class="nc">_OneSidedCutoff</span><span class="p">(</span><span class="n">_Cutoff</span><span class="p">):</span>
-</span><span data-line="29"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Abstract classs for cutoff functions with a fuxed lower cutoff of 0&quot;&quot;&quot;</span>
+</span><span data-line="29"><span class="w">    </span><span class="sa">r</span><span class="sd">"""Abstract classs for cutoff functions with a fuxed lower cutoff of 0"""</span>
 </span><span data-line="30">
 </span><span data-line="31">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 </span><span data-line="32">        <span class="nb">super</span><span class="p">(</span><span class="n">_OneSidedCutoff</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -190,7 +191,7 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="IdentityCutoff">
 <a class="viewcode-back" href="../../../models/cutoffs.html#mlcg.nn.cutoff.IdentityCutoff">[docs]</a>
 </span><span data-line="40"><span class="k">class</span><span class="w"> </span><span class="nc">IdentityCutoff</span><span class="p">(</span><span class="n">_Cutoff</span><span class="p">):</span>
-</span><span data-line="41"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Cutoff function that is one everywhere, but retains</span>
+</span><span data-line="41"><span class="w">    </span><span class="sa">r</span><span class="sd">"""Cutoff function that is one everywhere, but retains</span>
 </span><span data-line="42"><span class="sd">    cutoff_lower and cutoff_upper attributes</span>
 </span><span data-line="43">
 </span><span data-line="44"><span class="sd">    Parameters</span>
@@ -199,7 +200,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="47"><span class="sd">        left bound for the radial cutoff distance</span>
 </span><span data-line="48"><span class="sd">    cutoff_upper:</span>
 </span><span data-line="49"><span class="sd">        right bound for the radial cutoff distance</span>
-</span><span data-line="50"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="50"><span class="sd">    """</span>
 </span><span data-line="51">
 </span><span data-line="52">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cutoff_lower</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">cutoff_upper</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">):</span>
 </span><span data-line="53">        <span class="nb">super</span><span class="p">(</span><span class="n">IdentityCutoff</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -211,7 +212,7 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="IdentityCutoff.forward">
 <a class="viewcode-back" href="../../../autodoc.html#mlcg.nn.cutoff.IdentityCutoff.forward">[docs]</a>
 </span><span data-line="59">    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">distances</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-</span><span data-line="60"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Fowrad method that returns a cutoff enevlope where all values are</span>
+</span><span data-line="60"><span class="w">        </span><span class="sa">r</span><span class="sd">"""Fowrad method that returns a cutoff enevlope where all values are</span>
 </span><span data-line="61"><span class="sd">        one</span>
 </span><span data-line="62">
 </span><span data-line="63"><span class="sd">        Parameters</span>
@@ -222,7 +223,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="68"><span class="sd">        Returns</span>
 </span><span data-line="69"><span class="sd">        -------</span>
 </span><span data-line="70"><span class="sd">            Cutoff envelope filled with ones, of shape (total_num_edges)</span>
-</span><span data-line="71"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="71"><span class="sd">        """</span>
 </span><span data-line="72">        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">distances</span><span class="p">)</span></div>
 </div>
 
@@ -231,7 +232,7 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="CosineCutoff">
 <a class="viewcode-back" href="../../../models/cutoffs.html#mlcg.nn.cutoff.CosineCutoff">[docs]</a>
 </span><span data-line="75"><span class="k">class</span><span class="w"> </span><span class="nc">CosineCutoff</span><span class="p">(</span><span class="n">_Cutoff</span><span class="p">):</span>
-</span><span data-line="76"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Class implementing a cutoff envelope based a cosine signal in the</span>
+</span><span data-line="76"><span class="w">    </span><span class="sa">r</span><span class="sd">"""Class implementing a cutoff envelope based a cosine signal in the</span>
 </span><span data-line="77"><span class="sd">    interval `[lower_cutoff, upper_cutoff]`:</span>
 </span><span data-line="78">
 </span><span data-line="79"><span class="sd">    When the lower cutoff is set to 0, the function takes the form:</span>
@@ -256,7 +257,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="98">
 </span><span data-line="99">
 </span><span data-line="100">
-</span><span data-line="101"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="101"><span class="sd">    """</span>
 </span><span data-line="102">
 </span><span data-line="103">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cutoff_lower</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">cutoff_upper</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">5.0</span><span class="p">):</span>
 </span><span data-line="104">        <span class="nb">super</span><span class="p">(</span><span class="n">CosineCutoff</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -268,7 +269,7 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="CosineCutoff.forward">
 <a class="viewcode-back" href="../../../autodoc.html#mlcg.nn.cutoff.CosineCutoff.forward">[docs]</a>
 </span><span data-line="110">    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">distances</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-</span><span data-line="111"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Applies cutoff envelope to distances.</span>
+</span><span data-line="111"><span class="w">        </span><span class="sd">"""Applies cutoff envelope to distances.</span>
 </span><span data-line="112">
 </span><span data-line="113"><span class="sd">        Parameters</span>
 </span><span data-line="114"><span class="sd">        ----------</span>
@@ -280,7 +281,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="120"><span class="sd">        cutoffs:</span>
 </span><span data-line="121"><span class="sd">            Distances multiplied by the cutoff envelope, with shape</span>
 </span><span data-line="122"><span class="sd">            (total_num_edges)</span>
-</span><span data-line="123"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="123"><span class="sd">        """</span>
 </span><span data-line="124">        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff_lower</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
 </span><span data-line="125">            <span class="n">cutoffs</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span>
 </span><span data-line="126">                <span class="n">torch</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span>
@@ -318,7 +319,7 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="ShiftedCosineCutoff">
 <a class="viewcode-back" href="../../../models/cutoffs.html#mlcg.nn.cutoff.ShiftedCosineCutoff">[docs]</a>
 </span><span data-line="156"><span class="k">class</span><span class="w"> </span><span class="nc">ShiftedCosineCutoff</span><span class="p">(</span><span class="n">_OneSidedCutoff</span><span class="p">):</span>
-</span><span data-line="157"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Class of Behler cosine cutoff with an additional smoothing parameter.</span>
+</span><span data-line="157"><span class="w">    </span><span class="sa">r</span><span class="sd">"""Class of Behler cosine cutoff with an additional smoothing parameter.</span>
 </span><span data-line="158">
 </span><span data-line="159"><span class="sd">    .. math::</span>
 </span><span data-line="160">
@@ -334,7 +335,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="170"><span class="sd">    smooth_width:</span>
 </span><span data-line="171"><span class="sd">        parameter that controls the extent of smoothing in the cutoff envelope.</span>
 </span><span data-line="172">
-</span><span data-line="173"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="173"><span class="sd">    """</span>
 </span><span data-line="174">
 </span><span data-line="175">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
 </span><span data-line="176">        <span class="bp">self</span><span class="p">,</span>
@@ -345,13 +346,13 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="181">        <span class="bp">self</span><span class="o">.</span><span class="n">cutoff_upper</span> <span class="o">=</span> <span class="n">cutoff</span>
 </span><span data-line="182">        <span class="bp">self</span><span class="o">.</span><span class="n">smooth_width</span> <span class="o">=</span> <span class="n">smooth_width</span>
 </span><span data-line="183">        <span class="c1"># del self.cutoff_upper</span>
-</span><span data-line="184">        <span class="c1"># self.register_buffer(&quot;cutoff_upper&quot;, torch.Tensor([cutoff]))</span>
-</span><span data-line="185">        <span class="c1"># self.register_buffer(&quot;smooth_width&quot;, torch.Tensor([smooth_width]))</span>
+</span><span data-line="184">        <span class="c1"># self.register_buffer("cutoff_upper", torch.Tensor([cutoff]))</span>
+</span><span data-line="185">        <span class="c1"># self.register_buffer("smooth_width", torch.Tensor([smooth_width]))</span>
 </span><span data-line="186">
 <div class="viewcode-block" id="ShiftedCosineCutoff.forward">
 <a class="viewcode-back" href="../../../autodoc.html#mlcg.nn.cutoff.ShiftedCosineCutoff.forward">[docs]</a>
 </span><span data-line="187">    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">distances</span><span class="p">):</span>
-</span><span data-line="188"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute cutoff function.</span>
+</span><span data-line="188"><span class="w">        </span><span class="sd">"""Compute cutoff function.</span>
 </span><span data-line="189">
 </span><span data-line="190"><span class="sd">        Args:</span>
 </span><span data-line="191"><span class="sd">            distances (torch.Tensor): values of interatomic distances.</span>
@@ -359,7 +360,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="193"><span class="sd">        Returns:</span>
 </span><span data-line="194"><span class="sd">            torch.Tensor: values of cutoff function.</span>
 </span><span data-line="195">
-</span><span data-line="196"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="196"><span class="sd">        """</span>
 </span><span data-line="197">        <span class="c1"># Compute values of cutoff function</span>
 </span><span data-line="198">        <span class="n">cutoffs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">distances</span><span class="p">)</span>
 </span><span data-line="199">        <span class="n">mask</span> <span class="o">=</span> <span class="n">distances</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff_upper</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">smooth_width</span>

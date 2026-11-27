@@ -6,7 +6,8 @@
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=31853864" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -159,7 +160,7 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="GaussianBasis">
 <a class="viewcode-back" href="../../../../models/rbfs.html#mlcg.nn.radial_basis.gaussian.GaussianBasis">[docs]</a>
 </span><span data-line="9"><span class="k">class</span><span class="w"> </span><span class="nc">GaussianBasis</span><span class="p">(</span><span class="n">_RadialBasis</span><span class="p">):</span>
-</span><span data-line="10"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Class that generates a set of equidistant 1-D gaussian basis functions</span>
+</span><span data-line="10"><span class="w">    </span><span class="sa">r</span><span class="sd">"""Class that generates a set of equidistant 1-D gaussian basis functions</span>
 </span><span data-line="11"><span class="sd">    scattered between a specified lower and upper cutoff:</span>
 </span><span data-line="12">
 </span><span data-line="13"><span class="sd">    .. math::</span>
@@ -180,7 +181,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="28"><span class="sd">        updated during backpropagation. If False, these parameters will be</span>
 </span><span data-line="29"><span class="sd">        instead fixed in an unoptimizable buffer.</span>
 </span><span data-line="30">
-</span><span data-line="31"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="31"><span class="sd">    """</span>
 </span><span data-line="32">
 </span><span data-line="33">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
 </span><span data-line="34">        <span class="bp">self</span><span class="p">,</span>
@@ -195,7 +196,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="43">            <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span> <span class="o">=</span> <span class="n">cutoff</span>
 </span><span data-line="44">        <span class="k">else</span><span class="p">:</span>
 </span><span data-line="45">            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-</span><span data-line="46">                <span class="s2">&quot;Supplied cutoff </span><span class="si">{}</span><span class="s2"> is neither a number nor a _Cutoff instance.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+</span><span data-line="46">                <span class="s2">"Supplied cutoff </span><span class="si">{}</span><span class="s2"> is neither a number nor a _Cutoff instance."</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
 </span><span data-line="47">                    <span class="n">cutoff</span>
 </span><span data-line="48">                <span class="p">)</span>
 </span><span data-line="49">            <span class="p">)</span>
@@ -207,19 +208,19 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="55">
 </span><span data-line="56">        <span class="n">offset</span><span class="p">,</span> <span class="n">coeff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initial_params</span><span class="p">()</span>
 </span><span data-line="57">        <span class="k">if</span> <span class="n">trainable</span><span class="p">:</span>
-</span><span data-line="58">            <span class="bp">self</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="s2">&quot;coeff&quot;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">coeff</span><span class="p">))</span>
-</span><span data-line="59">            <span class="bp">self</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="s2">&quot;offset&quot;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">offset</span><span class="p">))</span>
+</span><span data-line="58">            <span class="bp">self</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="s2">"coeff"</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">coeff</span><span class="p">))</span>
+</span><span data-line="59">            <span class="bp">self</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="s2">"offset"</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">offset</span><span class="p">))</span>
 </span><span data-line="60">        <span class="k">else</span><span class="p">:</span>
-</span><span data-line="61">            <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">&quot;coeff&quot;</span><span class="p">,</span> <span class="n">coeff</span><span class="p">)</span>
-</span><span data-line="62">            <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">&quot;offset&quot;</span><span class="p">,</span> <span class="n">offset</span><span class="p">)</span>
+</span><span data-line="61">            <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">"coeff"</span><span class="p">,</span> <span class="n">coeff</span><span class="p">)</span>
+</span><span data-line="62">            <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">"offset"</span><span class="p">,</span> <span class="n">offset</span><span class="p">)</span>
 </span><span data-line="63">
 </span><span data-line="64">    <span class="k">def</span><span class="w"> </span><span class="nf">_initial_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="65"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Method for generating the initial parameters of the basis.</span>
+</span><span data-line="65"><span class="w">        </span><span class="sa">r</span><span class="sd">"""Method for generating the initial parameters of the basis.</span>
 </span><span data-line="66"><span class="sd">        The functions are set to have equidistant centers between the</span>
 </span><span data-line="67"><span class="sd">        lower and cupper cutoff, while the variance of each function</span>
 </span><span data-line="68"><span class="sd">        is set based on the difference between the lower and upper</span>
 </span><span data-line="69"><span class="sd">        cutoffs.</span>
-</span><span data-line="70"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="70"><span class="sd">        """</span>
 </span><span data-line="71">        <span class="n">offset</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span>
 </span><span data-line="72">            <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_lower</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_upper</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_rbf</span>
 </span><span data-line="73">        <span class="p">)</span>
@@ -229,7 +230,7 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="GaussianBasis.reset_parameters">
 <a class="viewcode-back" href="../../../../autodoc.html#mlcg.nn.radial_basis.gaussian.GaussianBasis.reset_parameters">[docs]</a>
 </span><span data-line="77">    <span class="k">def</span><span class="w"> </span><span class="nf">reset_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="78"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Method for resetting the basis to its initial state&quot;&quot;&quot;</span>
+</span><span data-line="78"><span class="w">        </span><span class="sa">r</span><span class="sd">"""Method for resetting the basis to its initial state"""</span>
 </span><span data-line="79">        <span class="n">offset</span><span class="p">,</span> <span class="n">coeff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initial_params</span><span class="p">()</span>
 </span><span data-line="80">        <span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy_</span><span class="p">(</span><span class="n">offset</span><span class="p">)</span>
 </span><span data-line="81">        <span class="bp">self</span><span class="o">.</span><span class="n">coeff</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy_</span><span class="p">(</span><span class="n">coeff</span><span class="p">)</span></div>
@@ -238,7 +239,7 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="GaussianBasis.forward">
 <a class="viewcode-back" href="../../../../autodoc.html#mlcg.nn.radial_basis.gaussian.GaussianBasis.forward">[docs]</a>
 </span><span data-line="83">    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dist</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-</span><span data-line="84"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Expansion of distances through the radial basis function set.</span>
+</span><span data-line="84"><span class="w">        </span><span class="sa">r</span><span class="sd">"""Expansion of distances through the radial basis function set.</span>
 </span><span data-line="85">
 </span><span data-line="86"><span class="sd">        Parameters</span>
 </span><span data-line="87"><span class="sd">        ----------</span>
@@ -250,7 +251,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="93"><span class="sd">        expanded_distances:</span>
 </span><span data-line="94"><span class="sd">            Distances expanded in the radial basis with shape (total_num_edges,</span>
 </span><span data-line="95"><span class="sd">            num_rbf)</span>
-</span><span data-line="96"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="96"><span class="sd">        """</span>
 </span><span data-line="97">
 </span><span data-line="98">        <span class="n">dist</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
 </span><span data-line="99">        <span class="n">expanded_distances</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
@@ -269,7 +270,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="109">        <span class="n">num_rbf</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
 </span><span data-line="110">        <span class="n">trainable</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 </span><span data-line="111">    <span class="p">):</span>
-</span><span data-line="112"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="112"><span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
 </span><span data-line="113"><span class="sd">        Constructor for GaussianBasis that only evaluates a subset of the basis functions</span>
 </span><span data-line="114"><span class="sd">        selected by a boolean ``lambda_filter`` tensor of shape ``(num_rbf,)``.</span>
 </span><span data-line="115">
@@ -288,11 +289,11 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="128"><span class="sd">            Total number of basis functions (before filtering).</span>
 </span><span data-line="129"><span class="sd">        trainable:</span>
 </span><span data-line="130"><span class="sd">            See :class:`GaussianBasis`. Only the kept offsets are registered.</span>
-</span><span data-line="131"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="131"><span class="sd">        """</span>
 </span><span data-line="132">
 </span><span data-line="133">        <span class="k">if</span> <span class="n">lambda_mask</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">!=</span> <span class="n">num_rbf</span><span class="p">:</span>
 </span><span data-line="134">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-</span><span data-line="135">                <span class="sa">f</span><span class="s2">&quot;lambda_filter must have </span><span class="si">{</span><span class="n">num_rbf</span><span class="si">}</span><span class="s2"> elements, got </span><span class="si">{</span><span class="n">lambda_mask</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span data-line="135">                <span class="sa">f</span><span class="s2">"lambda_filter must have </span><span class="si">{</span><span class="n">num_rbf</span><span class="si">}</span><span class="s2"> elements, got </span><span class="si">{</span><span class="n">lambda_mask</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span>
 </span><span data-line="136">            <span class="p">)</span>
 </span><span data-line="137">        <span class="n">obj</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">cutoff</span><span class="p">,</span> <span class="n">num_rbf</span><span class="p">,</span> <span class="n">trainable</span><span class="p">)</span>
 </span><span data-line="138">
@@ -306,7 +307,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="146">        <span class="k">if</span> <span class="n">trainable</span><span class="p">:</span>
 </span><span data-line="147">            <span class="n">obj</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">offset</span><span class="p">)</span>
 </span><span data-line="148">        <span class="k">else</span><span class="p">:</span>
-</span><span data-line="149">            <span class="n">obj</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">&quot;offset&quot;</span><span class="p">,</span> <span class="n">offset</span><span class="p">)</span>
+</span><span data-line="149">            <span class="n">obj</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">"offset"</span><span class="p">,</span> <span class="n">offset</span><span class="p">)</span>
 </span><span data-line="150">
 </span><span data-line="151">        <span class="n">obj</span><span class="o">.</span><span class="n">num_rbf</span> <span class="o">=</span> <span class="n">lambda_mask</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span>
 </span><span data-line="152">
@@ -318,7 +319,7 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="SkewedMuGaussianBasis">
 <a class="viewcode-back" href="../../../../autodoc.html#mlcg.nn.radial_basis.gaussian.SkewedMuGaussianBasis">[docs]</a>
 </span><span data-line="156"><span class="k">class</span><span class="w"> </span><span class="nc">SkewedMuGaussianBasis</span><span class="p">(</span><span class="n">GaussianBasis</span><span class="p">):</span>
-</span><span data-line="157"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Class that generates a set of non-equidistant 1-D gaussian basis functions</span>
+</span><span data-line="157"><span class="w">    </span><span class="sa">r</span><span class="sd">"""Class that generates a set of non-equidistant 1-D gaussian basis functions</span>
 </span><span data-line="158"><span class="sd">    with their means scattered between 0 and 1:</span>
 </span><span data-line="159">
 </span><span data-line="160"><span class="sd">    .. math::</span>
@@ -337,7 +338,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="173"><span class="sd">        When zeta is very close to 1, the distribution is close to uniform like in a</span>
 </span><span data-line="174"><span class="sd">        normal Gaussian RBF.</span>
 </span><span data-line="175">
-</span><span data-line="176"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="176"><span class="sd">    """</span>
 </span><span data-line="177">
 </span><span data-line="178">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
 </span><span data-line="179">        <span class="bp">self</span><span class="p">,</span>
@@ -350,16 +351,16 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="186">        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">cutoff</span><span class="o">=</span><span class="n">cutoff</span><span class="p">,</span> <span class="n">num_rbf</span><span class="o">=</span><span class="n">num_rbf</span><span class="p">,</span> <span class="n">trainable</span><span class="o">=</span><span class="n">trainable</span><span class="p">)</span>
 </span><span data-line="187">
 </span><span data-line="188">        <span class="n">offset</span><span class="p">,</span> <span class="n">coeff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initial_params</span><span class="p">()</span>
-</span><span data-line="189">        <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">&quot;coeff&quot;</span><span class="p">,</span> <span class="n">coeff</span><span class="p">)</span>
-</span><span data-line="190">        <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">&quot;offset&quot;</span><span class="p">,</span> <span class="n">offset</span><span class="p">)</span>
+</span><span data-line="189">        <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">"coeff"</span><span class="p">,</span> <span class="n">coeff</span><span class="p">)</span>
+</span><span data-line="190">        <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">"offset"</span><span class="p">,</span> <span class="n">offset</span><span class="p">)</span>
 </span><span data-line="191">
 </span><span data-line="192">    <span class="k">def</span><span class="w"> </span><span class="nf">_initial_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="193"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Method for generating the initial parameters of the basis.</span>
+</span><span data-line="193"><span class="w">        </span><span class="sa">r</span><span class="sd">"""Method for generating the initial parameters of the basis.</span>
 </span><span data-line="194"><span class="sd">        The functions are set to have equidistant centers between the</span>
 </span><span data-line="195"><span class="sd">        lower and cupper cutoff, while the variance of each function</span>
 </span><span data-line="196"><span class="sd">        is set based on the difference between the lower and upper</span>
 </span><span data-line="197"><span class="sd">        cutoffs.</span>
-</span><span data-line="198"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="198"><span class="sd">        """</span>
 </span><span data-line="199">        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">zeta</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-3</span><span class="p">:</span>
 </span><span data-line="200">            <span class="c1"># we switch to uniform dtrisbution of mu to avoid numerical instability near 1</span>
 </span><span data-line="201">            <span class="n">offset</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span>
@@ -395,7 +396,7 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="SkewedMuGaussianBasis.forward">
 <a class="viewcode-back" href="../../../../autodoc.html#mlcg.nn.radial_basis.gaussian.SkewedMuGaussianBasis.forward">[docs]</a>
 </span><span data-line="231">    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dist</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-</span><span data-line="232"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Expansion of distances through the radial basis function set.</span>
+</span><span data-line="232"><span class="w">        </span><span class="sa">r</span><span class="sd">"""Expansion of distances through the radial basis function set.</span>
 </span><span data-line="233">
 </span><span data-line="234"><span class="sd">        Parameters</span>
 </span><span data-line="235"><span class="sd">        ----------</span>
@@ -407,7 +408,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="241"><span class="sd">        expanded_distances:</span>
 </span><span data-line="242"><span class="sd">            Distances expanded in the radial basis with shape (total_num_edges,</span>
 </span><span data-line="243"><span class="sd">            num_rbf)</span>
-</span><span data-line="244"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="244"><span class="sd">        """</span>
 </span><span data-line="245">
 </span><span data-line="246">        <span class="n">dist</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
 </span><span data-line="247">        <span class="n">expanded_distances</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>

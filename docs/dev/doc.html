@@ -6,7 +6,8 @@
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=31853864" />
-    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=9454f7d5" />
+    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
     <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -154,24 +155,24 @@ data-aria-dark="Switch to auto color mode">
       <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
   <article class="yue" role="main">
           <section id="documentation">
-<h1>Documentation<a class="headerlink" href="#documentation" title="Link to this heading">¶</a></h1>
+<h1>Documentation<a class="headerlink" href="#documentation" title="Link to this heading">#</a></h1>
 <p>Documentation is available <a class="reference external" href="https://clementigroup.github.io/mlcg/">here</a> and here are some references on how to work with it.</p>
 </section>
 <section id="dependencies">
-<h1>Dependencies<a class="headerlink" href="#dependencies" title="Link to this heading">¶</a></h1>
+<h1>Dependencies<a class="headerlink" href="#dependencies" title="Link to this heading">#</a></h1>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">uv<span class="w"> </span>sync<span class="w"> </span>--group<span class="w"> </span>docs
 </span></pre></div>
 </div>
 </section>
 <section id="how-to-build">
-<h1>How to build<a class="headerlink" href="#how-to-build" title="Link to this heading">¶</a></h1>
+<h1>How to build<a class="headerlink" href="#how-to-build" title="Link to this heading">#</a></h1>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="nb">cd</span><span class="w"> </span>docs
 </span><span data-line="2">sphinx-build<span class="w"> </span>-b<span class="w"> </span>html<span class="w"> </span><span class="nb">source</span><span class="w"> </span>build
 </span></pre></div>
 </div>
 </section>
 <section id="how-to-update-the-online-documentation">
-<h1>How to update the online documentation<a class="headerlink" href="#how-to-update-the-online-documentation" title="Link to this heading">¶</a></h1>
+<h1>How to update the online documentation<a class="headerlink" href="#how-to-update-the-online-documentation" title="Link to this heading">#</a></h1>
 <p>This update should be done after any update of the <cite>main</cite> branch so that the
 documentation is synchronized with the main version of the repository.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">git<span class="w"> </span>checkout<span class="w"> </span>gh-pages

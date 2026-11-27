@@ -6,7 +6,8 @@
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=31853864" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/shibuya.css?v=9454f7d5" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link media="print" rel="stylesheet" type="text/css" href="../../../_static/print.css?v=20ff2c19" />
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -157,7 +158,7 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="SumOut">
 <a class="viewcode-back" href="../../../models/wrappers.html#mlcg.nn.gradients.SumOut">[docs]</a>
 </span><span data-line="7"><span class="k">class</span><span class="w"> </span><span class="nc">SumOut</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-</span><span data-line="8"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Property pooling wrapper for models</span>
+</span><span data-line="8"><span class="w">    </span><span class="sa">r</span><span class="sd">"""Property pooling wrapper for models</span>
 </span><span data-line="9">
 </span><span data-line="10"><span class="sd">    Parameters</span>
 </span><span data-line="11"><span class="sd">    ----------</span>
@@ -170,7 +171,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="18"><span class="sd">        ``data.neighbor_list``. Useful in cases where a model needs to</span>
 </span><span data-line="19"><span class="sd">        build its own coordinate-dependent neighbor list and in compilation</span>
 </span><span data-line="20"><span class="sd">        cases. For each key listed here, ``data.neighbor_list``</span>
-</span><span data-line="21"><span class="sd">        is temporarily cleared right before that model&#39;s call and restored</span>
+</span><span data-line="21"><span class="sd">        is temporarily cleared right before that model's call and restored</span>
 </span><span data-line="22"><span class="sd">        immediately after, leaving the other models unaffected. Defaults to</span>
 </span><span data-line="23"><span class="sd">        ``None``.</span>
 </span><span data-line="24">
@@ -194,23 +195,23 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="42"><span class="sd">        force_network = GradientsOut(energy_model, FORCE_KEY)</span>
 </span><span data-line="43">
 </span><span data-line="44"><span class="sd">        models = torch.nn.ModuleDict{</span>
-</span><span data-line="45"><span class="sd">                     &quot;bonds&quot;: bond_terms,</span>
-</span><span data-line="46"><span class="sd">                     &quot;angles&quot;: angle_terms,</span>
-</span><span data-line="47"><span class="sd">                     &quot;SchNet&quot;: force_network</span>
+</span><span data-line="45"><span class="sd">                     "bonds": bond_terms,</span>
+</span><span data-line="46"><span class="sd">                     "angles": angle_terms,</span>
+</span><span data-line="47"><span class="sd">                     "SchNet": force_network</span>
 </span><span data-line="48"><span class="sd">                 }</span>
 </span><span data-line="49"><span class="sd">        full_model = SumOut(models, targets=[ENERGY_KEY, FORCE_KEY])</span>
 </span><span data-line="50">
-</span><span data-line="51"><span class="sd">        # Withhold the shared neighbor_list from SchNet&#39;s call:</span>
+</span><span data-line="51"><span class="sd">        # Withhold the shared neighbor_list from SchNet's call:</span>
 </span><span data-line="52"><span class="sd">        full_model = SumOut(</span>
 </span><span data-line="53"><span class="sd">            models,</span>
 </span><span data-line="54"><span class="sd">            targets=[ENERGY_KEY, FORCE_KEY],</span>
-</span><span data-line="55"><span class="sd">            own_nl_models=[&quot;SchNet&quot;],</span>
+</span><span data-line="55"><span class="sd">            own_nl_models=["SchNet"],</span>
 </span><span data-line="56"><span class="sd">        )</span>
 </span><span data-line="57">
 </span><span data-line="58">
-</span><span data-line="59"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="59"><span class="sd">    """</span>
 </span><span data-line="60">
-</span><span data-line="61">    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;SumOut&quot;</span>
+</span><span data-line="61">    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"SumOut"</span>
 </span><span data-line="62">
 </span><span data-line="63">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
 </span><span data-line="64">        <span class="bp">self</span><span class="p">,</span>
@@ -226,13 +227,13 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="74">        <span class="bp">self</span><span class="o">.</span><span class="n">own_nl_models</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">own_nl_models</span><span class="p">)</span> <span class="k">if</span> <span class="n">own_nl_models</span> <span class="k">else</span> <span class="nb">set</span><span class="p">()</span>
 </span><span data-line="75">
 </span><span data-line="76">    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AtomicData</span><span class="p">:</span>
-</span><span data-line="77"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Sums output properties from individual models into global</span>
+</span><span data-line="77"><span class="w">        </span><span class="sa">r</span><span class="sd">"""Sums output properties from individual models into global</span>
 </span><span data-line="78"><span class="sd">        property predictions</span>
 </span><span data-line="79">
 </span><span data-line="80"><span class="sd">        Parameters</span>
 </span><span data-line="81"><span class="sd">        ----------</span>
 </span><span data-line="82"><span class="sd">        data:</span>
-</span><span data-line="83"><span class="sd">            AtomicData instance whose &#39;out&#39; field has been populated</span>
+</span><span data-line="83"><span class="sd">            AtomicData instance whose 'out' field has been populated</span>
 </span><span data-line="84"><span class="sd">            for each predictor in the model. For example:</span>
 </span><span data-line="85">
 </span><span data-line="86"><span class="sd">        .. code-block::python</span>
@@ -254,7 +255,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="102"><span class="sd">        Returns</span>
 </span><span data-line="103"><span class="sd">        -------</span>
 </span><span data-line="104"><span class="sd">        data:</span>
-</span><span data-line="105"><span class="sd">            AtomicData instance with updated &#39;out&#39; field that now contains</span>
+</span><span data-line="105"><span class="sd">            AtomicData instance with updated 'out' field that now contains</span>
 </span><span data-line="106"><span class="sd">            prediction target keys that map to tensors that have summed</span>
 </span><span data-line="107"><span class="sd">            up the respective contributions from each predictor in the model.</span>
 </span><span data-line="108"><span class="sd">            For example:</span>
@@ -276,11 +277,11 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="124"><span class="sd">            ...</span>
 </span><span data-line="125"><span class="sd">            )</span>
 </span><span data-line="126">
-</span><span data-line="127"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="127"><span class="sd">        """</span>
 </span><span data-line="128">        <span class="k">for</span> <span class="n">target</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">targets</span><span class="p">:</span>
 </span><span data-line="129">            <span class="n">data</span><span class="o">.</span><span class="n">out</span><span class="p">[</span><span class="n">target</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.00</span>
 </span><span data-line="130">
-</span><span data-line="131">        <span class="n">own_nl_models</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;own_nl_models&quot;</span><span class="p">,</span> <span class="nb">set</span><span class="p">())</span>
+</span><span data-line="131">        <span class="n">own_nl_models</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"own_nl_models"</span><span class="p">,</span> <span class="nb">set</span><span class="p">())</span>
 </span><span data-line="132">        <span class="n">original_neighbor_list</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span> <span class="k">if</span> <span class="n">own_nl_models</span> <span class="k">else</span> <span class="kc">None</span>
 </span><span data-line="133">
 </span><span data-line="134">        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
@@ -303,12 +304,12 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="150">
 </span><span data-line="151">
 </span><span data-line="152"><span class="k">class</span><span class="w"> </span><span class="nc">NeighborSharingSumOut</span><span class="p">(</span><span class="n">SumOut</span><span class="p">):</span>
-</span><span data-line="153"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;`SumOut` that computes the geometric neighbor list of a network once</span>
+</span><span data-line="153"><span class="w">    </span><span class="sa">r</span><span class="sd">"""`SumOut` that computes the geometric neighbor list of a network once</span>
 </span><span data-line="154"><span class="sd">    and shares it with other models, e.g. `FastCutoffRepulsion` and</span>
 </span><span data-line="155"><span class="sd">    `FastCutoffExpRepulsion`.</span>
 </span><span data-line="156">
 </span><span data-line="157"><span class="sd">    On every forward pass the neighbor list of ``nls_model_key`` is computed</span>
-</span><span data-line="158"><span class="sd">    and stored under that network&#39;s name so it is not recomputed by the</span>
+</span><span data-line="158"><span class="sd">    and stored under that network's name so it is not recomputed by the</span>
 </span><span data-line="159"><span class="sd">    network itself. For every model in ``shared_nl_models`` the entry</span>
 </span><span data-line="160"><span class="sd">    ``data.neighbor_list[model.name]`` is replaced by a copy of that</span>
 </span><span data-line="161"><span class="sd">    neighbor list, keeping ``index_mapping_exclusions`` (and a cached</span>
@@ -332,7 +333,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="179"><span class="sd">        List of prediction targets that will be pooled</span>
 </span><span data-line="180"><span class="sd">    own_nl_models:</span>
 </span><span data-line="181"><span class="sd">        See `SumOut`.</span>
-</span><span data-line="182"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="182"><span class="sd">    """</span>
 </span><span data-line="183">
 </span><span data-line="184">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
 </span><span data-line="185">        <span class="bp">self</span><span class="p">,</span>
@@ -351,34 +352,34 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="198">
 </span><span data-line="199">        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">models</span><span class="p">,</span> <span class="n">targets</span><span class="p">,</span> <span class="n">own_nl_models</span><span class="p">)</span>
 </span><span data-line="200">        <span class="k">if</span> <span class="n">nls_model_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">models</span><span class="p">:</span>
-</span><span data-line="201">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">nls_model_key</span><span class="si">=}</span><span class="s2"> is not a key of `models`&quot;</span><span class="p">)</span>
+</span><span data-line="201">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">nls_model_key</span><span class="si">=}</span><span class="s2"> is not a key of `models`"</span><span class="p">)</span>
 </span><span data-line="202">        <span class="k">if</span> <span class="n">nls_model_key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">own_nl_models</span><span class="p">:</span>
 </span><span data-line="203">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-</span><span data-line="204">                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">nls_model_key</span><span class="si">=}</span><span class="s2"> can&#39;t be contained in </span><span class="si">{</span><span class="n">own_nl_models</span><span class="si">=}</span><span class="s2">&quot;</span>
+</span><span data-line="204">                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">nls_model_key</span><span class="si">=}</span><span class="s2"> can't be contained in </span><span class="si">{</span><span class="n">own_nl_models</span><span class="si">=}</span><span class="s2">"</span>
 </span><span data-line="205">            <span class="p">)</span>
 </span><span data-line="206">        <span class="n">nls_model</span> <span class="o">=</span> <span class="n">models</span><span class="p">[</span><span class="n">nls_model_key</span><span class="p">]</span>
 </span><span data-line="207">        <span class="c1"># Guard for only using SchNet</span>
 </span><span data-line="208">        <span class="c1"># TOOO: create an interface for extracting cutoff of different MPNNs</span>
-</span><span data-line="209">        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">nls_model</span><span class="p">,</span> <span class="s2">&quot;model&quot;</span><span class="p">,</span> <span class="n">nls_model</span><span class="p">),</span> <span class="n">SchNet</span><span class="p">):</span>
+</span><span data-line="209">        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">nls_model</span><span class="p">,</span> <span class="s2">"model"</span><span class="p">,</span> <span class="n">nls_model</span><span class="p">),</span> <span class="n">SchNet</span><span class="p">):</span>
 </span><span data-line="210">            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-</span><span data-line="211">                <span class="s2">&quot;Only subclasses of SchNet are supported as root for the nls&quot;</span>
+</span><span data-line="211">                <span class="s2">"Only subclasses of SchNet are supported as root for the nls"</span>
 </span><span data-line="212">            <span class="p">)</span>
 </span><span data-line="213">
 </span><span data-line="214">        <span class="n">shared_nl_models</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">shared_nl_models</span><span class="p">)</span>
 </span><span data-line="215">        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">shared_nl_models</span><span class="p">:</span>
 </span><span data-line="216">            <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">models</span><span class="p">:</span>
-</span><span data-line="217">                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;shared model </span><span class="si">{</span><span class="n">key</span><span class="si">!r}</span><span class="s2"> is not in `models`&quot;</span><span class="p">)</span>
+</span><span data-line="217">                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"shared model </span><span class="si">{</span><span class="n">key</span><span class="si">!r}</span><span class="s2"> is not in `models`"</span><span class="p">)</span>
 </span><span data-line="218">            <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="n">nls_model_key</span> <span class="ow">or</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">own_nl_models</span><span class="p">:</span>
 </span><span data-line="219">                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-</span><span data-line="220">                    <span class="sa">f</span><span class="s2">&quot;shared model </span><span class="si">{</span><span class="n">key</span><span class="si">!r}</span><span class="s2"> can&#39;t be `nls_model_key` or be &quot;</span>
-</span><span data-line="221">                    <span class="s2">&quot;contained in `own_nl_models`&quot;</span>
+</span><span data-line="220">                    <span class="sa">f</span><span class="s2">"shared model </span><span class="si">{</span><span class="n">key</span><span class="si">!r}</span><span class="s2"> can't be `nls_model_key` or be "</span>
+</span><span data-line="221">                    <span class="s2">"contained in `own_nl_models`"</span>
 </span><span data-line="222">                <span class="p">)</span>
 </span><span data-line="223">            <span class="n">shared</span> <span class="o">=</span> <span class="n">models</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
 </span><span data-line="224">            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span>
-</span><span data-line="225">                <span class="nb">getattr</span><span class="p">(</span><span class="n">shared</span><span class="p">,</span> <span class="s2">&quot;model&quot;</span><span class="p">,</span> <span class="n">shared</span><span class="p">),</span> <span class="n">_BaseFastRepulsion</span>
+</span><span data-line="225">                <span class="nb">getattr</span><span class="p">(</span><span class="n">shared</span><span class="p">,</span> <span class="s2">"model"</span><span class="p">,</span> <span class="n">shared</span><span class="p">),</span> <span class="n">_BaseFastRepulsion</span>
 </span><span data-line="226">            <span class="p">):</span>
 </span><span data-line="227">                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-</span><span data-line="228">                    <span class="s2">&quot;Only subclasses of _BaseFastRepulsion are supported for sharing the nls&quot;</span>
+</span><span data-line="228">                    <span class="s2">"Only subclasses of _BaseFastRepulsion are supported for sharing the nls"</span>
 </span><span data-line="229">                <span class="p">)</span>
 </span><span data-line="230">        <span class="bp">self</span><span class="o">.</span><span class="n">nls_model_key</span> <span class="o">=</span> <span class="n">nls_model_key</span>
 </span><span data-line="231">        <span class="bp">self</span><span class="o">.</span><span class="n">shared_nl_models</span> <span class="o">=</span> <span class="n">shared_nl_models</span>
@@ -393,12 +394,12 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="240">            <span class="n">models</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">models</span><span class="p">,</span>
 </span><span data-line="241">            <span class="n">shared_nl_models</span><span class="o">=</span><span class="n">shared_nl_models</span><span class="p">,</span>
 </span><span data-line="242">            <span class="n">targets</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">targets</span><span class="p">,</span>
-</span><span data-line="243">            <span class="n">own_nl_models</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;own_nl_models&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+</span><span data-line="243">            <span class="n">own_nl_models</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">"own_nl_models"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
 </span><span data-line="244">        <span class="p">)</span>
 </span><span data-line="245">
 </span><span data-line="246">    <span class="k">def</span><span class="w"> </span><span class="nf">_network_neighbor_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">):</span>
 </span><span data-line="247">        <span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">nls_model_key</span><span class="p">]</span>
-</span><span data-line="248">        <span class="n">network</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;model&quot;</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>  <span class="c1"># unwrap GradientsOut</span>
+</span><span data-line="248">        <span class="n">network</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">"model"</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>  <span class="c1"># unwrap GradientsOut</span>
 </span><span data-line="249">        <span class="c1"># extract cutoff:</span>
 </span><span data-line="250">        <span class="n">nl</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">(</span>
 </span><span data-line="251">            <span class="n">data</span><span class="p">,</span>
@@ -418,7 +419,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="265">            <span class="n">entry</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">shared_nl</span><span class="p">)</span>
 </span><span data-line="266">            <span class="n">old_entry</span> <span class="o">=</span> <span class="n">original_nl</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
 </span><span data-line="267">            <span class="k">if</span> <span class="n">old_entry</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="268">                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;index_mapping_exclusions&quot;</span><span class="p">,</span> <span class="s2">&quot;exclusion_table&quot;</span><span class="p">):</span>
+</span><span data-line="268">                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"index_mapping_exclusions"</span><span class="p">,</span> <span class="s2">"exclusion_table"</span><span class="p">):</span>
 </span><span data-line="269">                    <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">old_entry</span><span class="p">:</span>
 </span><span data-line="270">                        <span class="n">entry</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">old_entry</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
 </span><span data-line="271">            <span class="n">new_nl</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">entry</span>
@@ -429,16 +430,16 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="276">        <span class="c1"># keep the exclusion tables built during the forward pass cached</span>
 </span><span data-line="277">        <span class="c1"># in the original entries so they are not rebuilt every call</span>
 </span><span data-line="278">        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">shared_names</span><span class="p">:</span>
-</span><span data-line="279">            <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">original_nl</span> <span class="ow">and</span> <span class="s2">&quot;exclusion_table&quot;</span> <span class="ow">in</span> <span class="n">new_nl</span><span class="p">[</span><span class="n">name</span><span class="p">]:</span>
-</span><span data-line="280">                <span class="n">original_nl</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;exclusion_table&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_nl</span><span class="p">[</span><span class="n">name</span><span class="p">][</span>
-</span><span data-line="281">                    <span class="s2">&quot;exclusion_table&quot;</span>
+</span><span data-line="279">            <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">original_nl</span> <span class="ow">and</span> <span class="s2">"exclusion_table"</span> <span class="ow">in</span> <span class="n">new_nl</span><span class="p">[</span><span class="n">name</span><span class="p">]:</span>
+</span><span data-line="280">                <span class="n">original_nl</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">"exclusion_table"</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_nl</span><span class="p">[</span><span class="n">name</span><span class="p">][</span>
+</span><span data-line="281">                    <span class="s2">"exclusion_table"</span>
 </span><span data-line="282">                <span class="p">]</span>
 </span><span data-line="283">        <span class="n">data</span><span class="o">.</span><span class="n">neighbor_list</span> <span class="o">=</span> <span class="n">original_nl</span>
 </span><span data-line="284">        <span class="k">return</span> <span class="n">data</span>
 </span><span data-line="285">
 </span><span data-line="286">
 </span><span data-line="287"><span class="k">class</span><span class="w"> </span><span class="nc">EnergyOut</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-</span><span data-line="288"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Extractor for energy computed via an mlcg compatible model.</span>
+</span><span data-line="288"><span class="w">    </span><span class="sa">r</span><span class="sd">"""Extractor for energy computed via an mlcg compatible model.</span>
 </span><span data-line="289">
 </span><span data-line="290"><span class="sd">    Parameters</span>
 </span><span data-line="291"><span class="sd">    ----------</span>
@@ -447,9 +448,9 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="294"><span class="sd">    targets:</span>
 </span><span data-line="295"><span class="sd">        List of prediction targets that will be extracted</span>
 </span><span data-line="296">
-</span><span data-line="297"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="297"><span class="sd">    """</span>
 </span><span data-line="298">
-</span><span data-line="299">    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;EnergyOut&quot;</span>
+</span><span data-line="299">    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"EnergyOut"</span>
 </span><span data-line="300">
 </span><span data-line="301">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
 </span><span data-line="302">        <span class="bp">self</span><span class="p">,</span>
@@ -473,7 +474,7 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="GradientsOut">
 <a class="viewcode-back" href="../../../models/wrappers.html#mlcg.nn.gradients.GradientsOut">[docs]</a>
 </span><span data-line="320"><span class="k">class</span><span class="w"> </span><span class="nc">GradientsOut</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-</span><span data-line="321"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Gradient wrapper for models.</span>
+</span><span data-line="321"><span class="w">    </span><span class="sa">r</span><span class="sd">"""Gradient wrapper for models.</span>
 </span><span data-line="322">
 </span><span data-line="323"><span class="sd">    Parameters</span>
 </span><span data-line="324"><span class="sd">    ----------</span>
@@ -487,7 +488,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="332"><span class="sd">        To predict forces from an energy model, one would supply a model that</span>
 </span><span data-line="333"><span class="sd">        predicts a scalar atom property (an energy) and specify the `FORCE_KEY`</span>
 </span><span data-line="334"><span class="sd">        in the targets.</span>
-</span><span data-line="335"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="335"><span class="sd">    """</span>
 </span><span data-line="336">
 </span><span data-line="337">    <span class="n">_targets</span> <span class="o">=</span> <span class="p">{</span><span class="n">FORCE_KEY</span><span class="p">:</span> <span class="n">ENERGY_KEY</span><span class="p">}</span>
 </span><span data-line="338">
@@ -502,10 +503,10 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="347">            <span class="bp">self</span><span class="o">.</span><span class="n">targets</span> <span class="o">=</span> <span class="n">targets</span>
 </span><span data-line="348">        <span class="k">assert</span> <span class="nb">any</span><span class="p">(</span>
 </span><span data-line="349">            <span class="p">[</span><span class="n">k</span> <span class="ow">in</span> <span class="n">GradientsOut</span><span class="o">.</span><span class="n">_targets</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">targets</span><span class="p">]</span>
-</span><span data-line="350">        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;targets=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">targets</span><span class="si">}</span><span class="s2"> should be any of </span><span class="si">{</span><span class="n">GradientsOut</span><span class="o">.</span><span class="n">_targets</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span data-line="350">        <span class="p">),</span> <span class="sa">f</span><span class="s2">"targets=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">targets</span><span class="si">}</span><span class="s2"> should be any of </span><span class="si">{</span><span class="n">GradientsOut</span><span class="o">.</span><span class="n">_targets</span><span class="si">}</span><span class="s2">"</span>
 </span><span data-line="351">
 </span><span data-line="352">    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">AtomicData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AtomicData</span><span class="p">:</span>
-</span><span data-line="353"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Forward pass through the gradient layer.</span>
+</span><span data-line="353"><span class="w">        </span><span class="sd">"""Forward pass through the gradient layer.</span>
 </span><span data-line="354">
 </span><span data-line="355"><span class="sd">        Parameters</span>
 </span><span data-line="356"><span class="sd">        ----------</span>
@@ -515,16 +516,16 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="360"><span class="sd">        Returns</span>
 </span><span data-line="361"><span class="sd">        -------</span>
 </span><span data-line="362"><span class="sd">        data:</span>
-</span><span data-line="363"><span class="sd">            Updated AtomicData instance, where the &quot;out&quot; field has</span>
+</span><span data-line="363"><span class="sd">            Updated AtomicData instance, where the "out" field has</span>
 </span><span data-line="364"><span class="sd">            been populated with the base predictions of the model (eg,</span>
 </span><span data-line="365"><span class="sd">            the energy as well as the target predictions produced through</span>
 </span><span data-line="366"><span class="sd">            gradient operations.</span>
-</span><span data-line="367"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="367"><span class="sd">        """</span>
 </span><span data-line="368">
 </span><span data-line="369">        <span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
 </span><span data-line="370">        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 </span><span data-line="371">        <span class="k">if</span> <span class="n">FORCE_KEY</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">targets</span><span class="p">:</span>
-</span><span data-line="372">            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;SumOut&quot;</span><span class="p">:</span>
+</span><span data-line="372">            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">"SumOut"</span><span class="p">:</span>
 </span><span data-line="373">                <span class="n">y</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">out</span><span class="p">[</span><span class="n">ENERGY_KEY</span><span class="p">]</span>
 </span><span data-line="374">            <span class="k">else</span><span class="p">:</span>
 </span><span data-line="375">                <span class="n">y</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">out</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="n">ENERGY_KEY</span><span class="p">]</span>
@@ -536,11 +537,11 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="381">                <span class="c1"># retain_graph=self.training,</span>
 </span><span data-line="382">                <span class="n">create_graph</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">,</span>
 </span><span data-line="383">            <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-</span><span data-line="384">            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;SumOut&quot;</span><span class="p">:</span>
+</span><span data-line="384">            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">"SumOut"</span><span class="p">:</span>
 </span><span data-line="385">                <span class="n">data</span><span class="o">.</span><span class="n">out</span><span class="p">[</span><span class="n">FORCE_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">dy_dr</span>
 </span><span data-line="386">            <span class="k">else</span><span class="p">:</span>
 </span><span data-line="387">                <span class="n">data</span><span class="o">.</span><span class="n">out</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="n">FORCE_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">dy_dr</span>
-</span><span data-line="388">            <span class="c1"># assert not torch.any(torch.isnan(dy_dr)), f&quot;nan in {self.name}&quot;</span>
+</span><span data-line="388">            <span class="c1"># assert not torch.any(torch.isnan(dy_dr)), f"nan in {self.name}"</span>
 </span><span data-line="389">        <span class="n">data</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
 </span><span data-line="390">
 </span><span data-line="391">        <span class="k">return</span> <span class="n">data</span>

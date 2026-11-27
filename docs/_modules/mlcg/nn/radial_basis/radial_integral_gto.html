@@ -6,7 +6,8 @@
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=31853864" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -163,7 +164,7 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="RIGTOBasis">
 <a class="viewcode-back" href="../../../../models/rbfs.html#mlcg.nn.radial_basis.radial_integral_gto.RIGTOBasis">[docs]</a>
 </span><span data-line="13"><span class="k">class</span><span class="w"> </span><span class="nc">RIGTOBasis</span><span class="p">(</span><span class="n">_RadialBasis</span><span class="p">):</span>
-</span><span data-line="14"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;This radial basis is the effective basis when expanding an atomic</span>
+</span><span data-line="14"><span class="w">    </span><span class="sa">r</span><span class="sd">"""This radial basis is the effective basis when expanding an atomic</span>
 </span><span data-line="15"><span class="sd">    density smeared by Gaussains of width :math:`\sigma` on a set of</span>
 </span><span data-line="16"><span class="sd">    :math:`n_{max}` orthonormal Gaussian Type Orbitals (GTOs) and</span>
 </span><span data-line="17"><span class="sd">    :math:`l_{max}+1` Spherical Harmonics (SPHs) namely.</span>
@@ -201,7 +202,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="49"><span class="sd">    mesh_size:</span>
 </span><span data-line="50"><span class="sd">        number of points used to interpolate with splines the radial basis spanning uniformly the range difined by the cutoff :math:`[0, r_c]`.</span>
 </span><span data-line="51">
-</span><span data-line="52"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="52"><span class="sd">    """</span>
 </span><span data-line="53">
 </span><span data-line="54">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
 </span><span data-line="55">        <span class="bp">self</span><span class="p">,</span>
@@ -218,7 +219,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="66">            <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span> <span class="o">=</span> <span class="n">cutoff</span>
 </span><span data-line="67">        <span class="k">else</span><span class="p">:</span>
 </span><span data-line="68">            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-</span><span data-line="69">                <span class="sa">f</span><span class="s2">&quot;Supplied cutoff </span><span class="si">{</span><span class="n">cutoff</span><span class="si">}</span><span class="s2"> is neither a number nor a _Cutoff instance.&quot;</span>
+</span><span data-line="69">                <span class="sa">f</span><span class="s2">"Supplied cutoff </span><span class="si">{</span><span class="n">cutoff</span><span class="si">}</span><span class="s2"> is neither a number nor a _Cutoff instance."</span>
 </span><span data-line="70">            <span class="p">)</span>
 </span><span data-line="71">
 </span><span data-line="72">        <span class="bp">self</span><span class="o">.</span><span class="n">check_cutoff</span><span class="p">()</span>
@@ -239,7 +240,7 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="RIGTOBasis.forward">
 <a class="viewcode-back" href="../../../../autodoc.html#mlcg.nn.radial_basis.radial_integral_gto.RIGTOBasis.forward">[docs]</a>
 </span><span data-line="87">    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dist</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-</span><span data-line="88"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Expansion of distances through the radial basis function set.</span>
+</span><span data-line="88"><span class="w">        </span><span class="sa">r</span><span class="sd">"""Expansion of distances through the radial basis function set.</span>
 </span><span data-line="89">
 </span><span data-line="90"><span class="sd">        Parameters</span>
 </span><span data-line="91"><span class="sd">        ----------</span>
@@ -250,7 +251,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="96"><span class="sd">        ------</span>
 </span><span data-line="97"><span class="sd">        expanded_distances: torch.Tensor</span>
 </span><span data-line="98"><span class="sd">            Distances expanded in the radial basis with shape (total_num_edges, lmax + 1, nmax)</span>
-</span><span data-line="99"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="99"><span class="sd">        """</span>
 </span><span data-line="100">        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lmax</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
 </span><span data-line="101">            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Rln</span><span class="p">(</span><span class="n">dist</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nmax</span><span class="p">)</span>
 </span><span data-line="102">        <span class="k">else</span><span class="p">:</span>
@@ -260,15 +261,15 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="RIGTOBasis.plot">
 <a class="viewcode-back" href="../../../../autodoc.html#mlcg.nn.radial_basis.radial_integral_gto.RIGTOBasis.plot">[docs]</a>
 </span><span data-line="105">    <span class="k">def</span><span class="w"> </span><span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="106"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot the set of radial basis function.&quot;&quot;&quot;</span>
+</span><span data-line="106"><span class="w">        </span><span class="sd">"""Plot the set of radial basis function."""</span>
 </span><span data-line="107">        <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 </span><span data-line="108">
 </span><span data-line="109">        <span class="n">dist</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="o">.</span><span class="n">cutoff_upper</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
 </span><span data-line="110">        <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">dist</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
 </span><span data-line="111">        <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lmax</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
 </span><span data-line="112">            <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nmax</span><span class="p">):</span>
-</span><span data-line="113">                <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">dist</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">y</span><span class="p">[:,</span> <span class="n">l</span><span class="p">,</span> <span class="n">n</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;n=</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span data-line="114">            <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;l=</span><span class="si">{</span><span class="n">l</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span data-line="113">                <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">dist</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">y</span><span class="p">[:,</span> <span class="n">l</span><span class="p">,</span> <span class="n">n</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">"n=</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</span><span data-line="114">            <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s2">"l=</span><span class="si">{</span><span class="n">l</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </span><span data-line="115">            <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
 </span><span data-line="116">            <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
 
@@ -288,7 +289,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="129">    <span class="n">coeffs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(((</span><span class="mi">4</span><span class="p">,</span> <span class="n">length</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">lmax</span><span class="p">,</span> <span class="n">nmax</span><span class="p">)))</span>
 </span><span data-line="130">    <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">lmax</span><span class="p">):</span>
 </span><span data-line="131">        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nmax</span><span class="p">):</span>
-</span><span data-line="132">            <span class="n">ispl</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">CubicSpline</span><span class="p">(</span><span class="n">dists</span><span class="p">,</span> <span class="n">x</span><span class="p">[:,</span> <span class="n">l</span><span class="p">,</span> <span class="n">n</span><span class="p">],</span> <span class="n">bc_type</span><span class="o">=</span><span class="s2">&quot;natural&quot;</span><span class="p">)</span>
+</span><span data-line="132">            <span class="n">ispl</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">CubicSpline</span><span class="p">(</span><span class="n">dists</span><span class="p">,</span> <span class="n">x</span><span class="p">[:,</span> <span class="n">l</span><span class="p">,</span> <span class="n">n</span><span class="p">],</span> <span class="n">bc_type</span><span class="o">=</span><span class="s2">"natural"</span><span class="p">)</span>
 </span><span data-line="133">            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
 </span><span data-line="134">                <span class="n">coeffs</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:,</span> <span class="n">l</span><span class="p">,</span> <span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">ispl</span><span class="o">.</span><span class="n">c</span><span class="p">[</span><span class="o">-</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>
 </span><span data-line="135">

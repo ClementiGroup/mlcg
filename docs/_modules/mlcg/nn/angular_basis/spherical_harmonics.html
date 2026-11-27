@@ -6,7 +6,8 @@
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=31853864" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -148,10 +149,10 @@ data-aria-dark="Switch to auto color mode">
       <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
   <article class="yue" role="main">
           <h1>Source code for mlcg.nn.angular_basis.spherical_harmonics</h1><div class="highlight"><pre>
-<span></span><span data-line="1"><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Spherical Harmonics as polynomials of x, y, z</span>
+<span></span><span data-line="1"><span class="sa">r</span><span class="sd">"""Spherical Harmonics as polynomials of x, y, z</span>
 </span><span data-line="2"><span class="sd">taken from the e3nn repo changing the layout of the output sph</span>
 </span><span data-line="3"><span class="sd">(https://github.com/e3nn/e3nn/tree/34ebae91b094392a9f26dfa153f9350d0e24d185)</span>
-</span><span data-line="4"><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="4"><span class="sd">"""</span>
 </span><span data-line="5">
 </span><span data-line="6"><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Any</span>
 </span><span data-line="7">
@@ -169,7 +170,7 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="SphericalHarmonics">
 <a class="viewcode-back" href="../../../../models/rbfs.html#mlcg.nn.angular_basis.spherical_harmonics.SphericalHarmonics">[docs]</a>
 </span><span data-line="19"><span class="k">class</span><span class="w"> </span><span class="nc">SphericalHarmonics</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-</span><span data-line="20"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;JITable module version of real Spherical harmonics</span>
+</span><span data-line="20"><span class="w">    </span><span class="sa">r</span><span class="sd">"""JITable module version of real Spherical harmonics</span>
 </span><span data-line="21">
 </span><span data-line="22"><span class="sd">    .. image:: https://user-images.githubusercontent.com/333780/79220728-dbe82c00-7e54-11ea-82c7-b3acbd9b2246.gif</span>
 </span><span data-line="23">
@@ -196,7 +197,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="44"><span class="sd">    .. note::</span>
 </span><span data-line="45">
 </span><span data-line="46"><span class="sd">        This function matches with the following table of standard real spherical harmonics from Wikipedia_</span>
-</span><span data-line="47"><span class="sd">        when ``normalize=True``, ``normalization=&#39;integral&#39;`` and is called with the argument in the order ``y,z,x`` (instead of ``x,y,z``).</span>
+</span><span data-line="47"><span class="sd">        when ``normalize=True``, ``normalization='integral'`` and is called with the argument in the order ``y,z,x`` (instead of ``x,y,z``).</span>
 </span><span data-line="48">
 </span><span data-line="49"><span class="sd">    .. _Wikipedia: https://en.wikipedia.org/wiki/Table_of_spherical_harmonics#Real_spherical_harmonics</span>
 </span><span data-line="50">
@@ -211,7 +212,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="59"><span class="sd">    normalize : bool</span>
 </span><span data-line="60"><span class="sd">        whether to normalize the ``x`` to vectors that lie on the unit sphere before projecting onto the spherical harmonics</span>
 </span><span data-line="61">
-</span><span data-line="62"><span class="sd">    normalization : {&#39;integral&#39;, &#39;component&#39;, &#39;norm&#39;}</span>
+</span><span data-line="62"><span class="sd">    normalization : {'integral', 'component', 'norm'}</span>
 </span><span data-line="63"><span class="sd">        normalization of the output tensors --- note that this option is independent of ``normalize``, which controls the processing of the *input*, rather than the output.</span>
 </span><span data-line="64"><span class="sd">        Valid options:</span>
 </span><span data-line="65"><span class="sd">        * *component*: :math:`\|Y^l(x)\|^2 = 2l+1, x \in S^2`</span>
@@ -227,7 +228,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="75"><span class="sd">        .. math:: Y^l(x)</span>
 </span><span data-line="76">
 </span><span data-line="77">
-</span><span data-line="78"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="78"><span class="sd">    """</span>
 </span><span data-line="79">
 </span><span data-line="80">    <span class="n">normalize</span><span class="p">:</span> <span class="nb">bool</span>
 </span><span data-line="81">    <span class="n">normalization</span><span class="p">:</span> <span class="nb">str</span>
@@ -238,13 +239,13 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="86">        <span class="bp">self</span><span class="p">,</span>
 </span><span data-line="87">        <span class="n">lmax</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
 </span><span data-line="88">        <span class="n">normalize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-</span><span data-line="89">        <span class="n">normalization</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;integral&quot;</span><span class="p">,</span>
+</span><span data-line="89">        <span class="n">normalization</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"integral"</span><span class="p">,</span>
 </span><span data-line="90">        <span class="n">irreps_in</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span data-line="91">    <span class="p">):</span>
 </span><span data-line="92">        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 </span><span data-line="93">        <span class="bp">self</span><span class="o">.</span><span class="n">normalize</span> <span class="o">=</span> <span class="n">normalize</span>
 </span><span data-line="94">        <span class="bp">self</span><span class="o">.</span><span class="n">normalization</span> <span class="o">=</span> <span class="n">normalization</span>
-</span><span data-line="95">        <span class="k">assert</span> <span class="n">normalization</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;integral&quot;</span><span class="p">,</span> <span class="s2">&quot;component&quot;</span><span class="p">,</span> <span class="s2">&quot;norm&quot;</span><span class="p">]</span>
+</span><span data-line="95">        <span class="k">assert</span> <span class="n">normalization</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"integral"</span><span class="p">,</span> <span class="s2">"component"</span><span class="p">,</span> <span class="s2">"norm"</span><span class="p">]</span>
 </span><span data-line="96">        <span class="bp">self</span><span class="o">.</span><span class="n">_lmax</span> <span class="o">=</span> <span class="n">lmax</span>
 </span><span data-line="97">        <span class="n">irreps_out</span> <span class="o">=</span> <span class="n">o3</span><span class="o">.</span><span class="n">Irreps</span><span class="o">.</span><span class="n">spherical_harmonics</span><span class="p">(</span><span class="n">lmax</span><span class="o">=</span><span class="n">lmax</span><span class="p">)</span>
 </span><span data-line="98">
@@ -253,14 +254,14 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="101">        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">irreps_out</span><span class="p">,</span> <span class="n">o3</span><span class="o">.</span><span class="n">Irreps</span><span class="p">)</span> <span class="ow">and</span> <span class="n">irreps_in</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
 </span><span data-line="102">            <span class="k">for</span> <span class="n">mul</span><span class="p">,</span> <span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span> <span class="ow">in</span> <span class="n">irreps_out</span><span class="p">:</span>
 </span><span data-line="103">                <span class="k">if</span> <span class="n">l</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">p</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-</span><span data-line="104">                    <span class="n">irreps_in</span> <span class="o">=</span> <span class="n">o3</span><span class="o">.</span><span class="n">Irreps</span><span class="p">(</span><span class="s2">&quot;1e&quot;</span><span class="p">)</span>
+</span><span data-line="104">                    <span class="n">irreps_in</span> <span class="o">=</span> <span class="n">o3</span><span class="o">.</span><span class="n">Irreps</span><span class="p">(</span><span class="s2">"1e"</span><span class="p">)</span>
 </span><span data-line="105">        <span class="k">if</span> <span class="n">irreps_in</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="106">            <span class="n">irreps_in</span> <span class="o">=</span> <span class="n">o3</span><span class="o">.</span><span class="n">Irreps</span><span class="p">(</span><span class="s2">&quot;1o&quot;</span><span class="p">)</span>
+</span><span data-line="106">            <span class="n">irreps_in</span> <span class="o">=</span> <span class="n">o3</span><span class="o">.</span><span class="n">Irreps</span><span class="p">(</span><span class="s2">"1o"</span><span class="p">)</span>
 </span><span data-line="107">
 </span><span data-line="108">        <span class="n">irreps_in</span> <span class="o">=</span> <span class="n">o3</span><span class="o">.</span><span class="n">Irreps</span><span class="p">(</span><span class="n">irreps_in</span><span class="p">)</span>
-</span><span data-line="109">        <span class="k">if</span> <span class="n">irreps_in</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="n">o3</span><span class="o">.</span><span class="n">Irreps</span><span class="p">(</span><span class="s2">&quot;1x1o&quot;</span><span class="p">),</span> <span class="n">o3</span><span class="o">.</span><span class="n">Irreps</span><span class="p">(</span><span class="s2">&quot;1x1e&quot;</span><span class="p">)):</span>
+</span><span data-line="109">        <span class="k">if</span> <span class="n">irreps_in</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="n">o3</span><span class="o">.</span><span class="n">Irreps</span><span class="p">(</span><span class="s2">"1x1o"</span><span class="p">),</span> <span class="n">o3</span><span class="o">.</span><span class="n">Irreps</span><span class="p">(</span><span class="s2">"1x1e"</span><span class="p">)):</span>
 </span><span data-line="110">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-</span><span data-line="111">                <span class="sa">f</span><span class="s2">&quot;irreps_in for SphericalHarmonics must be either a vector (`1x1o`) or a pseudovector (`1x1e`), not `</span><span class="si">{</span><span class="n">irreps_in</span><span class="si">}</span><span class="s2">`&quot;</span>
+</span><span data-line="111">                <span class="sa">f</span><span class="s2">"irreps_in for SphericalHarmonics must be either a vector (`1x1o`) or a pseudovector (`1x1e`), not `</span><span class="si">{</span><span class="n">irreps_in</span><span class="si">}</span><span class="s2">`"</span>
 </span><span data-line="112">            <span class="p">)</span>
 </span><span data-line="113">        <span class="bp">self</span><span class="o">.</span><span class="n">irreps_in</span> <span class="o">=</span> <span class="n">irreps_in</span>
 </span><span data-line="114">        <span class="n">input_p</span> <span class="o">=</span> <span class="n">irreps_in</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ir</span><span class="o">.</span><span class="n">p</span>
@@ -270,7 +271,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="118">            <span class="k">for</span> <span class="n">mul</span><span class="p">,</span> <span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span> <span class="ow">in</span> <span class="n">irreps_out</span><span class="p">:</span>
 </span><span data-line="119">                <span class="k">if</span> <span class="n">p</span> <span class="o">!=</span> <span class="n">input_p</span><span class="o">**</span><span class="n">l</span><span class="p">:</span>
 </span><span data-line="120">                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-</span><span data-line="121">                        <span class="sa">f</span><span class="s2">&quot;irreps_out `</span><span class="si">{</span><span class="n">irreps_out</span><span class="si">}</span><span class="s2">` passed to SphericalHarmonics asked for an output of l = </span><span class="si">{</span><span class="n">l</span><span class="si">}</span><span class="s2"> with parity p = </span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">, which is inconsistent with the input parity </span><span class="si">{</span><span class="n">input_p</span><span class="si">}</span><span class="s2"> — the output parity should have been p = </span><span class="si">{</span><span class="n">input_p</span><span class="o">**</span><span class="n">l</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span data-line="121">                        <span class="sa">f</span><span class="s2">"irreps_out `</span><span class="si">{</span><span class="n">irreps_out</span><span class="si">}</span><span class="s2">` passed to SphericalHarmonics asked for an output of l = </span><span class="si">{</span><span class="n">l</span><span class="si">}</span><span class="s2"> with parity p = </span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">, which is inconsistent with the input parity </span><span class="si">{</span><span class="n">input_p</span><span class="si">}</span><span class="s2"> — the output parity should have been p = </span><span class="si">{</span><span class="n">input_p</span><span class="o">**</span><span class="n">l</span><span class="si">}</span><span class="s2">"</span>
 </span><span data-line="122">                    <span class="p">)</span>
 </span><span data-line="123">                <span class="n">ls</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">l</span><span class="p">]</span> <span class="o">*</span> <span class="n">mul</span><span class="p">)</span>
 </span><span data-line="124">        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">irreps_out</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
@@ -285,7 +286,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="133">        <span class="n">_lmax</span> <span class="o">=</span> <span class="mi">11</span>
 </span><span data-line="134">        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lmax</span> <span class="o">&gt;</span> <span class="n">_lmax</span><span class="p">:</span>
 </span><span data-line="135">            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-</span><span data-line="136">                <span class="sa">f</span><span class="s2">&quot;spherical_harmonics maximum l implemented is </span><span class="si">{</span><span class="n">_lmax</span><span class="si">}</span><span class="s2">, send us an email to ask for more&quot;</span>
+</span><span data-line="136">                <span class="sa">f</span><span class="s2">"spherical_harmonics maximum l implemented is </span><span class="si">{</span><span class="n">_lmax</span><span class="si">}</span><span class="s2">, send us an email to ask for more"</span>
 </span><span data-line="137">            <span class="p">)</span>
 </span><span data-line="138">
 <div class="viewcode-block" id="SphericalHarmonics.forward">
@@ -297,11 +298,11 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="143">
 </span><span data-line="144">        <span class="n">sh</span> <span class="o">=</span> <span class="n">_spherical_harmonics</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_lmax</span><span class="p">,</span> <span class="n">x</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
 </span><span data-line="145">
-</span><span data-line="146">        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalization</span> <span class="o">==</span> <span class="s2">&quot;integral&quot;</span><span class="p">:</span>
+</span><span data-line="146">        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalization</span> <span class="o">==</span> <span class="s2">"integral"</span><span class="p">:</span>
 </span><span data-line="147">            <span class="k">for</span> <span class="n">ii</span><span class="p">,</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_ls_list</span><span class="p">):</span>
 </span><span data-line="148">                <span class="n">sh</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span><span class="o">.</span><span class="n">mul_</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">l</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">))</span>
 </span><span data-line="149">
-</span><span data-line="150">        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalization</span> <span class="o">==</span> <span class="s2">&quot;component&quot;</span><span class="p">:</span>
+</span><span data-line="150">        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalization</span> <span class="o">==</span> <span class="s2">"component"</span><span class="p">:</span>
 </span><span data-line="151">            <span class="k">for</span> <span class="n">ii</span><span class="p">,</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_ls_list</span><span class="p">):</span>
 </span><span data-line="152">                <span class="n">sh</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span><span class="o">.</span><span class="n">mul_</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">l</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
 </span><span data-line="153">
@@ -313,7 +314,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="157"><span class="k">def</span><span class="w"> </span><span class="nf">_spherical_harmonics</span><span class="p">(</span>
 </span><span data-line="158">    <span class="n">lmax</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
 </span><span data-line="159"><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
-</span><span data-line="160"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the spherical harmonics up to lmax (included) from the cartesian</span>
+</span><span data-line="160"><span class="w">    </span><span class="sd">"""Compute the spherical harmonics up to lmax (included) from the cartesian</span>
 </span><span data-line="161"><span class="sd">    positions `x,y,z` that should correspond to normalized vectors (direction</span>
 </span><span data-line="162"><span class="sd">    vectors). This function uses explicit recursion formulas that were generated</span>
 </span><span data-line="163"><span class="sd">    unsing the :func:`_generate_spherical_harmonics` function (defined below).</span>
@@ -334,7 +335,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="178"><span class="sd">    List[torch.Tensor]</span>
 </span><span data-line="179"><span class="sd">        direction vectors expanded on the spherical harmonic basis of shape</span>
 </span><span data-line="180"><span class="sd">        :math:`[l_max+1][n_vectors, m]`</span>
-</span><span data-line="181"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="181"><span class="sd">    """</span>
 </span><span data-line="182">    <span class="n">sh_0_0</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 </span><span data-line="183">    <span class="n">out</span> <span class="o">=</span> <span class="p">[</span>
 </span><span data-line="184">        <span class="n">sh_0_0</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
@@ -1325,35 +1326,35 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="1169">
 </span><span data-line="1170">
 </span><span data-line="1171"><span class="k">def</span><span class="w"> </span><span class="nf">_generate_spherical_harmonics</span><span class="p">(</span><span class="n">lmax</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
-</span><span data-line="1172"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;code used to generate the code above</span>
+</span><span data-line="1172"><span class="w">    </span><span class="sa">r</span><span class="sd">"""code used to generate the code above</span>
 </span><span data-line="1173">
 </span><span data-line="1174"><span class="sd">    based on `wigner_3j`</span>
-</span><span data-line="1175"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="1175"><span class="sd">    """</span>
 </span><span data-line="1176">    <span class="n">torch</span><span class="o">.</span><span class="n">set_default_dtype</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
 </span><span data-line="1177">
-</span><span data-line="1178">    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;sh_0_0 = torch.ones(x.shape, dtype=x.dtype, device=x.device)&quot;</span><span class="p">)</span>
-</span><span data-line="1179">    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;if lmax == 0:&quot;</span><span class="p">)</span>
-</span><span data-line="1180">    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;    return sh_0_0&quot;</span><span class="p">)</span>
+</span><span data-line="1178">    <span class="nb">print</span><span class="p">(</span><span class="s2">"sh_0_0 = torch.ones(x.shape, dtype=x.dtype, device=x.device)"</span><span class="p">)</span>
+</span><span data-line="1179">    <span class="nb">print</span><span class="p">(</span><span class="s2">"if lmax == 0:"</span><span class="p">)</span>
+</span><span data-line="1180">    <span class="nb">print</span><span class="p">(</span><span class="s2">"    return sh_0_0"</span><span class="p">)</span>
 </span><span data-line="1181">    <span class="nb">print</span><span class="p">()</span>
 </span><span data-line="1182">
-</span><span data-line="1183">    <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="n">sympy</span><span class="o">.</span><span class="n">symbols</span><span class="p">(</span><span class="s2">&quot;y z x&quot;</span><span class="p">)</span>
+</span><span data-line="1183">    <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="n">sympy</span><span class="o">.</span><span class="n">symbols</span><span class="p">(</span><span class="s2">"y z x"</span><span class="p">)</span>
 </span><span data-line="1184">    <span class="n">polynomials</span> <span class="o">=</span> <span class="p">[</span><span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">x</span><span class="p">]</span>
 </span><span data-line="1185">    <span class="n">polynormz</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
 </span><span data-line="1186">
 </span><span data-line="1187">    <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">lmax</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
-</span><span data-line="1188">        <span class="n">names</span> <span class="o">=</span> <span class="n">sympy</span><span class="o">.</span><span class="n">symbols</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sh_</span><span class="si">{</span><span class="n">l</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">m</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">l</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)))</span>
+</span><span data-line="1188">        <span class="n">names</span> <span class="o">=</span> <span class="n">sympy</span><span class="o">.</span><span class="n">symbols</span><span class="p">(</span><span class="s2">" "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">"sh_</span><span class="si">{</span><span class="n">l</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">m</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">l</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)))</span>
 </span><span data-line="1189">
 </span><span data-line="1190">        <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">polynomials</span><span class="p">):</span>
 </span><span data-line="1191">            <span class="n">p</span> <span class="o">=</span> <span class="n">sympy</span><span class="o">.</span><span class="n">simplify</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
 </span><span data-line="1192">            <span class="n">p</span> <span class="o">=</span> <span class="n">sympy</span><span class="o">.</span><span class="n">N</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-</span><span data-line="1193">            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">pycode</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span data-line="1193">            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">pycode</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </span><span data-line="1194">
-</span><span data-line="1195">        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;if lmax == </span><span class="si">{</span><span class="n">l</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
-</span><span data-line="1196">        <span class="n">u</span> <span class="o">=</span> <span class="s2">&quot;,</span><span class="se">\n</span><span class="s2">        &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
-</span><span data-line="1197">            <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sh_</span><span class="si">{</span><span class="n">j</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">m</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+</span><span data-line="1195">        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"if lmax == </span><span class="si">{</span><span class="n">l</span><span class="si">}</span><span class="s2">:"</span><span class="p">)</span>
+</span><span data-line="1196">        <span class="n">u</span> <span class="o">=</span> <span class="s2">",</span><span class="se">\n</span><span class="s2">        "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+</span><span data-line="1197">            <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">"sh_</span><span class="si">{</span><span class="n">j</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">m</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
 </span><span data-line="1198">            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">l</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
 </span><span data-line="1199">        <span class="p">)</span>
-</span><span data-line="1200">        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    return torch.stack([</span><span class="se">\n</span><span class="s2">        </span><span class="si">{</span><span class="n">u</span><span class="si">}</span><span class="se">\n</span><span class="s2">    ], dim=-1)&quot;</span><span class="p">)</span>
+</span><span data-line="1200">        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"    return torch.stack([</span><span class="se">\n</span><span class="s2">        </span><span class="si">{</span><span class="n">u</span><span class="si">}</span><span class="se">\n</span><span class="s2">    ], dim=-1)"</span><span class="p">)</span>
 </span><span data-line="1201">        <span class="nb">print</span><span class="p">()</span>
 </span><span data-line="1202">
 </span><span data-line="1203">        <span class="k">if</span> <span class="n">l</span> <span class="o">==</span> <span class="n">lmax</span><span class="p">:</span>

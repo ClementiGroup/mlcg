@@ -6,7 +6,8 @@
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=31853864" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/shibuya.css?v=9454f7d5" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link media="print" rel="stylesheet" type="text/css" href="../../../_static/print.css?v=20ff2c19" />
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -185,10 +186,10 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="ChignolinDataset">
 <a class="viewcode-back" href="../../../data/fixed_datasets.html#mlcg.datasets.chignolin.ChignolinDataset">[docs]</a>
 </span><span data-line="35"><span class="k">class</span><span class="w"> </span><span class="nc">ChignolinDataset</span><span class="p">(</span><span class="n">InMemoryDataset</span><span class="p">):</span>
-</span><span data-line="36"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Dataset for training a CG model of the chignolin protein following a Cα CG mapping using the all-atom data from [CGnet]_.</span>
+</span><span data-line="36"><span class="w">    </span><span class="sa">r</span><span class="sd">"""Dataset for training a CG model of the chignolin protein following a Cα CG mapping using the all-atom data from [CGnet]_.</span>
 </span><span data-line="37">
 </span><span data-line="38"><span class="sd">    This Dataset produces delta forces for model training, in which the CG prior forces (harmonic bonds and angles and a repulsive term) have been subtracted from the full CG forces.</span>
-</span><span data-line="39"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="39"><span class="sd">    """</span>
 </span><span data-line="40">
 </span><span data-line="41">    <span class="c1">#:Temperature used to generate the underlying all-atom data in [K]</span>
 </span><span data-line="42">    <span class="n">temperature</span> <span class="o">=</span> <span class="mi">350</span>  <span class="c1"># K</span>
@@ -203,7 +204,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="51">        <span class="n">transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 </span><span data-line="52">        <span class="n">pre_transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 </span><span data-line="53">        <span class="n">pre_filter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-</span><span data-line="54">        <span class="n">mapping</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;slice_aggregate&quot;</span><span class="p">,</span>
+</span><span data-line="54">        <span class="n">mapping</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"slice_aggregate"</span><span class="p">,</span>
 </span><span data-line="55">        <span class="n">terminal_embeds</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 </span><span data-line="56">        <span class="n">max_num_files</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span data-line="57">    <span class="p">):</span>
@@ -220,63 +221,63 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="68">        <span class="p">)</span>
 </span><span data-line="69">        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">slices</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">processed_paths</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 </span><span data-line="70">        <span class="bp">self</span><span class="o">.</span><span class="n">prior_models</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">processed_paths</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
-</span><span data-line="71">        <span class="bp">self</span><span class="o">.</span><span class="n">topologies</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;cln&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">processed_paths</span><span class="p">[</span><span class="mi">2</span><span class="p">])}</span>
+</span><span data-line="71">        <span class="bp">self</span><span class="o">.</span><span class="n">topologies</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"cln"</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">processed_paths</span><span class="p">[</span><span class="mi">2</span><span class="p">])}</span>
 </span><span data-line="72">
 <div class="viewcode-block" id="ChignolinDataset.download">
 <a class="viewcode-back" href="../../../data/fixed_datasets.html#mlcg.datasets.chignolin.ChignolinDataset.download">[docs]</a>
 </span><span data-line="73">    <span class="k">def</span><span class="w"> </span><span class="nf">download</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 </span><span data-line="74">        <span class="c1"># Download to `self.raw_dir`.</span>
 </span><span data-line="75">        <span class="n">host_link</span> <span class="o">=</span> <span class="p">(</span>
-</span><span data-line="76">            <span class="s2">&quot;http://ftp.mi.fu-berlin.de/pub/cmb-data/chignolin_trajectories/&quot;</span>
+</span><span data-line="76">            <span class="s2">"http://ftp.mi.fu-berlin.de/pub/cmb-data/chignolin_trajectories/"</span>
 </span><span data-line="77">        <span class="p">)</span>
-</span><span data-line="78">        <span class="n">url_forces</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">host_link</span><span class="si">}</span><span class="s2">/chignolin_forces_nowater.tar.gz&quot;</span>
-</span><span data-line="79">        <span class="n">url_coords</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">host_link</span><span class="si">}</span><span class="s2">/chignolin_coords_nowater.tar.gz&quot;</span>
-</span><span data-line="80">        <span class="n">url_inputs</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">host_link</span><span class="si">}</span><span class="s2">/chignolin_generators.tar.gz&quot;</span>
+</span><span data-line="78">        <span class="n">url_forces</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">host_link</span><span class="si">}</span><span class="s2">/chignolin_forces_nowater.tar.gz"</span>
+</span><span data-line="79">        <span class="n">url_coords</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">host_link</span><span class="si">}</span><span class="s2">/chignolin_coords_nowater.tar.gz"</span>
+</span><span data-line="80">        <span class="n">url_inputs</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">host_link</span><span class="si">}</span><span class="s2">/chignolin_generators.tar.gz"</span>
 </span><span data-line="81">        <span class="n">path_inputs</span> <span class="o">=</span> <span class="n">download_url</span><span class="p">(</span><span class="n">url_inputs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_dir</span><span class="p">)</span>
 </span><span data-line="82">        <span class="n">path_coord</span> <span class="o">=</span> <span class="n">download_url</span><span class="p">(</span><span class="n">url_coords</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_dir</span><span class="p">)</span>
 </span><span data-line="83">        <span class="n">path_forces</span> <span class="o">=</span> <span class="n">download_url</span><span class="p">(</span><span class="n">url_forces</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_dir</span><span class="p">)</span>
 </span><span data-line="84">
 </span><span data-line="85">        <span class="c1"># extract files</span>
-</span><span data-line="86">        <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_paths</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Extracting archives&quot;</span><span class="p">):</span>
-</span><span data-line="87">            <span class="n">extract_tar</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_dir</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;r:gz&quot;</span><span class="p">)</span></div>
+</span><span data-line="86">        <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_paths</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"Extracting archives"</span><span class="p">):</span>
+</span><span data-line="87">            <span class="n">extract_tar</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_dir</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">"r:gz"</span><span class="p">)</span></div>
 
 </span><span data-line="88">
 </span><span data-line="89">    <span class="nd">@property</span>
 </span><span data-line="90">    <span class="k">def</span><span class="w"> </span><span class="nf">raw_file_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 </span><span data-line="91">        <span class="k">return</span> <span class="p">[</span>
-</span><span data-line="92">            <span class="s2">&quot;chignolin_generators.tar.gz&quot;</span><span class="p">,</span>
-</span><span data-line="93">            <span class="s2">&quot;chignolin_forces_nowater.tar.gz&quot;</span><span class="p">,</span>
-</span><span data-line="94">            <span class="s2">&quot;chignolin_coords_nowater.tar.gz&quot;</span><span class="p">,</span>
+</span><span data-line="92">            <span class="s2">"chignolin_generators.tar.gz"</span><span class="p">,</span>
+</span><span data-line="93">            <span class="s2">"chignolin_forces_nowater.tar.gz"</span><span class="p">,</span>
+</span><span data-line="94">            <span class="s2">"chignolin_coords_nowater.tar.gz"</span><span class="p">,</span>
 </span><span data-line="95">        <span class="p">]</span>
 </span><span data-line="96">
 </span><span data-line="97">    <span class="nd">@property</span>
 </span><span data-line="98">    <span class="k">def</span><span class="w"> </span><span class="nf">processed_file_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="99">        <span class="k">return</span> <span class="p">[</span><span class="s2">&quot;chignolin.pt&quot;</span><span class="p">,</span> <span class="s2">&quot;chignolin.pdb&quot;</span><span class="p">,</span> <span class="s2">&quot;topologies.pt&quot;</span><span class="p">,</span> <span class="s2">&quot;priors.pt&quot;</span><span class="p">]</span>
+</span><span data-line="99">        <span class="k">return</span> <span class="p">[</span><span class="s2">"chignolin.pt"</span><span class="p">,</span> <span class="s2">"chignolin.pdb"</span><span class="p">,</span> <span class="s2">"topologies.pt"</span><span class="p">,</span> <span class="s2">"priors.pt"</span><span class="p">]</span>
 </span><span data-line="100">
 </span><span data-line="101">    <span class="nd">@staticmethod</span>
 </span><span data-line="102">    <span class="k">def</span><span class="w"> </span><span class="nf">get_data_filenames</span><span class="p">(</span><span class="n">coord_dir</span><span class="p">,</span> <span class="n">force_dir</span><span class="p">):</span>
 </span><span data-line="103">        <span class="n">tags</span> <span class="o">=</span> <span class="p">[</span>
-</span><span data-line="104">            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;chig_coor_&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;.npy&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+</span><span data-line="104">            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"chig_coor_"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">".npy"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
 </span><span data-line="105">            <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">coord_dir</span><span class="p">)</span>
 </span><span data-line="106">        <span class="p">]</span>
 </span><span data-line="107">
 </span><span data-line="108">        <span class="n">coord_fns</span> <span class="o">=</span> <span class="p">{}</span>
 </span><span data-line="109">        <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="n">tags</span><span class="p">:</span>
-</span><span data-line="110">            <span class="n">fn</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;chig_coor_</span><span class="si">{</span><span class="n">tag</span><span class="si">}</span><span class="s2">.npy&quot;</span>
+</span><span data-line="110">            <span class="n">fn</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"chig_coor_</span><span class="si">{</span><span class="n">tag</span><span class="si">}</span><span class="s2">.npy"</span>
 </span><span data-line="111">            <span class="n">coord_fns</span><span class="p">[</span><span class="n">tag</span><span class="p">]</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">coord_dir</span><span class="p">,</span> <span class="n">fn</span><span class="p">)</span>
 </span><span data-line="112">        <span class="n">forces_fns</span> <span class="o">=</span> <span class="p">{}</span>
 </span><span data-line="113">        <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="n">tags</span><span class="p">:</span>
-</span><span data-line="114">            <span class="n">fn</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;chig_force_</span><span class="si">{</span><span class="n">tag</span><span class="si">}</span><span class="s2">.npy&quot;</span>
+</span><span data-line="114">            <span class="n">fn</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"chig_force_</span><span class="si">{</span><span class="n">tag</span><span class="si">}</span><span class="s2">.npy"</span>
 </span><span data-line="115">            <span class="n">forces_fns</span><span class="p">[</span><span class="n">tag</span><span class="p">]</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">force_dir</span><span class="p">,</span> <span class="n">fn</span><span class="p">)</span>
 </span><span data-line="116">        <span class="k">return</span> <span class="n">coord_fns</span><span class="p">,</span> <span class="n">forces_fns</span>
 </span><span data-line="117">
 <div class="viewcode-block" id="ChignolinDataset.process">
 <a class="viewcode-back" href="../../../data/fixed_datasets.html#mlcg.datasets.chignolin.ChignolinDataset.process">[docs]</a>
 </span><span data-line="118">    <span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="119">        <span class="n">coord_dir</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_dir</span><span class="p">,</span> <span class="s2">&quot;coords_nowater&quot;</span><span class="p">)</span>
-</span><span data-line="120">        <span class="n">force_dir</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_dir</span><span class="p">,</span> <span class="s2">&quot;forces_nowater&quot;</span><span class="p">)</span>
+</span><span data-line="119">        <span class="n">coord_dir</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_dir</span><span class="p">,</span> <span class="s2">"coords_nowater"</span><span class="p">)</span>
+</span><span data-line="120">        <span class="n">force_dir</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_dir</span><span class="p">,</span> <span class="s2">"forces_nowater"</span><span class="p">)</span>
 </span><span data-line="121">
-</span><span data-line="122">        <span class="n">topology_fn</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_dir</span><span class="p">,</span> <span class="s2">&quot;chignolin_50ns_0/structure.pdb&quot;</span><span class="p">)</span>
+</span><span data-line="122">        <span class="n">topology_fn</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_dir</span><span class="p">,</span> <span class="s2">"chignolin_50ns_0/structure.pdb"</span><span class="p">)</span>
 </span><span data-line="123">        <span class="n">topo</span> <span class="o">=</span> <span class="n">mdtraj</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">topology_fn</span><span class="p">)</span><span class="o">.</span><span class="n">remove_solvent</span><span class="p">()</span><span class="o">.</span><span class="n">topology</span>
 </span><span data-line="124">        <span class="n">topology</span> <span class="o">=</span> <span class="n">Topology</span><span class="o">.</span><span class="n">from_mdtraj</span><span class="p">(</span><span class="n">topo</span><span class="p">)</span>
 </span><span data-line="125">        <span class="n">embeddings</span><span class="p">,</span> <span class="n">masses</span><span class="p">,</span> <span class="n">cg_matrix</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">build_cg_matrix</span><span class="p">(</span>
@@ -302,7 +303,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="145">        <span class="n">cg_matrix</span> <span class="o">=</span> <span class="n">config_map</span><span class="o">.</span><span class="n">standard_matrix</span>
 </span><span data-line="146">        <span class="c1"># taking only first 100 frames gives same results in ~1/15th of time</span>
 </span><span data-line="147">        <span class="n">constraints</span> <span class="o">=</span> <span class="n">guess_pairwise_constraints</span><span class="p">(</span><span class="n">coords</span><span class="p">[:],</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">5e-3</span><span class="p">)</span>
-</span><span data-line="148">        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapping</span> <span class="o">==</span> <span class="s2">&quot;slice_aggregate&quot;</span><span class="p">:</span>
+</span><span data-line="148">        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapping</span> <span class="o">==</span> <span class="s2">"slice_aggregate"</span><span class="p">:</span>
 </span><span data-line="149">            <span class="n">method</span> <span class="o">=</span> <span class="n">constraint_aware_uni_map</span>
 </span><span data-line="150">            <span class="n">force_agg_results</span> <span class="o">=</span> <span class="n">project_forces</span><span class="p">(</span>
 </span><span data-line="151">                <span class="n">coords</span><span class="o">=</span><span class="n">coords</span><span class="p">,</span>
@@ -311,7 +312,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="154">                <span class="n">constrained_inds</span><span class="o">=</span><span class="n">constraints</span><span class="p">,</span>
 </span><span data-line="155">                <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span>
 </span><span data-line="156">            <span class="p">)</span>
-</span><span data-line="157">        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapping</span> <span class="o">==</span> <span class="s2">&quot;slice_optimize&quot;</span><span class="p">:</span>
+</span><span data-line="157">        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapping</span> <span class="o">==</span> <span class="s2">"slice_optimize"</span><span class="p">:</span>
 </span><span data-line="158">            <span class="n">method</span> <span class="o">=</span> <span class="n">qp_linear_map</span>
 </span><span data-line="159">            <span class="n">l2</span> <span class="o">=</span> <span class="mf">1e3</span>
 </span><span data-line="160">            <span class="n">force_agg_results</span> <span class="o">=</span> <span class="n">project_forces</span><span class="p">(</span>
@@ -324,21 +325,21 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="167">            <span class="p">)</span>
 </span><span data-line="168">        <span class="k">else</span><span class="p">:</span>
 </span><span data-line="169">            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-</span><span data-line="170">                <span class="sa">f</span><span class="s2">&quot;Force mapping </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mapping</span><span class="si">}</span><span class="s2"> is neither &#39;slice_aggregate&#39; nor &#39;slice_optimize&#39;.&quot;</span>
+</span><span data-line="170">                <span class="sa">f</span><span class="s2">"Force mapping </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mapping</span><span class="si">}</span><span class="s2"> is neither 'slice_aggregate' nor 'slice_optimize'."</span>
 </span><span data-line="171">            <span class="p">)</span>
-</span><span data-line="172">        <span class="n">f_proj</span> <span class="o">=</span> <span class="n">force_agg_results</span><span class="p">[</span><span class="s2">&quot;tmap&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">force_map</span><span class="o">.</span><span class="n">standard_matrix</span>
+</span><span data-line="172">        <span class="n">f_proj</span> <span class="o">=</span> <span class="n">force_agg_results</span><span class="p">[</span><span class="s2">"tmap"</span><span class="p">]</span><span class="o">.</span><span class="n">force_map</span><span class="o">.</span><span class="n">standard_matrix</span>
 </span><span data-line="173">
 </span><span data-line="174">        <span class="n">data_list</span> <span class="o">=</span> <span class="p">[]</span>
 </span><span data-line="175">        <span class="n">ii_frame</span> <span class="o">=</span> <span class="mi">0</span>
 </span><span data-line="176">        <span class="n">file_counter</span> <span class="o">=</span> <span class="mi">0</span>
-</span><span data-line="177">        <span class="k">for</span> <span class="n">i_traj</span><span class="p">,</span> <span class="n">tag</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tqdm</span><span class="p">(</span><span class="n">coord_fns</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Load Dataset&quot;</span><span class="p">)):</span>
+</span><span data-line="177">        <span class="k">for</span> <span class="n">i_traj</span><span class="p">,</span> <span class="n">tag</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tqdm</span><span class="p">(</span><span class="n">coord_fns</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"Load Dataset"</span><span class="p">)):</span>
 </span><span data-line="178">            <span class="n">forces</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">forces_fns</span><span class="p">[</span><span class="n">tag</span><span class="p">])</span>
 </span><span data-line="179">            <span class="n">cg_forces</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
-</span><span data-line="180">                <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;mn, ind-&gt; imd&quot;</span><span class="p">,</span> <span class="n">f_proj</span><span class="p">,</span> <span class="n">forces</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span>
+</span><span data-line="180">                <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"mn, ind-&gt; imd"</span><span class="p">,</span> <span class="n">f_proj</span><span class="p">,</span> <span class="n">forces</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span>
 </span><span data-line="181">            <span class="p">)</span>
 </span><span data-line="182">            <span class="n">coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">coord_fns</span><span class="p">[</span><span class="n">tag</span><span class="p">])</span>
 </span><span data-line="183">            <span class="n">cg_coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
-</span><span data-line="184">                <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;mn, ind-&gt; imd&quot;</span><span class="p">,</span> <span class="n">cg_matrix</span><span class="p">,</span> <span class="n">coords</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span>
+</span><span data-line="184">                <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"mn, ind-&gt; imd"</span><span class="p">,</span> <span class="n">cg_matrix</span><span class="p">,</span> <span class="n">coords</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span>
 </span><span data-line="185">            <span class="p">)</span>
 </span><span data-line="186">
 </span><span data-line="187">            <span class="n">n_frames</span> <span class="o">=</span> <span class="n">cg_coords</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -357,7 +358,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="200">                    <span class="n">masses</span><span class="o">=</span><span class="n">masses</span><span class="p">,</span>
 </span><span data-line="201">                    <span class="n">neighborlist</span><span class="o">=</span><span class="n">prior_nls</span><span class="p">,</span>
 </span><span data-line="202">                    <span class="n">traj_id</span><span class="o">=</span><span class="n">i_traj</span><span class="p">,</span>
-</span><span data-line="203">                    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;cln&quot;</span><span class="p">,</span>
+</span><span data-line="203">                    <span class="n">name</span><span class="o">=</span><span class="s2">"cln"</span><span class="p">,</span>
 </span><span data-line="204">                    <span class="n">frame_id</span><span class="o">=</span><span class="n">i_frame</span><span class="p">,</span>
 </span><span data-line="205">                <span class="p">)</span>
 </span><span data-line="206">
@@ -368,7 +369,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="211">                <span class="n">data_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 </span><span data-line="212">                <span class="n">ii_frame</span> <span class="o">+=</span> <span class="mi">1</span>
 </span><span data-line="213">
-</span><span data-line="214">        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;collating data_list&quot;</span><span class="p">)</span>
+</span><span data-line="214">        <span class="nb">print</span><span class="p">(</span><span class="s2">"collating data_list"</span><span class="p">)</span>
 </span><span data-line="215">        <span class="n">datas</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">collate</span><span class="p">(</span>
 </span><span data-line="216">            <span class="n">data_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span>
 </span><span data-line="217">            <span class="n">data_list</span><span class="o">=</span><span class="n">data_list</span><span class="p">,</span>
@@ -376,29 +377,29 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="219">            <span class="n">add_batch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
 </span><span data-line="220">        <span class="p">)</span>
 </span><span data-line="221">
-</span><span data-line="222">        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;fitting baseline models&quot;</span><span class="p">)</span>
+</span><span data-line="222">        <span class="nb">print</span><span class="p">(</span><span class="s2">"fitting baseline models"</span><span class="p">)</span>
 </span><span data-line="223">        <span class="n">baseline_models</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">statistics</span> <span class="o">=</span> <span class="n">fit_baseline_models</span><span class="p">(</span>
 </span><span data-line="224">            <span class="n">datas</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">priors_cls</span>
 </span><span data-line="225">        <span class="p">)</span>
 </span><span data-line="226">
 </span><span data-line="227">        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">baseline_models</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
 </span><span data-line="228">            <span class="n">baseline_models</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">GradientsOut</span><span class="p">(</span>
-</span><span data-line="229">                <span class="n">baseline_models</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">targets</span><span class="o">=</span><span class="s2">&quot;forces&quot;</span>
+</span><span data-line="229">                <span class="n">baseline_models</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">targets</span><span class="o">=</span><span class="s2">"forces"</span>
 </span><span data-line="230">            <span class="p">)</span>
 </span><span data-line="231">
 </span><span data-line="232">        <span class="n">batch_size</span> <span class="o">=</span> <span class="mi">256</span>
 </span><span data-line="233">        <span class="n">chunks</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">chunker</span><span class="p">(</span><span class="n">data_list</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">))</span>
-</span><span data-line="234">        <span class="k">for</span> <span class="n">sub_data_list</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">chunks</span><span class="p">,</span> <span class="s2">&quot;Removing baseline forces&quot;</span><span class="p">):</span>
+</span><span data-line="234">        <span class="k">for</span> <span class="n">sub_data_list</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">chunks</span><span class="p">,</span> <span class="s2">"Removing baseline forces"</span><span class="p">):</span>
 </span><span data-line="235">            <span class="n">_</span> <span class="o">=</span> <span class="n">remove_baseline_forces</span><span class="p">(</span>
 </span><span data-line="236">                <span class="n">sub_data_list</span><span class="p">,</span>
 </span><span data-line="237">                <span class="n">baseline_models</span><span class="p">,</span>
 </span><span data-line="238">            <span class="p">)</span>
-</span><span data-line="239">        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;collating data_list&quot;</span><span class="p">)</span>
+</span><span data-line="239">        <span class="nb">print</span><span class="p">(</span><span class="s2">"collating data_list"</span><span class="p">)</span>
 </span><span data-line="240">        <span class="n">datas</span><span class="p">,</span> <span class="n">slices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">collate</span><span class="p">(</span><span class="n">data_list</span><span class="p">)</span>
 </span><span data-line="241">
-</span><span data-line="242">        <span class="c1"># remove baseline_forces and prior&#39;s neighbor lists to reduce</span>
+</span><span data-line="242">        <span class="c1"># remove baseline_forces and prior's neighbor lists to reduce</span>
 </span><span data-line="243">        <span class="c1"># memory footprint of the dataset</span>
-</span><span data-line="244">        <span class="nb">delattr</span><span class="p">(</span><span class="n">datas</span><span class="p">,</span> <span class="s2">&quot;baseline_forces&quot;</span><span class="p">)</span>
+</span><span data-line="244">        <span class="nb">delattr</span><span class="p">(</span><span class="n">datas</span><span class="p">,</span> <span class="s2">"baseline_forces"</span><span class="p">)</span>
 </span><span data-line="245">        <span class="n">datas</span><span class="o">.</span><span class="n">neighbor_list</span> <span class="o">=</span> <span class="p">{}</span>
 </span><span data-line="246">
 </span><span data-line="247">        <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">((</span><span class="n">cg_topo</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">processed_paths</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
@@ -411,12 +412,12 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="ChignolinDatasetWithDihedralPriors">
 <a class="viewcode-back" href="../../../autodoc.html#mlcg.datasets.chignolin.ChignolinDatasetWithDihedralPriors">[docs]</a>
 </span><span data-line="252"><span class="k">class</span><span class="w"> </span><span class="nc">ChignolinDatasetWithDihedralPriors</span><span class="p">(</span><span class="n">ChignolinDataset</span><span class="p">):</span>
-</span><span data-line="253"><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="253"><span class="w">    </span><span class="sd">"""</span>
 </span><span data-line="254"><span class="sd">    Inherit from Chignolin Dataset and redefine priors to compute</span>
 </span><span data-line="255"><span class="sd">    Modify _prior_cls to include priors to compute</span>
 </span><span data-line="256"><span class="sd">    Must provide</span>
 </span><span data-line="257"><span class="sd">        -----</span>
-</span><span data-line="258"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="258"><span class="sd">    """</span>
 </span><span data-line="259">
 </span><span data-line="260">    <span class="n">_priors_cls</span> <span class="o">=</span> <span class="p">[</span><span class="n">HarmonicBonds</span><span class="p">,</span> <span class="n">HarmonicAngles</span><span class="p">,</span> <span class="n">Repulsion</span><span class="p">,</span> <span class="n">Dihedral</span><span class="p">]</span>
 </span><span data-line="261">

@@ -6,7 +6,8 @@
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=31853864" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -159,7 +160,7 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="SpacedExpBasis">
 <a class="viewcode-back" href="../../../../models/rbfs.html#mlcg.nn.radial_basis.exp_spaced.SpacedExpBasis">[docs]</a>
 </span><span data-line="9"><span class="k">class</span><span class="w"> </span><span class="nc">SpacedExpBasis</span><span class="p">(</span><span class="n">_RadialBasis</span><span class="p">):</span>
-</span><span data-line="10"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Class for generating a set of exponential normal radial basis functions,</span>
+</span><span data-line="10"><span class="w">    </span><span class="sa">r</span><span class="sd">"""Class for generating a set of exponential normal radial basis functions,</span>
 </span><span data-line="11"><span class="sd">    with means and standard deviations designed to capture the physics around 2 :math:`\AA`.</span>
 </span><span data-line="12"><span class="sd">    The functions have an exponential form with the following means and std:</span>
 </span><span data-line="13">
@@ -192,7 +193,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="40"><span class="sd">        function) are registered as optimizable parameters that will be updated</span>
 </span><span data-line="41"><span class="sd">        during backpropagation. If False, these parameters will be instead fixed</span>
 </span><span data-line="42"><span class="sd">        in an unoptimizable buffer.</span>
-</span><span data-line="43"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="43"><span class="sd">    """</span>
 </span><span data-line="44">
 </span><span data-line="45">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
 </span><span data-line="46">        <span class="bp">self</span><span class="p">,</span>
@@ -209,7 +210,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="57">            <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span> <span class="o">=</span> <span class="n">cutoff</span>
 </span><span data-line="58">        <span class="k">else</span><span class="p">:</span>
 </span><span data-line="59">            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-</span><span data-line="60">                <span class="s2">&quot;Supplied cutoff </span><span class="si">{}</span><span class="s2"> is neither a number nor a _Cutoff instance.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+</span><span data-line="60">                <span class="s2">"Supplied cutoff </span><span class="si">{}</span><span class="s2"> is neither a number nor a _Cutoff instance."</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
 </span><span data-line="61">                    <span class="n">cutoff</span>
 </span><span data-line="62">                <span class="p">)</span>
 </span><span data-line="63">            <span class="p">)</span>
@@ -221,7 +222,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="69">        <span class="bp">self</span><span class="o">.</span><span class="n">check_cutoff</span><span class="p">()</span>
 </span><span data-line="70">        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma_factor</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">:</span>
 </span><span data-line="71">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-</span><span data-line="72">                <span class="s2">&quot;Sigma factor must be greater than or equal to 1.0, but </span><span class="si">{}</span><span class="s2"> was supplied.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+</span><span data-line="72">                <span class="s2">"Sigma factor must be greater than or equal to 1.0, but </span><span class="si">{}</span><span class="s2"> was supplied."</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
 </span><span data-line="73">                    <span class="bp">self</span><span class="o">.</span><span class="n">sigma_factor</span>
 </span><span data-line="74">                <span class="p">)</span>
 </span><span data-line="75">            <span class="p">)</span>
@@ -229,17 +230,17 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="77">
 </span><span data-line="78">        <span class="n">means</span><span class="p">,</span> <span class="n">betas</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initial_params</span><span class="p">()</span>
 </span><span data-line="79">        <span class="k">if</span> <span class="n">trainable</span><span class="p">:</span>
-</span><span data-line="80">            <span class="bp">self</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="s2">&quot;means&quot;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">means</span><span class="p">))</span>
-</span><span data-line="81">            <span class="bp">self</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="s2">&quot;betas&quot;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">betas</span><span class="p">))</span>
+</span><span data-line="80">            <span class="bp">self</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="s2">"means"</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">means</span><span class="p">))</span>
+</span><span data-line="81">            <span class="bp">self</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="s2">"betas"</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">betas</span><span class="p">))</span>
 </span><span data-line="82">        <span class="k">else</span><span class="p">:</span>
-</span><span data-line="83">            <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">&quot;means&quot;</span><span class="p">,</span> <span class="n">means</span><span class="p">)</span>
-</span><span data-line="84">            <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">&quot;betas&quot;</span><span class="p">,</span> <span class="n">betas</span><span class="p">)</span>
+</span><span data-line="83">            <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">"means"</span><span class="p">,</span> <span class="n">means</span><span class="p">)</span>
+</span><span data-line="84">            <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">"betas"</span><span class="p">,</span> <span class="n">betas</span><span class="p">)</span>
 </span><span data-line="85">        <span class="bp">self</span><span class="o">.</span><span class="n">num_rbf</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">means</span><span class="p">)</span>
 </span><span data-line="86">
 </span><span data-line="87">    <span class="k">def</span><span class="w"> </span><span class="nf">_initial_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="88"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="88"><span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
 </span><span data-line="89"><span class="sd">        Method for initializing the basis function parameters</span>
-</span><span data-line="90"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="90"><span class="sd">        """</span>
 </span><span data-line="91">
 </span><span data-line="92">        <span class="n">mus</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma_factor</span><span class="p">]</span>
 </span><span data-line="93">        <span class="n">sigmas</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sigma_factor</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_spacing</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma_min</span><span class="p">]</span>
@@ -253,10 +254,10 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="SpacedExpBasis.reset_parameters">
 <a class="viewcode-back" href="../../../../autodoc.html#mlcg.nn.radial_basis.exp_spaced.SpacedExpBasis.reset_parameters">[docs]</a>
 </span><span data-line="101">    <span class="k">def</span><span class="w"> </span><span class="nf">reset_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="102"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="102"><span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
 </span><span data-line="103"><span class="sd">        Method to reset the parameters of the basis functions to their</span>
 </span><span data-line="104"><span class="sd">        initial values.</span>
-</span><span data-line="105"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="105"><span class="sd">        """</span>
 </span><span data-line="106">        <span class="n">means</span><span class="p">,</span> <span class="n">betas</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initial_params</span><span class="p">()</span>
 </span><span data-line="107">        <span class="bp">self</span><span class="o">.</span><span class="n">means</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy_</span><span class="p">(</span><span class="n">means</span><span class="p">)</span>
 </span><span data-line="108">        <span class="bp">self</span><span class="o">.</span><span class="n">betas</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy_</span><span class="p">(</span><span class="n">betas</span><span class="p">)</span></div>
@@ -265,7 +266,7 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="SpacedExpBasis.forward">
 <a class="viewcode-back" href="../../../../autodoc.html#mlcg.nn.radial_basis.exp_spaced.SpacedExpBasis.forward">[docs]</a>
 </span><span data-line="110">    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dist</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-</span><span data-line="111"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="111"><span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
 </span><span data-line="112"><span class="sd">        Expansion of distances through the radial basis function set.</span>
 </span><span data-line="113">
 </span><span data-line="114"><span class="sd">        Parameters</span>
@@ -277,7 +278,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="120"><span class="sd">        ------</span>
 </span><span data-line="121"><span class="sd">        expanded_distances: torch.Tensor</span>
 </span><span data-line="122"><span class="sd">            Distances expanded in the radial basis with shape (total_num_edges, num_rbf)</span>
-</span><span data-line="123"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="123"><span class="sd">        """</span>
 </span><span data-line="124">
 </span><span data-line="125">        <span class="n">dist</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
 </span><span data-line="126">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="p">(</span><span class="n">dist</span><span class="p">)</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>

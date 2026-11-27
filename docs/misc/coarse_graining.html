@@ -6,7 +6,8 @@
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=31853864" />
-    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=9454f7d5" />
+    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
     <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -152,14 +153,17 @@ data-aria-dark="Switch to auto color mode">
       <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
   <article class="yue" role="main">
           <section id="coarse-graining">
-<h1>Coarse Graining<a class="headerlink" href="#coarse-graining" title="Link to this heading">¶</a></h1>
+<h1>Coarse Graining<a class="headerlink" href="#coarse-graining" title="Link to this heading">#</a></h1>
 <p><cite>mlcg.cg</cite> contains useful tools for projecting all-atom systems to a coarser resolution.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="mlcg.cg.projection.build_cg_topology">
-<span class="sig-prename descclassname"><span class="pre">mlcg.cg.projection.</span></span><span class="sig-name descname"><span class="pre">build_cg_topology</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cg_mapping</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">special_terminal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bonds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">add_chain_bonds&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">add_chain_angles&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dihedrals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">add_chain_dihedrals&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/cg/projection.html#build_cg_topology"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.cg.projection.build_cg_topology" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">mlcg.cg.projection.</span></span><span class="sig-name descname"><span class="pre">build_cg_topology</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cg_mapping</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">special_terminal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bonds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">add_chain_bonds&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">add_chain_angles&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dihedrals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">add_chain_dihedrals&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/cg/projection.html#build_cg_topology"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.cg.projection.build_cg_topology" title="Link to this definition">#</a></dt>
 <dd><p>Takes an <cite>mlcg.geometry.topology.Topology</cite> instance and returns another
 <cite>mlcg.geometry.topology.Topology</cite> instance conditioned on the supplied
 CG mapping</p>
+<div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version 0.2.2: </span>Will be removed in a future release. Use the <code class="docutils literal notranslate"><span class="pre">mlcg-tk</span></code> package instead.</p>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -183,10 +187,13 @@ types</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="mlcg.cg.projection.build_cg_matrix">
-<span class="sig-prename descclassname"><span class="pre">mlcg.cg.projection.</span></span><span class="sig-name descname"><span class="pre">build_cg_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cg_mapping</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">special_terminal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/cg/projection.html#build_cg_matrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.cg.projection.build_cg_matrix" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">mlcg.cg.projection.</span></span><span class="sig-name descname"><span class="pre">build_cg_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cg_mapping</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">special_terminal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/cg/projection.html#build_cg_matrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.cg.projection.build_cg_matrix" title="Link to this definition">#</a></dt>
 <dd><p>Function for producing coarse grain types, masses, and
 mapping matrices using a slicing strategy and a predetermined
 set of atoms to retain at the coarse grain resolution.</p>
+<div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version 0.2.2: </span>Will be removed in a future release. Use the <code class="docutils literal notranslate"><span class="pre">mlcg-tk</span></code> package instead.</p>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -200,7 +207,7 @@ set of atoms to retain at the coarse grain resolution.</p>
 </div>
 <p>Eg, a row for an alanine carbon alpha atom would be:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="p">{</span>
-</span><span data-line="2">    <span class="p">(</span><span class="s2">&quot;ALA&quot;</span><span class="p">,</span> <span class="s2">&quot;CA&quot;</span><span class="p">)</span> <span class="p">:</span> <span class="p">(</span><span class="s2">&quot;CA_A&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">12</span><span class="p">)</span>
+</span><span data-line="2">    <span class="p">(</span><span class="s2">"ALA"</span><span class="p">,</span> <span class="s2">"CA"</span><span class="p">)</span> <span class="p">:</span> <span class="p">(</span><span class="s2">"CA_A"</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">12</span><span class="p">)</span>
 </span><span data-line="3">    <span class="o">...</span>
 </span><span data-line="4"><span class="p">}</span>
 </span></pre></div>

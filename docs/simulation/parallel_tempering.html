@@ -6,7 +6,8 @@
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=31853864" />
-    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=9454f7d5" />
+    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
     <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -151,10 +152,10 @@ data-aria-dark="Switch to auto color mode">
       <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
   <article class="yue" role="main">
           <section id="parallel-tempering-simulation">
-<h1>Parallel Tempering Simulation<a class="headerlink" href="#parallel-tempering-simulation" title="Link to this heading">¶</a></h1>
+<h1>Parallel Tempering Simulation<a class="headerlink" href="#parallel-tempering-simulation" title="Link to this heading">#</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="mlcg.simulation.OverdampedSimulation">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.simulation.</span></span><span class="sig-name descname"><span class="pre">OverdampedSimulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">friction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/simulation/langevin.html#OverdampedSimulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.simulation.OverdampedSimulation" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.simulation.</span></span><span class="sig-name descname"><span class="pre">OverdampedSimulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">friction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/simulation/langevin.html#OverdampedSimulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.simulation.OverdampedSimulation" title="Link to this definition">#</a></dt>
 <dd><p>Overdamped Langevin simulation class for trained models.</p>
 <p>The following Brownian motion scheme is used:</p>
 <div class="math-wrapper docutils container">

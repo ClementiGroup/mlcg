@@ -6,7 +6,8 @@
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=31853864" />
-    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=9454f7d5" />
+    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
     <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -153,7 +154,7 @@ data-aria-dark="Switch to auto color mode">
       <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
   <article class="yue" role="main">
           <section id="tests">
-<h1>Tests<a class="headerlink" href="#tests" title="Link to this heading">¶</a></h1>
+<h1>Tests<a class="headerlink" href="#tests" title="Link to this heading">#</a></h1>
 <p>The <code class="docutils literal notranslate"><span class="pre">mlcg</span></code> package includes a structured test suite to ensure code quality and correctness. Tests are organized by <strong>type</strong>:</p>
 <ul class="simple">
 <li><p><strong>Unit tests</strong>
@@ -168,7 +169,7 @@ These tests check loading of old checkpoints to ensure continuity of the code.</
 </ul>
 <hr class="docutils" />
 <section id="running-tests">
-<h2>Running Tests<a class="headerlink" href="#running-tests" title="Link to this heading">¶</a></h2>
+<h2>Running Tests<a class="headerlink" href="#running-tests" title="Link to this heading">#</a></h2>
 <p>Run all tests:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">pytest</span>
 </span></pre></div>
@@ -187,7 +188,7 @@ These tests check loading of old checkpoints to ensure continuity of the code.</
 </div>
 </section>
 <section id="adding-new-tests">
-<h2>Adding New Tests<a class="headerlink" href="#adding-new-tests" title="Link to this heading">¶</a></h2>
+<h2>Adding New Tests<a class="headerlink" href="#adding-new-tests" title="Link to this heading">#</a></h2>
 <p>When contributing new tests:</p>
 <ul class="simple">
 <li><p>Place unit tests in <code class="docutils literal notranslate"><span class="pre">tests/unit/</span></code>.</p></li>
@@ -198,7 +199,7 @@ These tests check loading of old checkpoints to ensure continuity of the code.</
 <p>This ensures tests are correctly categorized and can be run selectively.</p>
 </section>
 <section id="tests-in-ci-cd-pipeline">
-<h2>Tests in CI/CD pipeline<a class="headerlink" href="#tests-in-ci-cd-pipeline" title="Link to this heading">¶</a></h2>
+<h2>Tests in CI/CD pipeline<a class="headerlink" href="#tests-in-ci-cd-pipeline" title="Link to this heading">#</a></h2>
 <p>Code within the <code class="docutils literal notranslate"><span class="pre">mlcg</span></code> package is tested using <code class="docutils literal notranslate"><span class="pre">CircleCI</span></code> for continuous integration.
 The file <code class="docutils literal notranslate"><span class="pre">.test_durations</span></code> is used to split tests across different containers according
 to their execution time. When a new, consistent set of tests is added, it is recommended

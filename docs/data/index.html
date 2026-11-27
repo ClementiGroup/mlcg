@@ -6,7 +6,8 @@
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=31853864" />
-    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=9454f7d5" />
+    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
     <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -144,7 +145,7 @@ data-aria-dark="Switch to auto color mode">
       <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
   <article class="yue" role="main">
           <section id="data-and-datasets">
-<h1>Data and datasets<a class="headerlink" href="#data-and-datasets" title="Link to this heading">¶</a></h1>
+<h1>Data and datasets<a class="headerlink" href="#data-and-datasets" title="Link to this heading">#</a></h1>
 <p><code class="docutils literal notranslate"><span class="pre">mlcg.data</span></code> prodivides the classes and objects to define a molecule, while <code class="docutils literal notranslate"><span class="pre">mlcg.dataset</span></code> provides
 datasets compatible with pytorch to enable training over datasets with several configurations
 of different molecules.</p>

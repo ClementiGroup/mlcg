@@ -6,7 +6,8 @@
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=31853864" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/shibuya.css?v=9454f7d5" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link media="print" rel="stylesheet" type="text/css" href="../../../_static/print.css?v=20ff2c19" />
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -148,7 +149,7 @@ data-aria-dark="Switch to auto color mode">
       <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
   <article class="yue" role="main">
           <h1>Source code for mlcg.geometry.internal_coordinates</h1><div class="highlight"><pre>
-<span></span><span data-line="1"><span class="sd">&quot;&quot;&quot;TODO: write tests&quot;&quot;&quot;</span>
+<span></span><span data-line="1"><span class="sd">"""TODO: write tests"""</span>
 </span><span data-line="2">
 </span><span data-line="3"><span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
 </span><span data-line="4"><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
@@ -163,8 +164,8 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="11">    <span class="n">keepdims</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 </span><span data-line="12">    <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-16</span><span class="p">,</span>
 </span><span data-line="13"><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-</span><span data-line="14"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute Euclidean norm of input so that 0-norm vectors can be used in</span>
-</span><span data-line="15"><span class="sd">    the backpropagation&quot;&quot;&quot;</span>
+</span><span data-line="14"><span class="w">    </span><span class="sd">"""Compute Euclidean norm of input so that 0-norm vectors can be used in</span>
+</span><span data-line="15"><span class="sd">    the backpropagation"""</span>
 </span><span data-line="16">    <span class="k">if</span> <span class="n">dim</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
 </span><span data-line="17">        <span class="n">dim</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 </span><span data-line="18">    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span>
@@ -178,7 +179,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="23"><span class="k">def</span><span class="w"> </span><span class="nf">safe_normalization</span><span class="p">(</span>
 </span><span data-line="24">    <span class="nb">input</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">norms</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
 </span><span data-line="25"><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-</span><span data-line="26"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Normalizes input using norms avoiding divitions by zero&quot;&quot;&quot;</span>
+</span><span data-line="26"><span class="w">    </span><span class="sd">"""Normalizes input using norms avoiding divitions by zero"""</span>
 </span><span data-line="27">    <span class="k">return</span> <span class="nb">input</span> <span class="o">/</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">norms</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">norms</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span></div>
 
 </span><span data-line="28">
@@ -190,7 +191,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="32">    <span class="n">mapping</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
 </span><span data-line="33">    <span class="n">cell_shifts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span data-line="34"><span class="p">):</span>
-</span><span data-line="35"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the distance (or displacement) vectors between the positions in</span>
+</span><span data-line="35"><span class="w">    </span><span class="sa">r</span><span class="sd">"""Compute the distance (or displacement) vectors between the positions in</span>
 </span><span data-line="36"><span class="sd">    :obj:`pos` following the :obj:`mapping` assuming that that mapping indices follow::</span>
 </span><span data-line="37">
 </span><span data-line="38"><span class="sd">     i--j</span>
@@ -205,7 +206,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="47"><span class="sd">    In the case of periodic boundary conditions, :obj:`cell_shifts` must be</span>
 </span><span data-line="48"><span class="sd">    provided so that :math:`\mathbf{r}_j` can be outside of the original unit</span>
 </span><span data-line="49"><span class="sd">    cell.</span>
-</span><span data-line="50"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="50"><span class="sd">    """</span>
 </span><span data-line="51">    <span class="k">assert</span> <span class="n">mapping</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">2</span>
 </span><span data-line="52">    <span class="k">assert</span> <span class="n">mapping</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span>
 </span><span data-line="53">
@@ -228,7 +229,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="67">    <span class="n">mapping</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
 </span><span data-line="68">    <span class="n">cell_shifts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span data-line="69"><span class="p">):</span>
-</span><span data-line="70"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the distance between the positions in :obj:`pos` following the</span>
+</span><span data-line="70"><span class="w">    </span><span class="sa">r</span><span class="sd">"""Compute the distance between the positions in :obj:`pos` following the</span>
 </span><span data-line="71"><span class="sd">    :obj:`mapping` assuming that mapping indices follow::</span>
 </span><span data-line="72">
 </span><span data-line="73"><span class="sd">     i--j</span>
@@ -242,7 +243,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="81"><span class="sd">    In the case of periodic boundary conditions, :obj:`cell_shifts` must be</span>
 </span><span data-line="82"><span class="sd">    provided so that :math:`\mathbf{r}_j` can be outside of the original unit</span>
 </span><span data-line="83"><span class="sd">    cell.</span>
-</span><span data-line="84"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="84"><span class="sd">    """</span>
 </span><span data-line="85">    <span class="k">assert</span> <span class="n">mapping</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">2</span>
 </span><span data-line="86">    <span class="k">assert</span> <span class="n">mapping</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span>
 </span><span data-line="87">    <span class="k">if</span> <span class="n">cell_shifts</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -261,7 +262,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="97">    <span class="n">mapping</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
 </span><span data-line="98">    <span class="n">cell_shifts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span data-line="99"><span class="p">):</span>
-</span><span data-line="100"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the raw angle (in radians) between the positions in :obj:`pos` following the :obj:`mapping` assuming that the mapping indices follow::</span>
+</span><span data-line="100"><span class="w">    </span><span class="sa">r</span><span class="sd">"""Compute the raw angle (in radians) between the positions in :obj:`pos` following the :obj:`mapping` assuming that the mapping indices follow::</span>
 </span><span data-line="101">
 </span><span data-line="102"><span class="sd">       j--k</span>
 </span><span data-line="103"><span class="sd">      /</span>
@@ -275,7 +276,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="111"><span class="sd">        \mathbf{r}_{kj} &amp;= \mathbf{r}_k - \mathbf{r}_j \\</span>
 </span><span data-line="112"><span class="sd">        \mathbf{\hat{n}} &amp;= \frac{\mathbf{r}_{ij} \times \mathbf{r}_{kj}}{\Vert \mathbf{r}_{ij} \times \mathbf{r}_{kj} \Vert} </span>
 </span><span data-line="113">
-</span><span data-line="114"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="114"><span class="sd">    """</span>
 </span><span data-line="115">    <span class="k">assert</span> <span class="n">mapping</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">2</span>
 </span><span data-line="116">    <span class="k">assert</span> <span class="n">mapping</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span>
 </span><span data-line="117">
@@ -305,7 +306,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="138">    <span class="n">mapping</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
 </span><span data-line="139">    <span class="n">cell_shifts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span data-line="140"><span class="p">):</span>
-</span><span data-line="141"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the cosine of the angle between the positions in :obj:`pos` following the :obj:`mapping` assuming that the mapping indices follow::</span>
+</span><span data-line="141"><span class="w">    </span><span class="sa">r</span><span class="sd">"""Compute the cosine of the angle between the positions in :obj:`pos` following the :obj:`mapping` assuming that the mapping indices follow::</span>
 </span><span data-line="142">
 </span><span data-line="143"><span class="sd">       j--k</span>
 </span><span data-line="144"><span class="sd">      /</span>
@@ -320,7 +321,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="153"><span class="sd">    In the case of periodic boundary conditions, :obj:`cell_shifts` must be</span>
 </span><span data-line="154"><span class="sd">    provided so that :math:`\mathbf{r}_j` can be outside of the original unit</span>
 </span><span data-line="155"><span class="sd">    cell.</span>
-</span><span data-line="156"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="156"><span class="sd">    """</span>
 </span><span data-line="157">    <span class="k">assert</span> <span class="n">mapping</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">2</span>
 </span><span data-line="158">    <span class="k">assert</span> <span class="n">mapping</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span>
 </span><span data-line="159">
@@ -348,8 +349,8 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="178">    <span class="n">mapping</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
 </span><span data-line="179">    <span class="n">cell_shifts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span data-line="180"><span class="p">):</span>
-</span><span data-line="181"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
-</span><span data-line="182"><span class="sd">    Compute the angle between two planes from positions in :obj:&#39;pos&#39; following the</span>
+</span><span data-line="181"><span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
+</span><span data-line="182"><span class="sd">    Compute the angle between two planes from positions in :obj:'pos' following the</span>
 </span><span data-line="183"><span class="sd">    :obj:`mapping`::</span>
 </span><span data-line="184">
 </span><span data-line="185"><span class="sd">    For dihedrals: the angle w.r.t. position of i&amp;l is positive if l i rotated clockwise</span>
@@ -381,7 +382,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="211"><span class="sd">    with mdtraj. In the case of periodic boundary conditions, :obj:`cell_shifts` must be</span>
 </span><span data-line="212"><span class="sd">    provided so that :math:`\mathbf{r}_j` can be outside of the original unit</span>
 </span><span data-line="213"><span class="sd">    cell.</span>
-</span><span data-line="214"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="214"><span class="sd">    """</span>
 </span><span data-line="215">    <span class="k">assert</span> <span class="n">mapping</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">2</span>
 </span><span data-line="216">    <span class="k">assert</span> <span class="n">mapping</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">4</span>
 </span><span data-line="217">    <span class="k">if</span> <span class="n">cell_shifts</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>

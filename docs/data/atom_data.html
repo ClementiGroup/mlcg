@@ -6,7 +6,8 @@
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=31853864" />
-    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=9454f7d5" />
+    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
     <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -116,18 +117,18 @@ data-aria-dark="Switch to auto color mode">
     </button>
     <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
 <li><a class="reference internal" href="#mlcg.data.atomic_data.AtomicData"><code class="docutils literal notranslate"><span class="pre">AtomicData</span></code></a><ul>
-<li><a class="reference internal" href="#mlcg.data.atomic_data.AtomicData.pos"><code class="docutils literal notranslate">pos</span></code></a></li>
-<li><a class="reference internal" href="#mlcg.data.atomic_data.AtomicData.atom_types"><code class="docutils literal notranslate">atom_types</span></code></a></li>
-<li><a class="reference internal" href="#mlcg.data.atomic_data.AtomicData.masses"><code class="docutils literal notranslate">masses</span></code></a></li>
-<li><a class="reference internal" href="#mlcg.data.atomic_data.AtomicData.pbc"><code class="docutils literal notranslate">pbc</span></code></a></li>
-<li><a class="reference internal" href="#mlcg.data.atomic_data.AtomicData.cell"><code class="docutils literal notranslate">cell</span></code></a></li>
-<li><a class="reference internal" href="#mlcg.data.atomic_data.AtomicData.tag"><code class="docutils literal notranslate">tag</span></code></a></li>
-<li><a class="reference internal" href="#mlcg.data.atomic_data.AtomicData.energy"><code class="docutils literal notranslate">energy</span></code></a></li>
-<li><a class="reference internal" href="#mlcg.data.atomic_data.AtomicData.forces"><code class="docutils literal notranslate">forces</span></code></a></li>
-<li><a class="reference internal" href="#mlcg.data.atomic_data.AtomicData.velocities"><code class="docutils literal notranslate">velocities</span></code></a></li>
-<li><a class="reference internal" href="#mlcg.data.atomic_data.AtomicData.neighbor_list"><code class="docutils literal notranslate">neighbor_list</span></code></a></li>
-<li><a class="reference internal" href="#mlcg.data.atomic_data.AtomicData.batch"><code class="docutils literal notranslate">batch</span></code></a></li>
-<li><a class="reference internal" href="#mlcg.data.atomic_data.AtomicData.excluded_pairs"><code class="docutils literal notranslate">excluded_pairs</span></code></a></li>
+<li><a class="reference internal" href="#mlcg.data.atomic_data.AtomicData.pos"><code class="docutils literal notranslate"><span class="pre">AtomicData.pos</span></code></a></li>
+<li><a class="reference internal" href="#mlcg.data.atomic_data.AtomicData.atom_types"><code class="docutils literal notranslate"><span class="pre">AtomicData.atom_types</span></code></a></li>
+<li><a class="reference internal" href="#mlcg.data.atomic_data.AtomicData.masses"><code class="docutils literal notranslate"><span class="pre">AtomicData.masses</span></code></a></li>
+<li><a class="reference internal" href="#mlcg.data.atomic_data.AtomicData.pbc"><code class="docutils literal notranslate"><span class="pre">AtomicData.pbc</span></code></a></li>
+<li><a class="reference internal" href="#mlcg.data.atomic_data.AtomicData.cell"><code class="docutils literal notranslate"><span class="pre">AtomicData.cell</span></code></a></li>
+<li><a class="reference internal" href="#mlcg.data.atomic_data.AtomicData.tag"><code class="docutils literal notranslate"><span class="pre">AtomicData.tag</span></code></a></li>
+<li><a class="reference internal" href="#mlcg.data.atomic_data.AtomicData.energy"><code class="docutils literal notranslate"><span class="pre">AtomicData.energy</span></code></a></li>
+<li><a class="reference internal" href="#mlcg.data.atomic_data.AtomicData.forces"><code class="docutils literal notranslate"><span class="pre">AtomicData.forces</span></code></a></li>
+<li><a class="reference internal" href="#mlcg.data.atomic_data.AtomicData.velocities"><code class="docutils literal notranslate"><span class="pre">AtomicData.velocities</span></code></a></li>
+<li><a class="reference internal" href="#mlcg.data.atomic_data.AtomicData.neighbor_list"><code class="docutils literal notranslate"><span class="pre">AtomicData.neighbor_list</span></code></a></li>
+<li><a class="reference internal" href="#mlcg.data.atomic_data.AtomicData.batch"><code class="docutils literal notranslate"><span class="pre">AtomicData.batch</span></code></a></li>
+<li><a class="reference internal" href="#mlcg.data.atomic_data.AtomicData.excluded_pairs"><code class="docutils literal notranslate"><span class="pre">AtomicData.excluded_pairs</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -165,17 +166,17 @@ data-aria-dark="Switch to auto color mode">
       <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
   <article class="yue" role="main">
           <section id="molecular-data-representation">
-<h1>Molecular Data Representation<a class="headerlink" href="#molecular-data-representation" title="Link to this heading">¶</a></h1>
+<h1>Molecular Data Representation<a class="headerlink" href="#molecular-data-representation" title="Link to this heading">#</a></h1>
 <p><cite>mlcg.data</cite> defines the <cite>AtomicData</cite> class, the data structure used as input to models. It contains one or more atomic structures with
 associated physical properties. <cite>AtomicData</cite> instances also store the outputs of models through which they pass.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="mlcg.data.atomic_data.AtomicData">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.data.atomic_data.</span></span><span class="sig-name descname"><span class="pre">AtomicData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/data/atomic_data.html#AtomicData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.data.atomic_data.AtomicData" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.data.atomic_data.</span></span><span class="sig-name descname"><span class="pre">AtomicData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/data/atomic_data.html#AtomicData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.data.atomic_data.AtomicData" title="Link to this definition">#</a></dt>
 <dd><p>A data object holding atomic structures.
 The attribute names are defined in <code class="xref py py-data docutils literal notranslate"><span class="pre">mlcg.data._keys</span></code></p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="mlcg.data.atomic_data.AtomicData.pos">
-<span class="sig-name descname"><span class="pre">pos</span></span><a class="headerlink" href="#mlcg.data.atomic_data.AtomicData.pos" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">pos</span></span><a class="headerlink" href="#mlcg.data.atomic_data.AtomicData.pos" title="Link to this definition">#</a></dt>
 <dd><p>set of atomic positions in each structures</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -186,7 +187,7 @@ The attribute names are defined in <code class="xref py py-data docutils literal
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="mlcg.data.atomic_data.AtomicData.atom_types">
-<span class="sig-name descname"><span class="pre">atom_types</span></span><a class="headerlink" href="#mlcg.data.atomic_data.AtomicData.atom_types" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">atom_types</span></span><a class="headerlink" href="#mlcg.data.atomic_data.AtomicData.atom_types" title="Link to this definition">#</a></dt>
 <dd><p>if atoms then it’s the atomic number, if it’s a CG bead then it’s a number defined by the CG mapping</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -197,7 +198,7 @@ The attribute names are defined in <code class="xref py py-data docutils literal
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="mlcg.data.atomic_data.AtomicData.masses">
-<span class="sig-name descname"><span class="pre">masses</span></span><a class="headerlink" href="#mlcg.data.atomic_data.AtomicData.masses" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">masses</span></span><a class="headerlink" href="#mlcg.data.atomic_data.AtomicData.masses" title="Link to this definition">#</a></dt>
 <dd><p>Masses of each atom</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -208,7 +209,7 @@ The attribute names are defined in <code class="xref py py-data docutils literal
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="mlcg.data.atomic_data.AtomicData.pbc">
-<span class="sig-name descname"><span class="pre">pbc</span></span><a class="headerlink" href="#mlcg.data.atomic_data.AtomicData.pbc" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">pbc</span></span><a class="headerlink" href="#mlcg.data.atomic_data.AtomicData.pbc" title="Link to this definition">#</a></dt>
 <dd><p>periodic boundary conditions</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -219,7 +220,7 @@ The attribute names are defined in <code class="xref py py-data docutils literal
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="mlcg.data.atomic_data.AtomicData.cell">
-<span class="sig-name descname"><span class="pre">cell</span></span><a class="headerlink" href="#mlcg.data.atomic_data.AtomicData.cell" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">cell</span></span><a class="headerlink" href="#mlcg.data.atomic_data.AtomicData.cell" title="Link to this definition">#</a></dt>
 <dd><p>unit cell of the atomic structure. Lattice vectors are defined row wise</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -230,7 +231,7 @@ The attribute names are defined in <code class="xref py py-data docutils literal
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="mlcg.data.atomic_data.AtomicData.tag">
-<span class="sig-name descname"><span class="pre">tag</span></span><a class="headerlink" href="#mlcg.data.atomic_data.AtomicData.tag" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">tag</span></span><a class="headerlink" href="#mlcg.data.atomic_data.AtomicData.tag" title="Link to this definition">#</a></dt>
 <dd><p>metadata about each structure</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -241,7 +242,7 @@ The attribute names are defined in <code class="xref py py-data docutils literal
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="mlcg.data.atomic_data.AtomicData.energy">
-<span class="sig-name descname"><span class="pre">energy</span></span><a class="headerlink" href="#mlcg.data.atomic_data.AtomicData.energy" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">energy</span></span><a class="headerlink" href="#mlcg.data.atomic_data.AtomicData.energy" title="Link to this definition">#</a></dt>
 <dd><p>reference energy associated with each structures</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -252,7 +253,7 @@ The attribute names are defined in <code class="xref py py-data docutils literal
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="mlcg.data.atomic_data.AtomicData.forces">
-<span class="sig-name descname"><span class="pre">forces</span></span><a class="headerlink" href="#mlcg.data.atomic_data.AtomicData.forces" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">forces</span></span><a class="headerlink" href="#mlcg.data.atomic_data.AtomicData.forces" title="Link to this definition">#</a></dt>
 <dd><p>reference forces associated with each structures</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -263,7 +264,7 @@ The attribute names are defined in <code class="xref py py-data docutils literal
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="mlcg.data.atomic_data.AtomicData.velocities">
-<span class="sig-name descname"><span class="pre">velocities</span></span><a class="headerlink" href="#mlcg.data.atomic_data.AtomicData.velocities" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">velocities</span></span><a class="headerlink" href="#mlcg.data.atomic_data.AtomicData.velocities" title="Link to this definition">#</a></dt>
 <dd><p>velocities associated with each structure</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -274,7 +275,7 @@ The attribute names are defined in <code class="xref py py-data docutils literal
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="mlcg.data.atomic_data.AtomicData.neighbor_list">
-<span class="sig-name descname"><span class="pre">neighbor_list</span></span><a class="headerlink" href="#mlcg.data.atomic_data.AtomicData.neighbor_list" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">neighbor_list</span></span><a class="headerlink" href="#mlcg.data.atomic_data.AtomicData.neighbor_list" title="Link to this definition">#</a></dt>
 <dd><p>contains information about the connectivity formatted according to
 <span class="xref std std-ref">mlcg.neighbor_list.neighbor_list.make_neighbor_list</span>.</p>
 <dl class="field-list simple">
@@ -286,7 +287,7 @@ The attribute names are defined in <code class="xref py py-data docutils literal
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="mlcg.data.atomic_data.AtomicData.batch">
-<span class="sig-name descname"><span class="pre">batch</span></span><a class="headerlink" href="#mlcg.data.atomic_data.AtomicData.batch" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">batch</span></span><a class="headerlink" href="#mlcg.data.atomic_data.AtomicData.batch" title="Link to this definition">#</a></dt>
 <dd><p>maps the atoms to their structure index (from 0 to n_structures-1)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -297,7 +298,7 @@ The attribute names are defined in <code class="xref py py-data docutils literal
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="mlcg.data.atomic_data.AtomicData.excluded_pairs">
-<span class="sig-name descname"><span class="pre">excluded_pairs</span></span><a class="headerlink" href="#mlcg.data.atomic_data.AtomicData.excluded_pairs" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">excluded_pairs</span></span><a class="headerlink" href="#mlcg.data.atomic_data.AtomicData.excluded_pairs" title="Link to this definition">#</a></dt>
 <dd><p>contains information about excluded pairs from the model neighborlist
 in particular <cite>excluded_order: int</cite> and <cite>index_mapping: [2, n_excluded]</cite>,
 unordered pairs: <cite>(i, j)</cite> excludes both directions</p>

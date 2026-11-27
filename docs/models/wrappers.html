@@ -6,7 +6,8 @@
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=31853864" />
-    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=9454f7d5" />
+    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
     <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -152,11 +153,11 @@ data-aria-dark="Switch to auto color mode">
       <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
   <article class="yue" role="main">
           <section id="gradient-sum-wrappers">
-<h1>Gradient/sum wrappers<a class="headerlink" href="#gradient-sum-wrappers" title="Link to this heading">¶</a></h1>
+<h1>Gradient/sum wrappers<a class="headerlink" href="#gradient-sum-wrappers" title="Link to this heading">#</a></h1>
 <p>These classes are used to build more complicated models.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="mlcg.nn.gradients.GradientsOut">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.nn.gradients.</span></span><span class="sig-name descname"><span class="pre">GradientsOut</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'forces'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/nn/gradients.html#GradientsOut"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.gradients.GradientsOut" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.nn.gradients.</span></span><span class="sig-name descname"><span class="pre">GradientsOut</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'forces'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/nn/gradients.html#GradientsOut"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.gradients.GradientsOut" title="Link to this definition">#</a></dt>
 <dd><p>Gradient wrapper for models.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -173,7 +174,7 @@ in the targets.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="mlcg.nn.gradients.SumOut">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.nn.gradients.</span></span><span class="sig-name descname"><span class="pre">SumOut</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">models</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">own_nl_models</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/nn/gradients.html#SumOut"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.gradients.SumOut" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mlcg.nn.gradients.</span></span><span class="sig-name descname"><span class="pre">SumOut</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">models</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">own_nl_models</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/nn/gradients.html#SumOut"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.nn.gradients.SumOut" title="Link to this definition">#</a></dt>
 <dd><p>Property pooling wrapper for models</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -206,17 +207,17 @@ immediately after, leaving the other models unaffected. Defaults to
 </span><span data-line="12"><span class="n">force_network</span> <span class="o">=</span> <span class="n">GradientsOut</span><span class="p">(</span><span class="n">energy_model</span><span class="p">,</span> <span class="n">FORCE_KEY</span><span class="p">)</span>
 </span><span data-line="13">
 </span><span data-line="14"><span class="n">models</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleDict</span><span class="p">{</span>
-</span><span data-line="15">             <span class="s2">&quot;bonds&quot;</span><span class="p">:</span> <span class="n">bond_terms</span><span class="p">,</span>
-</span><span data-line="16">             <span class="s2">&quot;angles&quot;</span><span class="p">:</span> <span class="n">angle_terms</span><span class="p">,</span>
-</span><span data-line="17">             <span class="s2">&quot;SchNet&quot;</span><span class="p">:</span> <span class="n">force_network</span>
+</span><span data-line="15">             <span class="s2">"bonds"</span><span class="p">:</span> <span class="n">bond_terms</span><span class="p">,</span>
+</span><span data-line="16">             <span class="s2">"angles"</span><span class="p">:</span> <span class="n">angle_terms</span><span class="p">,</span>
+</span><span data-line="17">             <span class="s2">"SchNet"</span><span class="p">:</span> <span class="n">force_network</span>
 </span><span data-line="18">         <span class="p">}</span>
 </span><span data-line="19"><span class="n">full_model</span> <span class="o">=</span> <span class="n">SumOut</span><span class="p">(</span><span class="n">models</span><span class="p">,</span> <span class="n">targets</span><span class="o">=</span><span class="p">[</span><span class="n">ENERGY_KEY</span><span class="p">,</span> <span class="n">FORCE_KEY</span><span class="p">])</span>
 </span><span data-line="20">
-</span><span data-line="21"><span class="c1"># Withhold the shared neighbor_list from SchNet&#39;s call:</span>
+</span><span data-line="21"><span class="c1"># Withhold the shared neighbor_list from SchNet's call:</span>
 </span><span data-line="22"><span class="n">full_model</span> <span class="o">=</span> <span class="n">SumOut</span><span class="p">(</span>
 </span><span data-line="23">    <span class="n">models</span><span class="p">,</span>
 </span><span data-line="24">    <span class="n">targets</span><span class="o">=</span><span class="p">[</span><span class="n">ENERGY_KEY</span><span class="p">,</span> <span class="n">FORCE_KEY</span><span class="p">],</span>
-</span><span data-line="25">    <span class="n">own_nl_models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;SchNet&quot;</span><span class="p">],</span>
+</span><span data-line="25">    <span class="n">own_nl_models</span><span class="o">=</span><span class="p">[</span><span class="s2">"SchNet"</span><span class="p">],</span>
 </span><span data-line="26"><span class="p">)</span>
 </span></pre></div>
 </div>

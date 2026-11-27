@@ -6,7 +6,8 @@
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=31853864" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/shibuya.css?v=9454f7d5" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link media="print" rel="stylesheet" type="text/css" href="../../../_static/print.css?v=20ff2c19" />
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -148,7 +149,7 @@ data-aria-dark="Switch to auto color mode">
       <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
   <article class="yue" role="main">
           <h1>Source code for mlcg.datasets.h5_dataset</h1><div class="highlight"><pre>
-<span></span><span data-line="1"><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Python classes for processing data stored in HDF5 format.</span>
+<span></span><span data-line="1"><span class="sa">r</span><span class="sd">"""Python classes for processing data stored in HDF5 format.</span>
 </span><span data-line="2">
 </span><span data-line="3"><span class="sd">Description</span>
 </span><span data-line="4"><span class="sd">------------</span>
@@ -156,8 +157,8 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="6"><span class="sd">HDF5 format benefits the dataset management for mlcg-tools when training/validation involves multiple molecules of vastly different lengths and when parallelization is used.</span>
 </span><span data-line="7"><span class="sd">The main features are:</span>
 </span><span data-line="8">
-</span><span data-line="9"><span class="sd">1. The internal structure mimics the hierarchy of the dataset itself, such that we don&#39;t have to replicate it on filesystem.</span>
-</span><span data-line="10"><span class="sd">2. we don&#39;t have to actively open all files in the process</span>
+</span><span data-line="9"><span class="sd">1. The internal structure mimics the hierarchy of the dataset itself, such that we don't have to replicate it on filesystem.</span>
+</span><span data-line="10"><span class="sd">2. we don't have to actively open all files in the process</span>
 </span><span data-line="11"><span class="sd">3. we can transparently load only the necessary part of the dataset to the memory</span>
 </span><span data-line="12">
 </span><span data-line="13"><span class="sd">This file contains the python data structures for handling the HDF5 file and its content, i.e., the coordinates, forces and embedding vectors for multiple CG molecules.</span>
@@ -166,16 +167,16 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="16"><span class="sd">.. code-block::</span>
 </span><span data-line="17">
 </span><span data-line="18"><span class="sd">        / (HDF-group, =&gt; `H5Dataset._h5_root`)</span>
-</span><span data-line="19"><span class="sd">        ├── OPEP (HDF-group =(part, according to &quot;partition_options&quot;)=&gt; `Metaset` in a `Partition`)</span>
+</span><span data-line="19"><span class="sd">        ├── OPEP (HDF-group =(part, according to "partition_options")=&gt; `Metaset` in a `Partition`)</span>
 </span><span data-line="20"><span class="sd">        │   ├── opep_0000 (HDF-group, =&gt; `MolData`)</span>
-</span><span data-line="21"><span class="sd">        │   │   ├── attrs (HDF-attributes of the molecule &quot;/OPEP/opep_0000&quot;)</span>
+</span><span data-line="21"><span class="sd">        │   │   ├── attrs (HDF-attributes of the molecule "/OPEP/opep_0000")</span>
 </span><span data-line="22"><span class="sd">        │   │   │   ├── cg_embeds (a 1-d numpy.int array)</span>
 </span><span data-line="23"><span class="sd">        │   │   │   ├── N_frames (int, number of frames = size of cg_coords on axis 0)</span>
 </span><span data-line="24"><span class="sd">        │   │   │   ... (optional, e.g., cg_top, cg_pdb, etc that corrsponds to the molecule)</span>
-</span><span data-line="25"><span class="sd">        │   │   ├── cg_coords (HDF-dataset of the molecule &quot;/OPEP/opep_0000&quot;, 3-d numpy.float32 array)</span>
-</span><span data-line="26"><span class="sd">        │   │   └── cg(_delta)_forces (HDF-dataset of the molecule &quot;/OPEP/opep_0000&quot;, 3-d numpy.float32 array)</span>
-</span><span data-line="27"><span class="sd">        │   ... (other molecules in &quot;/OPEP&quot;)</span>
-</span><span data-line="28"><span class="sd">        ├── CATH (HDF-group =&quot;partition_options&quot;=&gt; `Metaset` in a `Partition`)</span>
+</span><span data-line="25"><span class="sd">        │   │   ├── cg_coords (HDF-dataset of the molecule "/OPEP/opep_0000", 3-d numpy.float32 array)</span>
+</span><span data-line="26"><span class="sd">        │   │   └── cg(_delta)_forces (HDF-dataset of the molecule "/OPEP/opep_0000", 3-d numpy.float32 array)</span>
+</span><span data-line="27"><span class="sd">        │   ... (other molecules in "/OPEP")</span>
+</span><span data-line="28"><span class="sd">        ├── CATH (HDF-group ="partition_options"=&gt; `Metaset` in a `Partition`)</span>
 </span><span data-line="29"><span class="sd">        ...</span>
 </span><span data-line="30">
 </span><span data-line="31"><span class="sd">Basic bricks: ``MolData`` and ``MetaSet``</span>
@@ -191,8 +192,8 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="41"><span class="sd">The idea is that the molecules in a ``Metaset`` have similar numbers of CG beads, such that the sample requires similar processing time when passing through a neural network.</span>
 </span><span data-line="42"><span class="sd">When this rule is enforced, it will allow automatic balancing of batch composition during training and validation.</span>
 </span><span data-line="43">
-</span><span data-line="44"><span class="sd">* ``.create_from_hdf5_group``: initiate a Metaset by loading data from given HDF-group.mol_list, detailed_indices, hdf_key_mapping, stride and parallel can control which subset is loaded to the Metaset (details see the description of &quot;H5Dataset&quot;)</span>
-</span><span data-line="45"><span class="sd">* ``.trim_down_to``: drop frames of underlying for obtaining a subset with desired number of frames. The indices of frames to be dropped are controlled by a random number generator. When the parameter &quot;random_seed&quot; and the MolData order and number of frames are the same, the frames to be dropped will be reproducible.</span>
+</span><span data-line="44"><span class="sd">* ``.create_from_hdf5_group``: initiate a Metaset by loading data from given HDF-group.mol_list, detailed_indices, hdf_key_mapping, stride and parallel can control which subset is loaded to the Metaset (details see the description of "H5Dataset")</span>
+</span><span data-line="45"><span class="sd">* ``.trim_down_to``: drop frames of underlying for obtaining a subset with desired number of frames. The indices of frames to be dropped are controlled by a random number generator. When the parameter "random_seed" and the MolData order and number of frames are the same, the frames to be dropped will be reproducible.</span>
 </span><span data-line="46"><span class="sd">* ``len() (__len__)``: return total number of samples</span>
 </span><span data-line="47"><span class="sd">* ``[] (__get_item__)``: infer the molecule and get the corresponding frame according to the given unified index. Return value is grouped by an ``AtomicData`` object.</span>
 </span><span data-line="48">
@@ -211,83 +212,83 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="61"><span class="sd">``partition_options`` describe what partitions to create and what content to load into them. (Detailed description and examples are as followed.)</span>
 </span><span data-line="62"><span class="sd">``loading_options`` mainly deal with the HDF key mapping (which datasets/attributes corresponds to the coordinates, forces and embeddings) as well as (optionally) the information for correctly split the dataset in a parallel training/validation.</span>
 </span><span data-line="63">
-</span><span data-line="64"><span class="sd">An example &quot;partition_options&quot; (as a Python Mappable (e.g., dict)):</span>
+</span><span data-line="64"><span class="sd">An example "partition_options" (as a Python Mappable (e.g., dict)):</span>
 </span><span data-line="65">
 </span><span data-line="66"><span class="sd">.. code-block::</span>
 </span><span data-line="67">
 </span><span data-line="68"><span class="sd">        {</span>
-</span><span data-line="69"><span class="sd">                &quot;train&quot;: {</span>
-</span><span data-line="70"><span class="sd">                        &quot;metasets&quot;: {</span>
-</span><span data-line="71"><span class="sd">                                &quot;OPEP&quot;: {</span>
-</span><span data-line="72"><span class="sd">                                        &quot;molecules&quot;: [</span>
-</span><span data-line="73"><span class="sd">                                                &quot;opep_0000&quot;,</span>
-</span><span data-line="74"><span class="sd">                                                &quot;opep_0001&quot;,</span>
+</span><span data-line="69"><span class="sd">                "train": {</span>
+</span><span data-line="70"><span class="sd">                        "metasets": {</span>
+</span><span data-line="71"><span class="sd">                                "OPEP": {</span>
+</span><span data-line="72"><span class="sd">                                        "molecules": [</span>
+</span><span data-line="73"><span class="sd">                                                "opep_0000",</span>
+</span><span data-line="74"><span class="sd">                                                "opep_0001",</span>
 </span><span data-line="75"><span class="sd">                                                ...</span>
 </span><span data-line="76"><span class="sd">                                        ],</span>
-</span><span data-line="77"><span class="sd">                                        &quot;stride&quot;: 1, # optional, default 1</span>
-</span><span data-line="78"><span class="sd">                                        &quot;detailed_indices&quot;: {</span>
+</span><span data-line="77"><span class="sd">                                        "stride": 1, # optional, default 1</span>
+</span><span data-line="78"><span class="sd">                                        "detailed_indices": {</span>
 </span><span data-line="79"><span class="sd">                        # optional, providing the indices of frames to work with (before striding and splitting for parallel processes).</span>
 </span><span data-line="80"><span class="sd">                                                # optional,</span>
-</span><span data-line="81"><span class="sd">                            &quot;opep_0000&quot;:</span>
+</span><span data-line="81"><span class="sd">                            "opep_0000":</span>
 </span><span data-line="82"><span class="sd">                                val_ratio: 0.1</span>
 </span><span data-line="83"><span class="sd">                                test_ratio: 0.1</span>
 </span><span data-line="84"><span class="sd">                                seed: 12345</span>
-</span><span data-line="85"><span class="sd">                            &quot;opep_0001&quot;:</span>
+</span><span data-line="85"><span class="sd">                            "opep_0001":</span>
 </span><span data-line="86"><span class="sd">                                val_ratio: 0.1</span>
 </span><span data-line="87"><span class="sd">                                test_ratio: 0.1</span>
 </span><span data-line="88"><span class="sd">                                seed: 12345</span>
-</span><span data-line="89"><span class="sd">                            &quot;filename&quot;: ./splits</span>
+</span><span data-line="89"><span class="sd">                            "filename": ./splits</span>
 </span><span data-line="90">
 </span><span data-line="91"><span class="sd">                        # If detailed_indices are not provided for a given molecule, then it is equivalent to np.arange(N_frames)</span>
-</span><span data-line="92"><span class="sd">                                                    &quot;opep_0000&quot;: [1, 3, 5, 7, 9, ...],</span>
+</span><span data-line="92"><span class="sd">                                                    "opep_0000": [1, 3, 5, 7, 9, ...],</span>
 </span><span data-line="93">
 </span><span data-line="94">
 </span><span data-line="95"><span class="sd">                                        },</span>
 </span><span data-line="96"><span class="sd">                                },</span>
-</span><span data-line="97"><span class="sd">                                &quot;CATH&quot;: {</span>
-</span><span data-line="98"><span class="sd">                                        &quot;molecules&quot;: [</span>
-</span><span data-line="99"><span class="sd">                                                &quot;cath_1b43A02&quot;,</span>
+</span><span data-line="97"><span class="sd">                                "CATH": {</span>
+</span><span data-line="98"><span class="sd">                                        "molecules": [</span>
+</span><span data-line="99"><span class="sd">                                                "cath_1b43A02",</span>
 </span><span data-line="100"><span class="sd">                                                ...</span>
 </span><span data-line="101"><span class="sd">                                        ],</span>
-</span><span data-line="102"><span class="sd">                                        &quot;stride&quot;: 1, # optional</span>
-</span><span data-line="103"><span class="sd">                                        &quot;detailed_indices&quot;: {}, # optional</span>
+</span><span data-line="102"><span class="sd">                                        "stride": 1, # optional</span>
+</span><span data-line="103"><span class="sd">                                        "detailed_indices": {}, # optional</span>
 </span><span data-line="104"><span class="sd">                                }</span>
 </span><span data-line="105"><span class="sd">                        },</span>
-</span><span data-line="106"><span class="sd">                        &quot;batch_size&quot;: {</span>
+</span><span data-line="106"><span class="sd">                        "batch_size": {</span>
 </span><span data-line="107"><span class="sd">                                # each batch will contain 24 samples from</span>
 </span><span data-line="108"><span class="sd">                                # The two metasets will be trimmed down according to this ratio</span>
 </span><span data-line="109"><span class="sd">                                # so optimally it should be proportional to the ratio of numbers of frames in the metasets.</span>
-</span><span data-line="110"><span class="sd">                                &quot;OPEP&quot;: 24,</span>
-</span><span data-line="111"><span class="sd">                                &quot;CATH&quot;: 6,</span>
+</span><span data-line="110"><span class="sd">                                "OPEP": 24,</span>
+</span><span data-line="111"><span class="sd">                                "CATH": 6,</span>
 </span><span data-line="112"><span class="sd">                        },</span>
-</span><span data-line="113"><span class="sd">                        &quot;subsample_random_seed&quot;: 42, # optional, default 42. Random seed for trimming down the frames.</span>
-</span><span data-line="114"><span class="sd">                        &quot;max_epoch_samples&quot;: None, # optional, default None. For setting a desired dataset size.</span>
+</span><span data-line="113"><span class="sd">                        "subsample_random_seed": 42, # optional, default 42. Random seed for trimming down the frames.</span>
+</span><span data-line="114"><span class="sd">                        "max_epoch_samples": None, # optional, default None. For setting a desired dataset size.</span>
 </span><span data-line="115"><span class="sd">                        # Works by subsampling the dataset after it is loaded with the given stride.</span>
 </span><span data-line="116"><span class="sd">                },</span>
-</span><span data-line="117"><span class="sd">                &quot;val&quot;: { # similar</span>
+</span><span data-line="117"><span class="sd">                "val": { # similar</span>
 </span><span data-line="118"><span class="sd">                }</span>
 </span><span data-line="119"><span class="sd">        }</span>
 </span><span data-line="120">
-</span><span data-line="121"><span class="sd">An example &quot;loading_options&quot; (as a Python Mappable (e.g., dict)):</span>
+</span><span data-line="121"><span class="sd">An example "loading_options" (as a Python Mappable (e.g., dict)):</span>
 </span><span data-line="122">
 </span><span data-line="123"><span class="sd">.. code-block::</span>
 </span><span data-line="124">
 </span><span data-line="125"><span class="sd">        {</span>
-</span><span data-line="126"><span class="sd">                &quot;hdf_key_mapping&quot;: {</span>
+</span><span data-line="126"><span class="sd">                "hdf_key_mapping": {</span>
 </span><span data-line="127"><span class="sd">                        # keys for reading CG data from HDF5 groups</span>
-</span><span data-line="128"><span class="sd">                        &quot;embeds&quot;: &quot;attrs:cg_embeds&quot;,</span>
-</span><span data-line="129"><span class="sd">                        &quot;coords&quot;: &quot;cg_coords&quot;,</span>
-</span><span data-line="130"><span class="sd">                        &quot;forces&quot;: &quot;cg_delta_forces&quot;,</span>
+</span><span data-line="128"><span class="sd">                        "embeds": "attrs:cg_embeds",</span>
+</span><span data-line="129"><span class="sd">                        "coords": "cg_coords",</span>
+</span><span data-line="130"><span class="sd">                        "forces": "cg_delta_forces",</span>
 </span><span data-line="131"><span class="sd">                        # optional: (2, n_pairs) pairs removed from the model neighbor list,</span>
 </span><span data-line="132"><span class="sd">                        # unordered: (i, j) removes both directions, so storing each</span>
 </span><span data-line="133"><span class="sd">                        # pair once is enough. Requires the root attribute</span>
-</span><span data-line="134"><span class="sd">                        # `excluded_order` (&gt;= 2) in the HDF5 file, matching the model&#39;s one.</span>
-</span><span data-line="135"><span class="sd">                        &quot;excluded_pairs&quot;: &quot;attrs:excluded_pairs&quot;,</span>
+</span><span data-line="134"><span class="sd">                        # `excluded_order` (&gt;= 2) in the HDF5 file, matching the model's one.</span>
+</span><span data-line="135"><span class="sd">                        "excluded_pairs": "attrs:excluded_pairs",</span>
 </span><span data-line="136"><span class="sd">                },</span>
-</span><span data-line="137"><span class="sd">                &quot;parallel&quot;: { # optional, default rank=0 and world_size=1 (single process).</span>
+</span><span data-line="137"><span class="sd">                "parallel": { # optional, default rank=0 and world_size=1 (single process).</span>
 </span><span data-line="138"><span class="sd">                        # For split the dataset evenly and load only the necessary parts to each process in a parallelized train/val setup</span>
-</span><span data-line="139"><span class="sd">                        &quot;rank&quot;: 0, # which process is this</span>
-</span><span data-line="140"><span class="sd">                        &quot;world_size&quot;: 1, # how many processes are there</span>
+</span><span data-line="139"><span class="sd">                        "rank": 0, # which process is this</span>
+</span><span data-line="140"><span class="sd">                        "world_size": 1, # how many processes are there</span>
 </span><span data-line="141"><span class="sd">                }</span>
 </span><span data-line="142"><span class="sd">        }</span>
 </span><span data-line="143">
@@ -303,9 +304,9 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="153"><span class="sd">.. note::</span>
 </span><span data-line="154"><span class="sd">    Usually in a train-val split, each molecule goes to either the train or the test partition.</span>
 </span><span data-line="155"><span class="sd">    In some special cases (e.g., non-transferable training) one molecule can be part of both partitions.</span>
-</span><span data-line="156"><span class="sd">    In this situation, &quot;detailed_indices&quot; can be set to assign the corresponding frames to the desired partitions.</span>
+</span><span data-line="156"><span class="sd">    In this situation, "detailed_indices" can be set to assign the corresponding frames to the desired partitions.</span>
 </span><span data-line="157">
-</span><span data-line="158"><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="158"><span class="sd">"""</span>
 </span><span data-line="159">
 </span><span data-line="160"><span class="kn">import</span><span class="w"> </span><span class="nn">h5py</span>
 </span><span data-line="161"><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
@@ -323,7 +324,7 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="MolData">
 <a class="viewcode-back" href="../../../data/h5_datasets.html#mlcg.datasets.h5_dataset.MolData">[docs]</a>
 </span><span data-line="173"><span class="k">class</span><span class="w"> </span><span class="nc">MolData</span><span class="p">:</span>
-</span><span data-line="174"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Data-holder for coordinates, forces and embedding vector of a molecule, e.g., cath_1b43A02.</span>
+</span><span data-line="174"><span class="w">    </span><span class="sa">r</span><span class="sd">"""Data-holder for coordinates, forces and embedding vector of a molecule, e.g., cath_1b43A02.</span>
 </span><span data-line="175">
 </span><span data-line="176"><span class="sd">    Parameters</span>
 </span><span data-line="177"><span class="sd">    ----------</span>
@@ -339,7 +340,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="187"><span class="sd">        Unit cell of the atomic structure, of shape `(n_frames, 3, 3)`</span>
 </span><span data-line="188"><span class="sd">    pbc:</span>
 </span><span data-line="189"><span class="sd">        Periodic boundary conditions, of shape `(n_frames, 3)`</span>
-</span><span data-line="190"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="190"><span class="sd">    """</span>
 </span><span data-line="191">
 </span><span data-line="192">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
 </span><span data-line="193">        <span class="bp">self</span><span class="p">,</span>
@@ -375,8 +376,8 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="223">            <span class="p">)</span>
 </span><span data-line="224">            <span class="k">if</span> <span class="n">pairs</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">!=</span> <span class="mi">2</span> <span class="ow">or</span> <span class="n">pairs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
 </span><span data-line="225">                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-</span><span data-line="226">                    <span class="sa">f</span><span class="s2">&quot;excluded_pairs of molecule </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> must have shape &quot;</span>
-</span><span data-line="227">                    <span class="sa">f</span><span class="s2">&quot;(2, n_pairs), got </span><span class="si">{</span><span class="nb">tuple</span><span class="p">(</span><span class="n">pairs</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span data-line="226">                    <span class="sa">f</span><span class="s2">"excluded_pairs of molecule </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> must have shape "</span>
+</span><span data-line="227">                    <span class="sa">f</span><span class="s2">"(2, n_pairs), got </span><span class="si">{</span><span class="nb">tuple</span><span class="p">(</span><span class="n">pairs</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
 </span><span data-line="228">                <span class="p">)</span>
 </span><span data-line="229">            <span class="k">if</span> <span class="n">pairs</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
 </span><span data-line="230">                <span class="k">assert</span> <span class="n">pairs</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">pairs</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_embeds</span><span class="p">)</span>
@@ -423,7 +424,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="271">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pbc</span>
 </span><span data-line="272">
 </span><span data-line="273">    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="274">        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;MolData(name=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;, N_beads=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_beads</span><span class="si">}</span><span class="s2">, N_frames=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_frames</span><span class="si">}</span><span class="s2">)&quot;&quot;&quot;</span>
+</span><span data-line="274">        <span class="k">return</span> <span class="sa">f</span><span class="s2">"""MolData(name=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">", N_beads=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_beads</span><span class="si">}</span><span class="s2">, N_frames=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_frames</span><span class="si">}</span><span class="s2">)"""</span>
 </span><span data-line="275">
 </span><span data-line="276">    <span class="k">def</span><span class="w"> </span><span class="nf">sub_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="p">):</span>
 </span><span data-line="277">        <span class="bp">self</span><span class="o">.</span><span class="n">_coords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coords</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span>
@@ -437,14 +438,14 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="MetaSet">
 <a class="viewcode-back" href="../../../data/h5_datasets.html#mlcg.datasets.h5_dataset.MetaSet">[docs]</a>
 </span><span data-line="284"><span class="k">class</span><span class="w"> </span><span class="nc">MetaSet</span><span class="p">:</span>
-</span><span data-line="285"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Set of MolData instances for molecules with similar characterstics</span>
+</span><span data-line="285"><span class="w">    </span><span class="sa">r</span><span class="sd">"""Set of MolData instances for molecules with similar characterstics</span>
 </span><span data-line="286">
 </span><span data-line="287"><span class="sd">    Parameters</span>
 </span><span data-line="288"><span class="sd">    ----------</span>
 </span><span data-line="289"><span class="sd">    name:</span>
 </span><span data-line="290"><span class="sd">        Name of the metaset</span>
 </span><span data-line="291">
-</span><span data-line="292"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="292"><span class="sd">    """</span>
 </span><span data-line="293">
 </span><span data-line="294">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
 </span><span data-line="295">        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
@@ -458,10 +459,10 @@ data-aria-dark="Switch to auto color mode">
 <a class="viewcode-back" href="../../../data/h5_datasets.html#mlcg.datasets.h5_dataset.MetaSet.retrieve_hdf">[docs]</a>
 </span><span data-line="302">    <span class="nd">@staticmethod</span>
 </span><span data-line="303">    <span class="k">def</span><span class="w"> </span><span class="nf">retrieve_hdf</span><span class="p">(</span><span class="n">hdf_grp</span><span class="p">,</span> <span class="n">hdf_key</span><span class="p">):</span>
-</span><span data-line="304"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Unified hdf retriever for attributes and dataset.&quot;&quot;&quot;</span>
+</span><span data-line="304"><span class="w">        </span><span class="sd">"""Unified hdf retriever for attributes and dataset."""</span>
 </span><span data-line="305">
 </span><span data-line="306">        <span class="k">def</span><span class="w"> </span><span class="nf">is_attr</span><span class="p">(</span><span class="n">hdf_key</span><span class="p">):</span>
-</span><span data-line="307">            <span class="k">return</span> <span class="n">hdf_key</span><span class="p">[:</span><span class="mi">6</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;attrs:&quot;</span>
+</span><span data-line="307">            <span class="k">return</span> <span class="n">hdf_key</span><span class="p">[:</span><span class="mi">6</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"attrs:"</span>
 </span><span data-line="308">
 </span><span data-line="309">        <span class="k">if</span> <span class="n">is_attr</span><span class="p">(</span><span class="n">hdf_key</span><span class="p">):</span>
 </span><span data-line="310">            <span class="k">return</span> <span class="n">hdf_grp</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">hdf_key</span><span class="p">[</span><span class="mi">6</span><span class="p">:]]</span>
@@ -476,11 +477,11 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="316">        <span class="n">hdf5_group</span><span class="p">,</span>
 </span><span data-line="317">        <span class="n">mol_name</span><span class="p">,</span>
 </span><span data-line="318">    <span class="p">):</span>
-</span><span data-line="319"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="319"><span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
 </span><span data-line="320"><span class="sd">        Returns number of frames for each mol name</span>
-</span><span data-line="321"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="321"><span class="sd">        """</span>
 </span><span data-line="322">
-</span><span data-line="323">        <span class="k">return</span> <span class="n">MetaSet</span><span class="o">.</span><span class="n">retrieve_hdf</span><span class="p">(</span><span class="n">hdf5_group</span><span class="p">[</span><span class="n">mol_name</span><span class="p">],</span> <span class="s2">&quot;attrs:N_frames&quot;</span><span class="p">)</span></div>
+</span><span data-line="323">        <span class="k">return</span> <span class="n">MetaSet</span><span class="o">.</span><span class="n">retrieve_hdf</span><span class="p">(</span><span class="n">hdf5_group</span><span class="p">[</span><span class="n">mol_name</span><span class="p">],</span> <span class="s2">"attrs:N_frames"</span><span class="p">)</span></div>
 
 </span><span data-line="324">
 <div class="viewcode-block" id="MetaSet.create_from_hdf5_group">
@@ -492,27 +493,27 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="329">        <span class="n">detailed_indices</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 </span><span data-line="330">        <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
 </span><span data-line="331">        <span class="n">hdf_key_mapping</span><span class="o">=</span><span class="p">{</span>
-</span><span data-line="332">            <span class="s2">&quot;embeds&quot;</span><span class="p">:</span> <span class="s2">&quot;attrs:cg_embeds&quot;</span><span class="p">,</span>
-</span><span data-line="333">            <span class="s2">&quot;coords&quot;</span><span class="p">:</span> <span class="s2">&quot;cg_coords&quot;</span><span class="p">,</span>
-</span><span data-line="334">            <span class="s2">&quot;forces&quot;</span><span class="p">:</span> <span class="s2">&quot;cg_delta_forces&quot;</span><span class="p">,</span>
-</span><span data-line="335">            <span class="s2">&quot;weights&quot;</span><span class="p">:</span> <span class="s2">&quot;subsampling_weights&quot;</span><span class="p">,</span>
-</span><span data-line="336">            <span class="s2">&quot;cell&quot;</span><span class="p">:</span> <span class="s2">&quot;cell&quot;</span><span class="p">,</span>
-</span><span data-line="337">            <span class="s2">&quot;pbc&quot;</span><span class="p">:</span> <span class="s2">&quot;pbc&quot;</span><span class="p">,</span>
+</span><span data-line="332">            <span class="s2">"embeds"</span><span class="p">:</span> <span class="s2">"attrs:cg_embeds"</span><span class="p">,</span>
+</span><span data-line="333">            <span class="s2">"coords"</span><span class="p">:</span> <span class="s2">"cg_coords"</span><span class="p">,</span>
+</span><span data-line="334">            <span class="s2">"forces"</span><span class="p">:</span> <span class="s2">"cg_delta_forces"</span><span class="p">,</span>
+</span><span data-line="335">            <span class="s2">"weights"</span><span class="p">:</span> <span class="s2">"subsampling_weights"</span><span class="p">,</span>
+</span><span data-line="336">            <span class="s2">"cell"</span><span class="p">:</span> <span class="s2">"cell"</span><span class="p">,</span>
+</span><span data-line="337">            <span class="s2">"pbc"</span><span class="p">:</span> <span class="s2">"pbc"</span><span class="p">,</span>
 </span><span data-line="338">        <span class="p">},</span>
 </span><span data-line="339">        <span class="n">parallel</span><span class="o">=</span><span class="p">{</span>
-</span><span data-line="340">            <span class="s2">&quot;rank&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-</span><span data-line="341">            <span class="s2">&quot;world_size&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+</span><span data-line="340">            <span class="s2">"rank"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+</span><span data-line="341">            <span class="s2">"world_size"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
 </span><span data-line="342">        <span class="p">},</span>
 </span><span data-line="343">        <span class="n">subsample_using_weights</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
 </span><span data-line="344">    <span class="p">):</span>
-</span><span data-line="345"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;initiate a Metaset by loading data from given HDF-group.</span>
-</span><span data-line="346"><span class="sd">        mol_list, detailed_indices, hdf_key_mapping, stride and parallel can control which subset is loaded to the Metaset (details see the description of &quot;H5Dataset&quot;)</span>
+</span><span data-line="345"><span class="w">        </span><span class="sa">r</span><span class="sd">"""initiate a Metaset by loading data from given HDF-group.</span>
+</span><span data-line="346"><span class="sd">        mol_list, detailed_indices, hdf_key_mapping, stride and parallel can control which subset is loaded to the Metaset (details see the description of "H5Dataset")</span>
 </span><span data-line="347"><span class="sd">        Excluded pairs are loaded only if `excluded_pairs` is in hdf_key_mapping; their</span>
 </span><span data-line="348"><span class="sd">        `excluded_order` is read from the root attributes of the HDF5 file.</span>
-</span><span data-line="349"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="349"><span class="sd">        """</span>
 </span><span data-line="350">
 </span><span data-line="351">        <span class="k">def</span><span class="w"> </span><span class="nf">select_for_rank</span><span class="p">(</span><span class="n">length_or_indices</span><span class="p">):</span>
-</span><span data-line="352"><span class="w">            </span><span class="sd">&quot;&quot;&quot;Return a slicing for loading the necessary data from the HDF dataset.&quot;&quot;&quot;</span>
+</span><span data-line="352"><span class="w">            </span><span class="sd">"""Return a slicing for loading the necessary data from the HDF dataset."""</span>
 </span><span data-line="353">            <span class="kn">from</span><span class="w"> </span><span class="nn">numbers</span><span class="w"> </span><span class="kn">import</span> <span class="n">Integral</span>
 </span><span data-line="354">
 </span><span data-line="355">            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">length_or_indices</span><span class="p">,</span> <span class="n">Integral</span><span class="p">):</span>  <span class="c1"># int or np.int*</span>
@@ -521,16 +522,16 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="358">            <span class="k">else</span><span class="p">:</span>
 </span><span data-line="359">                <span class="n">indices</span> <span class="o">=</span> <span class="n">length_or_indices</span>
 </span><span data-line="360">                <span class="n">length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>
-</span><span data-line="361">            <span class="n">rank</span> <span class="o">=</span> <span class="n">parallel</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;rank&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-</span><span data-line="362">            <span class="n">world_size</span> <span class="o">=</span> <span class="n">parallel</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;world_size&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</span><span data-line="361">            <span class="n">rank</span> <span class="o">=</span> <span class="n">parallel</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"rank"</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+</span><span data-line="362">            <span class="n">world_size</span> <span class="o">=</span> <span class="n">parallel</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"world_size"</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 </span><span data-line="363">            <span class="k">if</span> <span class="n">rank</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">rank</span> <span class="o">&gt;=</span> <span class="n">world_size</span><span class="p">:</span>
 </span><span data-line="364">                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-</span><span data-line="365">                    <span class="s2">&quot;Rank </span><span class="si">%d</span><span class="s2"> is invalid given the world_size </span><span class="si">%d</span><span class="s2">.&quot;</span>
+</span><span data-line="365">                    <span class="s2">"Rank </span><span class="si">%d</span><span class="s2"> is invalid given the world_size </span><span class="si">%d</span><span class="s2">."</span>
 </span><span data-line="366">                    <span class="o">%</span> <span class="p">(</span><span class="n">rank</span><span class="p">,</span> <span class="n">world_size</span><span class="p">)</span>
 </span><span data-line="367">                <span class="p">)</span>
 </span><span data-line="368">            <span class="k">if</span> <span class="n">length</span> <span class="o">&lt;</span> <span class="n">world_size</span><span class="p">:</span>
 </span><span data-line="369">                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-</span><span data-line="370">                    <span class="s2">&quot;Length </span><span class="si">%d</span><span class="s2"> is too short given the world_size </span><span class="si">%d</span><span class="s2">.&quot;</span>
+</span><span data-line="370">                    <span class="s2">"Length </span><span class="si">%d</span><span class="s2"> is too short given the world_size </span><span class="si">%d</span><span class="s2">."</span>
 </span><span data-line="371">                    <span class="o">%</span> <span class="p">(</span><span class="n">length</span><span class="p">,</span> <span class="n">world_size</span><span class="p">)</span>
 </span><span data-line="372">                <span class="p">)</span>
 </span><span data-line="373">            <span class="n">residue</span> <span class="o">=</span> <span class="n">length</span> <span class="o">%</span> <span class="n">world_size</span>
@@ -539,29 +540,29 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="376">            <span class="k">else</span><span class="p">:</span>
 </span><span data-line="377">                <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">s_</span><span class="p">[(</span><span class="n">residue</span> <span class="o">+</span> <span class="n">rank</span><span class="p">)</span> <span class="p">::</span> <span class="p">(</span><span class="n">world_size</span> <span class="o">*</span> <span class="n">stride</span><span class="p">)]</span>
 </span><span data-line="378">
-</span><span data-line="379">        <span class="n">output</span> <span class="o">=</span> <span class="n">MetaSet</span><span class="p">(</span><span class="n">hdf5_group</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+</span><span data-line="379">        <span class="n">output</span> <span class="o">=</span> <span class="n">MetaSet</span><span class="p">(</span><span class="n">hdf5_group</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"/"</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
 </span><span data-line="380">        <span class="n">keys</span> <span class="o">=</span> <span class="n">hdf_key_mapping</span>
-</span><span data-line="381">        <span class="n">load_excluded_pairs</span> <span class="o">=</span> <span class="s2">&quot;excluded_pairs&quot;</span> <span class="ow">in</span> <span class="n">keys</span>
+</span><span data-line="381">        <span class="n">load_excluded_pairs</span> <span class="o">=</span> <span class="s2">"excluded_pairs"</span> <span class="ow">in</span> <span class="n">keys</span>
 </span><span data-line="382">        <span class="k">if</span> <span class="n">load_excluded_pairs</span><span class="p">:</span>
-</span><span data-line="383">            <span class="n">excluded_order</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">hdf5_group</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;excluded_order&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+</span><span data-line="383">            <span class="n">excluded_order</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">hdf5_group</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"excluded_order"</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
 </span><span data-line="384">            <span class="k">if</span> <span class="n">excluded_order</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
 </span><span data-line="385">                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-</span><span data-line="386">                    <span class="s2">&quot;`excluded_pairs` is in the hdf5 key mapping but the HDF5 file &quot;</span>
-</span><span data-line="387">                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">hdf5_group</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">filename</span><span class="si">}</span><span class="s2"> has no root attribute &quot;</span>
-</span><span data-line="388">                    <span class="s2">&quot;`excluded_order` &gt;= 2.&quot;</span>
+</span><span data-line="386">                    <span class="s2">"`excluded_pairs` is in the hdf5 key mapping but the HDF5 file "</span>
+</span><span data-line="387">                    <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">hdf5_group</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">filename</span><span class="si">}</span><span class="s2"> has no root attribute "</span>
+</span><span data-line="388">                    <span class="s2">"`excluded_order` &gt;= 2."</span>
 </span><span data-line="389">                <span class="p">)</span>
 </span><span data-line="390">            <span class="n">output</span><span class="o">.</span><span class="n">_excluded_order</span> <span class="o">=</span> <span class="n">excluded_order</span>
-</span><span data-line="391">        <span class="k">for</span> <span class="n">mol_name</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">mol_list</span><span class="p">,</span> <span class="n">leave</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;loading molecules&quot;</span><span class="p">):</span>
+</span><span data-line="391">        <span class="k">for</span> <span class="n">mol_name</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">mol_list</span><span class="p">,</span> <span class="n">leave</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"loading molecules"</span><span class="p">):</span>
 </span><span data-line="392">            <span class="k">if</span> <span class="n">mol_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">hdf5_group</span><span class="p">:</span>
 </span><span data-line="393">                <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
-</span><span data-line="394">                    <span class="s2">&quot;`mol_list` includes moleucle </span><span class="si">%s</span><span class="s2">,&quot;</span>
-</span><span data-line="395">                    <span class="s2">&quot; which is not in the h5 group at path </span><span class="si">%s</span><span class="s2">&quot;</span>
+</span><span data-line="394">                    <span class="s2">"`mol_list` includes moleucle </span><span class="si">%s</span><span class="s2">,"</span>
+</span><span data-line="395">                    <span class="s2">" which is not in the h5 group at path </span><span class="si">%s</span><span class="s2">"</span>
 </span><span data-line="396">                    <span class="o">%</span> <span class="p">(</span><span class="n">mol_name</span><span class="p">,</span> <span class="n">hdf5_group</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
 </span><span data-line="397">                <span class="p">)</span>
-</span><span data-line="398">            <span class="n">embeds</span> <span class="o">=</span> <span class="n">MetaSet</span><span class="o">.</span><span class="n">retrieve_hdf</span><span class="p">(</span><span class="n">hdf5_group</span><span class="p">[</span><span class="n">mol_name</span><span class="p">],</span> <span class="n">keys</span><span class="p">[</span><span class="s2">&quot;embeds&quot;</span><span class="p">])</span>
+</span><span data-line="398">            <span class="n">embeds</span> <span class="o">=</span> <span class="n">MetaSet</span><span class="o">.</span><span class="n">retrieve_hdf</span><span class="p">(</span><span class="n">hdf5_group</span><span class="p">[</span><span class="n">mol_name</span><span class="p">],</span> <span class="n">keys</span><span class="p">[</span><span class="s2">"embeds"</span><span class="p">])</span>
 </span><span data-line="399">            <span class="k">if</span> <span class="n">load_excluded_pairs</span><span class="p">:</span>
 </span><span data-line="400">                <span class="n">excluded_pairs</span> <span class="o">=</span> <span class="n">MetaSet</span><span class="o">.</span><span class="n">retrieve_hdf</span><span class="p">(</span>
-</span><span data-line="401">                    <span class="n">hdf5_group</span><span class="p">[</span><span class="n">mol_name</span><span class="p">],</span> <span class="n">keys</span><span class="p">[</span><span class="s2">&quot;excluded_pairs&quot;</span><span class="p">]</span>
+</span><span data-line="401">                    <span class="n">hdf5_group</span><span class="p">[</span><span class="n">mol_name</span><span class="p">],</span> <span class="n">keys</span><span class="p">[</span><span class="s2">"excluded_pairs"</span><span class="p">]</span>
 </span><span data-line="402">                <span class="p">)</span>
 </span><span data-line="403">            <span class="k">else</span><span class="p">:</span>
 </span><span data-line="404">                <span class="n">excluded_pairs</span> <span class="o">=</span> <span class="kc">None</span>
@@ -578,7 +579,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="415">                <span class="n">split_per_index</span> <span class="o">=</span> <span class="kc">True</span>
 </span><span data-line="416">            <span class="k">else</span><span class="p">:</span>
 </span><span data-line="417">                <span class="n">par_range</span> <span class="o">=</span> <span class="n">MetaSet</span><span class="o">.</span><span class="n">retrieve_hdf</span><span class="p">(</span>
-</span><span data-line="418">                    <span class="n">hdf5_group</span><span class="p">[</span><span class="n">mol_name</span><span class="p">],</span> <span class="s2">&quot;attrs:N_frames&quot;</span>
+</span><span data-line="418">                    <span class="n">hdf5_group</span><span class="p">[</span><span class="n">mol_name</span><span class="p">],</span> <span class="s2">"attrs:N_frames"</span>
 </span><span data-line="419">                <span class="p">)</span>
 </span><span data-line="420">                <span class="n">split_per_index</span> <span class="o">=</span> <span class="kc">False</span>
 </span><span data-line="421">            <span class="n">selection</span> <span class="o">=</span> <span class="n">select_for_rank</span><span class="p">(</span><span class="n">par_range</span><span class="p">)</span>
@@ -586,27 +587,27 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="423">            <span class="n">pbc</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># pbc is none by default</span>
 </span><span data-line="424">            <span class="k">if</span> <span class="ow">not</span> <span class="n">split_per_index</span><span class="p">:</span>
 </span><span data-line="425">                <span class="n">coords</span> <span class="o">=</span> <span class="n">MetaSet</span><span class="o">.</span><span class="n">retrieve_hdf</span><span class="p">(</span>
-</span><span data-line="426">                    <span class="n">hdf5_group</span><span class="p">[</span><span class="n">mol_name</span><span class="p">],</span> <span class="n">keys</span><span class="p">[</span><span class="s2">&quot;coords&quot;</span><span class="p">]</span>
+</span><span data-line="426">                    <span class="n">hdf5_group</span><span class="p">[</span><span class="n">mol_name</span><span class="p">],</span> <span class="n">keys</span><span class="p">[</span><span class="s2">"coords"</span><span class="p">]</span>
 </span><span data-line="427">                <span class="p">)[</span><span class="n">selection</span><span class="p">]</span>
 </span><span data-line="428">                <span class="n">forces</span> <span class="o">=</span> <span class="n">MetaSet</span><span class="o">.</span><span class="n">retrieve_hdf</span><span class="p">(</span>
-</span><span data-line="429">                    <span class="n">hdf5_group</span><span class="p">[</span><span class="n">mol_name</span><span class="p">],</span> <span class="n">keys</span><span class="p">[</span><span class="s2">&quot;forces&quot;</span><span class="p">]</span>
+</span><span data-line="429">                    <span class="n">hdf5_group</span><span class="p">[</span><span class="n">mol_name</span><span class="p">],</span> <span class="n">keys</span><span class="p">[</span><span class="s2">"forces"</span><span class="p">]</span>
 </span><span data-line="430">                <span class="p">)[</span><span class="n">selection</span><span class="p">]</span>
 </span><span data-line="431">                <span class="n">weights</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Weights are None by default</span>
 </span><span data-line="432">                <span class="k">if</span> <span class="n">subsample_using_weights</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
 </span><span data-line="433">                    <span class="n">weights</span> <span class="o">=</span> <span class="n">MetaSet</span><span class="o">.</span><span class="n">retrieve_hdf</span><span class="p">(</span>
-</span><span data-line="434">                        <span class="n">hdf5_group</span><span class="p">[</span><span class="n">mol_name</span><span class="p">],</span> <span class="n">keys</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span>
+</span><span data-line="434">                        <span class="n">hdf5_group</span><span class="p">[</span><span class="n">mol_name</span><span class="p">],</span> <span class="n">keys</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">]</span>
 </span><span data-line="435">                    <span class="p">)[</span><span class="n">selection</span><span class="p">]</span>
-</span><span data-line="436">                <span class="k">if</span> <span class="s2">&quot;cell&quot;</span> <span class="ow">in</span> <span class="n">hdf_key_mapping</span><span class="p">:</span>
+</span><span data-line="436">                <span class="k">if</span> <span class="s2">"cell"</span> <span class="ow">in</span> <span class="n">hdf_key_mapping</span><span class="p">:</span>
 </span><span data-line="437">                    <span class="k">try</span><span class="p">:</span>
 </span><span data-line="438">                        <span class="n">cell</span> <span class="o">=</span> <span class="n">MetaSet</span><span class="o">.</span><span class="n">retrieve_hdf</span><span class="p">(</span>
-</span><span data-line="439">                            <span class="n">hdf5_group</span><span class="p">[</span><span class="n">mol_name</span><span class="p">],</span> <span class="n">keys</span><span class="p">[</span><span class="s2">&quot;cell&quot;</span><span class="p">]</span>
+</span><span data-line="439">                            <span class="n">hdf5_group</span><span class="p">[</span><span class="n">mol_name</span><span class="p">],</span> <span class="n">keys</span><span class="p">[</span><span class="s2">"cell"</span><span class="p">]</span>
 </span><span data-line="440">                        <span class="p">)[</span><span class="n">selection</span><span class="p">]</span>
 </span><span data-line="441">                    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
 </span><span data-line="442">                        <span class="k">pass</span>
-</span><span data-line="443">                <span class="k">if</span> <span class="s2">&quot;pbc&quot;</span> <span class="ow">in</span> <span class="n">hdf_key_mapping</span><span class="p">:</span>
+</span><span data-line="443">                <span class="k">if</span> <span class="s2">"pbc"</span> <span class="ow">in</span> <span class="n">hdf_key_mapping</span><span class="p">:</span>
 </span><span data-line="444">                    <span class="k">try</span><span class="p">:</span>
 </span><span data-line="445">                        <span class="n">pbc</span> <span class="o">=</span> <span class="n">MetaSet</span><span class="o">.</span><span class="n">retrieve_hdf</span><span class="p">(</span>
-</span><span data-line="446">                            <span class="n">hdf5_group</span><span class="p">[</span><span class="n">mol_name</span><span class="p">],</span> <span class="n">keys</span><span class="p">[</span><span class="s2">&quot;pbc&quot;</span><span class="p">]</span>
+</span><span data-line="446">                            <span class="n">hdf5_group</span><span class="p">[</span><span class="n">mol_name</span><span class="p">],</span> <span class="n">keys</span><span class="p">[</span><span class="s2">"pbc"</span><span class="p">]</span>
 </span><span data-line="447">                        <span class="p">)[</span><span class="n">selection</span><span class="p">]</span>
 </span><span data-line="448">                    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
 </span><span data-line="449">                        <span class="k">pass</span>
@@ -614,27 +615,27 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="451">                <span class="c1"># For large dataset it is usually quicker to first load everything</span>
 </span><span data-line="452">                <span class="c1"># and then perform indexing in memory</span>
 </span><span data-line="453">                <span class="n">coords</span> <span class="o">=</span> <span class="n">MetaSet</span><span class="o">.</span><span class="n">retrieve_hdf</span><span class="p">(</span>
-</span><span data-line="454">                    <span class="n">hdf5_group</span><span class="p">[</span><span class="n">mol_name</span><span class="p">],</span> <span class="n">keys</span><span class="p">[</span><span class="s2">&quot;coords&quot;</span><span class="p">]</span>
+</span><span data-line="454">                    <span class="n">hdf5_group</span><span class="p">[</span><span class="n">mol_name</span><span class="p">],</span> <span class="n">keys</span><span class="p">[</span><span class="s2">"coords"</span><span class="p">]</span>
 </span><span data-line="455">                <span class="p">)[:][</span><span class="n">selection</span><span class="p">]</span>
 </span><span data-line="456">                <span class="n">forces</span> <span class="o">=</span> <span class="n">MetaSet</span><span class="o">.</span><span class="n">retrieve_hdf</span><span class="p">(</span>
-</span><span data-line="457">                    <span class="n">hdf5_group</span><span class="p">[</span><span class="n">mol_name</span><span class="p">],</span> <span class="n">keys</span><span class="p">[</span><span class="s2">&quot;forces&quot;</span><span class="p">]</span>
+</span><span data-line="457">                    <span class="n">hdf5_group</span><span class="p">[</span><span class="n">mol_name</span><span class="p">],</span> <span class="n">keys</span><span class="p">[</span><span class="s2">"forces"</span><span class="p">]</span>
 </span><span data-line="458">                <span class="p">)[:][</span><span class="n">selection</span><span class="p">]</span>
 </span><span data-line="459">                <span class="n">weights</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Weights are None by default</span>
 </span><span data-line="460">                <span class="k">if</span> <span class="n">subsample_using_weights</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
 </span><span data-line="461">                    <span class="n">weights</span> <span class="o">=</span> <span class="n">MetaSet</span><span class="o">.</span><span class="n">retrieve_hdf</span><span class="p">(</span>
-</span><span data-line="462">                        <span class="n">hdf5_group</span><span class="p">[</span><span class="n">mol_name</span><span class="p">],</span> <span class="n">keys</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span>
+</span><span data-line="462">                        <span class="n">hdf5_group</span><span class="p">[</span><span class="n">mol_name</span><span class="p">],</span> <span class="n">keys</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">]</span>
 </span><span data-line="463">                    <span class="p">)[:][</span><span class="n">selection</span><span class="p">]</span>
-</span><span data-line="464">                <span class="k">if</span> <span class="s2">&quot;cell&quot;</span> <span class="ow">in</span> <span class="n">hdf_key_mapping</span><span class="p">:</span>
+</span><span data-line="464">                <span class="k">if</span> <span class="s2">"cell"</span> <span class="ow">in</span> <span class="n">hdf_key_mapping</span><span class="p">:</span>
 </span><span data-line="465">                    <span class="k">try</span><span class="p">:</span>
 </span><span data-line="466">                        <span class="n">cell</span> <span class="o">=</span> <span class="n">MetaSet</span><span class="o">.</span><span class="n">retrieve_hdf</span><span class="p">(</span>
-</span><span data-line="467">                            <span class="n">hdf5_group</span><span class="p">[</span><span class="n">mol_name</span><span class="p">],</span> <span class="n">keys</span><span class="p">[</span><span class="s2">&quot;cell&quot;</span><span class="p">]</span>
+</span><span data-line="467">                            <span class="n">hdf5_group</span><span class="p">[</span><span class="n">mol_name</span><span class="p">],</span> <span class="n">keys</span><span class="p">[</span><span class="s2">"cell"</span><span class="p">]</span>
 </span><span data-line="468">                        <span class="p">)[:][</span><span class="n">selection</span><span class="p">]</span>
 </span><span data-line="469">                    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
 </span><span data-line="470">                        <span class="k">pass</span>
-</span><span data-line="471">                <span class="k">if</span> <span class="s2">&quot;pbc&quot;</span> <span class="ow">in</span> <span class="n">hdf_key_mapping</span><span class="p">:</span>
+</span><span data-line="471">                <span class="k">if</span> <span class="s2">"pbc"</span> <span class="ow">in</span> <span class="n">hdf_key_mapping</span><span class="p">:</span>
 </span><span data-line="472">                    <span class="k">try</span><span class="p">:</span>
 </span><span data-line="473">                        <span class="n">pbc</span> <span class="o">=</span> <span class="n">MetaSet</span><span class="o">.</span><span class="n">retrieve_hdf</span><span class="p">(</span>
-</span><span data-line="474">                            <span class="n">hdf5_group</span><span class="p">[</span><span class="n">mol_name</span><span class="p">],</span> <span class="n">keys</span><span class="p">[</span><span class="s2">&quot;pbc&quot;</span><span class="p">]</span>
+</span><span data-line="474">                            <span class="n">hdf5_group</span><span class="p">[</span><span class="n">mol_name</span><span class="p">],</span> <span class="n">keys</span><span class="p">[</span><span class="s2">"pbc"</span><span class="p">]</span>
 </span><span data-line="475">                        <span class="p">)[:][</span><span class="n">selection</span><span class="p">]</span>
 </span><span data-line="476">                    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
 </span><span data-line="477">                        <span class="k">pass</span>
@@ -661,18 +662,18 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="MetaSet.trim_down_to">
 <a class="viewcode-back" href="../../../data/h5_datasets.html#mlcg.datasets.h5_dataset.MetaSet.trim_down_to">[docs]</a>
 </span><span data-line="497">    <span class="k">def</span><span class="w"> </span><span class="nf">trim_down_to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_n_samples</span><span class="p">,</span> <span class="n">random_seed</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-</span><span data-line="498"><span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Trimming all datasets randomly to reach the target number of samples.</span>
+</span><span data-line="498"><span class="w">        </span><span class="sa">r</span><span class="sd">"""Trimming all datasets randomly to reach the target number of samples.</span>
 </span><span data-line="499"><span class="sd">        MolData attributes of the MetaSet are permanently subsampled by this</span>
 </span><span data-line="500"><span class="sd">        method.</span>
-</span><span data-line="501"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="501"><span class="sd">        """</span>
 </span><span data-line="502">        <span class="k">if</span> <span class="n">target_n_samples</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_total_samples</span> <span class="ow">or</span> <span class="n">target_n_samples</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-</span><span data-line="503">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Target number of samples invalid&quot;</span><span class="p">)</span>
+</span><span data-line="503">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Target number of samples invalid"</span><span class="p">)</span>
 </span><span data-line="504">        <span class="k">elif</span> <span class="n">target_n_samples</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_total_samples</span><span class="p">:</span>
 </span><span data-line="505">            <span class="k">return</span>
 </span><span data-line="506">        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
 </span><span data-line="507">            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-</span><span data-line="508">                <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Metaset </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: subsampling to </span><span class="si">{</span><span class="n">target_n_samples</span><span class="si">}</span><span class="s2"> samples with random seed </span><span class="si">{</span><span class="n">random_seed</span><span class="si">}</span><span class="s2">. &quot;</span>
-</span><span data-line="509">                <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_total_samples</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">target_n_samples</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_total_samples</span><span class="si">}</span><span class="s2">) samples will be removed.&quot;</span>
+</span><span data-line="508">                <span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Metaset </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: subsampling to </span><span class="si">{</span><span class="n">target_n_samples</span><span class="si">}</span><span class="s2"> samples with random seed </span><span class="si">{</span><span class="n">random_seed</span><span class="si">}</span><span class="s2">. "</span>
+</span><span data-line="509">                <span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_total_samples</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">target_n_samples</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_total_samples</span><span class="si">}</span><span class="s2">) samples will be removed."</span>
 </span><span data-line="510">            <span class="p">)</span>
 </span><span data-line="511">        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">random_seed</span><span class="p">)</span>
 </span><span data-line="512">        <span class="c1"># get the indices of samples to keep</span>
@@ -705,7 +706,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="538">            <span class="c1">## If weights exist for all</span>
 </span><span data-line="539">            <span class="bp">self</span><span class="o">.</span><span class="n">_make_cumulative_weights</span><span class="p">()</span>
 </span><span data-line="540">            <span class="nb">print</span><span class="p">(</span>
-</span><span data-line="541">                <span class="sa">f</span><span class="s2">&quot;cumulative weights have shape </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_cumulative_weights</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span data-line="541">                <span class="sa">f</span><span class="s2">"cumulative weights have shape </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_cumulative_weights</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span>
 </span><span data-line="542">            <span class="p">)</span>
 </span><span data-line="543">
 </span><span data-line="544">    <span class="nd">@property</span>
@@ -722,7 +723,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="555">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_mol_samples</span>
 </span><span data-line="556">
 </span><span data-line="557">    <span class="k">def</span><span class="w"> </span><span class="nf">_weights_exist</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="558"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Checks if _weights is an attribute for all molecules in dataset&quot;&quot;&quot;</span>
+</span><span data-line="558"><span class="w">        </span><span class="sd">"""Checks if _weights is an attribute for all molecules in dataset"""</span>
 </span><span data-line="559">        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">([(</span><span class="n">mol_d</span><span class="o">.</span><span class="n">_weights</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">)</span> <span class="k">for</span> <span class="n">mol_d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mol_dataset</span><span class="p">])</span>
 </span><span data-line="560">
 </span><span data-line="561">    <span class="k">def</span><span class="w"> </span><span class="nf">_make_cumulative_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -733,7 +734,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="566">        <span class="c1"># Check if length of _cumulative_weights is correct</span>
 </span><span data-line="567">        <span class="k">assert</span> <span class="p">(</span>
 </span><span data-line="568">            <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cumulative_weights</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_total_samples</span>
-</span><span data-line="569">        <span class="p">),</span> <span class="s2">&quot;Number of weights does not match number of samples&quot;</span>
+</span><span data-line="569">        <span class="p">),</span> <span class="s2">"Number of weights does not match number of samples"</span>
 </span><span data-line="570">        <span class="c1"># Set all inf weights to max value</span>
 </span><span data-line="571">        <span class="bp">self</span><span class="o">.</span><span class="n">_cumulative_weights</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_cumulative_weights</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span>
 </span><span data-line="572">            <span class="bp">self</span><span class="o">.</span><span class="n">_cumulative_weights</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_cumulative_weights</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">]</span>
@@ -741,7 +742,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="574">        <span class="c1"># Check max and min values of weights array</span>
 </span><span data-line="575">        <span class="k">assert</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cumulative_weights</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
 </span><span data-line="576">            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cumulative_weights</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span>
-</span><span data-line="577">        <span class="p">),</span> <span class="s2">&quot;Smallest weight value is infinite OR some weight is negative&quot;</span>
+</span><span data-line="577">        <span class="p">),</span> <span class="s2">"Smallest weight value is infinite OR some weight is negative"</span>
 </span><span data-line="578">
 </span><span data-line="579">    <span class="k">def</span><span class="w"> </span><span class="nf">get_mol_data_by_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mol_name</span><span class="p">):</span>
 </span><span data-line="580">        <span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mol_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">mol_name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
@@ -763,9 +764,9 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="596">
 </span><span data-line="597">        <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{}</span>
 </span><span data-line="598">        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mol_dataset</span><span class="p">[</span><span class="n">dataset_id</span><span class="p">]</span><span class="o">.</span><span class="n">excluded_pairs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="599">            <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;excluded_pairs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-</span><span data-line="600">                <span class="s2">&quot;excluded_order&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_excluded_order</span><span class="p">,</span>
-</span><span data-line="601">                <span class="s2">&quot;index_mapping&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mol_dataset</span><span class="p">[</span><span class="n">dataset_id</span><span class="p">]</span><span class="o">.</span><span class="n">excluded_pairs</span><span class="p">,</span>
+</span><span data-line="599">            <span class="n">kwargs</span><span class="p">[</span><span class="s2">"excluded_pairs"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+</span><span data-line="600">                <span class="s2">"excluded_order"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_excluded_order</span><span class="p">,</span>
+</span><span data-line="601">                <span class="s2">"index_mapping"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mol_dataset</span><span class="p">[</span><span class="n">dataset_id</span><span class="p">]</span><span class="o">.</span><span class="n">excluded_pairs</span><span class="p">,</span>
 </span><span data-line="602">            <span class="p">}</span>
 </span><span data-line="603">        <span class="k">return</span> <span class="n">AtomicData</span><span class="o">.</span><span class="n">from_points</span><span class="p">(</span>
 </span><span data-line="604">            <span class="n">pos</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_mol_dataset</span><span class="p">[</span><span class="n">dataset_id</span><span class="p">]</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="n">data_id</span><span class="p">],</span>
@@ -781,9 +782,9 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="614">        <span class="k">if</span> <span class="n">idx</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
 </span><span data-line="615">            <span class="n">idx</span> <span class="o">+=</span> <span class="n">full_length</span>
 </span><span data-line="616">        <span class="k">if</span> <span class="n">idx</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">idx</span> <span class="o">&gt;=</span> <span class="n">full_length</span><span class="p">:</span>
-</span><span data-line="617">            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s2">&quot;Given idx is outside of the dataset.&quot;</span><span class="p">)</span>
+</span><span data-line="617">            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s2">"Given idx is outside of the dataset."</span><span class="p">)</span>
 </span><span data-line="618">        <span class="c1"># find in which dataset it resides</span>
-</span><span data-line="619">        <span class="n">dataset_id</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cumulate_indices</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s2">&quot;right&quot;</span><span class="p">)</span>
+</span><span data-line="619">        <span class="n">dataset_id</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cumulate_indices</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s2">"right"</span><span class="p">)</span>
 </span><span data-line="620">        <span class="c1"># locate the position within the dataset</span>
 </span><span data-line="621">        <span class="k">if</span> <span class="n">dataset_id</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
 </span><span data-line="622">            <span class="n">datapt_id</span> <span class="o">=</span> <span class="n">idx</span>
@@ -795,20 +796,20 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="628">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_total_samples</span>
 </span><span data-line="629">
 </span><span data-line="630">    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="631">        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Metaset with </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_mol</span><span class="si">}</span><span class="s2"> molecules and </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_total_samples</span><span class="si">}</span><span class="s2"> samples&quot;</span></div>
+</span><span data-line="631">        <span class="k">return</span> <span class="sa">f</span><span class="s2">"Metaset with </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_mol</span><span class="si">}</span><span class="s2"> molecules and </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_total_samples</span><span class="si">}</span><span class="s2"> samples"</span></div>
 
 </span><span data-line="632">
 </span><span data-line="633">
 <div class="viewcode-block" id="Partition">
 <a class="viewcode-back" href="../../../data/h5_datasets.html#mlcg.datasets.h5_dataset.Partition">[docs]</a>
 </span><span data-line="634"><span class="k">class</span><span class="w"> </span><span class="nc">Partition</span><span class="p">:</span>
-</span><span data-line="635"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Contain several metasets for a certain purpose, e.g., training.</span>
+</span><span data-line="635"><span class="w">    </span><span class="sa">r</span><span class="sd">"""Contain several metasets for a certain purpose, e.g., training.</span>
 </span><span data-line="636">
 </span><span data-line="637"><span class="sd">    Parameters</span>
 </span><span data-line="638"><span class="sd">    ----------</span>
 </span><span data-line="639"><span class="sd">    name:</span>
 </span><span data-line="640"><span class="sd">        name of the partition</span>
-</span><span data-line="641"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="641"><span class="sd">    """</span>
 </span><span data-line="642">
 </span><span data-line="643">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 </span><span data-line="644">        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
@@ -820,11 +821,11 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="650">        <span class="bp">self</span><span class="o">.</span><span class="n">_sample_ready</span> <span class="o">=</span> <span class="kc">False</span>
 </span><span data-line="651">
 </span><span data-line="652">    <span class="k">def</span><span class="w"> </span><span class="nf">get_metaset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">metaset_name</span><span class="p">):</span>
-</span><span data-line="653">        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample_ready</span><span class="p">,</span> <span class="s2">&quot;Sampling setup needs to be done first.&quot;</span>
+</span><span data-line="653">        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample_ready</span><span class="p">,</span> <span class="s2">"Sampling setup needs to be done first."</span>
 </span><span data-line="654">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metasets</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">metaset_name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 </span><span data-line="655">
 </span><span data-line="656">    <span class="k">def</span><span class="w"> </span><span class="nf">get_metasets</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="657">        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample_ready</span><span class="p">,</span> <span class="s2">&quot;Sampling setup needs to be done first.&quot;</span>
+</span><span data-line="657">        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample_ready</span><span class="p">,</span> <span class="s2">"Sampling setup needs to be done first."</span>
 </span><span data-line="658">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metasets</span>
 </span><span data-line="659">
 <div class="viewcode-block" id="Partition.sampling_setup">
@@ -836,14 +837,14 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="664">        <span class="n">random_seed</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
 </span><span data-line="665">        <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
 </span><span data-line="666">    <span class="p">):</span>
-</span><span data-line="667"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the number of batches available for an epoch according to</span>
+</span><span data-line="667"><span class="w">        </span><span class="sd">"""Calculate the number of batches available for an epoch according to</span>
 </span><span data-line="668"><span class="sd">        the batch size for each metaset and optionally the maximum number of</span>
 </span><span data-line="669"><span class="sd">        samples in an epoch. The molecular dataset will be trimmed accordingly.</span>
-</span><span data-line="670"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="670"><span class="sd">        """</span>
 </span><span data-line="671">        <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">batch_sizes</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_metasets</span><span class="p">):</span>
 </span><span data-line="672">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-</span><span data-line="673">                <span class="s2">&quot;Input `batch_sizes` shall have exactly the same keys&quot;</span>
-</span><span data-line="674">                <span class="s2">&quot; as the metasets in this H5Dataset: &quot;</span>
+</span><span data-line="673">                <span class="s2">"Input `batch_sizes` shall have exactly the same keys"</span>
+</span><span data-line="674">                <span class="s2">" as the metasets in this H5Dataset: "</span>
 </span><span data-line="675">                <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_metasets</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
 </span><span data-line="676">            <span class="p">)</span>
 </span><span data-line="677">        <span class="bp">self</span><span class="o">.</span><span class="n">_batch_sizes</span> <span class="o">=</span> <span class="n">batch_sizes</span>
@@ -864,7 +865,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="692">                <span class="n">trim_down_due_to_max_epoch_samples</span> <span class="o">=</span> <span class="kc">True</span>
 </span><span data-line="693">                <span class="n">n_batches</span> <span class="o">=</span> <span class="n">max_epoch_batch</span>
 </span><span data-line="694">        <span class="n">return_info</span> <span class="o">=</span> <span class="p">{</span>
-</span><span data-line="695">            <span class="s2">&quot;total_size&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_metasets</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metasets</span><span class="p">}</span>
+</span><span data-line="695">            <span class="s2">"total_size"</span><span class="p">:</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_metasets</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metasets</span><span class="p">}</span>
 </span><span data-line="696">        <span class="p">}</span>
 </span><span data-line="697">        <span class="k">if</span> <span class="n">trim_down_is_needed</span><span class="p">:</span>
 </span><span data-line="698">            <span class="c1"># trimming down the number of samples in each metaset accordingly</span>
@@ -875,26 +876,26 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="703">                    <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="c1"># since we already warned above</span>
 </span><span data-line="704">                <span class="p">)</span>
 </span><span data-line="705">            <span class="c1"># warn about the sampling</span>
-</span><span data-line="706">            <span class="n">warn_message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Partition `</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">`: The size of samples in given Metasets will be reduced via subsampling &quot;</span>
+</span><span data-line="706">            <span class="n">warn_message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Partition `</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">`: The size of samples in given Metasets will be reduced via subsampling "</span>
 </span><span data-line="707">            <span class="k">if</span> <span class="n">trim_down_due_to_max_epoch_samples</span><span class="p">:</span>
-</span><span data-line="708">                <span class="n">warn_message</span> <span class="o">+=</span> <span class="s2">&quot;according to the `max_epoch_samples`.</span><span class="se">\n</span><span class="s2">&quot;</span>
+</span><span data-line="708">                <span class="n">warn_message</span> <span class="o">+=</span> <span class="s2">"according to the `max_epoch_samples`.</span><span class="se">\n</span><span class="s2">"</span>
 </span><span data-line="709">            <span class="k">else</span><span class="p">:</span>
-</span><span data-line="710">                <span class="n">warn_message</span> <span class="o">+=</span> <span class="s2">&quot;according to desired batch composition.</span><span class="se">\n</span><span class="s2">&quot;</span>
+</span><span data-line="710">                <span class="n">warn_message</span> <span class="o">+=</span> <span class="s2">"according to desired batch composition.</span><span class="se">\n</span><span class="s2">"</span>
 </span><span data-line="711">            <span class="n">batch_size_message</span> <span class="o">=</span> <span class="p">(</span>
-</span><span data-line="712">                <span class="s2">&quot;:&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_metasets</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-</span><span data-line="713">                <span class="o">+</span> <span class="s2">&quot; = &quot;</span>
-</span><span data-line="714">                <span class="o">+</span> <span class="s2">&quot;:&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">batch_sizes</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metasets</span><span class="p">])</span>
+</span><span data-line="712">                <span class="s2">":"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_metasets</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+</span><span data-line="713">                <span class="o">+</span> <span class="s2">" = "</span>
+</span><span data-line="714">                <span class="o">+</span> <span class="s2">":"</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">batch_sizes</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metasets</span><span class="p">])</span>
 </span><span data-line="715">            <span class="p">)</span>
 </span><span data-line="716">            <span class="n">warn_message</span> <span class="o">+=</span> <span class="p">(</span>
-</span><span data-line="717">                <span class="sa">f</span><span class="s2">&quot;This partition now contains </span><span class="si">{</span><span class="n">n_batches</span><span class="si">}</span><span class="s2"> mini batches, &quot;</span>
+</span><span data-line="717">                <span class="sa">f</span><span class="s2">"This partition now contains </span><span class="si">{</span><span class="n">n_batches</span><span class="si">}</span><span class="s2"> mini batches, "</span>
 </span><span data-line="718">            <span class="p">)</span>
-</span><span data-line="719">            <span class="n">warn_message</span> <span class="o">+=</span> <span class="s2">&quot;each containing &quot;</span> <span class="o">+</span> <span class="n">batch_size_message</span> <span class="o">+</span> <span class="s2">&quot;.</span><span class="se">\n</span><span class="s2">&quot;</span>
-</span><span data-line="720">            <span class="n">warn_message</span> <span class="o">+=</span> <span class="s2">&quot;Note for reproducibility: the subsampling (trimming down) of each Metasets is controlled by the molecule entries and frames, the `stride`, the ratio of `batch_sizes` as well as the `subsample_random_seed`.&quot;</span>
+</span><span data-line="719">            <span class="n">warn_message</span> <span class="o">+=</span> <span class="s2">"each containing "</span> <span class="o">+</span> <span class="n">batch_size_message</span> <span class="o">+</span> <span class="s2">".</span><span class="se">\n</span><span class="s2">"</span>
+</span><span data-line="720">            <span class="n">warn_message</span> <span class="o">+=</span> <span class="s2">"Note for reproducibility: the subsampling (trimming down) of each Metasets is controlled by the molecule entries and frames, the `stride`, the ratio of `batch_sizes` as well as the `subsample_random_seed`."</span>
 </span><span data-line="721">            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
 </span><span data-line="722">                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">warn_message</span><span class="p">)</span>
 </span><span data-line="723">        <span class="bp">self</span><span class="o">.</span><span class="n">_sample_ready</span> <span class="o">=</span> <span class="kc">True</span>
-</span><span data-line="724">        <span class="n">return_info</span><span class="p">[</span><span class="s2">&quot;is_trimmed&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">trim_down_is_needed</span>
-</span><span data-line="725">        <span class="n">return_info</span><span class="p">[</span><span class="s2">&quot;current_size&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+</span><span data-line="724">        <span class="n">return_info</span><span class="p">[</span><span class="s2">"is_trimmed"</span><span class="p">]</span> <span class="o">=</span> <span class="n">trim_down_is_needed</span>
+</span><span data-line="725">        <span class="n">return_info</span><span class="p">[</span><span class="s2">"current_size"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
 </span><span data-line="726">            <span class="n">k</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_metasets</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metasets</span>
 </span><span data-line="727">        <span class="p">}</span>
 </span><span data-line="728">        <span class="k">return</span> <span class="n">return_info</span></div>
@@ -902,7 +903,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="729">
 </span><span data-line="730">    <span class="nd">@property</span>
 </span><span data-line="731">    <span class="k">def</span><span class="w"> </span><span class="nf">batch_sizes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="732">        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample_ready</span><span class="p">,</span> <span class="s2">&quot;Sampling setup needs to be done first.&quot;</span>
+</span><span data-line="732">        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample_ready</span><span class="p">,</span> <span class="s2">"Sampling setup needs to be done first."</span>
 </span><span data-line="733">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_batch_sizes</span>
 </span><span data-line="734">
 </span><span data-line="735">    <span class="nd">@property</span>
@@ -910,9 +911,9 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="737">        <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metasets</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">n_total_samples</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metasets</span><span class="p">}</span>
 </span><span data-line="738">
 </span><span data-line="739">    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="740">        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Partition `</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">` with Metasets:</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+</span><span data-line="740">        <span class="k">return</span> <span class="sa">f</span><span class="s2">"Partition `</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">` with Metasets:</span><span class="se">\n</span><span class="s2">"</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
 </span><span data-line="741">            <span class="p">[</span>
-</span><span data-line="742">                <span class="sa">f</span><span class="s1">&#39;- &quot;</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s1">&quot;: </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s1"> samples&#39;</span>
+</span><span data-line="742">                <span class="sa">f</span><span class="s1">'- "</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s1">": </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s1"> samples'</span>
 </span><span data-line="743">                <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_sizes</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
 </span><span data-line="744">            <span class="p">]</span>
 </span><span data-line="745">        <span class="p">)</span></div>
@@ -922,7 +923,7 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="H5Dataset">
 <a class="viewcode-back" href="../../../data/h5_datasets.html#mlcg.datasets.h5_dataset.H5Dataset">[docs]</a>
 </span><span data-line="748"><span class="k">class</span><span class="w"> </span><span class="nc">H5Dataset</span><span class="p">:</span>
-</span><span data-line="749"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;The top-level class for handling multiple datasets contained in a HDF5 file.</span>
+</span><span data-line="749"><span class="w">    </span><span class="sa">r</span><span class="sd">"""The top-level class for handling multiple datasets contained in a HDF5 file.</span>
 </span><span data-line="750">
 </span><span data-line="751"><span class="sd">    Parameters</span>
 </span><span data-line="752"><span class="sd">    ----------</span>
@@ -933,7 +934,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="757"><span class="sd">    loading_options:</span>
 </span><span data-line="758"><span class="sd">        Dictionary of options specifying how hdf5 attrs/datasets are named</span>
 </span><span data-line="759"><span class="sd">        within hd5 groups</span>
-</span><span data-line="760"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="760"><span class="sd">    """</span>
 </span><span data-line="761">
 </span><span data-line="762">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
 </span><span data-line="763">        <span class="bp">self</span><span class="p">,</span>
@@ -943,7 +944,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="767">        <span class="n">subsample_using_weights</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 </span><span data-line="768">    <span class="p">):</span>
 </span><span data-line="769">        <span class="bp">self</span><span class="o">.</span><span class="n">_h5_path</span> <span class="o">=</span> <span class="n">h5_file_path</span>
-</span><span data-line="770">        <span class="bp">self</span><span class="o">.</span><span class="n">_h5_root</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">h5_file_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span>
+</span><span data-line="770">        <span class="bp">self</span><span class="o">.</span><span class="n">_h5_root</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">h5_file_path</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span>
 </span><span data-line="771">        <span class="bp">self</span><span class="o">.</span><span class="n">_metaset_entries</span> <span class="o">=</span> <span class="p">{}</span>
 </span><span data-line="772">        <span class="c1"># ^ dict containing all metasets in the HDF5 file</span>
 </span><span data-line="773">        <span class="bp">self</span><span class="o">.</span><span class="n">_partitions</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># dict containing the configured metasets</span>
@@ -960,12 +961,12 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="784">    <span class="k">def</span><span class="w"> </span><span class="nf">_create_partitions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partition_options</span><span class="p">,</span> <span class="n">loading_options</span><span class="p">):</span>
 </span><span data-line="785">        <span class="c1">## TODO: sanity check of the given dictionary</span>
 </span><span data-line="786">
-</span><span data-line="787">        <span class="n">hdf_key_mapping</span> <span class="o">=</span> <span class="n">loading_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;hdf_key_mapping&quot;</span><span class="p">)</span>
+</span><span data-line="787">        <span class="n">hdf_key_mapping</span> <span class="o">=</span> <span class="n">loading_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"hdf_key_mapping"</span><span class="p">)</span>
 </span><span data-line="788">        <span class="n">parallel</span> <span class="o">=</span> <span class="n">loading_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-</span><span data-line="789">            <span class="s2">&quot;parallel&quot;</span><span class="p">,</span>
+</span><span data-line="789">            <span class="s2">"parallel"</span><span class="p">,</span>
 </span><span data-line="790">            <span class="p">{</span>
-</span><span data-line="791">                <span class="s2">&quot;rank&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-</span><span data-line="792">                <span class="s2">&quot;world_size&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+</span><span data-line="791">                <span class="s2">"rank"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+</span><span data-line="792">                <span class="s2">"world_size"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
 </span><span data-line="793">            <span class="p">},</span>
 </span><span data-line="794">        <span class="p">)</span>  <span class="c1"># if no parallel entry, then target for single process</span>
 </span><span data-line="795">        <span class="k">for</span> <span class="n">part_name</span> <span class="ow">in</span> <span class="n">partition_options</span><span class="p">:</span>
@@ -973,16 +974,16 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="797">            <span class="n">part</span> <span class="o">=</span> <span class="n">Partition</span><span class="p">(</span><span class="n">part_name</span><span class="p">)</span>
 </span><span data-line="798">            <span class="n">part_info</span> <span class="o">=</span> <span class="n">partition_options</span><span class="p">[</span><span class="n">part_name</span><span class="p">]</span>
 </span><span data-line="799">            <span class="c1"># TODO: check option consistency</span>
-</span><span data-line="800">            <span class="k">for</span> <span class="n">metaset_name</span> <span class="ow">in</span> <span class="n">part_info</span><span class="p">[</span><span class="s2">&quot;metasets&quot;</span><span class="p">]:</span>
+</span><span data-line="800">            <span class="k">for</span> <span class="n">metaset_name</span> <span class="ow">in</span> <span class="n">part_info</span><span class="p">[</span><span class="s2">"metasets"</span><span class="p">]:</span>
 </span><span data-line="801">                <span class="k">if</span> <span class="n">metaset_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metaset_entries</span><span class="p">:</span>
 </span><span data-line="802">                    <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
-</span><span data-line="803">                        <span class="sa">f</span><span class="s2">&quot;`partition_options` refer to metaset </span><span class="si">{</span><span class="n">part</span><span class="si">}</span><span class="s2">,&quot;</span>
-</span><span data-line="804">                        <span class="sa">f</span><span class="s2">&quot; which is not in the h5 dataset at path </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_h5_path</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span data-line="803">                        <span class="sa">f</span><span class="s2">"`partition_options` refer to metaset </span><span class="si">{</span><span class="n">part</span><span class="si">}</span><span class="s2">,"</span>
+</span><span data-line="804">                        <span class="sa">f</span><span class="s2">" which is not in the h5 dataset at path </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_h5_path</span><span class="si">}</span><span class="s2">"</span>
 </span><span data-line="805">                    <span class="p">)</span>
-</span><span data-line="806">                <span class="n">mol_list</span> <span class="o">=</span> <span class="n">part_info</span><span class="p">[</span><span class="s2">&quot;metasets&quot;</span><span class="p">][</span><span class="n">metaset_name</span><span class="p">][</span><span class="s2">&quot;molecules&quot;</span><span class="p">]</span>
-</span><span data-line="807">                <span class="n">input_detailed_indices</span> <span class="o">=</span> <span class="n">part_info</span><span class="p">[</span><span class="s2">&quot;metasets&quot;</span><span class="p">][</span>
+</span><span data-line="806">                <span class="n">mol_list</span> <span class="o">=</span> <span class="n">part_info</span><span class="p">[</span><span class="s2">"metasets"</span><span class="p">][</span><span class="n">metaset_name</span><span class="p">][</span><span class="s2">"molecules"</span><span class="p">]</span>
+</span><span data-line="807">                <span class="n">input_detailed_indices</span> <span class="o">=</span> <span class="n">part_info</span><span class="p">[</span><span class="s2">"metasets"</span><span class="p">][</span>
 </span><span data-line="808">                    <span class="n">metaset_name</span>
-</span><span data-line="809">                <span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;detailed_indices&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</span><span data-line="809">                <span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"detailed_indices"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 </span><span data-line="810">
 </span><span data-line="811">                <span class="k">if</span> <span class="n">input_detailed_indices</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
 </span><span data-line="812">                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_detailed_indices</span><span class="p">,</span> <span class="n">Dict</span><span class="p">):</span>
@@ -1009,7 +1010,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="833">                <span class="k">else</span><span class="p">:</span>
 </span><span data-line="834">                    <span class="n">detailed_indices</span> <span class="o">=</span> <span class="kc">None</span>
 </span><span data-line="835">
-</span><span data-line="836">                <span class="n">stride</span> <span class="o">=</span> <span class="n">part_info</span><span class="p">[</span><span class="s2">&quot;metasets&quot;</span><span class="p">][</span><span class="n">metaset_name</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;stride&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</span><span data-line="836">                <span class="n">stride</span> <span class="o">=</span> <span class="n">part_info</span><span class="p">[</span><span class="s2">"metasets"</span><span class="p">][</span><span class="n">metaset_name</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"stride"</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 </span><span data-line="837">                <span class="n">part</span><span class="o">.</span><span class="n">add_metaset</span><span class="p">(</span>
 </span><span data-line="838">                    <span class="n">metaset_name</span><span class="p">,</span>
 </span><span data-line="839">                    <span class="n">MetaSet</span><span class="o">.</span><span class="n">create_from_hdf5_group</span><span class="p">(</span>
@@ -1023,18 +1024,18 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="847">                    <span class="p">),</span>
 </span><span data-line="848">                <span class="p">)</span>
 </span><span data-line="849">            <span class="c1">## trim the metasets to fit the need of sampling</span>
-</span><span data-line="850">            <span class="n">random_seed</span> <span class="o">=</span> <span class="n">part_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;subsample_random_seed&quot;</span><span class="p">,</span> <span class="mi">42</span><span class="p">)</span>
-</span><span data-line="851">            <span class="n">max_epoch_samples</span> <span class="o">=</span> <span class="n">part_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;max_epoch_samples&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-</span><span data-line="852">            <span class="k">if</span> <span class="n">max_epoch_samples</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">parallel</span><span class="p">[</span><span class="s2">&quot;world_size&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+</span><span data-line="850">            <span class="n">random_seed</span> <span class="o">=</span> <span class="n">part_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"subsample_random_seed"</span><span class="p">,</span> <span class="mi">42</span><span class="p">)</span>
+</span><span data-line="851">            <span class="n">max_epoch_samples</span> <span class="o">=</span> <span class="n">part_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"max_epoch_samples"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</span><span data-line="852">            <span class="k">if</span> <span class="n">max_epoch_samples</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">parallel</span><span class="p">[</span><span class="s2">"world_size"</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
 </span><span data-line="853">                <span class="n">max_epoch_samples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
-</span><span data-line="854">                    <span class="n">max_epoch_samples</span> <span class="o">//</span> <span class="n">parallel</span><span class="p">[</span><span class="s2">&quot;world_size&quot;</span><span class="p">]</span>
+</span><span data-line="854">                    <span class="n">max_epoch_samples</span> <span class="o">//</span> <span class="n">parallel</span><span class="p">[</span><span class="s2">"world_size"</span><span class="p">]</span>
 </span><span data-line="855">                <span class="p">)</span>
 </span><span data-line="856">            <span class="bp">self</span><span class="o">.</span><span class="n">_partition_sample_info</span><span class="p">[</span><span class="n">part_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">part</span><span class="o">.</span><span class="n">sampling_setup</span><span class="p">(</span>
-</span><span data-line="857">                <span class="n">part_info</span><span class="p">[</span><span class="s2">&quot;batch_sizes&quot;</span><span class="p">],</span>
+</span><span data-line="857">                <span class="n">part_info</span><span class="p">[</span><span class="s2">"batch_sizes"</span><span class="p">],</span>
 </span><span data-line="858">                <span class="n">max_epoch_samples</span><span class="p">,</span>
 </span><span data-line="859">                <span class="n">random_seed</span><span class="o">=</span><span class="n">random_seed</span><span class="p">,</span>
 </span><span data-line="860">                <span class="n">verbose</span><span class="o">=</span><span class="p">(</span>
-</span><span data-line="861">                    <span class="n">parallel</span><span class="p">[</span><span class="s2">&quot;rank&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span>
+</span><span data-line="861">                    <span class="n">parallel</span><span class="p">[</span><span class="s2">"rank"</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span>
 </span><span data-line="862">                <span class="p">),</span>  <span class="c1"># show trimming info only on rank 0</span>
 </span><span data-line="863">            <span class="p">)</span>
 </span><span data-line="864">            <span class="bp">self</span><span class="o">.</span><span class="n">_partitions</span><span class="p">[</span><span class="n">part_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">part</span>
@@ -1055,8 +1056,8 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="879">
 </span><span data-line="880">    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 </span><span data-line="881">        <span class="k">return</span> <span class="p">(</span>
-</span><span data-line="882">            <span class="s1">&#39;H5Dataset:</span><span class="se">\n</span><span class="s1">Path: &quot;</span><span class="si">%s</span><span class="s1">&quot;</span><span class="se">\n</span><span class="s1">Partitions:</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_h5_path</span>
-</span><span data-line="883">            <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;- &quot;&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">part</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;&quot;&#39;</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_partitions</span><span class="p">])</span>
+</span><span data-line="882">            <span class="s1">'H5Dataset:</span><span class="se">\n</span><span class="s1">Path: "</span><span class="si">%s</span><span class="s1">"</span><span class="se">\n</span><span class="s1">Partitions:</span><span class="se">\n</span><span class="s1">'</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_h5_path</span>
+</span><span data-line="883">            <span class="o">+</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">'- "'</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">part</span><span class="p">)</span> <span class="o">+</span> <span class="s1">'"'</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_partitions</span><span class="p">])</span>
 </span><span data-line="884">        <span class="p">)</span>
 </span><span data-line="885">
 <div class="viewcode-block" id="H5Dataset.training_validation_splitting">
@@ -1068,7 +1069,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="890">        <span class="n">metaset_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
 </span><span data-line="891">        <span class="n">mol_list</span><span class="p">:</span> <span class="n">List</span><span class="p">,</span>
 </span><span data-line="892">    <span class="p">):</span>
-</span><span data-line="893"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="893"><span class="w">        </span><span class="sd">"""</span>
 </span><span data-line="894"><span class="sd">        Option to split molecule in metaset frame by frame into training or validation</span>
 </span><span data-line="895"><span class="sd">        Inputs:</span>
 </span><span data-line="896"><span class="sd">            input_detailed_indices --</span>
@@ -1085,11 +1086,11 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="907"><span class="sd">        Outputs:</span>
 </span><span data-line="908"><span class="sd">            self._detailed_indices[part_name][metaset_name] --</span>
 </span><span data-line="909"><span class="sd">                pass back indices according to queried metaset and partition</span>
-</span><span data-line="910"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="910"><span class="sd">        """</span>
 </span><span data-line="911">        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_detailed_indices</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
 </span><span data-line="912">            <span class="c1"># Split into training and validation at first instance,</span>
 </span><span data-line="913">            <span class="c1">#   write out if specified in yaml and save for later reference</span>
-</span><span data-line="914">            <span class="k">for</span> <span class="n">partition_key</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">]:</span>
+</span><span data-line="914">            <span class="k">for</span> <span class="n">partition_key</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"train"</span><span class="p">,</span> <span class="s2">"val"</span><span class="p">,</span> <span class="s2">"test"</span><span class="p">]:</span>
 </span><span data-line="915">                <span class="bp">self</span><span class="o">.</span><span class="n">_detailed_indices</span><span class="p">[</span><span class="n">partition_key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 </span><span data-line="916">                <span class="bp">self</span><span class="o">.</span><span class="n">_detailed_indices</span><span class="p">[</span><span class="n">partition_key</span><span class="p">][</span><span class="n">metaset_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 </span><span data-line="917">
@@ -1098,17 +1099,17 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="920">
 </span><span data-line="921">                <span class="k">if</span> <span class="p">(</span>
 </span><span data-line="922">                    <span class="n">mol_name</span>
-</span><span data-line="923">                    <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_detailed_indices</span><span class="p">[</span><span class="s2">&quot;train&quot;</span><span class="p">][</span><span class="n">metaset_name</span><span class="p">]</span>
+</span><span data-line="923">                    <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_detailed_indices</span><span class="p">[</span><span class="s2">"train"</span><span class="p">][</span><span class="n">metaset_name</span><span class="p">]</span>
 </span><span data-line="924">                <span class="p">):</span>
 </span><span data-line="925">                    <span class="n">required_keys</span> <span class="o">=</span> <span class="p">[</span>
-</span><span data-line="926">                        <span class="s2">&quot;val_ratio&quot;</span><span class="p">,</span>
-</span><span data-line="927">                        <span class="s2">&quot;test_ratio&quot;</span><span class="p">,</span>
-</span><span data-line="928">                        <span class="s2">&quot;seed&quot;</span><span class="p">,</span>
+</span><span data-line="926">                        <span class="s2">"val_ratio"</span><span class="p">,</span>
+</span><span data-line="927">                        <span class="s2">"test_ratio"</span><span class="p">,</span>
+</span><span data-line="928">                        <span class="s2">"seed"</span><span class="p">,</span>
 </span><span data-line="929">                    <span class="p">]</span>
 </span><span data-line="930">                    <span class="k">for</span> <span class="n">required_key</span> <span class="ow">in</span> <span class="n">required_keys</span><span class="p">:</span>
 </span><span data-line="931">                        <span class="k">assert</span> <span class="p">(</span>
 </span><span data-line="932">                            <span class="n">required_key</span> <span class="ow">in</span> <span class="n">input_detailed_indices</span><span class="p">[</span><span class="n">mol_name</span><span class="p">]</span>
-</span><span data-line="933">                        <span class="p">),</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> not found in yaml file&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">required_key</span><span class="p">)</span>
+</span><span data-line="933">                        <span class="p">),</span> <span class="s2">"</span><span class="si">{}</span><span class="s2"> not found in yaml file"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">required_key</span><span class="p">)</span>
 </span><span data-line="934">                    <span class="n">dataset_len</span> <span class="o">=</span> <span class="n">MetaSet</span><span class="o">.</span><span class="n">grab_n_frames</span><span class="p">(</span>
 </span><span data-line="935">                        <span class="bp">self</span><span class="o">.</span><span class="n">_metaset_entries</span><span class="p">[</span><span class="n">metaset_name</span><span class="p">],</span>
 </span><span data-line="936">                        <span class="n">mol_name</span><span class="p">,</span>
@@ -1118,23 +1119,23 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="940">                    <span class="p">)</span>
 </span><span data-line="941">                    <span class="c1">## make_splits returns as tensor but can only index with numpy</span>
 </span><span data-line="942">                    <span class="c1">##   inside create_hdf5_group</span>
-</span><span data-line="943">                    <span class="bp">self</span><span class="o">.</span><span class="n">_detailed_indices</span><span class="p">[</span><span class="s2">&quot;train&quot;</span><span class="p">][</span><span class="n">metaset_name</span><span class="p">][</span>
+</span><span data-line="943">                    <span class="bp">self</span><span class="o">.</span><span class="n">_detailed_indices</span><span class="p">[</span><span class="s2">"train"</span><span class="p">][</span><span class="n">metaset_name</span><span class="p">][</span>
 </span><span data-line="944">                        <span class="n">mol_name</span>
 </span><span data-line="945">                    <span class="p">]</span> <span class="o">=</span> <span class="n">idx_train</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
-</span><span data-line="946">                    <span class="bp">self</span><span class="o">.</span><span class="n">_detailed_indices</span><span class="p">[</span><span class="s2">&quot;val&quot;</span><span class="p">][</span><span class="n">metaset_name</span><span class="p">][</span>
+</span><span data-line="946">                    <span class="bp">self</span><span class="o">.</span><span class="n">_detailed_indices</span><span class="p">[</span><span class="s2">"val"</span><span class="p">][</span><span class="n">metaset_name</span><span class="p">][</span>
 </span><span data-line="947">                        <span class="n">mol_name</span>
 </span><span data-line="948">                    <span class="p">]</span> <span class="o">=</span> <span class="n">idx_val</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
-</span><span data-line="949">                    <span class="bp">self</span><span class="o">.</span><span class="n">_detailed_indices</span><span class="p">[</span><span class="s2">&quot;test&quot;</span><span class="p">][</span><span class="n">metaset_name</span><span class="p">][</span>
+</span><span data-line="949">                    <span class="bp">self</span><span class="o">.</span><span class="n">_detailed_indices</span><span class="p">[</span><span class="s2">"test"</span><span class="p">][</span><span class="n">metaset_name</span><span class="p">][</span>
 </span><span data-line="950">                        <span class="n">mol_name</span>
 </span><span data-line="951">                    <span class="p">]</span> <span class="o">=</span> <span class="n">idx_test</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
-</span><span data-line="952">            <span class="k">if</span> <span class="s2">&quot;filename&quot;</span> <span class="ow">in</span> <span class="n">input_detailed_indices</span><span class="p">:</span>
+</span><span data-line="952">            <span class="k">if</span> <span class="s2">"filename"</span> <span class="ow">in</span> <span class="n">input_detailed_indices</span><span class="p">:</span>
 </span><span data-line="953">                <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span>
-</span><span data-line="954">                    <span class="n">input_detailed_indices</span><span class="p">[</span><span class="s2">&quot;filename&quot;</span><span class="p">],</span>
+</span><span data-line="954">                    <span class="n">input_detailed_indices</span><span class="p">[</span><span class="s2">"filename"</span><span class="p">],</span>
 </span><span data-line="955">                    <span class="bp">self</span><span class="o">.</span><span class="n">_detailed_indices</span><span class="p">,</span>
 </span><span data-line="956">                <span class="p">)</span>
 </span><span data-line="957">            <span class="k">assert</span> <span class="p">(</span>
 </span><span data-line="958">                <span class="n">part_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_detailed_indices</span>
-</span><span data-line="959">            <span class="p">),</span> <span class="s2">&quot;Parition naming not train, val, or test. Check partition_options yaml file&quot;</span>
+</span><span data-line="959">            <span class="p">),</span> <span class="s2">"Parition naming not train, val, or test. Check partition_options yaml file"</span>
 </span><span data-line="960">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_detailed_indices</span><span class="p">[</span><span class="n">part_name</span><span class="p">][</span><span class="n">metaset_name</span><span class="p">]</span></div>
 </div>
 
@@ -1143,7 +1144,7 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="H5SimpleDataset">
 <a class="viewcode-back" href="../../../data/h5_datasets.html#mlcg.datasets.h5_dataset.H5SimpleDataset">[docs]</a>
 </span><span data-line="963"><span class="k">class</span><span class="w"> </span><span class="nc">H5SimpleDataset</span><span class="p">(</span><span class="n">H5Dataset</span><span class="p">):</span>
-</span><span data-line="964"><span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;The top-level class for handling a single dataset contained in a HDF5 file.</span>
+</span><span data-line="964"><span class="w">    </span><span class="sa">r</span><span class="sd">"""The top-level class for handling a single dataset contained in a HDF5 file.</span>
 </span><span data-line="965"><span class="sd">    Will only load from one single type of molecules (i.e., one Metaset), and do</span>
 </span><span data-line="966"><span class="sd">    not support partition splits.</span>
 </span><span data-line="967"><span class="sd">    Use .get_dataloader for obtaining a dataloader for PyTorch training, etc.</span>
@@ -1167,7 +1168,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="985"><span class="sd">        Key mapping for reading the data from h5 file.</span>
 </span><span data-line="986"><span class="sd">    parallel: default for single process</span>
 </span><span data-line="987"><span class="sd">        For DDP parallelism. Details see the head of this file.</span>
-</span><span data-line="988"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="988"><span class="sd">    """</span>
 </span><span data-line="989">
 </span><span data-line="990">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
 </span><span data-line="991">        <span class="bp">self</span><span class="p">,</span>
@@ -1177,19 +1178,19 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="995">        <span class="n">metaset_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span data-line="996">        <span class="n">mol_list</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span data-line="997">        <span class="n">hdf_key_mapping</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-</span><span data-line="998">            <span class="s2">&quot;embeds&quot;</span><span class="p">:</span> <span class="s2">&quot;attrs:cg_embeds&quot;</span><span class="p">,</span>
-</span><span data-line="999">            <span class="s2">&quot;coords&quot;</span><span class="p">:</span> <span class="s2">&quot;cg_coords&quot;</span><span class="p">,</span>
-</span><span data-line="1000">            <span class="s2">&quot;forces&quot;</span><span class="p">:</span> <span class="s2">&quot;cg_delta_forces&quot;</span><span class="p">,</span>
+</span><span data-line="998">            <span class="s2">"embeds"</span><span class="p">:</span> <span class="s2">"attrs:cg_embeds"</span><span class="p">,</span>
+</span><span data-line="999">            <span class="s2">"coords"</span><span class="p">:</span> <span class="s2">"cg_coords"</span><span class="p">,</span>
+</span><span data-line="1000">            <span class="s2">"forces"</span><span class="p">:</span> <span class="s2">"cg_delta_forces"</span><span class="p">,</span>
 </span><span data-line="1001">        <span class="p">},</span>
-</span><span data-line="1002">        <span class="n">parallel</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;rank&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;world_size&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+</span><span data-line="1002">        <span class="n">parallel</span><span class="o">=</span><span class="p">{</span><span class="s2">"rank"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"world_size"</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
 </span><span data-line="1003">        <span class="n">subsample_using_weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 </span><span data-line="1004">    <span class="p">):</span>
 </span><span data-line="1005">        <span class="c1"># input checking</span>
 </span><span data-line="1006">        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">stride</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">stride</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-</span><span data-line="1007">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Parameter `stride` is invalid.&quot;</span><span class="p">)</span>
+</span><span data-line="1007">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Parameter `stride` is invalid."</span><span class="p">)</span>
 </span><span data-line="1008">        <span class="c1"># load the h5 file</span>
 </span><span data-line="1009">        <span class="bp">self</span><span class="o">.</span><span class="n">_h5_path</span> <span class="o">=</span> <span class="n">h5_file_path</span>
-</span><span data-line="1010">        <span class="bp">self</span><span class="o">.</span><span class="n">_h5_root</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">h5_file_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span>
+</span><span data-line="1010">        <span class="bp">self</span><span class="o">.</span><span class="n">_h5_root</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">h5_file_path</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span>
 </span><span data-line="1011">        <span class="bp">self</span><span class="o">.</span><span class="n">_metaset_entries</span> <span class="o">=</span> <span class="p">{}</span>
 </span><span data-line="1012">        <span class="c1"># ^ dict containing all metasets in the HDF5 file</span>
 </span><span data-line="1013">        <span class="bp">self</span><span class="o">.</span><span class="n">_partitions</span> <span class="o">=</span> <span class="kc">None</span>
@@ -1200,19 +1201,19 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="1018">        <span class="k">if</span> <span class="n">metaset_name</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
 </span><span data-line="1019">            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_metasets</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
 </span><span data-line="1020">                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-</span><span data-line="1021">                    <span class="sa">f</span><span class="s2">&quot;Given h5 dataset contains multiple entries:</span><span class="se">\n</span><span class="s2">&quot;</span>
-</span><span data-line="1022">                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">all_metasets</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-</span><span data-line="1023">                    <span class="sa">f</span><span class="s2">&quot;Please select one via `metaset_name` or use &quot;</span>
-</span><span data-line="1024">                    <span class="sa">f</span><span class="s2">&quot;H5Dataset instead.&quot;</span>
+</span><span data-line="1021">                    <span class="sa">f</span><span class="s2">"Given h5 dataset contains multiple entries:</span><span class="se">\n</span><span class="s2">"</span>
+</span><span data-line="1022">                    <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">all_metasets</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+</span><span data-line="1023">                    <span class="sa">f</span><span class="s2">"Please select one via `metaset_name` or use "</span>
+</span><span data-line="1024">                    <span class="sa">f</span><span class="s2">"H5Dataset instead."</span>
 </span><span data-line="1025">                <span class="p">)</span>
 </span><span data-line="1026">            <span class="k">else</span><span class="p">:</span>
 </span><span data-line="1027">                <span class="n">metaset_name</span> <span class="o">=</span> <span class="n">all_metasets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 </span><span data-line="1028">        <span class="k">else</span><span class="p">:</span>
 </span><span data-line="1029">            <span class="k">if</span> <span class="n">metaset_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">all_metasets</span><span class="p">:</span>
 </span><span data-line="1030">                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-</span><span data-line="1031">                    <span class="sa">f</span><span class="s2">&quot;Metaset </span><span class="si">{</span><span class="n">metaset_name</span><span class="si">}</span><span class="s2"> not found in given &quot;</span>
-</span><span data-line="1032">                    <span class="sa">f</span><span class="s2">&quot;h5 dataset. The following are available:</span><span class="se">\n</span><span class="s2">&quot;</span>
-</span><span data-line="1033">                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">all_metasets</span><span class="si">}</span><span class="s2">.&quot;</span>
+</span><span data-line="1031">                    <span class="sa">f</span><span class="s2">"Metaset </span><span class="si">{</span><span class="n">metaset_name</span><span class="si">}</span><span class="s2"> not found in given "</span>
+</span><span data-line="1032">                    <span class="sa">f</span><span class="s2">"h5 dataset. The following are available:</span><span class="se">\n</span><span class="s2">"</span>
+</span><span data-line="1033">                    <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">all_metasets</span><span class="si">}</span><span class="s2">."</span>
 </span><span data-line="1034">                <span class="p">)</span>
 </span><span data-line="1035">        <span class="bp">self</span><span class="o">.</span><span class="n">metaset_name</span> <span class="o">=</span> <span class="n">metaset_name</span>
 </span><span data-line="1036">        <span class="k">if</span> <span class="n">mol_list</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -1241,14 +1242,14 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="1057">        <span class="n">shuffle</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 </span><span data-line="1058">        <span class="n">pin_memory</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 </span><span data-line="1059">    <span class="p">):</span>
-</span><span data-line="1060"><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="1060"><span class="w">        </span><span class="sd">"""</span>
 </span><span data-line="1061"><span class="sd">        Parameters:</span>
 </span><span data-line="1062"><span class="sd">        -----------</span>
 </span><span data-line="1063"><span class="sd">        batch_size:</span>
 </span><span data-line="1064"><span class="sd">        Size of the batches to draw from the metaset</span>
 </span><span data-line="1065"><span class="sd">        collater_fn, shuffle, pin_memory:</span>
 </span><span data-line="1066"><span class="sd">        See PyTorch documentations for dataloader options.</span>
-</span><span data-line="1067"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="1067"><span class="sd">        """</span>
 </span><span data-line="1068">        <span class="n">data_loader</span> <span class="o">=</span> <span class="n">H5MetasetDataLoader</span><span class="p">(</span>
 </span><span data-line="1069">            <span class="bp">self</span><span class="o">.</span><span class="n">metaset</span><span class="p">,</span>
 </span><span data-line="1070">            <span class="n">batch_size</span><span class="p">,</span>
@@ -1279,8 +1280,8 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="1094">
 </span><span data-line="1095">    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 </span><span data-line="1096">        <span class="k">return</span> <span class="p">(</span>
-</span><span data-line="1097">            <span class="sa">f</span><span class="s1">&#39;H5Dataset:</span><span class="se">\n</span><span class="s1">Path: &quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_h5_path</span><span class="si">}</span><span class="s1">&quot;</span><span class="se">\n</span><span class="s1">Metaset:</span><span class="se">\n</span><span class="s1">&#39;</span>
-</span><span data-line="1098">            <span class="sa">f</span><span class="s2">&quot;- </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">metaset_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">metaset</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span data-line="1097">            <span class="sa">f</span><span class="s1">'H5Dataset:</span><span class="se">\n</span><span class="s1">Path: "</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_h5_path</span><span class="si">}</span><span class="s1">"</span><span class="se">\n</span><span class="s1">Metaset:</span><span class="se">\n</span><span class="s1">'</span>
+</span><span data-line="1098">            <span class="sa">f</span><span class="s2">"- </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">metaset_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">metaset</span><span class="si">}</span><span class="s2">"</span>
 </span><span data-line="1099">        <span class="p">)</span></div>
 
 </span><span data-line="1100">
@@ -1288,9 +1289,9 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="H5PartitionDataLoader">
 <a class="viewcode-back" href="../../../data/h5_datasets.html#mlcg.datasets.h5_dataset.H5PartitionDataLoader">[docs]</a>
 </span><span data-line="1102"><span class="k">class</span><span class="w"> </span><span class="nc">H5PartitionDataLoader</span><span class="p">:</span>
-</span><span data-line="1103"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Load batches from one or multiple Metasets in a Partition.</span>
+</span><span data-line="1103"><span class="w">    </span><span class="sd">"""Load batches from one or multiple Metasets in a Partition.</span>
 </span><span data-line="1104"><span class="sd">    In multiple Metasets scenario, the order of data loaders will be</span>
-</span><span data-line="1105"><span class="sd">    alphabetically ascending with respect to the Metaset names.&quot;&quot;&quot;</span>
+</span><span data-line="1105"><span class="sd">    alphabetically ascending with respect to the Metaset names."""</span>
 </span><span data-line="1106">
 </span><span data-line="1107">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
 </span><span data-line="1108">        <span class="bp">self</span><span class="p">,</span>
@@ -1329,7 +1330,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="1141">        <span class="k">return</span> <span class="bp">self</span>
 </span><span data-line="1142">
 </span><span data-line="1143">    <span class="k">def</span><span class="w"> </span><span class="fm">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="1144">        <span class="c1"># throw &quot;StopIteration&quot; when any of the sampler finishes iteration</span>
+</span><span data-line="1144">        <span class="c1"># throw "StopIteration" when any of the sampler finishes iteration</span>
 </span><span data-line="1145">        <span class="k">try</span><span class="p">:</span>
 </span><span data-line="1146">            <span class="n">merged_samples</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
 </span><span data-line="1147">                <span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span>
@@ -1356,7 +1357,7 @@ data-aria-dark="Switch to auto color mode">
 <div class="viewcode-block" id="H5MetasetDataLoader">
 <a class="viewcode-back" href="../../../data/h5_datasets.html#mlcg.datasets.h5_dataset.H5MetasetDataLoader">[docs]</a>
 </span><span data-line="1167"><span class="k">class</span><span class="w"> </span><span class="nc">H5MetasetDataLoader</span><span class="p">:</span>
-</span><span data-line="1168"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Load batches from one Metaset. For kwargs/options, see</span>
+</span><span data-line="1168"><span class="w">    </span><span class="sd">"""Load batches from one Metaset. For kwargs/options, see</span>
 </span><span data-line="1169"><span class="sd">    https://pytorch.org/docs/stable/data.html?highlight=dataset#torch.utils.data.Dataset</span>
 </span><span data-line="1170">
 </span><span data-line="1171">
@@ -1366,7 +1367,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="1175"><span class="sd">        Dataset object for a single set of molecules</span>
 </span><span data-line="1176"><span class="sd">    batch_size:</span>
 </span><span data-line="1177"><span class="sd">        Size of the batches to draw from the metaset</span>
-</span><span data-line="1178"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="1178"><span class="sd">    """</span>
 </span><span data-line="1179">
 </span><span data-line="1180">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
 </span><span data-line="1181">        <span class="bp">self</span><span class="p">,</span>

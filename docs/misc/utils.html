@@ -6,7 +6,8 @@
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=31853864" />
-    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=9454f7d5" />
+    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
     <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -155,24 +156,24 @@ data-aria-dark="Switch to auto color mode">
       <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
   <article class="yue" role="main">
           <section id="general-utilities">
-<h1>General utilities<a class="headerlink" href="#general-utilities" title="Link to this heading">¶</a></h1>
+<h1>General utilities<a class="headerlink" href="#general-utilities" title="Link to this heading">#</a></h1>
 <p><cite>mlcg.utils</cite> contains useful tools for diverse use cases in the mlcg ecosystems
 such as reading and using yaml files, converting tensors to tuples and others</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="mlcg.utils.load_yaml">
-<span class="sig-prename descclassname"><span class="pre">mlcg.utils.</span></span><span class="sig-name descname"><span class="pre">load_yaml</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fn</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/utils.html#load_yaml"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.utils.load_yaml" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">mlcg.utils.</span></span><span class="sig-name descname"><span class="pre">load_yaml</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fn</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/utils.html#load_yaml"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.utils.load_yaml" title="Link to this definition">#</a></dt>
 <dd><p>Load a yaml file using ruamel.yaml</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="mlcg.utils.dump_yaml">
-<span class="sig-prename descclassname"><span class="pre">mlcg.utils.</span></span><span class="sig-name descname"><span class="pre">dump_yaml</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/utils.html#dump_yaml"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.utils.dump_yaml" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">mlcg.utils.</span></span><span class="sig-name descname"><span class="pre">dump_yaml</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/utils.html#dump_yaml"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.utils.dump_yaml" title="Link to this definition">#</a></dt>
 <dd><p>dump a dictionary into a yaml file using ruamel.yaml</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="mlcg.utils.tensor2tuple">
-<span class="sig-prename descclassname"><span class="pre">mlcg.utils.</span></span><span class="sig-name descname"><span class="pre">tensor2tuple</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/utils.html#tensor2tuple"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.utils.tensor2tuple" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">mlcg.utils.</span></span><span class="sig-name descname"><span class="pre">tensor2tuple</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/utils.html#tensor2tuple"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.utils.tensor2tuple" title="Link to this definition">#</a></dt>
 <dd><p>Helper function that flattens tensors
 and returns them as tuples</p>
 <dl class="field-list simple">
@@ -190,7 +191,7 @@ and returns them as tuples</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="mlcg.utils.make_splits">
-<span class="sig-prename descclassname"><span class="pre">mlcg.utils.</span></span><span class="sig-name descname"><span class="pre">make_splits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_len</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_ratio</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_ratio</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">splits</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/utils.html#make_splits"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.utils.make_splits" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">mlcg.utils.</span></span><span class="sig-name descname"><span class="pre">make_splits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_len</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_ratio</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_ratio</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">splits</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/utils.html#make_splits"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.utils.make_splits" title="Link to this definition">#</a></dt>
 <dd><p>Function for making train, validation, and test sets
 and then optionally saving them to disk using <cite>numpy.savez</cite>.
 Splits are returned as torch tensors.</p>
@@ -227,7 +228,7 @@ order (train, validation, test)</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="mlcg.utils.download_url">
-<span class="sig-prename descclassname"><span class="pre">mlcg.utils.</span></span><span class="sig-name descname"><span class="pre">download_url</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">folder</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/utils.html#download_url"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.utils.download_url" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">mlcg.utils.</span></span><span class="sig-name descname"><span class="pre">download_url</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">folder</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/utils.html#download_url"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.utils.download_url" title="Link to this definition">#</a></dt>
 <dd><p>Downloads the content of an URL to a specific folder.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>

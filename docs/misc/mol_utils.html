@@ -6,7 +6,8 @@
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=31853864" />
-    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=9454f7d5" />
+    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
     <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -152,11 +153,11 @@ data-aria-dark="Switch to auto color mode">
       <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
   <article class="yue" role="main">
           <section id="molecular-utilities">
-<h1>Molecular utilities<a class="headerlink" href="#molecular-utilities" title="Link to this heading">¶</a></h1>
+<h1>Molecular utilities<a class="headerlink" href="#molecular-utilities" title="Link to this heading">#</a></h1>
 <p><cite>mlcg.mol_utils</cite> contains useful tools for creating systems via ASE</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="mlcg.mol_utils._ASE_prior_model">
-<span class="sig-prename descclassname"><span class="pre">mlcg.mol_utils.</span></span><span class="sig-name descname"><span class="pre">_ASE_prior_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'CH3CH2NH2'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sum_out</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cpu'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/mol_utils.html#_ASE_prior_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.mol_utils._ASE_prior_model" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">mlcg.mol_utils.</span></span><span class="sig-name descname"><span class="pre">_ASE_prior_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'CH3CH2NH2'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sum_out</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cpu'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/mol_utils.html#_ASE_prior_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.mol_utils._ASE_prior_model" title="Link to this definition">#</a></dt>
 <dd><p>Wrapper that returns a simple prior-only model of
 an ASE molecule with HarmonicBonds and HarmonicAngles
 priors whose parameters are estimated from coordinates
@@ -184,7 +185,7 @@ AtomicData instance, used for fitting under the key
 
 <dl class="py function">
 <dt class="sig sig-object py" id="mlcg.mol_utils._get_initial_data">
-<span class="sig-prename descclassname"><span class="pre">mlcg.mol_utils.</span></span><span class="sig-name descname"><span class="pre">_get_initial_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/mol_utils.html#_get_initial_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.mol_utils._get_initial_data" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">mlcg.mol_utils.</span></span><span class="sig-name descname"><span class="pre">_get_initial_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mlcg/mol_utils.html#_get_initial_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mlcg.mol_utils._get_initial_data" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 </section>

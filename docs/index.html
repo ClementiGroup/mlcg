@@ -6,7 +6,8 @@
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="_static/pygments.css?v=31853864" />
-    <link rel="stylesheet" type="text/css" href="_static/shibuya.css?v=9454f7d5" />
+    <link rel="stylesheet" type="text/css" href="_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link media="print" rel="stylesheet" type="text/css" href="_static/print.css?v=20ff2c19" />
     <link rel="stylesheet" type="text/css" href="_static/custom.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -156,12 +157,12 @@ data-aria-dark="Switch to auto color mode">
       <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
   <article class="yue" role="main">
           <section id="welcome-to-mlcg-s-documentation">
-<h1>Welcome to mlcg’s documentation!<a class="headerlink" href="#welcome-to-mlcg-s-documentation" title="Link to this heading">¶</a></h1>
+<h1>Welcome to mlcg’s documentation!<a class="headerlink" href="#welcome-to-mlcg-s-documentation" title="Link to this heading">#</a></h1>
 <p>This is the base code to create models such as the ones described in <a class="reference internal" href="bibliography.html#transcgschnet" id="id1"><span>[TransCGSchnet]</span></a> and <a class="reference internal" href="bibliography.html#cgschnet" id="id2"><span>[CGSchnet]</span></a>.</p>
 <p><a class="reference external" href="https://clementigroup.github.io/mlcg/"><img alt="Docs badge" src="https://img.shields.io/badge/mlcg-docs-blue.svg" /></a> <a class="reference external" href="https://opensource.org/licenses/MIT"><img alt="License" src="https://img.shields.io/github/license/Naereen/StrapDown.js.svg" /></a> <a class="reference external" href="https://git.imp.fu-berlin.de/ag-clementi/mlcg/-/commits/main"><img alt="pipeline status" src="https://git.imp.fu-berlin.de/ag-clementi/mlcg/badges/main/pipeline.svg" /></a></p>
 <p>This repository collects a set of tools to apply machine learning techniques to coarse grain atomic systems.</p>
 <section id="installation">
-<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading">¶</a></h2>
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading">#</a></h2>
 <p>Requires <strong>Python 3.12</strong>. Clone the repo:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">git<span class="w"> </span>clone<span class="w"> </span>git@github.com:ClementiGroup/mlcg.git
 </span><span data-line="2"><span class="nb">cd</span><span class="w"> </span>mlcg
@@ -212,7 +213,7 @@ hardware:</p>
 </div>
 <p>In a self-managed environment you can also skip the lock file and install
 the package directly with the extra matching your hardware:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;.[cu130]&quot;</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">".[cu130]"</span>
 </span></pre></div>
 </div>
 <p><strong>Python headers / clusters</strong></p>
@@ -234,7 +235,7 @@ recreated.</p>
 </span></pre></div>
 </div>
 <p>or, for a self-managed environment:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;.[cu130]&quot;</span><span class="w"> </span>--group<span class="w"> </span>dev
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">".[cu130]"</span><span class="w"> </span>--group<span class="w"> </span>dev
 </span></pre></div>
 </div>
 <p><strong>With pip</strong></p>
@@ -243,17 +244,17 @@ installing dependencies in a specific order to avoid version conflicts
 between optional model backends — see <a href="#id4"><span class="problematic" id="id5">`Installation with pip`_</span></a> below.</p>
 </section>
 <section id="examples">
-<h2>Examples<a class="headerlink" href="#examples" title="Link to this heading">¶</a></h2>
+<h2>Examples<a class="headerlink" href="#examples" title="Link to this heading">#</a></h2>
 <p>Please take a look into the <code class="docutils literal notranslate"><span class="pre">examples</span></code> folder of the repository to see how to use this code to train a model over an existing dataset.</p>
 </section>
 </section>
 <section id="cli">
-<h1>CLI<a class="headerlink" href="#cli" title="Link to this heading">¶</a></h1>
+<h1>CLI<a class="headerlink" href="#cli" title="Link to this heading">#</a></h1>
 <p>The models defined in this library can be conveniently trained using the pytorch-lightning
 <a class="reference external" href="https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_cli.html">CLI</a> utilities.</p>
 </section>
 <section id="contents">
-<h1>Contents<a class="headerlink" href="#contents" title="Link to this heading">¶</a></h1>
+<h1>Contents<a class="headerlink" href="#contents" title="Link to this heading">#</a></h1>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="data/index.html">Data and datasets</a><ul>
@@ -305,7 +306,7 @@ between optional model backends — see <a href="#id4"><span class="problematic"
 </ul>
 </div>
 <section id="indices-and-tables">
-<h2>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Link to this heading">¶</a></h2>
+<h2>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Link to this heading">#</a></h2>
 <ul class="simple">
 <li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
 <li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
