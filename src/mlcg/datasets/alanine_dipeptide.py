@@ -19,10 +19,18 @@ from ..nn import (
 )
 from ..nn.prior import _Prior
 from .utils import remove_baseline_forces, chunker
+from typing_extensions import deprecated
 
 
+@deprecated(
+    "AlanineDataset is deprecated since mlcg 0.2.2 and will be removed in a future release. "
+    "Training dataset should be built using the `mlcg-tk` package"
+)
 class AlanineDataset(InMemoryDataset):
     r"""Dataset for training a CG model of the alanine-dipeptide protein following a Cα + 1 C\beta CG mapping
+
+    .. deprecated:: 0.2.2
+        Will be removed in a future release.
 
     Alanine Dipeptide CG structure:
 
