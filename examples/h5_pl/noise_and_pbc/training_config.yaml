@@ -1,5 +1,8 @@
 ckpt_path: last
 data:
+  transform_kbt: 0.596161081
+  transform_noise_level: 0.001
+  with_pbc: true
   h5_file_path: 
     ./bilayer_with_pbc.h5
   loading_options:
@@ -12,10 +15,7 @@ data:
     nl_chkpts:
       POPC: ./bilayer_nls.pt
   baseline_models: ./bilayer_prior.pt
-  transform_kbt: 0.596161081
-  transform_noise_level: null
   partition_options: ./bilayer_partition.yaml
-
 model:
   loss:
     class_path: mlcg.nn.Loss
