@@ -11,7 +11,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mlcg"
-version = "0.2.1"
+version = "0.2.2"
 description = "A collection of tools for processing raw simulation data for use in training machine-learned, coarse-grained (CG) force fields using the MLCG library"
 readme = { file = "README.rst", content-type = "text/x-rst" }
 requires-python = "==3.12.*"
