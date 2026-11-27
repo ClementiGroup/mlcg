@@ -104,6 +104,22 @@ Installing with ``pip`` instead of ``uv`` is also possible, but requires
 installing dependencies in a specific order to avoid version conflicts
 between optional model backends — see `Installation with pip`_ below.
 
+**Troubleshooting**
+
+*Installing in HPC systems*
+
+For Cython to work properly, ``gcc``, the C compiler, needs to be available
+on the ``PATH``. In a cluster or any other HPC environment, sometimes you need
+to explicitly load a ``gcc`` module for this. *Please consult the documentation
+of your HPC resource for instructions on how to do this*.
+
+*Cython fails to build extensions*
+
+In some cases the Cython extension fails to build even if most of the steps
+have been followed well. Forcing Python to version 3.12.16 can sometimes fix
+this error. In ``uv``, this can be specified with ``--python 3.12.16`` when
+creating the environment.
+
 .. end-install
 
 
